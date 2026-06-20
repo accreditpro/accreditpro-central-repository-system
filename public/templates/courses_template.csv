@@ -1,0 +1,6 @@
+Course Code,Course Name,Program,Semester,Course Type,Credits,Theory Hours,Lab Hours,Status,NBA Mapping,NAAC Mapping
+CS101,Programming Fundamentals,B.Tech CSE,1,Core,4,3,2,Active,PO1,Criterion 2.1
+CS201,Data Structures and Algorithms,B.Tech CSE,3,Core,4,3,2,Active,PO1,Criterion 2.1
+CS301,Database Management Systems,B.Tech CSE,5,Core,4,3,2,Active,PO2,Criterion 2.1
+CS401,Machine Learning,B.Tech CSE,7,Professional Elective,3,3,0,Active,PO3,Criterion 2.2
+AI501,Deep Learning,M.Tech AI,1,Core,4,3,2,Active,PO1,Criterion 2.1
