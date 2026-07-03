@@ -98,5 +98,9 @@
     "vite": "^5.4.1",
     "vite-plugin-sitemap": "^0.8.2",
     "vite-prerender-plugin": "^0.5.13"
-  }
+  },
+  "trustedDependencies": [
+    "@swc/core",
+    "core-js"
+  ]
 }
