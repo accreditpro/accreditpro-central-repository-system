@@ -105,11 +105,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 interface RepositoryWorkspaceProps {
   config: RepositoryModuleConfig;
   initialTabIndex?: number;
+  hideTabs?: boolean;
 }
 
-export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorkspaceProps) => {
+export const RepositoryWorkspace = ({ config, initialTabIndex, hideTabs = false }: RepositoryWorkspaceProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
   const metrics = repositoryHealth[config.id];
+  const activeTabConfig = config.tabs.find((tab) => tab.id === activeTab) ?? config.tabs[initialTabIndex ?? 0];
 
   // Reset active tab when config changes (e.g., switching between repositories)
   useEffect(() => {
@@ -126,8 +128,12 @@ export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorks
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">{config.label}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">{config.description}</p>
+            <h2 className="text-xl font-bold tracking-tight">
+              {hideTabs && activeTabConfig ? activeTabConfig.label : config.label}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {hideTabs && activeTabConfig ? `${config.label} — ${config.description}` : config.description}
+            </p>
           </div>
         </div>
 
@@ -153,30 +159,33 @@ export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorks
         </div>
       </motion.div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          {config.tabs.map((tab) => {
-            const Icon = iconMap[tab.icon] || FileText;
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      {hideTabs && activeTabConfig ? (
+        <RepositoryTabContent tabConfig={activeTabConfig} repositoryId={config.id} />
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
+            {config.tabs.map((tab) => {
+              const Icon = iconMap[tab.icon] || FileText;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">{tab.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
-        {config.tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-4">
-            <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
-          </TabsContent>
-        ))}
-      </Tabs>
+          {config.tabs.map((tab) => (
+            <TabsContent key={tab.id} value={tab.id} className="mt-4">
+              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 };

@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { CoordinatorSidebar } from '@/components/layout/CoordinatorSidebar';
 import { RepositoryDashboard } from './components/RepositoryDashboard';
 import { RepositoryWorkspace } from './components/RepositoryWorkspace';
 import { DocumentsView } from './components/DocumentsView';
@@ -31,21 +30,25 @@ import {
   Upload,
   ShieldCheck,
   User,
-  ChevronLeft,
-  ChevronRight,
   Menu,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { toggleNotificationPanel } from '@/store/slices/uiSlice';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
+import { Bell } from 'lucide-react';
 
-const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
+const sidebarItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap, separator: true },
+  { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap, separatorAfter: true },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
   { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
-  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2, separator: true },
+  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2, separatorAfter: true },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
-  { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
+  { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separatorAfter: true },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
@@ -58,6 +61,10 @@ const repositoryConfigMap = {
 };
 
 export const DepartmentRepositoryPage = () => {
+  const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const { notifications } = useAppSelector((state) => state.ui);
+  const unreadCount = notifications.filter((n) => !n.read).length;
   const [activeView, setActiveView] = useState<SidebarView>('student-repository');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -85,126 +92,65 @@ export const DepartmentRepositoryPage = () => {
     }
   };
 
+  const currentLabel = sidebarItems.find((i) => i.id === activeView)?.label || 'Dashboard';
+
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-      {/* Mobile sidebar overlay */}
-      <AnimatePresence>
-        {mobileSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+    <div className="flex h-screen overflow-hidden">
+      <CoordinatorSidebar
+        subtitle="Department Coordinator"
+        activeView={activeView}
+        onNavigate={(id) => setActiveView(id as SidebarView)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+        items={sidebarItems}
+      />
 
-      {/* Sidebar */}
-      <motion.aside
-        className={cn(
-          'h-full border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col z-50',
-          'fixed lg:relative',
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-          sidebarCollapsed ? 'w-16' : 'w-64',
-          'transition-all duration-300 ease-in-out'
-        )}
-      >
-        {/* Sidebar Header */}
-        <div className={cn('p-4 border-b border-border/50', sidebarCollapsed && 'p-2')}>
-          {!sidebarCollapsed ? (
-            <div className="space-y-1">
-              <h2 className="text-sm font-bold tracking-tight">Repository Workspace</h2>
-              <div className="flex items-center gap-1.5">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium">
-                  {coordinatorContext.department}
-                </Badge>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                  {coordinatorContext.academicYear}
-                </Badge>
-              </div>
+      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
+        <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-background/80 px-4 md:px-6 backdrop-blur-xl">
+          
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 lg:hidden shrink-0"
+              onClick={() => setMobileSidebarOpen(true)}
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg font-semibold">{currentLabel}</h1>
+              <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
+                {coordinatorContext.department}
+              </Badge>
+              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hidden sm:inline-flex">
+                {coordinatorContext.academicYear}
+              </Badge>
             </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-                <GraduationCap className="h-4 w-4 text-white" />
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
 
-        {/* Navigation */}
-        <ScrollArea className="flex-1 py-2">
-          <nav className="space-y-0.5 px-2">
-            {sidebarItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = activeView === item.id;
-              const showSeparator = item.separator && index < sidebarItems.length - 1;
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
 
-              return (
-                <div key={item.id}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      'w-full justify-start gap-2.5 h-9 px-3 text-xs font-medium rounded-lg transition-all',
-                      isActive && 'bg-primary/10 text-primary hover:bg-primary/15 shadow-sm border border-primary/20',
-                      !isActive && 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                      sidebarCollapsed && 'justify-center px-0'
-                    )}
-                    onClick={() => {
-                      setActiveView(item.id);
-                      setMobileSidebarOpen(false);
-                    }}
-                    title={sidebarCollapsed ? item.label : undefined}
-                  >
-                    <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
-                  </Button>
-                  {showSeparator && <Separator className="my-2 opacity-50" />}
-                </div>
-              );
-            })}
-          </nav>
-        </ScrollArea>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-8 w-8"
+              onClick={() => dispatch(toggleNotificationPanel())}
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              )}
+            </Button>
 
-        {/* Collapse Toggle */}
-        <div className="p-2 border-t border-border/50 hidden lg:block">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            {!sidebarCollapsed && <span className="ml-2">Collapse</span>}
-          </Button>
-        </div>
-      </motion.aside>
+            <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden flex flex-col">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setMobileSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          <div>
-            <p className="text-sm font-semibold">
-              {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              {coordinatorContext.department} • {coordinatorContext.academicYear}
-            </p>
+            {user && <UserProfileMenu user={user} />}
           </div>
         </div>
 
-        {/* Content Area */}
         <ScrollArea className="flex-1">
           <div className="p-6">
             <AnimatePresence mode="wait">
