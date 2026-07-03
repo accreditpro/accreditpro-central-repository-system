@@ -34,6 +34,8 @@ const getRoleBasedRedirect = (role: UserRole): string => {
       return '/app/finance-repository';
     case UserRole.TPO_COORDINATOR:
       return '/app/tpo-repository';
+    case UserRole.STUDENT_DEVELOPMENT_COORDINATOR:
+      return '/app/student-development-repository';
     case UserRole.INSTITUTION_ADMIN:
     case UserRole.IQAC_COORDINATOR:
     case UserRole.PRINCIPAL:
@@ -100,6 +102,7 @@ const Login = () => {
     { label: 'Infra. Coordinator', email: 'infrastructure@accreditpro.com', role: 'Infrastructure' },
     { label: 'Finance Coordinator', email: 'finance@accreditpro.com', role: 'Finance' },
     { label: 'TPO Coordinator', email: 'tpo@accreditpro.com', role: 'Placements' },
+    { label: 'Student Dev. Coordinator', email: 'studentdev@accreditpro.com', role: 'Student Activities' },
   ];
 
   return (

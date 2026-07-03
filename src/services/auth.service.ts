@@ -99,6 +99,18 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       createdAt: '2024-04-15T00:00:00Z',
     },
   },
+  'studentdev@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '9',
+      email: 'studentdev@accreditpro.com',
+      firstName: 'Anita',
+      lastName: 'Desai',
+      role: UserRole.STUDENT_DEVELOPMENT_COORDINATOR,
+      institution: 'National University',
+      createdAt: '2024-05-01T00:00:00Z',
+    },
+  },
 };
 
 class AuthService {

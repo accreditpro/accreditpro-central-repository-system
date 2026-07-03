@@ -10,6 +10,7 @@ import { DepartmentCoordinatorLayout } from '@/layouts/DepartmentCoordinatorLayo
 import { InfrastructureCoordinatorLayout } from '@/layouts/InfrastructureCoordinatorLayout';
 import { FinanceCoordinatorLayout } from '@/layouts/FinanceCoordinatorLayout';
 import { TPOCoordinatorLayout } from '@/layouts/TPOCoordinatorLayout';
+import { StudentDevelopmentCoordinatorLayout } from '@/layouts/StudentDevelopmentCoordinatorLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
@@ -30,6 +31,7 @@ import { DepartmentRepositoryPage } from '@/pages/department-repository/Departme
 import { InfrastructureRepositoryPage } from '@/pages/infrastructure-repository/InfrastructureRepositoryPage';
 import FinanceRepositoryPage from '@/pages/finance-repository/FinanceRepositoryPage';
 import TPORepositoryPage from '@/pages/tpo-repository/TPORepositoryPage';
+import StudentDevelopmentRepositoryPage from '@/pages/student-development-repository/StudentDevelopmentRepositoryPage';
 
 // Institution Admin Pages
 import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashboard';
@@ -205,6 +207,18 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<TPORepositoryPage />} />
+      </Route>
+
+      {/* Student Development Coordinator Routes - No outer sidebar */}
+      <Route
+        path="/app/student-development-repository"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT_DEVELOPMENT_COORDINATOR]}>
+            <StudentDevelopmentCoordinatorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<StudentDevelopmentRepositoryPage />} />
       </Route>
 
       {/* Legacy routes - redirect to new structure */}
