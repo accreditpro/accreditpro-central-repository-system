@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -9,10 +9,13 @@ import { RepositoryTabContent } from './RepositoryTabContent';
 import {
   GraduationCap,
   Users,
+  Users2,
+  UsersRound,
   BookOpen,
   FlaskConical,
   FileText,
   Calendar,
+  CalendarDays,
   Award,
   Globe,
   FolderOpen,
@@ -28,15 +31,39 @@ import {
   BadgeCheck,
   Presentation,
   TrendingUp,
+  Building2,
+  School,
+  Wrench,
+  Monitor,
+  Home,
+  Bus,
+  Leaf,
+  Handshake,
+  Heart,
+  MapPin,
+  Zap,
+  Droplets,
+  Trash2,
+  ClipboardCheck,
+  Flame,
+  Camera,
+  AlertTriangle,
+  ShieldCheck,
+  Settings,
+  Wifi,
+  Package,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
   Users,
+  Users2,
+  UsersRound,
   BookOpen,
   FlaskConical,
   FileText,
   Calendar,
+  CalendarDays,
   Award,
   Globe,
   FolderOpen,
@@ -52,15 +79,42 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BadgeCheck,
   Presentation,
   TrendingUp,
+  Building2,
+  School,
+  Wrench,
+  Monitor,
+  Home,
+  Bus,
+  Leaf,
+  Handshake,
+  Heart,
+  MapPin,
+  Zap,
+  Droplets,
+  Trash2,
+  ClipboardCheck,
+  Flame,
+  Camera,
+  AlertTriangle,
+  ShieldCheck,
+  Settings,
+  Wifi,
+  Package,
 };
 
 interface RepositoryWorkspaceProps {
   config: RepositoryModuleConfig;
+  initialTabIndex?: number;
 }
 
-export const RepositoryWorkspace = ({ config }: RepositoryWorkspaceProps) => {
-  const [activeTab, setActiveTab] = useState(config.tabs[0]?.id || '');
+export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorkspaceProps) => {
+  const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
   const metrics = repositoryHealth[config.id];
+
+  // Reset active tab when config changes (e.g., switching between repositories)
+  useEffect(() => {
+    setActiveTab(config.tabs[initialTabIndex ?? 0]?.id || '');
+  }, [config.id, initialTabIndex]);
 
   return (
     <div className="space-y-5">

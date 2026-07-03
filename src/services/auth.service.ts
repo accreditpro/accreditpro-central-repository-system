@@ -63,6 +63,42 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       createdAt: '2024-03-01T00:00:00Z',
     },
   },
+  'infrastructure@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '6',
+      email: 'infrastructure@accreditpro.com',
+      firstName: 'Rajesh',
+      lastName: 'Kumar',
+      role: UserRole.INFRASTRUCTURE_COORDINATOR,
+      institution: 'National University',
+      createdAt: '2024-03-15T00:00:00Z',
+    },
+  },
+  'finance@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '7',
+      email: 'finance@accreditpro.com',
+      firstName: 'Priya',
+      lastName: 'Sharma',
+      role: UserRole.FINANCE_COORDINATOR,
+      institution: 'National University',
+      createdAt: '2024-04-01T00:00:00Z',
+    },
+  },
+  'tpo@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '8',
+      email: 'tpo@accreditpro.com',
+      firstName: 'Vikram',
+      lastName: 'Mehta',
+      role: UserRole.TPO_COORDINATOR,
+      institution: 'National University',
+      createdAt: '2024-04-15T00:00:00Z',
+    },
+  },
 };
 
 class AuthService {

@@ -624,12 +624,214 @@ export const researchRepositoryConfig: RepositoryModuleConfig = {
   ],
 };
 
+// ============ ALUMNI REPOSITORY ============
+export const alumniRepositoryConfig: RepositoryModuleConfig = {
+  id: 'alumni',
+  label: 'Alumni Repository',
+  description: 'Maintain alumni records, career progression, engagement, and contributions',
+  icon: 'Users2',
+  color: 'text-teal-600',
+  gradient: 'from-teal-500 to-teal-600',
+  tabs: [
+    {
+      id: 'alumni-details',
+      label: 'Alumni Details',
+      icon: 'UserCircle',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'alumniName', label: 'Alumni Name', type: 'text', required: true, csvColumn: 'Alumni Name' },
+        { key: 'rollNumber', label: 'Roll Number', type: 'text', required: true, csvColumn: 'Roll Number' },
+        { key: 'department', label: 'Department', type: 'select', required: true, csvColumn: 'Department', masterDataSource: 'departments' },
+        { key: 'program', label: 'Program', type: 'select', required: true, csvColumn: 'Program', masterDataSource: 'programs' },
+        { key: 'specialization', label: 'Specialization', type: 'select', required: false, csvColumn: 'Specialization', masterDataSource: 'specializations' },
+        { key: 'graduationYear', label: 'Graduation Year', type: 'text', required: true, csvColumn: 'Graduation Year' },
+        { key: 'personalEmail', label: 'Personal Email', type: 'text', required: true, csvColumn: 'Personal Email' },
+        { key: 'mobileNumber', label: 'Mobile Number', type: 'text', required: false, csvColumn: 'Mobile Number' },
+        { key: 'currentCity', label: 'Current City', type: 'text', required: false, csvColumn: 'Current City' },
+        { key: 'currentCountry', label: 'Current Country', type: 'text', required: false, csvColumn: 'Current Country' },
+        { key: 'linkedinProfile', label: 'LinkedIn Profile', type: 'text', required: false, csvColumn: 'LinkedIn Profile' },
+        { key: 'alumniStatus', label: 'Alumni Status', type: 'select', required: false, csvColumn: 'Alumni Status', selectOptions: ['Active', 'Inactive', 'Unverified', 'Deceased'] },
+      ],
+      requiredEvidence: ['Graduation Register', 'Alumni Registration Form', 'Identity Verification (Optional)'],
+      validationRules: [
+        'Unique Alumni ID',
+        'Unique Roll Number',
+        'Valid Email format',
+        'Program must exist in master data',
+        'Specialization must exist in master data',
+        'Graduation Year must exist in academic years',
+      ],
+      templateFile: '/templates/alumni_details_template.csv',
+    },
+    {
+      id: 'employment-career',
+      label: 'Employment & Career',
+      icon: 'Briefcase',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'organizationName', label: 'Organization Name', type: 'text', required: true, csvColumn: 'Organization Name' },
+        { key: 'designation', label: 'Designation', type: 'text', required: true, csvColumn: 'Designation' },
+        { key: 'industrySector', label: 'Industry Sector', type: 'select', required: true, csvColumn: 'Industry Sector', selectOptions: ['IT/Software', 'Manufacturing', 'Banking & Finance', 'Consulting', 'Healthcare', 'E-commerce', 'Automotive', 'Telecom', 'FMCG', 'Energy', 'Education', 'Government/PSU', 'Startup', 'Other'] },
+        { key: 'employmentType', label: 'Employment Type', type: 'select', required: false, csvColumn: 'Employment Type', selectOptions: ['Full Time', 'Part Time', 'Contract', 'Freelance', 'Self-Employed'] },
+        { key: 'startDate', label: 'Start Date', type: 'date', required: true, csvColumn: 'Start Date' },
+        { key: 'currentPackage', label: 'Current Package (LPA)', type: 'number', required: false, csvColumn: 'Current Package' },
+        { key: 'careerLevel', label: 'Career Level', type: 'select', required: false, csvColumn: 'Career Level', selectOptions: ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Manager', 'Director', 'VP', 'CXO', 'Founder'] },
+      ],
+      requiredEvidence: ['Employment Letter', 'LinkedIn Profile', 'Employer Verification (Optional)'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Start Date must be valid',
+        'Package must be ≥ 0',
+      ],
+      templateFile: '/templates/alumni_employment_template.csv',
+    },
+    {
+      id: 'higher-education',
+      label: 'Higher Education',
+      icon: 'GraduationCap',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'institutionName', label: 'Institution Name', type: 'text', required: true, csvColumn: 'Institution Name' },
+        { key: 'programName', label: 'Program Name', type: 'text', required: true, csvColumn: 'Program Name' },
+        { key: 'country', label: 'Country', type: 'text', required: true, csvColumn: 'Country' },
+        { key: 'admissionYear', label: 'Admission Year', type: 'text', required: true, csvColumn: 'Admission Year' },
+        { key: 'completionYear', label: 'Completion Year', type: 'text', required: false, csvColumn: 'Completion Year' },
+        { key: 'status', label: 'Status', type: 'select', required: false, csvColumn: 'Status', selectOptions: ['Pursuing', 'Completed', 'Dropped Out'] },
+      ],
+      requiredEvidence: ['Admission Letter', 'Degree Certificate', 'Student ID Card'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Admission Year ≤ Completion Year',
+      ],
+      templateFile: '/templates/alumni_higher_education_template.csv',
+    },
+    {
+      id: 'alumni-engagement',
+      label: 'Alumni Engagement',
+      icon: 'Handshake',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'engagementType', label: 'Engagement Type', type: 'select', required: true, csvColumn: 'Engagement Type', selectOptions: ['Guest Lecture', 'Webinar', 'Workshop', 'Hackathon', 'Industrial Visit', 'Curriculum Review', 'Panel Discussion', 'Career Counseling', 'Placement Support'] },
+        { key: 'activityName', label: 'Activity Name', type: 'text', required: true, csvColumn: 'Activity Name' },
+        { key: 'activityDate', label: 'Activity Date', type: 'date', required: true, csvColumn: 'Activity Date' },
+        { key: 'role', label: 'Role', type: 'select', required: false, csvColumn: 'Role', selectOptions: ['Speaker', 'Mentor', 'Judge', 'Panelist', 'Organizer', 'Facilitator', 'Reviewer'] },
+        { key: 'contributionHours', label: 'Contribution Hours', type: 'number', required: false, csvColumn: 'Contribution Hours' },
+      ],
+      requiredEvidence: ['Invitation', 'Attendance', 'Photographs', 'Feedback'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Activity Date must be valid',
+      ],
+      templateFile: '/templates/alumni_engagement_template.csv',
+    },
+    {
+      id: 'alumni-contributions',
+      label: 'Alumni Contributions',
+      icon: 'Heart',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'contributionType', label: 'Contribution Type', type: 'select', required: true, csvColumn: 'Contribution Type', selectOptions: ['Equipment Donation', 'Scholarship', 'Books', 'Software License', 'Endowment', 'Research Support', 'Infrastructure', 'Cash Donation', 'Other'] },
+        { key: 'contributionTitle', label: 'Contribution Title', type: 'text', required: true, csvColumn: 'Contribution Title' },
+        { key: 'contributionValue', label: 'Contribution Value (₹)', type: 'number', required: true, csvColumn: 'Contribution Value' },
+        { key: 'contributionDate', label: 'Contribution Date', type: 'date', required: true, csvColumn: 'Contribution Date' },
+        { key: 'beneficiaryDepartment', label: 'Beneficiary Department', type: 'select', required: false, csvColumn: 'Beneficiary Department', selectOptions: ['CSE', 'ECE', 'EEE', 'MECH', 'Civil', 'Institution-wide'] },
+      ],
+      requiredEvidence: ['Donation Receipt', 'Acknowledgement Letter', 'Photographs'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Contribution Value must be ≥ 0',
+        'Contribution Date must be valid',
+      ],
+      templateFile: '/templates/alumni_contributions_template.csv',
+    },
+    {
+      id: 'alumni-mentorship',
+      label: 'Alumni Mentorship',
+      icon: 'UsersRound',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'mentorshipProgram', label: 'Mentorship Program', type: 'text', required: true, csvColumn: 'Mentorship Program' },
+        { key: 'mentorshipType', label: 'Mentorship Type', type: 'select', required: true, csvColumn: 'Mentorship Type', selectOptions: ['Career Guidance', 'Technical Mentoring', 'Research Mentoring', 'Entrepreneurship', 'Placement Preparation', 'Project Guidance', 'Skill Development'] },
+        { key: 'numberOfMentees', label: 'Number of Mentees', type: 'number', required: true, csvColumn: 'Number of Mentees' },
+        { key: 'startDate', label: 'Start Date', type: 'date', required: true, csvColumn: 'Start Date' },
+        { key: 'endDate', label: 'End Date', type: 'date', required: false, csvColumn: 'End Date' },
+      ],
+      requiredEvidence: ['Mentorship Plan', 'Attendance', 'Feedback', 'Completion Report'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Start Date must be valid',
+        'End Date must be ≥ Start Date',
+      ],
+      templateFile: '/templates/alumni_mentorship_template.csv',
+    },
+    {
+      id: 'alumni-achievements',
+      label: 'Alumni Achievements',
+      icon: 'Trophy',
+      fields: [
+        { key: 'alumniId', label: 'Alumni ID', type: 'text', required: true, csvColumn: 'Alumni ID' },
+        { key: 'achievementTitle', label: 'Achievement Title', type: 'text', required: true, csvColumn: 'Achievement Title' },
+        { key: 'achievementCategory', label: 'Achievement Category', type: 'select', required: true, csvColumn: 'Achievement Category', selectOptions: ['Patent', 'National Award', 'Startup Founder', 'CEO', 'International Recognition', 'Research Award', 'Government Award', 'Industry Award', 'Publication', 'Social Impact', 'Other'] },
+        { key: 'awardingOrganization', label: 'Awarding Organization', type: 'text', required: true, csvColumn: 'Awarding Organization' },
+        { key: 'achievementDate', label: 'Achievement Date', type: 'date', required: true, csvColumn: 'Achievement Date' },
+        { key: 'description', label: 'Description', type: 'text', required: false, csvColumn: 'Description' },
+      ],
+      requiredEvidence: ['Award Certificate', 'News Article', 'Photographs'],
+      validationRules: [
+        'Alumni ID must exist in Alumni Details',
+        'Achievement Date must be valid',
+      ],
+      templateFile: '/templates/alumni_achievements_template.csv',
+    },
+    {
+      id: 'alumni-chapters',
+      label: 'Alumni Chapters',
+      icon: 'MapPin',
+      fields: [
+        { key: 'chapterName', label: 'Chapter Name', type: 'text', required: true, csvColumn: 'Chapter Name' },
+        { key: 'chapterType', label: 'Chapter Type', type: 'select', required: true, csvColumn: 'Chapter Type', selectOptions: ['City-based', 'Country-based', 'Industry-based', 'Batch-based', 'Department-based'] },
+        { key: 'location', label: 'Location', type: 'text', required: true, csvColumn: 'Location' },
+        { key: 'coordinatorName', label: 'Coordinator Name', type: 'text', required: true, csvColumn: 'Coordinator Name' },
+        { key: 'formationDate', label: 'Formation Date', type: 'date', required: true, csvColumn: 'Formation Date' },
+        { key: 'status', label: 'Status', type: 'select', required: false, csvColumn: 'Status', selectOptions: ['Active', 'Inactive', 'Proposed'] },
+      ],
+      requiredEvidence: ['Chapter Registration', 'Meeting Minutes', 'Photographs'],
+      validationRules: [
+        'Chapter Name must be unique',
+        'Formation Date must be valid',
+      ],
+      templateFile: '/templates/alumni_chapters_template.csv',
+    },
+    {
+      id: 'alumni-events',
+      label: 'Alumni Events',
+      icon: 'CalendarDays',
+      fields: [
+        { key: 'eventName', label: 'Event Name', type: 'text', required: true, csvColumn: 'Event Name' },
+        { key: 'eventType', label: 'Event Type', type: 'select', required: true, csvColumn: 'Event Type', selectOptions: ['Alumni Meet', 'Reunion', 'Networking Event', 'Fundraiser', 'Convocation', 'Awards Ceremony', 'Cultural Event', 'Sports Meet', 'Webinar Series', 'Other'] },
+        { key: 'eventDate', label: 'Event Date', type: 'date', required: true, csvColumn: 'Event Date' },
+        { key: 'location', label: 'Location', type: 'text', required: true, csvColumn: 'Location' },
+        { key: 'participantsCount', label: 'Participants Count', type: 'number', required: true, csvColumn: 'Participants Count' },
+        { key: 'outcomeSummary', label: 'Outcome Summary', type: 'text', required: false, csvColumn: 'Outcome Summary' },
+      ],
+      requiredEvidence: ['Event Brochure', 'Attendance', 'Photographs', 'Feedback', 'Event Report'],
+      validationRules: [
+        'Event Name must not be empty',
+        'Event Date must be valid',
+        'Participants Count must be ≥ 0',
+      ],
+      templateFile: '/templates/alumni_events_template.csv',
+    },
+  ],
+};
+
 // All repository configs
 export const allRepositoryConfigs: RepositoryModuleConfig[] = [
   academicRepositoryConfig,
   facultyRepositoryConfig,
   studentRepositoryConfig,
   researchRepositoryConfig,
+  alumniRepositoryConfig,
 ];
 
 // ============ MOCK DATA ============
@@ -640,6 +842,7 @@ export const dashboardKPIs: KPICard[] = [
   { id: 'faculty-completion', label: 'Faculty Repository', value: 85, suffix: '%', icon: 'Users', color: 'text-indigo-600 bg-indigo-500/10', trend: 3, trendLabel: 'vs last month' },
   { id: 'student-completion', label: 'Student Repository', value: 72, suffix: '%', icon: 'BookOpen', color: 'text-emerald-600 bg-emerald-500/10', trend: 8, trendLabel: 'vs last month' },
   { id: 'research-completion', label: 'Research Repository', value: 65, suffix: '%', icon: 'FlaskConical', color: 'text-pink-600 bg-pink-500/10', trend: 4, trendLabel: 'vs last month' },
+  { id: 'alumni-completion', label: 'Alumni Repository', value: 58, suffix: '%', icon: 'Users2', color: 'text-teal-600 bg-teal-500/10', trend: 6, trendLabel: 'vs last month' },
   { id: 'pending-reviews', label: 'Pending Reviews', value: 14, icon: 'Clock', color: 'text-orange-600 bg-orange-500/10', trend: -3, trendLabel: 'vs last week' },
   { id: 'pending-verification', label: 'Pending Verification', value: 8, icon: 'Shield', color: 'text-cyan-600 bg-cyan-500/10', trend: -2, trendLabel: 'cleared' },
   { id: 'pending-evidence', label: 'Pending Evidence', value: 12, icon: 'FileText', color: 'text-amber-600 bg-amber-500/10', trend: -4, trendLabel: 'uploaded' },
@@ -652,6 +855,11 @@ export const repositoryHealth: Record<string, RepositoryMetrics> = {
   faculty: { dataCompleteness: 92, evidenceCompleteness: 68, verificationPercent: 85, readinessScore: 82 },
   student: { dataCompleteness: 88, evidenceCompleteness: 75, verificationPercent: 70, readinessScore: 78 },
   research: { dataCompleteness: 74, evidenceCompleteness: 60, verificationPercent: 65, readinessScore: 66 },
+  alumni: { dataCompleteness: 68, evidenceCompleteness: 55, verificationPercent: 58, readinessScore: 60 },
+  infrastructure: { dataCompleteness: 82, evidenceCompleteness: 68, verificationPercent: 75, readinessScore: 71 },
+  'green-campus': { dataCompleteness: 76, evidenceCompleteness: 65, verificationPercent: 72, readinessScore: 68 },
+  'safety-security': { dataCompleteness: 88, evidenceCompleteness: 78, verificationPercent: 82, readinessScore: 80 },
+  'utilities': { dataCompleteness: 80, evidenceCompleteness: 70, verificationPercent: 74, readinessScore: 72 },
 };
 
 // Repository Summaries per tab
@@ -683,6 +891,16 @@ export const repositorySummaries: Record<string, RepositorySummary> = {
   'research-grants': { recordsUploaded: 18, pendingValidation: 2, pendingVerification: 3, verified: 10, approved: 10, rejected: 0, lastUpdated: '2025-01-09 11:00' },
   'sponsored-projects': { recordsUploaded: 11, pendingValidation: 0, pendingVerification: 2, verified: 8, approved: 7, rejected: 1, lastUpdated: '2025-01-07 16:00' },
   'consultancy-projects': { recordsUploaded: 8, pendingValidation: 1, pendingVerification: 2, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-08 14:00' },
+  // Alumni
+  'alumni-details': { recordsUploaded: 420, pendingValidation: 12, pendingVerification: 25, verified: 350, approved: 340, rejected: 8, lastUpdated: '2025-01-12 10:00' },
+  'employment-career': { recordsUploaded: 380, pendingValidation: 8, pendingVerification: 18, verified: 320, approved: 310, rejected: 5, lastUpdated: '2025-01-11 14:30' },
+  'higher-education': { recordsUploaded: 95, pendingValidation: 3, pendingVerification: 8, verified: 75, approved: 72, rejected: 2, lastUpdated: '2025-01-10 11:00' },
+  'alumni-engagement': { recordsUploaded: 68, pendingValidation: 4, pendingVerification: 6, verified: 50, approved: 48, rejected: 2, lastUpdated: '2025-01-12 09:30' },
+  'alumni-contributions': { recordsUploaded: 45, pendingValidation: 2, pendingVerification: 5, verified: 32, approved: 30, rejected: 1, lastUpdated: '2025-01-11 16:00' },
+  'alumni-mentorship': { recordsUploaded: 28, pendingValidation: 2, pendingVerification: 4, verified: 18, approved: 16, rejected: 1, lastUpdated: '2025-01-09 13:00' },
+  'alumni-achievements': { recordsUploaded: 52, pendingValidation: 3, pendingVerification: 6, verified: 38, approved: 35, rejected: 2, lastUpdated: '2025-01-10 15:30' },
+  'alumni-chapters': { recordsUploaded: 12, pendingValidation: 1, pendingVerification: 2, verified: 8, approved: 8, rejected: 0, lastUpdated: '2025-01-08 10:00' },
+  'alumni-events': { recordsUploaded: 24, pendingValidation: 2, pendingVerification: 3, verified: 16, approved: 15, rejected: 1, lastUpdated: '2025-01-11 11:30' },
 };
 
 // Upload History

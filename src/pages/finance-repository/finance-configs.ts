@@ -1,0 +1,243 @@
+export interface FinanceFieldConfig {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'currency' | 'percentage';
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
+export interface FinanceTabConfig {
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  fields: FinanceFieldConfig[];
+  sampleData: Record<string, string | number>[];
+}
+
+export const financeTabConfigs: FinanceTabConfig[] = [
+  {
+    id: 'budget-allocation',
+    label: 'Budget Allocation',
+    icon: 'PieChart',
+    description: 'Annual budget allocation across departments and categories',
+    fields: [
+      { key: 'financialYear', label: 'Financial Year', type: 'text', required: true, placeholder: '2024-25' },
+      { key: 'department', label: 'Department', type: 'text', required: true },
+      { key: 'budgetHead', label: 'Budget Head', type: 'select', options: ['Salaries', 'Infrastructure', 'Equipment', 'Library', 'Research', 'Student Welfare', 'Maintenance', 'IT & Technology', 'Sports', 'Cultural Activities', 'Administrative', 'Contingency'] },
+      { key: 'allocatedAmount', label: 'Allocated Amount (₹)', type: 'currency', required: true },
+      { key: 'revisedAmount', label: 'Revised Amount (₹)', type: 'currency' },
+      { key: 'utilizedAmount', label: 'Utilized Amount (₹)', type: 'currency' },
+      { key: 'utilizationPercentage', label: 'Utilization %', type: 'percentage' },
+      { key: 'approvalDate', label: 'Approval Date', type: 'date' },
+      { key: 'approvedBy', label: 'Approved By', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Proposed', 'Approved', 'Revised', 'Frozen', 'Closed'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { financialYear: '2024-25', department: 'Computer Science', budgetHead: 'Equipment', allocatedAmount: 1500000, revisedAmount: 1600000, utilizedAmount: 1200000, utilizationPercentage: 75, approvalDate: '2024-04-01', approvedBy: 'Finance Committee', status: 'Approved', remarks: 'Lab upgrades' },
+      { financialYear: '2024-25', department: 'Mechanical Engineering', budgetHead: 'Infrastructure', allocatedAmount: 2500000, revisedAmount: 2500000, utilizedAmount: 1800000, utilizationPercentage: 72, approvalDate: '2024-04-01', approvedBy: 'Finance Committee', status: 'Approved', remarks: 'Workshop renovation' },
+      { financialYear: '2024-25', department: 'Library', budgetHead: 'Library', allocatedAmount: 800000, revisedAmount: 900000, utilizedAmount: 750000, utilizationPercentage: 83, approvalDate: '2024-04-01', approvedBy: 'Finance Committee', status: 'Revised', remarks: 'E-journal subscriptions added' },
+      { financialYear: '2024-25', department: 'Administration', budgetHead: 'Administrative', allocatedAmount: 1200000, revisedAmount: 1200000, utilizedAmount: 600000, utilizationPercentage: 50, approvalDate: '2024-04-01', approvedBy: 'Finance Committee', status: 'Approved', remarks: 'Ongoing' },
+    ],
+  },
+  {
+    id: 'income-revenue',
+    label: 'Income & Revenue',
+    icon: 'TrendingUp',
+    description: 'All sources of institutional income and revenue streams',
+    fields: [
+      { key: 'financialYear', label: 'Financial Year', type: 'text', required: true },
+      { key: 'revenueSource', label: 'Revenue Source', type: 'select', required: true, options: ['Tuition Fees', 'Examination Fees', 'Hostel Fees', 'Transport Fees', 'Government Grants', 'UGC Grants', 'AICTE Grants', 'Consultancy Income', 'Research Grants', 'Rental Income', 'Interest Income', 'Donations', 'Sponsored Projects', 'Other Income'] },
+      { key: 'category', label: 'Category', type: 'select', options: ['Academic', 'Non-Academic', 'Grants', 'Self-Generated', 'Endowment'] },
+      { key: 'amount', label: 'Amount (₹)', type: 'currency', required: true },
+      { key: 'receiptDate', label: 'Receipt Date', type: 'date' },
+      { key: 'sourceEntity', label: 'Source Entity', type: 'text' },
+      { key: 'referenceNumber', label: 'Reference/Receipt No.', type: 'text' },
+      { key: 'recurring', label: 'Recurring', type: 'select', options: ['Yes', 'No'] },
+      { key: 'verificationStatus', label: 'Verification Status', type: 'select', options: ['Pending', 'Verified', 'Audited'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { financialYear: '2024-25', revenueSource: 'Tuition Fees', category: 'Academic', amount: 45000000, receiptDate: '2024-07-15', sourceEntity: 'Students (All Programs)', referenceNumber: 'TF-2024-001', recurring: 'Yes', verificationStatus: 'Verified', remarks: 'Semester 1 collection' },
+      { financialYear: '2024-25', revenueSource: 'Government Grants', category: 'Grants', amount: 12000000, receiptDate: '2024-06-01', sourceEntity: 'State Government', referenceNumber: 'GG-2024-045', recurring: 'Yes', verificationStatus: 'Audited', remarks: 'Annual grant' },
+      { financialYear: '2024-25', revenueSource: 'Consultancy Income', category: 'Self-Generated', amount: 3500000, receiptDate: '2024-09-20', sourceEntity: 'Various Industries', referenceNumber: 'CI-2024-012', recurring: 'No', verificationStatus: 'Verified', remarks: 'Faculty consultancy' },
+      { financialYear: '2024-25', revenueSource: 'Interest Income', category: 'Non-Academic', amount: 2800000, receiptDate: '2024-12-31', sourceEntity: 'Bank FD', referenceNumber: 'INT-2024-Q4', recurring: 'Yes', verificationStatus: 'Pending', remarks: 'FD interest accrued' },
+    ],
+  },
+  {
+    id: 'expenditure',
+    label: 'Expenditure',
+    icon: 'Receipt',
+    description: 'Detailed expenditure tracking across all categories',
+    fields: [
+      { key: 'financialYear', label: 'Financial Year', type: 'text', required: true },
+      { key: 'expenditureHead', label: 'Expenditure Head', type: 'select', required: true, options: ['Salaries & Wages', 'Infrastructure Development', 'Equipment Purchase', 'Library Resources', 'Research & Development', 'Student Support', 'Maintenance & Repairs', 'Utilities', 'Travel & Conveyance', 'Printing & Stationery', 'Communication', 'Insurance', 'Depreciation', 'Miscellaneous'] },
+      { key: 'department', label: 'Department', type: 'text' },
+      { key: 'description', label: 'Description', type: 'text', required: true },
+      { key: 'amount', label: 'Amount (₹)', type: 'currency', required: true },
+      { key: 'paymentDate', label: 'Payment Date', type: 'date' },
+      { key: 'vendorPayee', label: 'Vendor/Payee', type: 'text' },
+      { key: 'invoiceNumber', label: 'Invoice/Voucher No.', type: 'text' },
+      { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: ['NEFT', 'RTGS', 'Cheque', 'Cash', 'DD', 'Online'] },
+      { key: 'budgetHead', label: 'Budget Head', type: 'text' },
+      { key: 'approvedBy', label: 'Approved By', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'Processed', 'Paid', 'Rejected'] },
+    ],
+    sampleData: [
+      { financialYear: '2024-25', expenditureHead: 'Salaries & Wages', department: 'All', description: 'Faculty salaries - October 2024', amount: 8500000, paymentDate: '2024-10-30', vendorPayee: 'Faculty Members', invoiceNumber: 'SAL-2024-10', paymentMode: 'NEFT', budgetHead: 'Salaries', approvedBy: 'Registrar', status: 'Paid' },
+      { financialYear: '2024-25', expenditureHead: 'Equipment Purchase', department: 'Computer Science', description: 'Server rack and networking equipment', amount: 450000, paymentDate: '2024-08-15', vendorPayee: 'TechSolutions Pvt Ltd', invoiceNumber: 'INV-TS-2024-089', paymentMode: 'NEFT', budgetHead: 'Equipment', approvedBy: 'Purchase Committee', status: 'Paid' },
+      { financialYear: '2024-25', expenditureHead: 'Library Resources', department: 'Library', description: 'E-journal subscription renewal', amount: 350000, paymentDate: '2024-07-01', vendorPayee: 'Elsevier India', invoiceNumber: 'ELS-2024-IN-456', paymentMode: 'RTGS', budgetHead: 'Library', approvedBy: 'Librarian', status: 'Paid' },
+      { financialYear: '2024-25', expenditureHead: 'Maintenance & Repairs', department: 'Administration', description: 'Annual building maintenance contract', amount: 1200000, paymentDate: '2024-05-01', vendorPayee: 'BuildCare Services', invoiceNumber: 'BC-AMC-2024', paymentMode: 'Cheque', budgetHead: 'Maintenance', approvedBy: 'Estate Officer', status: 'Processed' },
+    ],
+  },
+  {
+    id: 'research-funding',
+    label: 'Research Funding',
+    icon: 'FlaskConical',
+    description: 'Research grants, project funding, and sponsored research details',
+    fields: [
+      { key: 'projectTitle', label: 'Project Title', type: 'text', required: true },
+      { key: 'principalInvestigator', label: 'Principal Investigator', type: 'text', required: true },
+      { key: 'department', label: 'Department', type: 'text', required: true },
+      { key: 'fundingAgency', label: 'Funding Agency', type: 'select', options: ['DST', 'CSIR', 'UGC', 'AICTE', 'DBT', 'ICMR', 'DRDO', 'ISRO', 'Industry', 'International', 'State Government', 'Other'] },
+      { key: 'sanctionedAmount', label: 'Sanctioned Amount (₹)', type: 'currency', required: true },
+      { key: 'receivedAmount', label: 'Received Amount (₹)', type: 'currency' },
+      { key: 'expendedAmount', label: 'Expended Amount (₹)', type: 'currency' },
+      { key: 'sanctionDate', label: 'Sanction Date', type: 'date' },
+      { key: 'startDate', label: 'Start Date', type: 'date' },
+      { key: 'endDate', label: 'End Date', type: 'date' },
+      { key: 'projectStatus', label: 'Project Status', type: 'select', options: ['Submitted', 'Sanctioned', 'Ongoing', 'Completed', 'Extended', 'Terminated'] },
+      { key: 'utilizationCertificate', label: 'UC Submitted', type: 'select', options: ['Yes', 'No', 'Pending', 'N/A'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { projectTitle: 'AI-based Crop Disease Detection', principalInvestigator: 'Dr. Anand Verma', department: 'Computer Science', fundingAgency: 'DST', sanctionedAmount: 2500000, receivedAmount: 1800000, expendedAmount: 1500000, sanctionDate: '2023-06-15', startDate: '2023-08-01', endDate: '2026-07-31', projectStatus: 'Ongoing', utilizationCertificate: 'Yes', remarks: 'Year 2 in progress' },
+      { projectTitle: 'Sustainable Construction Materials', principalInvestigator: 'Dr. Meera Patel', department: 'Civil Engineering', fundingAgency: 'AICTE', sanctionedAmount: 1800000, receivedAmount: 1800000, expendedAmount: 1650000, sanctionDate: '2022-04-01', startDate: '2022-06-01', endDate: '2025-05-31', projectStatus: 'Ongoing', utilizationCertificate: 'Yes', remarks: 'Final year' },
+      { projectTitle: 'Nano-material Synthesis for Solar Cells', principalInvestigator: 'Dr. Suresh Kumar', department: 'Physics', fundingAgency: 'CSIR', sanctionedAmount: 3200000, receivedAmount: 2400000, expendedAmount: 2100000, sanctionDate: '2023-01-10', startDate: '2023-03-01', endDate: '2026-02-28', projectStatus: 'Ongoing', utilizationCertificate: 'Pending', remarks: 'Equipment procurement delayed' },
+      { projectTitle: 'Rural Healthcare IoT Network', principalInvestigator: 'Dr. Kavitha Rajan', department: 'Electronics', fundingAgency: 'DBT', sanctionedAmount: 1500000, receivedAmount: 1500000, expendedAmount: 1500000, sanctionDate: '2021-09-01', startDate: '2021-11-01', endDate: '2024-10-31', projectStatus: 'Completed', utilizationCertificate: 'Yes', remarks: 'Successfully completed' },
+    ],
+  },
+  {
+    id: 'scholarships',
+    label: 'Scholarships',
+    icon: 'GraduationCap',
+    description: 'Scholarship schemes, disbursements, and beneficiary tracking',
+    fields: [
+      { key: 'scholarshipName', label: 'Scholarship Name', type: 'text', required: true },
+      { key: 'category', label: 'Category', type: 'select', required: true, options: ['Merit-based', 'Need-based', 'SC/ST', 'OBC', 'Minority', 'Sports', 'Differently Abled', 'Girl Child', 'Research Fellowship', 'International', 'Alumni Funded', 'Corporate Sponsored'] },
+      { key: 'fundingSource', label: 'Funding Source', type: 'select', options: ['Government', 'Institution', 'Private Donor', 'Corporate', 'Alumni', 'Trust/Foundation', 'International Agency'] },
+      { key: 'academicYear', label: 'Academic Year', type: 'text', required: true },
+      { key: 'totalBeneficiaries', label: 'Total Beneficiaries', type: 'number' },
+      { key: 'amountPerStudent', label: 'Amount Per Student (₹)', type: 'currency' },
+      { key: 'totalDisbursed', label: 'Total Disbursed (₹)', type: 'currency', required: true },
+      { key: 'disbursementDate', label: 'Disbursement Date', type: 'date' },
+      { key: 'eligibilityCriteria', label: 'Eligibility Criteria', type: 'text' },
+      { key: 'selectionProcess', label: 'Selection Process', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Open', 'Applications Closed', 'Under Review', 'Disbursed', 'Partially Disbursed', 'Cancelled'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { scholarshipName: 'Merit Excellence Award', category: 'Merit-based', fundingSource: 'Institution', academicYear: '2024-25', totalBeneficiaries: 50, amountPerStudent: 25000, totalDisbursed: 1250000, disbursementDate: '2024-09-15', eligibilityCriteria: 'CGPA >= 9.0', selectionProcess: 'Academic performance', status: 'Disbursed', remarks: 'Annual merit scholarship' },
+      { scholarshipName: 'SC/ST Scholarship (State Govt)', category: 'SC/ST', fundingSource: 'Government', academicYear: '2024-25', totalBeneficiaries: 120, amountPerStudent: 35000, totalDisbursed: 4200000, disbursementDate: '2024-10-01', eligibilityCriteria: 'SC/ST category, income < 2.5L', selectionProcess: 'Government norms', status: 'Disbursed', remarks: 'State scholarship scheme' },
+      { scholarshipName: 'TechCorp STEM Scholarship', category: 'Corporate Sponsored', fundingSource: 'Corporate', academicYear: '2024-25', totalBeneficiaries: 20, amountPerStudent: 50000, totalDisbursed: 1000000, disbursementDate: '2024-08-20', eligibilityCriteria: 'STEM students, CGPA >= 8.5', selectionProcess: 'Interview + Academic record', status: 'Disbursed', remarks: 'CSR initiative by TechCorp' },
+      { scholarshipName: 'Research Fellowship', category: 'Research Fellowship', fundingSource: 'Institution', academicYear: '2024-25', totalBeneficiaries: 15, amountPerStudent: 120000, totalDisbursed: 1800000, disbursementDate: '2024-07-01', eligibilityCriteria: 'PhD scholars with publications', selectionProcess: 'Research committee review', status: 'Partially Disbursed', remarks: 'Quarterly disbursement' },
+    ],
+  },
+  {
+    id: 'endowments-donations',
+    label: 'Endowments & Donations',
+    icon: 'Heart',
+    description: 'Endowment funds, donations received, and corpus management',
+    fields: [
+      { key: 'donorName', label: 'Donor Name', type: 'text', required: true },
+      { key: 'donationType', label: 'Donation Type', type: 'select', required: true, options: ['Endowment', 'One-time Donation', 'Recurring Donation', 'In-kind', 'Corpus Fund', 'Chair Professorship', 'Building/Infrastructure', 'Equipment'] },
+      { key: 'purpose', label: 'Purpose', type: 'text', required: true },
+      { key: 'amount', label: 'Amount (₹)', type: 'currency', required: true },
+      { key: 'dateReceived', label: 'Date Received', type: 'date' },
+      { key: 'donorCategory', label: 'Donor Category', type: 'select', options: ['Alumni', 'Corporate', 'Individual', 'Trust/Foundation', 'Government', 'International', 'Parent'] },
+      { key: 'taxExemption', label: '80G Certificate Issued', type: 'select', options: ['Yes', 'No', 'N/A'] },
+      { key: 'corpusValue', label: 'Current Corpus Value (₹)', type: 'currency' },
+      { key: 'annualInterest', label: 'Annual Interest Generated (₹)', type: 'currency' },
+      { key: 'utilizationDetails', label: 'Utilization Details', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Matured', 'Partially Utilized', 'Fully Utilized', 'Dormant'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { donorName: 'Shri Ramesh Agarwal (Batch 1985)', donationType: 'Endowment', purpose: 'Merit Scholarship for ECE students', amount: 5000000, dateReceived: '2020-03-15', donorCategory: 'Alumni', taxExemption: 'Yes', corpusValue: 5800000, annualInterest: 420000, utilizationDetails: 'Annual scholarship to top 5 ECE students', status: 'Active', remarks: 'Perpetual endowment' },
+      { donorName: 'InfoTech Solutions Ltd', donationType: 'Chair Professorship', purpose: 'Chair Professor in AI & ML', amount: 10000000, dateReceived: '2022-01-10', donorCategory: 'Corporate', taxExemption: 'Yes', corpusValue: 10500000, annualInterest: 750000, utilizationDetails: 'Salary supplement + research fund for Chair Professor', status: 'Active', remarks: '5-year renewable' },
+      { donorName: 'Dr. Lakshmi Foundation', donationType: 'Corpus Fund', purpose: 'Girl child education support', amount: 3000000, dateReceived: '2019-08-20', donorCategory: 'Trust/Foundation', taxExemption: 'Yes', corpusValue: 3600000, annualInterest: 260000, utilizationDetails: 'Tuition fee waiver for 10 girl students annually', status: 'Active', remarks: 'Growing corpus' },
+      { donorName: 'Parent Association 2023', donationType: 'One-time Donation', purpose: 'Auditorium renovation', amount: 1500000, dateReceived: '2023-12-05', donorCategory: 'Parent', taxExemption: 'Yes', corpusValue: 0, annualInterest: 0, utilizationDetails: 'Used for auditorium sound system upgrade', status: 'Fully Utilized', remarks: 'Project completed' },
+    ],
+  },
+  {
+    id: 'audit-reports',
+    label: 'Audit Reports',
+    icon: 'FileCheck',
+    description: 'Internal and external audit reports, compliance, and observations',
+    fields: [
+      { key: 'auditType', label: 'Audit Type', type: 'select', required: true, options: ['Internal Audit', 'Statutory Audit', 'CAG Audit', 'Tax Audit', 'Special Audit', 'System Audit', 'Academic Audit', 'ISO Audit'] },
+      { key: 'financialYear', label: 'Financial Year', type: 'text', required: true },
+      { key: 'auditorName', label: 'Auditor/Firm Name', type: 'text', required: true },
+      { key: 'auditPeriod', label: 'Audit Period', type: 'text' },
+      { key: 'auditDate', label: 'Audit Date', type: 'date' },
+      { key: 'reportDate', label: 'Report Date', type: 'date' },
+      { key: 'totalObservations', label: 'Total Observations', type: 'number' },
+      { key: 'majorFindings', label: 'Major Findings', type: 'number' },
+      { key: 'resolvedObservations', label: 'Resolved Observations', type: 'number' },
+      { key: 'complianceScore', label: 'Compliance Score (%)', type: 'percentage' },
+      { key: 'auditOpinion', label: 'Audit Opinion', type: 'select', options: ['Unqualified', 'Qualified', 'Adverse', 'Disclaimer', 'Pending'] },
+      { key: 'status', label: 'Status', type: 'select', options: ['In Progress', 'Completed', 'Report Submitted', 'Action Taken', 'Closed'] },
+      { key: 'remarks', label: 'Key Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { auditType: 'Statutory Audit', financialYear: '2023-24', auditorName: 'M/s Sharma & Associates', auditPeriod: 'Apr 2023 - Mar 2024', auditDate: '2024-05-15', reportDate: '2024-06-30', totalObservations: 12, majorFindings: 2, resolvedObservations: 10, complianceScore: 92, auditOpinion: 'Unqualified', status: 'Closed', remarks: 'Clean audit report' },
+      { auditType: 'Internal Audit', financialYear: '2024-25', auditorName: 'Internal Audit Cell', auditPeriod: 'Apr 2024 - Sep 2024', auditDate: '2024-10-01', reportDate: '2024-10-20', totalObservations: 8, majorFindings: 1, resolvedObservations: 5, complianceScore: 88, auditOpinion: 'Unqualified', status: 'Action Taken', remarks: 'Procurement process improvement needed' },
+      { auditType: 'Tax Audit', financialYear: '2023-24', auditorName: 'M/s Patel Tax Consultants', auditPeriod: 'Apr 2023 - Mar 2024', auditDate: '2024-08-01', reportDate: '2024-09-15', totalObservations: 3, majorFindings: 0, resolvedObservations: 3, complianceScore: 98, auditOpinion: 'Unqualified', status: 'Closed', remarks: 'All TDS compliances met' },
+      { auditType: 'CAG Audit', financialYear: '2022-23', auditorName: 'Comptroller & Auditor General', auditPeriod: 'Apr 2022 - Mar 2023', auditDate: '2023-11-10', reportDate: '2024-02-28', totalObservations: 18, majorFindings: 4, resolvedObservations: 14, complianceScore: 85, auditOpinion: 'Qualified', status: 'Action Taken', remarks: 'Asset register discrepancies noted' },
+    ],
+  },
+  {
+    id: 'financial-assets',
+    label: 'Financial Assets',
+    icon: 'Landmark',
+    description: 'Fixed deposits, investments, reserves, and financial instruments',
+    fields: [
+      { key: 'assetType', label: 'Asset Type', type: 'select', required: true, options: ['Fixed Deposit', 'Mutual Fund', 'Government Securities', 'Bonds', 'Savings Account', 'Current Account', 'PPF', 'NSC', 'Gold', 'Property', 'Equipment', 'Vehicles'] },
+      { key: 'description', label: 'Description', type: 'text', required: true },
+      { key: 'institution', label: 'Bank/Institution', type: 'text', required: true },
+      { key: 'accountNumber', label: 'Account/Folio Number', type: 'text' },
+      { key: 'investmentAmount', label: 'Investment Amount (₹)', type: 'currency', required: true },
+      { key: 'currentValue', label: 'Current Value (₹)', type: 'currency' },
+      { key: 'interestRate', label: 'Interest/Return Rate (%)', type: 'percentage' },
+      { key: 'maturityDate', label: 'Maturity Date', type: 'date' },
+      { key: 'startDate', label: 'Start/Purchase Date', type: 'date' },
+      { key: 'annualIncome', label: 'Annual Income (₹)', type: 'currency' },
+      { key: 'purpose', label: 'Purpose/Earmarked For', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Matured', 'Redeemed', 'Renewed', 'Under Lien'] },
+      { key: 'remarks', label: 'Remarks', type: 'text' },
+    ],
+    sampleData: [
+      { assetType: 'Fixed Deposit', description: 'Corpus Fund FD', institution: 'State Bank of India', accountNumber: 'FD-38291047562', investmentAmount: 25000000, currentValue: 27500000, interestRate: 7.5, maturityDate: '2026-03-31', startDate: '2023-04-01', annualIncome: 1875000, purpose: 'Corpus Fund - General', status: 'Active', remarks: '3-year FD, auto-renewal' },
+      { assetType: 'Fixed Deposit', description: 'Endowment Fund FD', institution: 'HDFC Bank', accountNumber: 'FD-9827364510', investmentAmount: 15000000, currentValue: 16200000, interestRate: 7.25, maturityDate: '2025-09-30', startDate: '2022-10-01', annualIncome: 1087500, purpose: 'Endowment Scholarships', status: 'Active', remarks: 'Linked to scholarship disbursement' },
+      { assetType: 'Mutual Fund', description: 'Debt Fund - Conservative', institution: 'ICICI Prudential AMC', accountNumber: 'MF-IP-2024-789', investmentAmount: 5000000, currentValue: 5400000, interestRate: 8.2, maturityDate: '2027-06-30', startDate: '2024-01-15', annualIncome: 410000, purpose: 'Reserve Fund Growth', status: 'Active', remarks: 'Low-risk debt fund' },
+      { assetType: 'Government Securities', description: 'G-Sec 2028', institution: 'RBI', accountNumber: 'GSEC-2028-456', investmentAmount: 10000000, currentValue: 10300000, interestRate: 7.1, maturityDate: '2028-12-31', startDate: '2023-01-01', annualIncome: 710000, purpose: 'Long-term reserve', status: 'Active', remarks: 'Government guaranteed' },
+    ],
+  },
+];
+
+export const financeDocumentCategories = [
+  { id: 'budget-approvals', label: 'Budget Approval Orders', count: 8 },
+  { id: 'audit-certificates', label: 'Audit Certificates & Reports', count: 12 },
+  { id: 'funding-sanctions', label: 'Funding Sanction Letters', count: 15 },
+  { id: 'scholarship-records', label: 'Scholarship Disbursement Records', count: 20 },
+  { id: 'donation-receipts', label: 'Donation Receipts & 80G Certificates', count: 10 },
+  { id: 'asset-registers', label: 'Asset Registers & Valuations', count: 6 },
+  { id: 'bank-statements', label: 'Bank Statements & Reconciliations', count: 24 },
+  { id: 'tax-returns', label: 'Tax Returns & TDS Certificates', count: 8 },
+  { id: 'utilization-certificates', label: 'Utilization Certificates', count: 14 },
+  { id: 'financial-statements', label: 'Balance Sheet & P&L Statements', count: 4 },
+  { id: 'compliance-reports', label: 'Compliance & Regulatory Reports', count: 7 },
+  { id: 'investment-documents', label: 'Investment & FD Documents', count: 16 },
+];

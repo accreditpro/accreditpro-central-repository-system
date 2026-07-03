@@ -16,6 +16,7 @@ import {
   facultyRepositoryConfig,
   studentRepositoryConfig,
   researchRepositoryConfig,
+  alumniRepositoryConfig,
   coordinatorContext,
 } from './repository-configs';
 import { SidebarView } from './types';
@@ -23,6 +24,7 @@ import {
   LayoutDashboard,
   GraduationCap,
   Users,
+  Users2,
   BookOpen,
   FlaskConical,
   FileText,
@@ -39,7 +41,8 @@ const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<
   { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap, separator: true },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
-  { id: 'research-repository', label: 'Research Repository', icon: FlaskConical, separator: true },
+  { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
+  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2, separator: true },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
@@ -51,6 +54,7 @@ const repositoryConfigMap = {
   'faculty-repository': facultyRepositoryConfig,
   'student-repository': studentRepositoryConfig,
   'research-repository': researchRepositoryConfig,
+  'alumni-repository': alumniRepositoryConfig,
 };
 
 export const DepartmentRepositoryPage = () => {
@@ -66,6 +70,7 @@ export const DepartmentRepositoryPage = () => {
       case 'faculty-repository':
       case 'student-repository':
       case 'research-repository':
+      case 'alumni-repository':
         return <RepositoryWorkspace config={repositoryConfigMap[activeView]} />;
       case 'documents':
         return <DocumentsView />;

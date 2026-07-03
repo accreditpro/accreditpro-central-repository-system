@@ -7,6 +7,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { AppLayout } from '@/layouts/AppLayout';
 import { DepartmentCoordinatorLayout } from '@/layouts/DepartmentCoordinatorLayout';
+import { InfrastructureCoordinatorLayout } from '@/layouts/InfrastructureCoordinatorLayout';
+import { FinanceCoordinatorLayout } from '@/layouts/FinanceCoordinatorLayout';
+import { TPOCoordinatorLayout } from '@/layouts/TPOCoordinatorLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
@@ -24,6 +27,9 @@ import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
 import { DepartmentPage } from '@/pages/department/DepartmentPage';
 import { AcademicRepositoryPage } from '@/pages/academic-repository/AcademicRepositoryPage';
 import { DepartmentRepositoryPage } from '@/pages/department-repository/DepartmentRepositoryPage';
+import { InfrastructureRepositoryPage } from '@/pages/infrastructure-repository/InfrastructureRepositoryPage';
+import FinanceRepositoryPage from '@/pages/finance-repository/FinanceRepositoryPage';
+import TPORepositoryPage from '@/pages/tpo-repository/TPORepositoryPage';
 
 // Institution Admin Pages
 import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashboard';
@@ -165,6 +171,42 @@ const AppRoutes = () => {
         <Route index element={<DepartmentRepositoryPage />} />
       </Route>
 
+      {/* Infrastructure Coordinator Routes - No outer sidebar */}
+      <Route
+        path="/app/infrastructure-repository"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.INFRASTRUCTURE_COORDINATOR, UserRole.DEPARTMENT_COORDINATOR]}>
+            <InfrastructureCoordinatorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<InfrastructureRepositoryPage />} />
+      </Route>
+
+      {/* Finance Coordinator Routes - No outer sidebar */}
+      <Route
+        path="/app/finance-repository"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.FINANCE_COORDINATOR]}>
+            <FinanceCoordinatorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<FinanceRepositoryPage />} />
+      </Route>
+
+      {/* TPO Coordinator Routes - No outer sidebar */}
+      <Route
+        path="/app/tpo-repository"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.TPO_COORDINATOR]}>
+            <TPOCoordinatorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<TPORepositoryPage />} />
+      </Route>
+
       {/* Legacy routes - redirect to new structure */}
       <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
       <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
@@ -180,7 +222,7 @@ const AppRoutes = () => {
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/app/department-repository" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

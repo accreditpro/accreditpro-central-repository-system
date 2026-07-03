@@ -136,7 +136,7 @@ export interface ColumnMapping {
   status: 'auto' | 'manual' | 'unmapped';
 }
 
-export type RepositoryModule = 'academic' | 'faculty' | 'student' | 'research';
+export type RepositoryModule = 'academic' | 'faculty' | 'student' | 'research' | 'alumni';
 export type WorkflowStatus = 'draft' | 'submitted' | 'validated' | 'evidence_pending' | 'hod_review' | 'iqac_verification' | 'approved' | 'rejected';
 
 export type SidebarView =
@@ -145,6 +145,7 @@ export type SidebarView =
   | 'faculty-repository'
   | 'student-repository'
   | 'research-repository'
+  | 'alumni-repository'
   | 'documents'
   | 'upload-history'
   | 'verification-status'
