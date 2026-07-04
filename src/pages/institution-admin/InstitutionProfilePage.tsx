@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,6 +19,11 @@ import {
   Landmark,
   GraduationCap,
   FileCheck,
+  Target,
+  Eye,
+  Heart,
+  Plus,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -169,6 +175,10 @@ export const InstitutionProfilePage = () => {
               <Building2 className="h-3.5 w-3.5" />
               Basic Information
             </TabsTrigger>
+            <TabsTrigger value="mission-vision" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Target className="h-3.5 w-3.5" />
+              Mission & Vision
+            </TabsTrigger>
             <TabsTrigger value="address" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
               <MapPin className="h-3.5 w-3.5" />
               Address
@@ -247,6 +257,178 @@ export const InstitutionProfilePage = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Mission & Vision */}
+          <TabsContent value="mission-vision" className="mt-4">
+            <div className="space-y-6">
+              {/* Vision */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Vision Statement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {editing ? (
+                    <Textarea
+                      value={profile.missionVision.vision}
+                      onChange={(e) =>
+                        setProfile((prev) => ({
+                          ...prev,
+                          missionVision: { ...prev.missionVision, vision: e.target.value },
+                        }))
+                      }
+                      className="min-h-[120px] text-sm"
+                      placeholder="Enter the institution's vision statement..."
+                    />
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground/90">{profile.missionVision.vision || '-'}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Mission */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Target className="h-5 w-5 text-primary" />
+                    Mission Statement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {editing ? (
+                    <Textarea
+                      value={profile.missionVision.mission}
+                      onChange={(e) =>
+                        setProfile((prev) => ({
+                          ...prev,
+                          missionVision: { ...prev.missionVision, mission: e.target.value },
+                        }))
+                      }
+                      className="min-h-[120px] text-sm"
+                      placeholder="Enter the institution's mission statement..."
+                    />
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground/90">{profile.missionVision.mission || '-'}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Core Values */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Heart className="h-5 w-5 text-primary" />
+                    Core Values
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.missionVision.coreValues.map((value, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="px-3 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {value}
+                        {editing && (
+                          <button
+                            className="ml-2 hover:text-destructive"
+                            onClick={() => {
+                              setProfile((prev) => ({
+                                ...prev,
+                                missionVision: {
+                                  ...prev.missionVision,
+                                  coreValues: prev.missionVision.coreValues.filter((_, i) => i !== index),
+                                },
+                              }));
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                    {editing && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => {
+                          const newValue = prompt('Enter a new core value:');
+                          if (newValue?.trim()) {
+                            setProfile((prev) => ({
+                              ...prev,
+                              missionVision: {
+                                ...prev.missionVision,
+                                coreValues: [...prev.missionVision.coreValues, newValue.trim()],
+                              },
+                            }));
+                          }
+                        }}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Value
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quality Policy & Motto */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      Quality Policy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {editing ? (
+                      <Textarea
+                        value={profile.missionVision.qualityPolicy}
+                        onChange={(e) =>
+                          setProfile((prev) => ({
+                            ...prev,
+                            missionVision: { ...prev.missionVision, qualityPolicy: e.target.value },
+                          }))
+                        }
+                        className="min-h-[100px] text-sm"
+                        placeholder="Enter the quality policy..."
+                      />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-foreground/90">{profile.missionVision.qualityPolicy || '-'}</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      Motto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {editing ? (
+                      <Input
+                        value={profile.missionVision.motto}
+                        onChange={(e) =>
+                          setProfile((prev) => ({
+                            ...prev,
+                            missionVision: { ...prev.missionVision, motto: e.target.value },
+                          }))
+                        }
+                        placeholder="Enter the institution's motto..."
+                      />
+                    ) : (
+                      <p className="text-lg font-semibold italic text-primary">{profile.missionVision.motto || '-'}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Address */}

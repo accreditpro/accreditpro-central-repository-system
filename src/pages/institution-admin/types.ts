@@ -1,3 +1,11 @@
+export interface MissionVision {
+  mission: string;
+  vision: string;
+  coreValues: string[];
+  qualityPolicy: string;
+  motto: string;
+}
+
 export interface InstitutionProfile {
   name: string;
   code: string;
@@ -14,6 +22,7 @@ export interface InstitutionProfile {
   ownershipStatus: string;
   affiliatedUniversity: string;
   affiliatedUniversityAddress: string;
+  missionVision: MissionVision;
   address: {
     line1: string;
     line2: string;

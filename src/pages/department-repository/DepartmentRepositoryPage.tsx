@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { RepositoryDashboard } from './components/RepositoryDashboard';
 import { RepositoryWorkspace } from './components/RepositoryWorkspace';
+import { DepartmentMissionVision } from './components/DepartmentMissionVision';
 import { DocumentsView } from './components/DocumentsView';
 import { UploadHistoryView } from './components/UploadHistoryView';
 import { VerificationStatusView } from './components/VerificationStatusView';
@@ -22,6 +23,7 @@ import {
 import { SidebarView } from './types';
 import {
   LayoutDashboard,
+  Target,
   GraduationCap,
   Users,
   Users2,
@@ -38,7 +40,8 @@ import {
 
 const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap, separator: true },
+  { id: 'mission-vision', label: 'Mission & Vision', icon: Target, separator: true },
+  { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
   { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
@@ -66,6 +69,8 @@ export const DepartmentRepositoryPage = () => {
     switch (activeView) {
       case 'dashboard':
         return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
+      case 'mission-vision':
+        return <DepartmentMissionVision />;
       case 'academic-repository':
       case 'faculty-repository':
       case 'student-repository':

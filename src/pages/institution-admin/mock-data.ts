@@ -30,6 +30,22 @@ export const institutionProfile: InstitutionProfile = {
   ownershipStatus: 'Trust',
   affiliatedUniversity: 'Anna University',
   affiliatedUniversityAddress: 'Guindy, Chennai - 600025, Tamil Nadu',
+  missionVision: {
+    mission: 'To provide quality technical education and foster innovation through excellence in teaching, research, and industry collaboration, thereby producing competent engineers and technologists who contribute to the advancement of society.',
+    vision: 'To be a globally recognized institution of excellence in engineering education and research, nurturing ethical and socially responsible professionals who lead technological innovation and sustainable development.',
+    coreValues: [
+      'Excellence in Education',
+      'Innovation and Creativity',
+      'Integrity and Ethics',
+      'Social Responsibility',
+      'Inclusivity and Diversity',
+      'Continuous Improvement',
+      'Industry Collaboration',
+      'Sustainability',
+    ],
+    qualityPolicy: 'Sri Venkateswara College of Engineering is committed to providing quality education through competent faculty, state-of-the-art infrastructure, and industry-relevant curriculum. We strive for continuous improvement in all academic and administrative processes to achieve excellence in technical education and research.',
+    motto: 'Knowledge is Power - Vidya Shakti',
+  },
   address: {
     line1: 'Post Bag No. 1, Pennalur',
     line2: 'Sriperumbudur Tk.',

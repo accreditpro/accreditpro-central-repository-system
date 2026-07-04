@@ -141,6 +141,7 @@ export type WorkflowStatus = 'draft' | 'submitted' | 'validated' | 'evidence_pen
 
 export type SidebarView =
   | 'dashboard'
+  | 'mission-vision'
   | 'academic-repository'
   | 'faculty-repository'
   | 'student-repository'
