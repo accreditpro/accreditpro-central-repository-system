@@ -111,6 +111,31 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       createdAt: '2024-05-01T00:00:00Z',
     },
   },
+  'examination@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '10',
+      email: 'examination@accreditpro.com',
+      firstName: 'Dr. Ramesh',
+      lastName: 'Iyer',
+      role: UserRole.EXAMINATION_OFFICER,
+      institution: 'National University',
+      createdAt: '2024-06-01T00:00:00Z',
+    },
+  },
+  'hod@accreditpro.com': {
+    password: 'admin123',
+    user: {
+      id: '11',
+      email: 'hod@accreditpro.com',
+      firstName: 'Dr. Suresh',
+      lastName: 'Patil',
+      role: UserRole.HEAD_OF_DEPARTMENT,
+      institution: 'National University',
+      department: 'Computer Science & Engineering',
+      createdAt: '2024-01-15T00:00:00Z',
+    },
+  },
 };
 
 class AuthService {
@@ -154,15 +179,7 @@ class AuthService {
       };
     }
 
-    // Auto-login as department coordinator for demo/preview
-    const demoUser = MOCK_USERS['department@accreditpro.com'];
-    const demoTokens = {
-      accessToken: `mock-jwt-access-demo`,
-      refreshToken: `mock-jwt-refresh-demo`,
-    };
-    localStorage.setItem(this.TOKEN_KEY, JSON.stringify(demoTokens));
-    localStorage.setItem(this.USER_KEY, JSON.stringify(demoUser.user));
-    return { user: demoUser.user, tokens: demoTokens };
+    return null;
   }
 
   isAuthenticated(): boolean {

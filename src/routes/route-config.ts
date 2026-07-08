@@ -102,6 +102,12 @@ export const appNavigationConfig: NavItem[] = [
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
+    title: 'Supporting Documents',
+    href: '/app/supporting-documents',
+    icon: 'FileSpreadsheet',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
     title: 'Department Repository',
     href: '/app/department-repository',
     icon: 'Database',

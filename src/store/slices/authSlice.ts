@@ -6,7 +6,7 @@ const initialState: AuthState = {
   user: null,
   tokens: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
 };
 
@@ -73,6 +73,12 @@ const authSlice = createSlice({
         state.tokens = null;
         state.isAuthenticated = false;
         state.error = null;
+      })
+      .addCase(initializeAuth.pending, (state) => {
+        // Only set loading if not already authenticated (avoid flicker after login)
+        if (!state.isAuthenticated) {
+          state.isLoading = true;
+        }
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.user = action.payload.user;
