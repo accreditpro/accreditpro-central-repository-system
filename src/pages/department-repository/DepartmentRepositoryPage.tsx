@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { RepositoryDashboard } from './components/RepositoryDashboard';
 import { RepositoryWorkspace } from './components/RepositoryWorkspace';
@@ -12,13 +13,14 @@ import { DocumentsView } from './components/DocumentsView';
 import { UploadHistoryView } from './components/UploadHistoryView';
 import { VerificationStatusView } from './components/VerificationStatusView';
 import { ProfileView } from './components/ProfileView';
+import { AcademicCalendarModule } from './components/AcademicCalendarModule';
 import {
   academicRepositoryConfig,
   facultyRepositoryConfig,
   studentRepositoryConfig,
   researchRepositoryConfig,
   alumniRepositoryConfig,
-  coordinatorContext,
+  departmentInfo,
 } from './repository-configs';
 import { SidebarView } from './types';
 import {
@@ -36,7 +38,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Calendar,
 } from 'lucide-react';
+
+// Academic years for the last 7 years
+const ACADEMIC_YEARS = [
+  '2025-26',
+  '2024-25',
+  '2023-24',
+  '2022-23',
+  '2021-22',
+  '2020-21',
+  '2019-20',
+];
 
 const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -61,9 +75,10 @@ const repositoryConfigMap = {
 };
 
 export const DepartmentRepositoryPage = () => {
-  const [activeView, setActiveView] = useState<SidebarView>('student-repository');
+  const [activeView, setActiveView] = useState<SidebarView>('academic-repository');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2025-26');
 
   const renderContent = () => {
     switch (activeView) {
@@ -76,7 +91,12 @@ export const DepartmentRepositoryPage = () => {
       case 'student-repository':
       case 'research-repository':
       case 'alumni-repository':
-        return <RepositoryWorkspace config={repositoryConfigMap[activeView]} />;
+        return (
+          <RepositoryWorkspace
+            config={repositoryConfigMap[activeView]}
+            academicYear={selectedAcademicYear}
+          />
+        );
       case 'documents':
         return <DocumentsView />;
       case 'upload-history':
@@ -118,22 +138,42 @@ export const DepartmentRepositoryPage = () => {
         {/* Sidebar Header */}
         <div className={cn('p-4 border-b border-border/50', sidebarCollapsed && 'p-2')}>
           {!sidebarCollapsed ? (
-            <div className="space-y-1">
-              <h2 className="text-sm font-bold tracking-tight">Repository Workspace</h2>
+            <div className="space-y-2">
+              <h2 className="text-sm font-bold tracking-tight">{departmentInfo.department}</h2>
               <div className="flex items-center gap-1.5">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium">
-                  {coordinatorContext.department}
-                </Badge>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                  {coordinatorContext.academicYear}
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-2 py-0.5 font-semibold bg-blue-500/10 text-blue-700 border-blue-500/30"
+                >
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {selectedAcademicYear}
                 </Badge>
               </div>
+              {/* Academic Year Selector */}
+              <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
+                <SelectTrigger className="h-8 text-xs w-full border-dashed">
+                  <SelectValue placeholder="Select Academic Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACADEMIC_YEARS.map((year) => (
+                    <SelectItem key={year} value={year} className="text-xs">
+                      {year}
+                      {year === '2025-26' && (
+                        <span className="ml-2 text-[9px] text-blue-600 font-medium">(Current)</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-1">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
                 <GraduationCap className="h-4 w-4 text-white" />
               </div>
+              <Badge variant="outline" className="text-[8px] px-1 py-0">
+                {selectedAcademicYear.slice(0, 4)}
+              </Badge>
             </div>
           )}
         </div>
@@ -199,14 +239,24 @@ export const DepartmentRepositoryPage = () => {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold">
               {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
             </p>
             <p className="text-[10px] text-muted-foreground">
-              {coordinatorContext.department} • {coordinatorContext.academicYear}
+              {departmentInfo.department} • {selectedAcademicYear}
             </p>
           </div>
+          <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
+            <SelectTrigger className="h-7 w-[100px] text-[10px] border-dashed">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ACADEMIC_YEARS.map((year) => (
+                <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Content Area */}
@@ -214,7 +264,7 @@ export const DepartmentRepositoryPage = () => {
           <div className="p-6">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeView}
+                key={`${activeView}-${selectedAcademicYear}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}

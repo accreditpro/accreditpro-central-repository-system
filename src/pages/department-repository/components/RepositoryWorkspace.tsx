@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
-import { repositoryHealth } from '../repository-configs';
+import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
+import { AcademicCalendarModule } from './AcademicCalendarModule';
 import {
   GraduationCap,
   Users,
@@ -105,9 +106,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 interface RepositoryWorkspaceProps {
   config: RepositoryModuleConfig;
   initialTabIndex?: number;
+  academicYear?: string;
 }
 
-export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorkspaceProps) => {
+export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: RepositoryWorkspaceProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
   const metrics = repositoryHealth[config.id];
 
@@ -173,7 +175,14 @@ export const RepositoryWorkspace = ({ config, initialTabIndex }: RepositoryWorks
 
         {config.tabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
-            <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+            {tab.id === 'academic-calendar' && config.id === 'academic' ? (
+              <AcademicCalendarModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : (
+              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+            )}
           </TabsContent>
         ))}
       </Tabs>

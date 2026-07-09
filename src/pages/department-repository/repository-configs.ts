@@ -60,31 +60,6 @@ export const academicRepositoryConfig: RepositoryModuleConfig = {
   gradient: 'from-violet-500 to-violet-600',
   tabs: [
     {
-      id: 'curriculum',
-      label: 'Curriculum',
-      icon: 'BookOpen',
-      fields: [
-        { key: 'program', label: 'Program', type: 'select', required: true, csvColumn: 'Program', masterDataSource: 'programOfferings' },
-        { key: 'academicRegulation', label: 'Academic Regulation', type: 'select', required: true, csvColumn: 'Academic Regulation', masterDataSource: 'regulations' },
-        { key: 'totalCredits', label: 'Total Credits', type: 'number', required: true, csvColumn: 'Total Credits', validationRules: ['> 0'] },
-        { key: 'openElectives', label: 'Open Electives Available', type: 'number', required: true, csvColumn: 'Open Electives Available' },
-        { key: 'professionalElectives', label: 'Professional Electives Available', type: 'number', required: true, csvColumn: 'Professional Electives Available' },
-        { key: 'valueAddedCourses', label: 'Value Added Courses Available', type: 'number', required: true, csvColumn: 'Value Added Courses Available' },
-        { key: 'internshipIncluded', label: 'Internship Included', type: 'boolean', required: true, csvColumn: 'Internship Included' },
-        { key: 'projectIncluded', label: 'Project Work Included', type: 'boolean', required: true, csvColumn: 'Project Work Included' },
-        { key: 'industryCourses', label: 'Industry Courses Included', type: 'boolean', required: true, csvColumn: 'Industry Courses Included' },
-        { key: 'revisionDate', label: 'Revision Date', type: 'date', required: true, csvColumn: 'Revision Date' },
-      ],
-      requiredEvidence: ['Curriculum Structure', 'Regulation Document', 'BoS Minutes', 'Curriculum Revision Approval'],
-      validationRules: [
-        'Program Offering must exist in master data',
-        'Academic Regulation must exist in master data',
-        'Total Credits must be > 0',
-        'No duplicate Program + Regulation combination',
-      ],
-      templateFile: '/templates/curriculum_template.csv',
-    },
-    {
       id: 'courses',
       label: 'Courses',
       icon: 'FileText',
@@ -113,19 +88,24 @@ export const academicRepositoryConfig: RepositoryModuleConfig = {
       label: 'Academic Calendar',
       icon: 'Calendar',
       fields: [
-        { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', masterDataSource: 'academicYears' },
-        { key: 'semester', label: 'Semester', type: 'select', required: true, csvColumn: 'Semester', selectOptions: ['I', 'II', 'Summer'] },
+        { key: 'department', label: 'Department', type: 'text', required: true, csvColumn: 'Department' },
+        { key: 'year', label: 'Year', type: 'select', required: true, csvColumn: 'Year', selectOptions: ['I Year', 'II Year', 'III Year', 'IV Year'] },
+        { key: 'semester', label: 'Semester', type: 'select', required: true, csvColumn: 'Semester', selectOptions: ['Semester I', 'Semester II'] },
+        { key: 'description', label: 'Description', type: 'text', required: true, csvColumn: 'Description' },
         { key: 'startDate', label: 'Start Date', type: 'date', required: true, csvColumn: 'Start Date' },
         { key: 'endDate', label: 'End Date', type: 'date', required: true, csvColumn: 'End Date' },
-        { key: 'instructionalDays', label: 'Instructional Days', type: 'number', required: true, csvColumn: 'Instructional Days' },
-        { key: 'midExamDates', label: 'Mid Exam Dates', type: 'text', required: true, csvColumn: 'Mid Exam Dates' },
-        { key: 'endExamDates', label: 'End Exam Dates', type: 'text', required: true, csvColumn: 'End Exam Dates' },
+        { key: 'duration', label: 'Duration', type: 'number', required: false, csvColumn: 'Duration' },
       ],
-      requiredEvidence: ['Academic Calendar PDF', 'Semester Schedule', 'Exam Schedule'],
+      requiredEvidence: ['Department Academic Calendar PDF', 'Academic Calendar Report', 'NBA Evidence', 'NAAC Evidence', 'Department Academic Planner'],
       validationRules: [
-        'Academic Year must exist in master data',
-        'Start Date must be before End Date',
-        'Semester must be valid',
+        'Department must match logged-in department',
+        'Year must be valid (I Year to IV Year)',
+        'Semester must be valid (Semester I or Semester II)',
+        'Description is mandatory',
+        'Start Date is mandatory',
+        'End Date is mandatory',
+        'End Date must be greater than Start Date',
+        'Duration auto-calculated from Start Date and End Date if left blank',
       ],
       templateFile: '/templates/academic_calendar_template.csv',
     },
@@ -865,7 +845,6 @@ export const repositoryHealth: Record<string, RepositoryMetrics> = {
 // Repository Summaries per tab
 export const repositorySummaries: Record<string, RepositorySummary> = {
   // Academic
-  'curriculum': { recordsUploaded: 8, pendingValidation: 1, pendingVerification: 2, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-08 10:15' },
   'courses': { recordsUploaded: 156, pendingValidation: 5, pendingVerification: 12, verified: 130, approved: 125, rejected: 4, lastUpdated: '2025-01-12 16:45' },
   'academic-calendar': { recordsUploaded: 4, pendingValidation: 0, pendingVerification: 0, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-05 09:00' },
   'value-added-courses': { recordsUploaded: 12, pendingValidation: 2, pendingVerification: 3, verified: 5, approved: 5, rejected: 1, lastUpdated: '2025-01-09 11:20' },
@@ -911,7 +890,7 @@ export const uploadHistory: UploadHistoryRecord[] = [
   { id: '4', fileName: 'publications_2024_25.csv', tab: 'Publications', repository: 'research', uploadedAt: '2025-01-12 15:30', recordsCount: 28, validRecords: 27, invalidRecords: 1, status: 'pending', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'hod_review' },
   { id: '5', fileName: 'vac_2025_26.csv', tab: 'Value Added Courses', repository: 'academic', uploadedAt: '2025-01-09 11:20', recordsCount: 12, validRecords: 11, invalidRecords: 1, status: 'approved', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'approved' },
   { id: '6', fileName: 'student_results_sem5.csv', tab: 'Academic Performance', repository: 'student', uploadedAt: '2025-01-12 16:00', recordsCount: 180, validRecords: 178, invalidRecords: 2, status: 'pending', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'iqac_verification' },
-  { id: '7', fileName: 'curriculum_r22_2025.csv', tab: 'Curriculum', repository: 'academic', uploadedAt: '2025-01-08 10:15', recordsCount: 8, validRecords: 8, invalidRecords: 0, status: 'approved', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'approved' },
+  { id: '7', fileName: 'academic_calendar_2025_26.csv', tab: 'Academic Calendar', repository: 'academic', uploadedAt: '2025-01-08 10:15', recordsCount: 25, validRecords: 25, invalidRecords: 0, status: 'approved', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'approved' },
   { id: '8', fileName: 'moocs_2024_25.csv', tab: 'MOOCs', repository: 'academic', uploadedAt: '2025-01-11 13:40', recordsCount: 24, validRecords: 22, invalidRecords: 2, status: 'pending', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'hod_review' },
 ];
 
