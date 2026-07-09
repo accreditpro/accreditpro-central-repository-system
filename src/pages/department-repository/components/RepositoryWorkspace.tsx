@@ -7,6 +7,7 @@ import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
 import { AcademicCalendarModule } from './AcademicCalendarModule';
+import { CoursesModule } from './CoursesModule';
 import {
   GraduationCap,
   Users,
@@ -177,6 +178,11 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'academic-calendar' && config.id === 'academic' ? (
               <AcademicCalendarModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'courses' && config.id === 'academic' ? (
+              <CoursesModule
                 department={departmentInfo.department}
                 academicYear={academicYear || '2025-26'}
               />
