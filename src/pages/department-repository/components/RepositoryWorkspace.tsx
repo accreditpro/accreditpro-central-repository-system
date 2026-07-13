@@ -8,6 +8,16 @@ import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
 import { AcademicCalendarModule } from './AcademicCalendarModule';
 import { CoursesModule } from './CoursesModule';
+import { AddOnProgramsModule } from './AddOnProgramsModule';
+import { ValueAddedCoursesModule } from './ValueAddedCoursesModule';
+import { AcademicTimetableModule } from './AcademicTimetableModule';
+import { FacultyProfileModule } from './FacultyProfileModule';
+import { FacultyQualificationModule } from './FacultyQualificationModule';
+import { FacultyEmploymentModule } from './FacultyEmploymentModule';
+import { FacultyProfessionPracticeModule } from './FacultyProfessionPracticeModule';
+import { FacultyEvidenceModule } from './FacultyEvidenceModule';
+import { FacultyProfessionalDevelopmentModule } from './FacultyProfessionalDevelopmentModule';
+import { StudentRepositoryModule } from './StudentRepositoryModule';
 import {
   GraduationCap,
   Users,
@@ -54,6 +64,7 @@ import {
   Settings,
   Wifi,
   Package,
+  Clock,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -102,6 +113,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Settings,
   Wifi,
   Package,
+  Clock,
 };
 
 interface RepositoryWorkspaceProps {
@@ -118,6 +130,11 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
   useEffect(() => {
     setActiveTab(config.tabs[initialTabIndex ?? 0]?.id || '');
   }, [config.id, initialTabIndex]);
+
+  // Render Student Repository with its own dedicated module (with Department/Year/Semester selectors)
+  if (config.id === 'student') {
+    return <StudentRepositoryModule config={config} academicYear={academicYear} />;
+  }
 
   return (
     <div className="space-y-5">
@@ -183,6 +200,51 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
               />
             ) : tab.id === 'courses' && config.id === 'academic' ? (
               <CoursesModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'add-on-programs' && config.id === 'academic' ? (
+              <AddOnProgramsModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'value-added-courses' && config.id === 'academic' ? (
+              <ValueAddedCoursesModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'academic-timetable' && config.id === 'academic' ? (
+              <AcademicTimetableModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-profiles' && config.id === 'faculty' ? (
+              <FacultyProfileModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-qualifications' && config.id === 'faculty' ? (
+              <FacultyQualificationModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-employment' && config.id === 'faculty' ? (
+              <FacultyEmploymentModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-profession-practice' && config.id === 'faculty' ? (
+              <FacultyProfessionPracticeModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-evidence' && config.id === 'faculty' ? (
+              <FacultyEvidenceModule
+                department={departmentInfo.department}
+                academicYear={academicYear || '2025-26'}
+              />
+            ) : tab.id === 'faculty-professional-development' && config.id === 'faculty' ? (
+              <FacultyProfessionalDevelopmentModule
                 department={departmentInfo.department}
                 academicYear={academicYear || '2025-26'}
               />

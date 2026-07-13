@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import {
   Calendar,
@@ -49,6 +50,25 @@ const YEARS_OF_STUDY = ['I Year', 'II Year', 'III Year', 'IV Year'];
 const SEMESTERS = ['Semester I', 'Semester II'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 function calculateDuration(startDate: string, endDate: string): number {
   if (!startDate || !endDate) return 0;
   const start = new Date(startDate);
@@ -74,6 +94,7 @@ function getEventStatus(startDate: string, endDate: string): 'upcoming' | 'compl
 }
 
 export const AcademicCalendarModule = ({ department, academicYear }: AcademicCalendarModuleProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester I');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -157,15 +178,15 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
-        const lines = text.split('\n').filter((line) => line.trim());
-        const headers = lines[0].split(',').map((h) => h.trim());
+        const lines = text.split(/\r?\n/).filter((line) => line.trim());
+        const headers = parseCSVLine(lines[0]);
 
         const parsed: CalendarEvent[] = [];
         let validCount = 0;
         let invalidCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map((v) => v.trim());
+          const values = parseCSVLine(lines[i]);
           const row: Record<string, string> = {};
           headers.forEach((h, idx) => {
             row[h] = values[idx] || '';
@@ -235,8 +256,8 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
         setShowUploadDialog(true);
       };
       reader.readAsText(file);
-      // Reset input
-      e.target.value = '';
+      // Reset input so same file can be re-uploaded
+      if (fileInputRef.current) fileInputRef.current.value = '';
     },
     [department, selectedYear, selectedSemester]
   );
@@ -251,6 +272,16 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
       errors: undefined,
     }));
     setEvents((prev) => [...prev, ...newEvents]);
+    // Auto-switch to the year/semester of the first imported record so user can see results
+    if (newEvents.length > 0) {
+      const firstEvent = newEvents[0];
+      if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
+        setSelectedYear(firstEvent.year);
+      }
+      if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
+        setSelectedSemester(firstEvent.semester);
+      }
+    }
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
@@ -387,14 +418,15 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
               <Download className="h-3.5 w-3.5" />
               Download CSV Template
             </Button>
-            <div className="relative">
+            <div>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="hidden"
               />
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-3.5 w-3.5" />
                 Upload CSV
               </Button>
@@ -617,21 +649,25 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Start Date *</Label>
-                  <Input
-                    type="date"
-                    value={newEvent.startDate}
-                    onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
-                    className="mt-1 h-9 text-sm"
-                  />
+                  <div className="mt-1">
+                    <DatePicker
+                      value={newEvent.startDate}
+                      onChange={(v) => setNewEvent({ ...newEvent, startDate: v })}
+                      placeholder="Select start date"
+                      className="h-9 text-sm"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label className="text-xs">End Date *</Label>
-                  <Input
-                    type="date"
-                    value={newEvent.endDate}
-                    onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
-                    className="mt-1 h-9 text-sm"
-                  />
+                  <div className="mt-1">
+                    <DatePicker
+                      value={newEvent.endDate}
+                      onChange={(v) => setNewEvent({ ...newEvent, endDate: v })}
+                      placeholder="Select end date"
+                      className="h-9 text-sm"
+                    />
+                  </div>
                 </div>
               </div>
               {newEvent.startDate && newEvent.endDate && (

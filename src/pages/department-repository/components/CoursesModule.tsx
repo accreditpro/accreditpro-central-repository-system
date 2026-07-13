@@ -28,6 +28,7 @@ import {
   Eye,
   DownloadCloud,
   RefreshCw,
+  Calculator,
 } from 'lucide-react';
 
 interface CourseRecord {
@@ -38,10 +39,20 @@ interface CourseRecord {
   courseCode: string;
   courseName: string;
   courseType: string;
-  lectureHours: string;
-  theoryHours: string;
-  labHours: string;
-  credits: string;
+  // CI (Class Room Instructions)
+  lectureHours: number;
+  theoryHours: number;
+  // PI (Lab Instructions)
+  practicalHours: number;
+  // TW (Team Work)
+  teamWorkHours: number;
+  // SL (Self Learning)
+  selfLearningHours: number;
+  // Calculated fields
+  ciHours: number; // Lecture + Theory
+  piHours: number; // Practical
+  totalHours: number; // CI + PI + TW + SL
+  credits: number; // Total / 30 rounded
   status: string;
   validationStatus?: 'valid' | 'invalid';
   errors?: string[];
@@ -69,8 +80,23 @@ const SEMESTERS_MAP: Record<string, string[]> = {
   'III Year': ['Semester 5', 'Semester 6'],
   'IV Year': ['Semester 7', 'Semester 8'],
 };
-const COURSE_TYPES = ['Theory', 'Lab'];
+const COURSE_TYPES = ['Theory', 'Lab', 'Theory + Lab', 'Project', 'Seminar', 'Internship'];
 const COURSE_STATUSES = ['Active', 'Inactive', 'Proposed'];
+
+// Helper: Calculate CI, PI, Total Hours, Credits
+function calculateCourseMetrics(
+  lectureHours: number,
+  theoryHours: number,
+  practicalHours: number,
+  teamWorkHours: number,
+  selfLearningHours: number
+) {
+  const ciHours = lectureHours + theoryHours;
+  const piHours = practicalHours;
+  const totalHours = ciHours + piHours + teamWorkHours + selfLearningHours;
+  const credits = Math.round(totalHours / 30);
+  return { ciHours, piHours, totalHours, credits };
+}
 
 // Mock evidence data
 const generateMockEvidence = (): EvidenceRecord[] => [
@@ -111,10 +137,19 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
     courseType: '',
     lectureHours: '',
     theoryHours: '',
-    labHours: '',
-    credits: '',
+    practicalHours: '',
+    teamWorkHours: '',
+    selfLearningHours: '',
     status: 'Active',
   });
+
+  // Computed values for the form
+  const formCI = (parseFloat(newCourse.lectureHours) || 0) + (parseFloat(newCourse.theoryHours) || 0);
+  const formPI = parseFloat(newCourse.practicalHours) || 0;
+  const formTW = parseFloat(newCourse.teamWorkHours) || 0;
+  const formSL = parseFloat(newCourse.selfLearningHours) || 0;
+  const formTotalHours = formCI + formPI + formTW + formSL;
+  const formCredits = Math.round(formTotalHours / 30);
 
   // Update semester when year changes
   const handleYearChange = (year: string) => {
@@ -170,22 +205,34 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
     return filtered;
   }, [evidence, selectedYear, selectedSemester, evidenceSearch, evidenceFilterStatus]);
 
+  // Summary stats for current semester
+  const semesterStats = useMemo(() => {
+    const semCourses = courses.filter(
+      (c) => c.year === selectedYear && c.semester === selectedSemester
+    );
+    const totalCredits = semCourses.reduce((sum, c) => sum + c.credits, 0);
+    const totalContactHours = semCourses.reduce((sum, c) => sum + c.totalHours, 0);
+    const theoryCourses = semCourses.filter((c) => c.courseType === 'Theory').length;
+    const labCourses = semCourses.filter((c) => c.courseType === 'Lab' || c.courseType === 'Theory + Lab').length;
+    return { total: semCourses.length, totalCredits, totalContactHours, theoryCourses, labCourses };
+  }, [courses, selectedYear, selectedSemester]);
+
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
-    const header = 'Department,Year,Semester,Course Code,Course Name,Course Type,Lecture Hours,Theory Hours,Lab Hours,Credits,Status';
+    const header = 'Department,Year,Semester,Course Code,Course Name,Course Type,Lecture Hours (CI),Theory Hours (CI),Practical Hours (PI),Team Work Hours (TW),Self Learning Hours (SL),Status';
     const sampleRows = [
-      `${department},${selectedYear},${selectedSemester},CS501,Machine Learning,Theory,3,3,0,3,Active`,
-      `${department},${selectedYear},${selectedSemester},CS501L,Machine Learning Lab,Lab,0,0,3,1.5,Active`,
-      `${department},${selectedYear},${selectedSemester},CS502,Deep Learning,Theory,3,3,0,3,Active`,
-      `${department},${selectedYear},${selectedSemester},CS503,Computer Vision,Theory,3,3,0,3,Active`,
-      `${department},${selectedYear},${selectedSemester},CS503L,Computer Vision Lab,Lab,0,0,3,1.5,Active`,
+      `${department},${selectedYear},${selectedSemester},CS501,Machine Learning,Theory,3,0,0,1,2,Active`,
+      `${department},${selectedYear},${selectedSemester},CS501L,Machine Learning Lab,Lab,0,0,3,0,1,Active`,
+      `${department},${selectedYear},${selectedSemester},CS502,Deep Learning,Theory,3,0,0,1,2,Active`,
+      `${department},${selectedYear},${selectedSemester},CS503,Computer Vision,Theory + Lab,2,0,2,1,1,Active`,
+      `${department},${selectedYear},${selectedSemester},CS504,NLP,Theory,3,0,0,1,2,Active`,
     ];
     const csv = [header, ...sampleRows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `courses_template_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
+    a.download = `courses_nba_template_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [department, selectedYear, selectedSemester]);
@@ -226,7 +273,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
             errors.push('Course Name is mandatory');
           }
           if (row['Course Type'] && !COURSE_TYPES.includes(row['Course Type'])) {
-            errors.push(`Course Type "${row['Course Type']}" must be Theory or Lab`);
+            errors.push(`Course Type "${row['Course Type']}" must be one of: ${COURSE_TYPES.join(', ')}`);
           }
 
           const yearVal = row['Year'] || selectedYear;
@@ -234,6 +281,14 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
           if (!YEARS_OF_STUDY.includes(yearVal)) {
             errors.push(`Year "${yearVal}" is not valid`);
           }
+
+          const lectureHrs = parseFloat(row['Lecture Hours (CI)'] || row['Lecture Hours'] || '0');
+          const theoryHrs = parseFloat(row['Theory Hours (CI)'] || row['Theory Hours'] || '0');
+          const practicalHrs = parseFloat(row['Practical Hours (PI)'] || row['Lab Hours'] || row['Practical Hours'] || '0');
+          const twHrs = parseFloat(row['Team Work Hours (TW)'] || row['Team Work Hours'] || '0');
+          const slHrs = parseFloat(row['Self Learning Hours (SL)'] || row['Self Learning Hours'] || '0');
+
+          const metrics = calculateCourseMetrics(lectureHrs, theoryHrs, practicalHrs, twHrs, slHrs);
 
           const courseRecord: CourseRecord = {
             id: `upload-${i}`,
@@ -243,10 +298,15 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
             courseCode: row['Course Code'] || '',
             courseName: row['Course Name'] || '',
             courseType: row['Course Type'] || 'Theory',
-            lectureHours: row['Lecture Hours'] || '0',
-            theoryHours: row['Theory Hours'] || '0',
-            labHours: row['Lab Hours'] || '0',
-            credits: row['Credits'] || '0',
+            lectureHours: lectureHrs,
+            theoryHours: theoryHrs,
+            practicalHours: practicalHrs,
+            teamWorkHours: twHrs,
+            selfLearningHours: slHrs,
+            ciHours: metrics.ciHours,
+            piHours: metrics.piHours,
+            totalHours: metrics.totalHours,
+            credits: metrics.credits,
             status: row['Status'] || 'Active',
             validationStatus: errors.length > 0 ? 'invalid' : 'valid',
             errors: errors.length > 0 ? errors : undefined,
@@ -290,6 +350,14 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
   const handleAddCourse = useCallback(() => {
     if (!newCourse.courseCode || !newCourse.courseName || !newCourse.courseType) return;
 
+    const lectureHrs = parseFloat(newCourse.lectureHours) || 0;
+    const theoryHrs = parseFloat(newCourse.theoryHours) || 0;
+    const practicalHrs = parseFloat(newCourse.practicalHours) || 0;
+    const twHrs = parseFloat(newCourse.teamWorkHours) || 0;
+    const slHrs = parseFloat(newCourse.selfLearningHours) || 0;
+
+    const metrics = calculateCourseMetrics(lectureHrs, theoryHrs, practicalHrs, twHrs, slHrs);
+
     const course: CourseRecord = {
       id: editingCourse ? editingCourse.id : `course-${Date.now()}`,
       department,
@@ -298,10 +366,15 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
       courseCode: newCourse.courseCode,
       courseName: newCourse.courseName,
       courseType: newCourse.courseType,
-      lectureHours: newCourse.lectureHours || '0',
-      theoryHours: newCourse.theoryHours || '0',
-      labHours: newCourse.labHours || '0',
-      credits: newCourse.credits || '0',
+      lectureHours: lectureHrs,
+      theoryHours: theoryHrs,
+      practicalHours: practicalHrs,
+      teamWorkHours: twHrs,
+      selfLearningHours: slHrs,
+      ciHours: metrics.ciHours,
+      piHours: metrics.piHours,
+      totalHours: metrics.totalHours,
+      credits: metrics.credits,
       status: newCourse.status,
     };
 
@@ -311,7 +384,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
       setCourses((prev) => [...prev, course]);
     }
 
-    setNewCourse({ courseCode: '', courseName: '', courseType: '', lectureHours: '', theoryHours: '', labHours: '', credits: '', status: 'Active' });
+    setNewCourse({ courseCode: '', courseName: '', courseType: '', lectureHours: '', theoryHours: '', practicalHours: '', teamWorkHours: '', selfLearningHours: '', status: 'Active' });
     setShowAddDialog(false);
     setEditingCourse(null);
   }, [newCourse, department, selectedYear, selectedSemester, editingCourse]);
@@ -323,10 +396,11 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
       courseCode: course.courseCode,
       courseName: course.courseName,
       courseType: course.courseType,
-      lectureHours: course.lectureHours,
-      theoryHours: course.theoryHours,
-      labHours: course.labHours,
-      credits: course.credits,
+      lectureHours: course.lectureHours.toString(),
+      theoryHours: course.theoryHours.toString(),
+      practicalHours: course.practicalHours.toString(),
+      teamWorkHours: course.teamWorkHours.toString(),
+      selfLearningHours: course.selfLearningHours.toString(),
       status: course.status,
     });
     setShowAddDialog(true);
@@ -359,15 +433,15 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
               <BookOpen className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Department Courses</h2>
+              <h2 className="text-xl font-bold tracking-tight">Department Courses (NBA Format)</h2>
               <p className="text-xs text-muted-foreground">
-                Manage course data for each year and semester — upload via CSV or add manually
+                Manage courses with CI, PI, TW, SL hours — Credits auto-calculated as Total Hours / 30 (rounded)
               </p>
             </div>
           </div>
         </div>
 
-        {/* Context Info Cards - Same as Academic Calendar */}
+        {/* Context Info Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="border-border/50">
             <CardContent className="p-3">
@@ -414,6 +488,78 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
         </div>
       </div>
 
+      {/* NBA Hours Legend */}
+      <Card className="border-border/50 bg-gradient-to-r from-indigo-50/50 to-violet-50/50 dark:from-indigo-950/20 dark:to-violet-950/20">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Calculator className="h-4 w-4 text-indigo-600" />
+            <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">NBA Credit Calculation Formula</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div className="text-center p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400">CI</p>
+              <p className="text-[9px] text-blue-600 dark:text-blue-300">Lecture + Theory</p>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <p className="text-[10px] font-bold text-purple-700 dark:text-purple-400">PI</p>
+              <p className="text-[9px] text-purple-600 dark:text-purple-300">Practical Hours</p>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">TW</p>
+              <p className="text-[9px] text-emerald-600 dark:text-emerald-300">Team Work</p>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400">SL</p>
+              <p className="text-[9px] text-amber-600 dark:text-amber-300">Self Learning</p>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
+              <p className="text-[10px] font-bold text-rose-700 dark:text-rose-400">Total Hrs</p>
+              <p className="text-[9px] text-rose-600 dark:text-rose-300">CI+PI+TW+SL</p>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400">Credits</p>
+              <p className="text-[9px] text-indigo-600 dark:text-indigo-300">Total / 30 (Round)</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Semester Summary Stats */}
+      {semesterStats.total > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Card className="border-border/50">
+            <CardContent className="p-3 text-center">
+              <p className="text-lg font-bold text-indigo-600">{semesterStats.total}</p>
+              <p className="text-[10px] text-muted-foreground">Total Courses</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-3 text-center">
+              <p className="text-lg font-bold text-emerald-600">{semesterStats.totalCredits}</p>
+              <p className="text-[10px] text-muted-foreground">Total Credits</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-3 text-center">
+              <p className="text-lg font-bold text-violet-600">{semesterStats.totalContactHours}</p>
+              <p className="text-[10px] text-muted-foreground">Total Contact Hrs</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-3 text-center">
+              <p className="text-lg font-bold text-blue-600">{semesterStats.theoryCourses}</p>
+              <p className="text-[10px] text-muted-foreground">Theory Courses</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-3 text-center">
+              <p className="text-lg font-bold text-purple-600">{semesterStats.labCourses}</p>
+              <p className="text-[10px] text-muted-foreground">Lab Courses</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Actions Bar */}
       <Card className="border-border/50">
         <CardContent className="p-4">
@@ -435,7 +581,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                 Upload CSV
               </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={() => { setEditingCourse(null); setNewCourse({ courseCode: '', courseName: '', courseType: '', lectureHours: '', theoryHours: '', labHours: '', credits: '', status: 'Active' }); setShowAddDialog(true); }} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setEditingCourse(null); setNewCourse({ courseCode: '', courseName: '', courseType: '', lectureHours: '', theoryHours: '', practicalHours: '', teamWorkHours: '', selfLearningHours: '', status: 'Active' }); setShowAddDialog(true); }} className="gap-2">
               <Plus className="h-3.5 w-3.5" />
               Add Course
             </Button>
@@ -468,7 +614,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                 <div>
                   <p className="text-sm font-semibold text-green-700">Courses Saved Successfully</p>
                   <p className="text-xs text-green-600 mt-0.5">
-                    Total Courses: {totalCoursesForYearSem} • {selectedYear} / {selectedSemester}
+                    Total Courses: {totalCoursesForYearSem} • Total Credits: {semesterStats.totalCredits} • {selectedYear} / {selectedSemester}
                   </p>
                 </div>
               </CardContent>
@@ -489,7 +635,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
           />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[130px] h-9 text-sm">
+          <SelectTrigger className="w-[140px] h-9 text-sm">
             <Filter className="h-3.5 w-3.5 mr-2" />
             <SelectValue placeholder="Type" />
           </SelectTrigger>
@@ -516,12 +662,12 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
         </Badge>
       </div>
 
-      {/* Courses Table */}
+      {/* Courses Table - NBA Format */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <FileText className="h-4 w-4 text-indigo-600" />
-            Courses — {selectedYear} / {selectedSemester}
+            Courses — {selectedYear} / {selectedSemester} (NBA Manual Format)
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -534,40 +680,80 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
               </p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[500px]">
-              <Table>
+            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="text-xs font-semibold w-8">#</TableHead>
-                    <TableHead className="text-xs font-semibold">Course Code</TableHead>
-                    <TableHead className="text-xs font-semibold">Course Name</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Type</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Lec Hrs</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Theory Hrs</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Lab Hrs</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Credits</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
+                    <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">Course Code</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">Course Name</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Type</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>CI</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Lec+Theory)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>PI</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Practical)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>TW</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Team Work)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>SL</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Self Learn)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>Total</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Hours)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span>Credits</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">(Total/30)</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Status</TableHead>
+                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCourses.map((course, idx) => (
                     <TableRow key={course.id} className="hover:bg-muted/20">
-                      <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                      <TableCell className="text-xs font-medium font-mono">{course.courseCode}</TableCell>
-                      <TableCell className="text-sm font-medium">{course.courseName}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
+                      <TableCell className="text-xs font-medium font-mono whitespace-nowrap">{course.courseCode}</TableCell>
+                      <TableCell className="text-sm font-medium whitespace-nowrap">{course.courseName}</TableCell>
+                      <TableCell className="text-center whitespace-nowrap">
                         <Badge variant="outline" className={cn('text-[10px]',
-                          course.courseType === 'Theory' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+                          course.courseType === 'Theory' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                          course.courseType === 'Lab' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
+                          'bg-teal-500/10 text-teal-600 border-teal-500/20'
                         )}>
                           {course.courseType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-center">{course.lectureHours}</TableCell>
-                      <TableCell className="text-xs text-center">{course.theoryHours}</TableCell>
-                      <TableCell className="text-xs text-center">{course.labHours}</TableCell>
-                      <TableCell className="text-xs text-center font-semibold">{course.credits}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-xs text-center font-medium text-blue-600 whitespace-nowrap">{course.ciHours}</TableCell>
+                      <TableCell className="text-xs text-center font-medium text-purple-600 whitespace-nowrap">{course.piHours}</TableCell>
+                      <TableCell className="text-xs text-center font-medium text-emerald-600 whitespace-nowrap">{course.teamWorkHours}</TableCell>
+                      <TableCell className="text-xs text-center font-medium text-amber-600 whitespace-nowrap">{course.selfLearningHours}</TableCell>
+                      <TableCell className="text-xs text-center font-bold text-rose-600 whitespace-nowrap">{course.totalHours}</TableCell>
+                      <TableCell className="text-center whitespace-nowrap">
+                        <Badge className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold">
+                          {course.credits}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center whitespace-nowrap">
                         <Badge variant="outline" className={cn('text-[10px]',
                           course.status === 'Active' && 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
                           course.status === 'Inactive' && 'bg-gray-500/10 text-gray-600 border-gray-500/20',
@@ -576,7 +762,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                           {course.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right sticky right-0 bg-background z-10">
                         <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditCourse(course)}>
                             <Edit2 className="h-3 w-3" />
@@ -588,9 +774,36 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                       </TableCell>
                     </TableRow>
                   ))}
+                  {/* Totals Row */}
+                  <TableRow className="bg-muted/50 border-t-2 font-semibold">
+                    <TableCell className="sticky left-0 bg-muted/50 z-10"></TableCell>
+                    <TableCell colSpan={3} className="text-xs text-right font-bold whitespace-nowrap">SEMESTER TOTALS →</TableCell>
+                    <TableCell className="text-xs text-center font-bold text-blue-700">
+                      {filteredCourses.reduce((s, c) => s + c.ciHours, 0)}
+                    </TableCell>
+                    <TableCell className="text-xs text-center font-bold text-purple-700">
+                      {filteredCourses.reduce((s, c) => s + c.piHours, 0)}
+                    </TableCell>
+                    <TableCell className="text-xs text-center font-bold text-emerald-700">
+                      {filteredCourses.reduce((s, c) => s + c.teamWorkHours, 0)}
+                    </TableCell>
+                    <TableCell className="text-xs text-center font-bold text-amber-700">
+                      {filteredCourses.reduce((s, c) => s + c.selfLearningHours, 0)}
+                    </TableCell>
+                    <TableCell className="text-xs text-center font-bold text-rose-700">
+                      {filteredCourses.reduce((s, c) => s + c.totalHours, 0)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge className="bg-indigo-700 hover:bg-indigo-800 text-white text-[10px] font-bold">
+                        {filteredCourses.reduce((s, c) => s + c.credits, 0)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell></TableCell>
+                    <TableCell className="sticky right-0 bg-muted/50 z-10"></TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
-            </ScrollArea>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -713,6 +926,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
               'NAAC Course Evidence',
               'NBA Course Evidence',
               'CO-PO Mapping',
+              'Bloom\'s Taxonomy Mapping',
             ].map((item) => (
               <Badge key={item} variant="outline" className="text-[10px] bg-background">
                 {item}
@@ -722,11 +936,11 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
         </CardContent>
       </Card>
 
-      {/* Add/Edit Course Dialog */}
+      {/* Add/Edit Course Dialog - NBA Format */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingCourse(null); } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base">{editingCourse ? 'Edit Course' : 'Add Course'}</DialogTitle>
+            <DialogTitle className="text-base">{editingCourse ? 'Edit Course' : 'Add Course'} (NBA Format)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -778,32 +992,90 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                   className="mt-1 h-9 text-sm"
                 />
               </div>
-              <div className="grid grid-cols-4 gap-3">
+
+              {/* NBA Hours Section */}
+              <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+                <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                  <Calculator className="h-3.5 w-3.5" />
+                  NBA Hours & Credit Calculation
+                </p>
+
+                {/* CI - Class Room Instructions */}
                 <div>
-                  <Label className="text-xs">Lecture Hrs</Label>
-                  <Input type="number" min="0" value={newCourse.lectureHours}
-                    onChange={(e) => setNewCourse({ ...newCourse, lectureHours: e.target.value })}
-                    className="mt-1 h-9 text-sm" />
+                  <p className="text-[10px] font-semibold text-blue-600 mb-1.5">CI — Class Room Instructions</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Lecture Hours</Label>
+                      <Input type="number" min="0" value={newCourse.lectureHours}
+                        onChange={(e) => setNewCourse({ ...newCourse, lectureHours: e.target.value })}
+                        placeholder="0"
+                        className="mt-1 h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Theory Hours</Label>
+                      <Input type="number" min="0" value={newCourse.theoryHours}
+                        onChange={(e) => setNewCourse({ ...newCourse, theoryHours: e.target.value })}
+                        placeholder="0"
+                        className="mt-1 h-8 text-sm" />
+                    </div>
+                  </div>
                 </div>
+
+                {/* PI - Lab Instructions */}
                 <div>
-                  <Label className="text-xs">Theory Hrs</Label>
-                  <Input type="number" min="0" value={newCourse.theoryHours}
-                    onChange={(e) => setNewCourse({ ...newCourse, theoryHours: e.target.value })}
-                    className="mt-1 h-9 text-sm" />
+                  <p className="text-[10px] font-semibold text-purple-600 mb-1.5">PI — Lab Instructions</p>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Practical Hours</Label>
+                    <Input type="number" min="0" value={newCourse.practicalHours}
+                      onChange={(e) => setNewCourse({ ...newCourse, practicalHours: e.target.value })}
+                      placeholder="0"
+                      className="mt-1 h-8 text-sm" />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs">Lab Hrs</Label>
-                  <Input type="number" min="0" value={newCourse.labHours}
-                    onChange={(e) => setNewCourse({ ...newCourse, labHours: e.target.value })}
-                    className="mt-1 h-9 text-sm" />
+
+                {/* TW & SL */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-emerald-600 mb-1.5">TW — Team Work</p>
+                    <Input type="number" min="0" value={newCourse.teamWorkHours}
+                      onChange={(e) => setNewCourse({ ...newCourse, teamWorkHours: e.target.value })}
+                      placeholder="0"
+                      className="h-8 text-sm" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 mb-1.5">SL — Self Learning</p>
+                    <Input type="number" min="0" value={newCourse.selfLearningHours}
+                      onChange={(e) => setNewCourse({ ...newCourse, selfLearningHours: e.target.value })}
+                      placeholder="0"
+                      className="h-8 text-sm" />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs">Credits</Label>
-                  <Input type="number" min="0" step="0.5" value={newCourse.credits}
-                    onChange={(e) => setNewCourse({ ...newCourse, credits: e.target.value })}
-                    className="mt-1 h-9 text-sm" />
+
+                {/* Auto-calculated summary */}
+                <Separator />
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="text-center p-2 rounded bg-blue-500/10">
+                    <p className="text-[9px] text-blue-600 font-medium">CI</p>
+                    <p className="text-sm font-bold text-blue-700">{formCI}</p>
+                  </div>
+                  <div className="text-center p-2 rounded bg-purple-500/10">
+                    <p className="text-[9px] text-purple-600 font-medium">PI</p>
+                    <p className="text-sm font-bold text-purple-700">{formPI}</p>
+                  </div>
+                  <div className="text-center p-2 rounded bg-rose-500/10">
+                    <p className="text-[9px] text-rose-600 font-medium">Total Hrs</p>
+                    <p className="text-sm font-bold text-rose-700">{formTotalHours}</p>
+                  </div>
+                  <div className="text-center p-2 rounded bg-indigo-500/10">
+                    <p className="text-[9px] text-indigo-600 font-medium">Credits</p>
+                    <p className="text-sm font-bold text-indigo-700">{formCredits}</p>
+                  </div>
                 </div>
+                <p className="text-[9px] text-muted-foreground text-center">
+                  Credits = (CI + PI + TW + SL) / 30 = {formTotalHours} / 30 = {(formTotalHours / 30).toFixed(2)} ≈ <strong>{formCredits}</strong>
+                </p>
               </div>
+
               <div>
                 <Label className="text-xs">Status</Label>
                 <Select value={newCourse.status} onValueChange={(v) => setNewCourse({ ...newCourse, status: v })}>
@@ -832,11 +1104,11 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-5xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              CSV Upload Preview
+              CSV Upload Preview (NBA Format)
             </DialogTitle>
           </DialogHeader>
           {uploadStats && (
@@ -879,9 +1151,11 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                       <TableHead className="text-xs font-semibold">Code</TableHead>
                       <TableHead className="text-xs font-semibold">Course Name</TableHead>
                       <TableHead className="text-xs font-semibold">Type</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Lec</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Theory</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Lab</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">CI</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">PI</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">TW</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">SL</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">Total</TableHead>
                       <TableHead className="text-xs font-semibold text-center">Credits</TableHead>
                       <TableHead className="text-xs font-semibold text-center">Valid</TableHead>
                     </TableRow>
@@ -898,10 +1172,14 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                         <TableCell className="text-xs font-mono">{course.courseCode}</TableCell>
                         <TableCell className="text-xs font-medium">{course.courseName}</TableCell>
                         <TableCell className="text-xs">{course.courseType}</TableCell>
-                        <TableCell className="text-xs text-center">{course.lectureHours}</TableCell>
-                        <TableCell className="text-xs text-center">{course.theoryHours}</TableCell>
-                        <TableCell className="text-xs text-center">{course.labHours}</TableCell>
-                        <TableCell className="text-xs text-center">{course.credits}</TableCell>
+                        <TableCell className="text-xs text-center text-blue-600">{course.ciHours}</TableCell>
+                        <TableCell className="text-xs text-center text-purple-600">{course.piHours}</TableCell>
+                        <TableCell className="text-xs text-center text-emerald-600">{course.teamWorkHours}</TableCell>
+                        <TableCell className="text-xs text-center text-amber-600">{course.selfLearningHours}</TableCell>
+                        <TableCell className="text-xs text-center font-bold text-rose-600">{course.totalHours}</TableCell>
+                        <TableCell className="text-xs text-center">
+                          <Badge className="bg-indigo-600 text-white text-[10px]">{course.credits}</Badge>
+                        </TableCell>
                         <TableCell className="text-center">
                           {course.validationStatus === 'valid' ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
