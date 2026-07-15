@@ -1,0 +1,6 @@
+Student Registration Number,Student Name,Platform,Course Name,Duration (Hours),Grade,Score,Certificate ID,Completion Date,Certification Status,Academic Year
+CS2022001,Rahul Verma,NPTEL,Deep Learning,60,Elite + Gold,92%,NPTEL-DL-2025-001,2025-04-10,Certified,2025-26
+CS2022002,Priya Sharma,Coursera,Google Cloud Professional Architect,80,Pass,88%,GCPA-2025-XYZ,2025-05-30,Certified,2025-26
+CS2022003,Suresh Reddy,SWAYAM,Cyber Security,45,Elite,85%,SWAYAM-CS-2025,2025-06-15,Certified,2025-26
+CS2022004,Anita Desai,edX,Data Science with Python,50,Verified,90%,EDX-DS-2025,2025-07-20,Certified,2025-26
+CS2022005,Arjun Nair,Microsoft Learn,Azure AI Fundamentals,30,Pass,91%,MS-AI-2025-001,2025-06-20,Certified,2025-26

@@ -1,0 +1,246 @@
+$ vite
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+Port 3002 is in use, trying another one...
+Port 3003 is in use, trying another one...
+Port 3004 is in use, trying another one...
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m755[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3005[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.21.112.1:[1m3005[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.29.44:[1m3005[22m/[39m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mprerender/utils.js changed, restarting server...[39m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m server restarted.
+[2m12:26:56 pm[22m [36m[1m[vite][22m[39m [32mprerender/utils.js changed, restarting server...[39m
+
+<--- Last few GCs --->
+
+[23868:000001EA6D333000]   570344 ms: Scavenge 42.1 (45.6) -> 40.4 (42.6) MB, pooled: 6 MB, 0.38 / 0.00 ms  (average mu = 0.995, current mu = 0.976) allocation failure; 
+[23868:000001EA6D333000]   570346 ms: Scavenge 41.2 (42.6) -> 40.4 (45.6) MB, pooled: 3 MB, 0.28 / 0.00 ms  (average mu = 0.995, current mu = 0.976) allocation failure; 
+[23868:000001EA6D333000]   606739 ms: Scavenge 41.9 (45.6) -> 40.4 (42.8) MB, pooled: 6 MB, 0.24 / 0.00 ms  (average mu = 0.995, current mu = 0.976) task; 
+
+FATAL ERROR: Zone Allocation failed - process out of memory
+----- Native stack trace -----
+
+
+<--- Last few GCs --->
+
+[23868:000001EA6D333000]   570344 ms: Scavenge 42.1 (45.6) -> 40.4 (42.6) MB, pooled: 6 MB, 0.38 / 0.00 ms  (average mu = 0.995, current mu = 0.976) allocation failure; 
+[23868:000001EA6D333000]   570346 ms: Scavenge 41.2 (42.6) -> 40.4 (45.6) MB, pooled: 3 MB, 0.28 / 0.00 ms  (average mu = 0.995, current mu = 0.976) allocation failure; 
+[23868:000001EA6D333000]   606739 ms: Scavenge 41.9 (45.6) -> 40.4 (42.8) MB, pooled: 6 MB, 0.24 / 0.00 ms  (average mu = 0.995, current mu = 0.976) task; 
+
+FATAL ERROR: Zone Allocation failed - process out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7BF20403F node::OnFatalError+1343
+ 2: 00007FF7BFE4FAA7 v8::Function::NewInstance+423
+ 3: 00007FF7BF7C9986 v8::SnapshotCreator::GetIsolate+56566
+ 4: 00007FF7BF5F3A52 SSL_CTX_get_client_CA_list+11538
+ 5: 00007FF7BF5F3A12 SSL_CTX_get_client_CA_list+11474
+ 6: 00007FF7BF5F3A24 SSL_CTX_get_client_CA_list+11492
+ 7: 00007FF7BF5F3913 SSL_CTX_get_client_CA_list+11219
+ 8: 00007FF7BF5F385D SSL_CTX_get_client_CA_list+11037
+ 9: 00007FF7BF5EDD74 v8::internal::OptimizingCompileInputQueue::OptimizingCompileInputQueue+196644
+10: 00007FF7BF5F5E2E SSL_CTX_get_client_CA_list+20718
+11: 00007FF7BF5F5BA3 SSL_CTX_get_client_CA_list+20067
+12: 00007FF7BF6590D4 SSL_CTX_get_client_CA_list+426900
+13: 00007FF7BF658D07 SSL_CTX_get_client_CA_list+425927
+14: 00007FF7BF657DEB SSL_CTX_get_client_CA_list+422059
+15: 00007FF7BF655907 SSL_CTX_get_client_CA_list+412615
+16: 00007FF7BF62AB0B SSL_CTX_get_client_CA_list+237003
+17: 00007FF7BF62A6E2 SSL_CTX_get_client_CA_list+235938
+18: 00007FF7BF62C695 SSL_CTX_get_client_CA_list+244053
+19: 00007FF7BF62BB3E SSL_CTX_get_client_CA_list+241150
+20: 00007FF7BF63F0A1 SSL_CTX_get_client_CA_list+320353
+21: 00007FF7BF613F05 SSL_CTX_get_client_CA_list+143813
+22: 00007FF7BF62F632 SSL_CTX_get_client_CA_list+256242
+23: 00007FF7BF640CF6 SSL_CTX_get_client_CA_list+327606
+24: 00007FF7BF641AF7 SSL_CTX_get_client_CA_list+331191
+25: 00007FF7BF655ECA SSL_CTX_get_client_CA_list+414090
+26: 00007FF7BF62AB0B SSL_CTX_get_client_CA_list+237003
+27: 00007FF7BF6A2C76 SSL_CTX_get_client_CA_list+728886
+28: 00007FF7BF6A1990 SSL_CTX_get_client_CA_list+724048
+29: 00007FF7BF69F78A SSL_CTX_get_client_CA_list+715338
+30: 00007FF7BFDC376F EVP_MD_CTX_set_update_fn+200559
+31: 00007FF7BF6A126B SSL_CTX_get_client_CA_list+722219
+32: 00007FF7C0630C5F v8::platform::DefaultJobHandle::UpdatePriority+591
+33: 00007FF7BF152E0E node::GetNodeReport+90430
+34: 00007FF7BFEA4A36 uv_thread_detach+150
+35: 00007FF7C1105A73 v8::base::UnsignedDivisionByConstant<unsigned __int64>+2907235
+36: 00007FF83851E957 BaseThreadInitThunk+23
+37: 00007FF8395E7C1C RtlUserThreadStart+44
+ 1: 00007FF7BF20403F node::OnFatalError+1343
+ 2: 00007FF7BFE4FAA7 
+ 3: 00007FF7BF7C9986 
+ 4: 00007FF7BF694A3F 
+ 5: 00007FF7BF646180 
+ 6: 00007FF7BF645C2D 
+ 7: 00007FF7BF64646F 
+ 8: 00007FF7BF646624 
+ 9: 00007FF7BF64694F 
+10: 00007FF7BF65571B 
+11: 00007FF7BF62AB0B 
+12: 00007FF7BF6A2C76 
+13: 00007FF7BF6A1990 
+14: 00007FF7BF69F78A 
+15: 00007FF7BFDC376F 
+16: 00007FF7BF6A126B 
+17: 00007FF7C0630C5F 
+18: 00007FF7BF152E0E 
+19: 00007FF7BFEA4A36 
+20: 00007FF7C1105A73 
+21: 00007FF83851E957 
+22: 00007FF8395E7C1C 
+error: script "dev" exited with code 134
+update [39m[2m/src/components/ui/checkbox.tsx, /src/index.css[22m
+[2m12:24:01 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/DocumentsView.tsx[2m12:24:02 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/AdminPages.tsx, /src/index.css[22m
+[2m12:24:02 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/AdminDashboard.tsx, /src/pages/admin/dashboard/Charts.tsx[22m
+[2m12:24:02 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/VersionHistoryDialog.tsx, /src/index.css[22m
+[2m12:24:02 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/FinanceCoordinatorLayout.tsx, /src/index.css[22m
+[2m12:24:02 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/ExaminationOfficerLayout.tsx, /src/i[2m12:24:03 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: UNKNOWN: unknown error, open 'D:\AccreditPro\products\accreditpro-ai-powered-data-intelligence-platform\accreditpro-central-repository-system\src\components\layout\Header.tsx'[39m
+      at async open (node:internal/fs/promises:640:25)
+      at async Object.readFile (node:internal/fs/promises:1287:14)
+      at async loadAndTransform (file:///D:/AccreditPro/products/accreditpro-ai-powered-data-intelligence-platform/accreditpro-central-repository-system/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51925:16)
+      at async viteTransformMiddleware (file:///D:/AccreditPro/products/accreditpro-ai-powered-data-intelligence-platform/accreditpro-central-repository-system/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+[2m12:25:32 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/academic-repository/components/RepositoryTabContent.tsx, /src/index.css[22m
+[2m12:25:34 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/layouts/AppLayout.tsx, /src/pages/admin/AdminDashboard.tsx, /src/pages/admin/institutions/InstitutionsPage.tsx, /src/pages/admin/templates/TemplatesPage.tsx, /src/pages/admin/institutions/create/CreateInstitutionPage.tsx, /src/pages/academic-repository/AcademicRepositoryPage.tsx, /src/pages/department-repository/DepartmentRepositoryPage.tsx, /src/components/layout/NotificationPanel.tsx, /src/components/layout/Sidebar.tsx, /src/components/ui/avatar.tsx, /src/components/ui/button.tsx, /src/components/ui/scroll-area.tsx, /src/components/ui/badge.tsx, /src/components/ui/input.tsx, /src/components/ui/card.tsx, /src/components/ui/label.tsx, /src/pages/admin/dashboard/StatCards.tsx, /src/pages/admin/dashboard/TopInstitutionsTable.tsx, /src/pages/admin/dashboard/RecentActivities.tsx, /src/pages/admin/dashboard/ErrorState.tsx, /src/components/ui/dropdown-menu.tsx, /src/components/ui/progress.tsx, /src/components/ui/alert-dialog.tsx, /src/components/ui/dialog.tsx, /src/components/shared/DataTable.tsx, /src/components/ui/sheet.tsx, /src/components/ui/textarea.tsx, /src/pages/admin/institutions/create/steps/BasicInfoStep.tsx, /src/pages/department/DataModuleView.tsx, /src/pages/department/DepartmentDashboard.tsx, /src/pages/department/CSVUploadEngine.tsx, /src/pages/admin/analytics/Charts.tsx, /src/pages/department/DepartmentAnalytics.tsx, /src/pages/admin/analytics/StatCards.tsx, /src/pages/admin/analytics/RecentActivity.tsx, /src/components/ui/select.tsx, /src/pages/academic-repository/components/RepositoryKPICards.tsx, /src/pages/academic-repository/components/AnalyticsPanel.tsx, /src/pages/department-repository/components/RepositoryDashboard.tsx, /src/pages/department-repository/components/RepositoryWorkspace.tsx, /src/pages/department-repository/components/UploadHistoryView.tsx, /src/pages/department-repository/components/VerificationStatusView.tsx, /src/components/ui/table.tsx, /src/components/ui/switch.tsx, /src/pages/academic-repository/components/CSVUploadDialog.tsx, /src/pages/department-repository/components/RepositoryTabContent.tsx, /src/pages/department-repository/components/AcademicCalendarModule.tsx, /src/pages/department-repository/components/FacultyProfileModule.tsx, /src/pages/department-repository/components/AddOnProgramsModule.tsx, /src/pages/department-repository/components/AcademicTimetableModule.tsx, /src/pages/department-repository/components/FacultyQualificationModule.tsx, /src/pages/department-repository/components/FacultyEmploymentModule.tsx, /src/pages/department-repository/components/ValueAddedCoursesModule.tsx, /src/pages/department-repository/components/FacultyProfessionPracticeModule.tsx, /src/pages/department-repository/components/StudentRepositoryModule.tsx, /src/pages/department-repository/components/FacultyEvidenceModule.tsx, /src/pages/department-repository/components/ResearchModule.tsx, /src/pages/department-repository/components/StudentDevOutcomesModule.tsx, /src/components/ui/date-picker.tsx, /src/components/ui/time-picker.tsx, /src/pages/department-repository/components/CSVUploadDialog.tsx, /src/components/ui/calendar.tsx, /src/components/ui/popover.tsx, /src/components/ui/separator.tsx, /src/components/ui/form.tsx, /src/components/ui/checkbox.tsx, /src/components/ui/alert.tsx, /src/components/ui/tabs.tsx, /src/pages/infrastructure-repository/InfrastructureRepositoryPage.tsx, /src/pages/department-repository/components/DocumentsView.tsx, /src/components/ui/tooltip.tsx, /src/components/ui/skeleton.tsx, /src/pages/institution-admin/governance/GovernancePage.tsx, /src/pages/department-repository/components/CoursesModule.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/Sidebar.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AuthLayout.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css, /src/layouts/HODLayout.tsx, /src/layouts/PrincipalLayout.tsx, /src/components/layout/ThemeToggle.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department/CSVUploadEngine.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department/DataModuleView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/textarea.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/button.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/AcademicStructurePage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/PreviewDrawer.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/finance-repository/FinanceRepositoryPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/NotificationPanel.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/PrincipalDashboardPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/tpo-repository/components/TPODashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/tpo-repository/components/TPODocumentsView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/InstitutionProfilePage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/academic-repository/components/CSVUploadDialog.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/finance-repository/components/FinanceDashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/RepositoryReadiness.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/department-repository/DepartmentRepositoryPage.tsx, /src/pages/department-repository/components/RepositoryDashboard.tsx, /src/pages/department-repository/components/RepositoryWorkspace.tsx, /src/pages/department-repository/components/UploadHistoryView.tsx, /src/pages/department-repository/components/VerificationStatusView.tsx, /src/pages/department-repository/components/ProfileView.tsx, /src/pages/department-repository/components/RepositoryTabContent.tsx, /src/pages/department-repository/components/StudentRepositoryModule.tsx, /src/pages/department-repository/components/ResearchModule.tsx, /src/pages/department-repository/components/StudentDevOutcomesModule.tsx, /src/pages/department-repository/components/CSVUploadDialog.tsx, /src/pages/department-repository/components/DocumentsView.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/components/ExecutiveModules.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/academic-repository/components/AnalyticsPanel.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/examination-repository/ExaminationRepositoryPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/scroll-area.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/components/InstitutionOverview.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/finance-repository/components/FinanceDocumentsView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/CSVUploadDialog.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/institutions/create/steps/AcademicConfigStep.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/institutions/create/steps/BasicInfoStep.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/student-development-repository/StudentDevelopmentRepositoryPage.tsx, /src/pages/student-development-repository/components/StudentDevelopmentDocumentsView.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/ResearchModule.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/EvidenceRepositoryEngine.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/institutions/create/CreateInstitutionPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/UploadHistoryView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m12:25:49 pm[22m [36m[1m[vite][22m[39m server restarted.
+ pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/InstitutionDashboard.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/analytics/RecentActivity.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/ApprovalQueue.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/ThemeToggle.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/ActivityTimeline.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/UploadDialog.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/DepartmentAnalytics.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/combobox.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/governance/GovernancePage.tsx[22m
+[2m12:25:35 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/AcademicStructurePage.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/student-development-repository/StudentDevelopmentRepositoryPage.tsx, /src/pages/student-development-repository/components/StudentDevelopmentDocumentsView.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/supporting-documents/SupportingDocumentsPage.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/examination-repository/components/ExaminationDocumentsView.tsx[22m
+[2m12:25:45 pm[22m [36m[1m[vite][22m[39m server restarted.
+[2m12:27:00 pm[22m [36m[1m[vite][22m[39m [32mprerender/blog-routes.js changed, restarting server...[39m
+X [ERROR] Cannot read directory "../../../..": Insufficient system resources exist to complete the requested service.
+
+X [ERROR] Could not resolve "D:\\AccreditPro\\products\\accreditpro-ai-powered-data-intelligence-platform\\accreditpro-central-repository-system\\vite.config.ts"
+
+[31mfailed to load config from D:\AccreditPro\products\accreditpro-ai-powered-data-intelligence-platform\accreditpro-central-repository-system\vite.config.ts[39m
+[2m12:27:01 pm[22m [31m[1m[vite][22m[39m Build failed with 2 errors:
+error: Cannot read directory "../../../..": Insufficient system resources exist to complete the requested service.
+error: Could not resolve "D:\\AccreditPro\\products\\accreditpro-ai-powered-data-intelligence-platform\\accreditpro-central-repository-system\\vite.config.ts"
+[2m12:27:01 pm[22m [31m[1m[vite][22m[39m server restart failed
+atar.tsx, /src/components/ui/scroll-area.tsx, /src/components/ui/badge.tsx, /src/pages/admin/dashboard/TopInstitutionsTable.tsx, /src/pages/admin/dashboard/RecentActivities.tsx, /src/pages/admin/dashboard/ErrorState.tsx, /src/components/ui/input.tsx, /src/components/ui/label.tsx, /src/components/ui/card.tsx, /src/components/ui/alert.tsx, /src/components/ui/checkbox.tsx, /src/components/ui/progress.tsx, /src/components/ui/dropdown-menu.tsx, /src/components/shared/DataTable.tsx, /src/components/ui/alert-dialog.tsx, /src/pages/admin/institutions/create/steps/BasicInfoStep.tsx, /src/components/ui/form.tsx, /src/components/ui/dialog.tsx, /src/pages/admin/analytics/StatCards.tsx, /src/pages/admin/analytics/RecentActivity.tsx, /src/pages/admin/analytics/Charts.tsx, /src/components/ui/select.tsx, /src/pages/department/DepartmentAnalytics.tsx, /src/pages/department/CSVUploadEngine.tsx, /src/pages/department/DataModuleView.tsx, /src/components/ui/textarea.tsx, /src/components/ui/separator.tsx, /src/pages/department/DepartmentDashboard.tsx, /src/components/ui/sheet.tsx, /src/pages/academic-repository/components/AnalyticsPanel.tsx, /src/components/ui/tabs.tsx, /src/pages/academic-repository/components/RepositoryKPICards.tsx, /src/pages/academic-repository/components/RepositoryTabContent.tsx, /src/pages/department-repository/components/RepositoryWorkspace.tsx, /src/pages/department-repository/components/DocumentsView.tsx, /src/pages/department-repository/components/RepositoryDashboard.tsx, /src/pages/department-repository/components/VerificationStatusView.tsx, /src/components/ui/table.tsx, /src/pages/department-repository/components/UploadHistoryView.tsx, /src/components/ui/switch.tsx, /src/pages/institution-admin/governance/GovernancePage.tsx, /src/components/ui/tooltip.tsx, /src/components/ui/skeleton.tsx, /src/pages/academic-repository/components/CSVUploadDialog.tsx, /src/pages/department-repository/components/CoursesModule.tsx, /src/pages/department-repository/components/RepositoryTabContent.tsx, /src/pages/department-repository/components/AcademicCalendarModule.tsx, /src/pages/department-repository/components/ValueAddedCoursesModule.tsx, /src/pages/department-repository/components/AddOnProgramsModule.tsx, /src/pages/department-repository/components/AcademicTimetableModule.tsx, /src/pages/department-repository/components/FacultyProfileModule.tsx, /src/pages/department-repository/components/FacultyEmploymentModule.tsx, /src/pages/department-repository/components/FacultyQualificationModule.tsx, /src/pages/department-repository/components/FacultyProfessionPracticeModule.tsx, /src/pages/department-repository/components/StudentRepositoryModule.tsx, /src/pages/department-repository/components/FacultyEvidenceModule.tsx, /src/pages/department-repository/components/ResearchModule.tsx, /src/pages/department-repository/components/StudentDevOutcomesModule.tsx, /src/components/ui/date-picker.tsx, /src/components/ui/time-picker.tsx, /src/pages/department-repository/components/CSVUploadDialog.tsx, /src/components/ui/calendar.tsx, /src/components/ui/popover.tsx[22m
+[2m12:25:36 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/blog-routes.tsx[22m
+[2m12:25:36 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/skeleton.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pages/AuthError.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/pagination.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/ExaminationOfficerLayout.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/lib/config.ts[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/pages/department/types.ts[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AppLayout.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/accordion.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/admin/institutions/InstitutionsPage.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/aspect-ratio.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department/DataModuleView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/EvidenceReview.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/sonner.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/ActivityTimeline.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/dropdown-menu.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/VersionHistoryDialog.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/RepositoryReadiness.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/UploadHistoryView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/components/ExecutiveDashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/admin/institutions/create/steps/BasicInfoStep.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/AddOnProgramsModule.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/academic-repository/components/RepositoryKPICards.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css, /src/routes/ProtectedRoute.tsx, /src/layouts/PrincipalLayout.tsx, /src/layouts/HODLayout.tsx, /src/routes/PublicRoute.tsx, /src/components/layout/Sidebar.tsx, /src/components/layout/Header.tsx, /src/components/layout/UserProfileMenu.tsx, /src/components/layout/ThemeToggle.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AuthLayout.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/RepositoryDashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/form.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/academic-repository/components/RepositoryTabContent.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/evidence-repository/EvidenceRepositoryEngine.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/institution-admin/InstitutionDashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/popover.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/toggle.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/DepartmentRepositoryPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/PrincipalDashboardPage.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/scroll-area.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/principal-dashboard/components/InstitutionOverview.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/hod-dashboard/components/DepartmentAnalytics.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/institution-admin/supporting-documents/SupportingDocumentsPage.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ui/collapsible.tsx[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/department-repository/components/VerificationStatusView.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/infrastructure-repository/components/InfrastructureDashboard.tsx, /src/index.css[22m
+[2m12:25:37 pm[22m [36m[1m[vite][22m[39m server restarted.
+
+<--- Last few GCs --->
+
+[21208:00000212F8A77000]  1329610 ms: Scavenge 170.4 (175.6) -> 169.5 (176.6) MB, pooled: 6 MB, 0.31 / 0.00 ms  (average mu = 0.990, current mu = 0.957) allocation failure; 
+[21208:00000212F8A77000]  1330216 ms: Scavenge 170.3 (176.6) -> 169.5 (176.6) MB, pooled: 6 MB, 0.24 / 0.00 ms  (average mu = 0.990, current mu = 0.957) task; 
+[21208:00000212F8A77000]  1330818 ms: Scavenge 170.5 (176.6) -> 169.6 (176.6) MB, pooled: 6 MB, 0.33 / 0.00 ms  (average mu = 0.990, current mu = 0.957) allocation failure; 
+
+FATAL ERROR: Zone Allocation failed - process out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7BF20403F 
+ 2: 00007FF7BFE4FAA7 
+ 3: 00007FF7BF7C9986 
+ 4: 00007FF7BF38AD33 
+ 5: 00007FF7C0B8BA0A 
+ 6: 00007FF7C0BA6535 
+ 7: 00007FF7C0B6703E 
+ 8: 00007FF7C0B639AA 
+ 9: 00007FF7C0B60527 
+10: 00007FF7C0B60099 
+11: 00007FF7C0B5FB54 
+12: 00007FF7C0B5EFAF 
+13: 00007FF7C0B5EC2E 
+14: 00007FF7C084C726 
+15: 00007FF7C08438D8 
+16: 00007FF7C0842DE0 
+17: 00007FF7BFDC376F 
+18: 00007FF7BFD887FD 
+19: 00007FF7BFD884F5 
+20: 00007FF7C0630C5F 
+21: 00007FF7BF152E0E 
+22: 00007FF7BFEA4A36 
+23: 00007FF7C1105A73 
+24: 00007FF83851E957 BaseThreadInitThunk+23
+25: 00007FF8395E7C1C RtlUserThreadStart+44
+error: script "dev" exited with code 134

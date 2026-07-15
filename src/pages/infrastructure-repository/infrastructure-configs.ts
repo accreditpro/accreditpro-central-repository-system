@@ -1,0 +1,776 @@
+import { RepositoryModuleConfig, RepositoryTabConfig, RepositorySummary } from '../department-repository/types';
+
+// ============ INFRASTRUCTURE REPOSITORY CONFIGURATION ============
+
+export const infrastructureCoordinatorContext = {
+  name: 'Mr. Rajesh Kumar',
+  role: 'Infrastructure Coordinator',
+  institution: 'Malla Reddy College of Engineering & Technology',
+  department: 'Infrastructure & Facilities',
+};
+
+// Buildings Tab
+const buildingsTab: RepositoryTabConfig = {
+  id: 'buildings',
+  label: 'Buildings',
+  icon: 'Building2',
+  fields: [
+    { key: 'buildingName', label: 'Building Name', type: 'text', required: true, csvColumn: 'Building Name' },
+    { key: 'buildingCode', label: 'Building Code', type: 'text', required: true, csvColumn: 'Building Code' },
+    { key: 'buildingType', label: 'Building Type', type: 'select', required: true, csvColumn: 'Building Type', selectOptions: ['Academic', 'Administrative', 'Hostel', 'Library', 'Workshop', 'Auditorium', 'Sports', 'Other'] },
+    { key: 'constructionYear', label: 'Construction Year', type: 'number', required: true, csvColumn: 'Construction Year' },
+    { key: 'numberOfFloors', label: 'Number of Floors', type: 'number', required: true, csvColumn: 'Number of Floors' },
+    { key: 'builtUpArea', label: 'Built-up Area (Sq. m)', type: 'number', required: true, csvColumn: 'Built-up Area (Sq. m)' },
+    { key: 'usage', label: 'Usage', type: 'text', required: true, csvColumn: 'Usage' },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Under Construction', 'Decommissioned'] },
+    { key: 'accessibilityAvailable', label: 'Accessibility Available', type: 'select', required: true, csvColumn: 'Accessibility Available', selectOptions: ['Yes', 'No', 'Partial'] },
+    { key: 'fireSafetyAvailable', label: 'Fire Safety Available', type: 'select', required: true, csvColumn: 'Fire Safety Available', selectOptions: ['Yes', 'No', 'Partial'] },
+  ],
+  requiredEvidence: ['Building Plan', 'Occupancy Certificate', 'Fire Safety Certificate', 'Photographs', 'Approval Documents'],
+  validationRules: [
+    'Building Name is required',
+    'Building Code must be unique',
+    'Construction Year must be valid',
+    'Built-up Area must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_buildings_template.csv',
+};
+
+// Classrooms Tab
+const classroomsTab: RepositoryTabConfig = {
+  id: 'classrooms',
+  label: 'Classrooms',
+  icon: 'School',
+  fields: [
+    { key: 'roomNumber', label: 'Room Number', type: 'text', required: true, csvColumn: 'Room Number' },
+    { key: 'building', label: 'Building', type: 'text', required: true, csvColumn: 'Building' },
+    { key: 'department', label: 'Department', type: 'text', required: true, csvColumn: 'Department' },
+    { key: 'roomType', label: 'Room Type', type: 'select', required: true, csvColumn: 'Room Type', selectOptions: ['Regular', 'Smart Classroom', 'Tutorial Room', 'Drawing Hall', 'Seminar Room'] },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'smartClassroom', label: 'Smart Classroom', type: 'select', required: true, csvColumn: 'Smart Classroom', selectOptions: ['Yes', 'No'] },
+    { key: 'projectorAvailable', label: 'Projector Available', type: 'select', required: true, csvColumn: 'Projector Available', selectOptions: ['Yes', 'No'] },
+    { key: 'internetAvailable', label: 'Internet Available', type: 'select', required: true, csvColumn: 'Internet Available', selectOptions: ['Yes', 'No'] },
+    { key: 'airConditioned', label: 'Air Conditioned', type: 'select', required: true, csvColumn: 'Air Conditioned', selectOptions: ['Yes', 'No'] },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive'] },
+  ],
+  requiredEvidence: ['Room Photographs', 'Asset Register', 'Room Allocation'],
+  validationRules: [
+    'Room Number is required',
+    'Building must exist in Buildings repository',
+    'Department must exist in master data',
+    'Capacity must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_classrooms_template.csv',
+};
+
+// Laboratories Tab
+const laboratoriesTab: RepositoryTabConfig = {
+  id: 'laboratories',
+  label: 'Laboratories',
+  icon: 'FlaskConical',
+  fields: [
+    { key: 'laboratoryName', label: 'Laboratory Name', type: 'text', required: true, csvColumn: 'Laboratory Name' },
+    { key: 'department', label: 'Department', type: 'text', required: true, csvColumn: 'Department' },
+    { key: 'program', label: 'Program', type: 'text', required: true, csvColumn: 'Program' },
+    { key: 'laboratoryType', label: 'Laboratory Type', type: 'select', required: true, csvColumn: 'Laboratory Type', selectOptions: ['Hardware', 'Software', 'Research', 'Workshop', 'Language', 'Science'] },
+    { key: 'area', label: 'Area (Sq. m)', type: 'number', required: true, csvColumn: 'Area' },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'numberOfWorkstations', label: 'Number of Workstations', type: 'number', required: true, csvColumn: 'Number of Workstations' },
+    { key: 'softwareAvailable', label: 'Software Available', type: 'select', required: true, csvColumn: 'Software Available', selectOptions: ['Yes', 'No'] },
+    { key: 'internetAvailable', label: 'Internet Available', type: 'select', required: true, csvColumn: 'Internet Available', selectOptions: ['Yes', 'No'] },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive'] },
+  ],
+  requiredEvidence: ['Lab Layout', 'Lab Photographs', 'Lab Manuals', 'Safety Certificate', 'Equipment List'],
+  validationRules: [
+    'Laboratory Name is required',
+    'Department must exist in master data',
+    'Program must exist in master data',
+    'Capacity must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_laboratories_template.csv',
+};
+
+// Equipment Tab
+const equipmentTab: RepositoryTabConfig = {
+  id: 'equipment',
+  label: 'Equipment',
+  icon: 'Wrench',
+  fields: [
+    { key: 'equipmentName', label: 'Equipment Name', type: 'text', required: true, csvColumn: 'Equipment Name' },
+    { key: 'equipmentCode', label: 'Equipment Code', type: 'text', required: true, csvColumn: 'Equipment Code' },
+    { key: 'laboratory', label: 'Laboratory', type: 'text', required: true, csvColumn: 'Laboratory' },
+    { key: 'manufacturer', label: 'Manufacturer', type: 'text', required: true, csvColumn: 'Manufacturer' },
+    { key: 'purchaseDate', label: 'Purchase Date', type: 'date', required: true, csvColumn: 'Purchase Date' },
+    { key: 'cost', label: 'Cost', type: 'number', required: true, csvColumn: 'Cost' },
+    { key: 'warrantyExpiry', label: 'Warranty Expiry', type: 'date', required: false, csvColumn: 'Warranty Expiry' },
+    { key: 'workingStatus', label: 'Working Status', type: 'select', required: true, csvColumn: 'Working Status', selectOptions: ['Working', 'Not Working', 'Under Repair', 'Condemned'] },
+    { key: 'calibrationRequired', label: 'Calibration Required', type: 'select', required: true, csvColumn: 'Calibration Required', selectOptions: ['Yes', 'No'] },
+    { key: 'calibrationDate', label: 'Calibration Date', type: 'date', required: false, csvColumn: 'Calibration Date' },
+  ],
+  requiredEvidence: ['Invoice', 'Warranty Card', 'Calibration Certificate', 'AMC Document', 'Photograph'],
+  validationRules: [
+    'Equipment Name is required',
+    'Equipment Code must be unique',
+    'Laboratory must exist in Laboratories repository',
+    'Purchase Date must be valid',
+    'Cost must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_equipment_template.csv',
+};
+
+// Library Tab
+const libraryTab: RepositoryTabConfig = {
+  id: 'library',
+  label: 'Library',
+  icon: 'BookOpen',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'text', required: true, csvColumn: 'Academic Year' },
+    { key: 'books', label: 'Books', type: 'number', required: true, csvColumn: 'Books' },
+    { key: 'journals', label: 'Journals', type: 'number', required: true, csvColumn: 'Journals' },
+    { key: 'eBooks', label: 'E-Books', type: 'number', required: true, csvColumn: 'E-Books' },
+    { key: 'eJournals', label: 'E-Journals', type: 'number', required: true, csvColumn: 'E-Journals' },
+    { key: 'digitalLibraryAvailable', label: 'Digital Library Available', type: 'select', required: true, csvColumn: 'Digital Library Available', selectOptions: ['Yes', 'No'] },
+    { key: 'readingCapacity', label: 'Reading Capacity', type: 'number', required: true, csvColumn: 'Reading Capacity' },
+    { key: 'librarySoftware', label: 'Library Software', type: 'text', required: false, csvColumn: 'Library Software' },
+    { key: 'libraryAutomation', label: 'Library Automation', type: 'select', required: true, csvColumn: 'Library Automation', selectOptions: ['Fully Automated', 'Partially Automated', 'Manual'] },
+    { key: 'workingHours', label: 'Working Hours', type: 'text', required: true, csvColumn: 'Working Hours' },
+  ],
+  requiredEvidence: ['Library Register', 'Subscription Receipts', 'Library Photographs', 'Library Automation Report'],
+  validationRules: [
+    'Academic Year must exist in master data',
+    'Books count must be a positive number',
+    'Reading Capacity must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_library_template.csv',
+};
+
+// ICT Infrastructure Tab
+const ictInfrastructureTab: RepositoryTabConfig = {
+  id: 'ict-infrastructure',
+  label: 'ICT Infrastructure',
+  icon: 'Monitor',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'text', required: true, csvColumn: 'Academic Year' },
+    { key: 'desktopComputers', label: 'Desktop Computers', type: 'number', required: true, csvColumn: 'Desktop Computers' },
+    { key: 'laptops', label: 'Laptops', type: 'number', required: true, csvColumn: 'Laptops' },
+    { key: 'servers', label: 'Servers', type: 'number', required: true, csvColumn: 'Servers' },
+    { key: 'networkSwitches', label: 'Network Switches', type: 'number', required: true, csvColumn: 'Network Switches' },
+    { key: 'wifiAccessPoints', label: 'WiFi Access Points', type: 'number', required: true, csvColumn: 'WiFi Access Points' },
+    { key: 'internetBandwidth', label: 'Internet Bandwidth (Mbps)', type: 'number', required: true, csvColumn: 'Internet Bandwidth (Mbps)' },
+    { key: 'licensedSoftware', label: 'Licensed Software', type: 'number', required: true, csvColumn: 'Licensed Software' },
+    { key: 'erpAvailable', label: 'ERP Available', type: 'select', required: true, csvColumn: 'ERP Available', selectOptions: ['Yes', 'No'] },
+    { key: 'cloudServices', label: 'Cloud Services', type: 'select', required: true, csvColumn: 'Cloud Services', selectOptions: ['Yes', 'No'] },
+    { key: 'backupFacility', label: 'Backup Facility', type: 'select', required: true, csvColumn: 'Backup Facility', selectOptions: ['Yes', 'No'] },
+  ],
+  requiredEvidence: ['Internet Bills', 'Network Diagram', 'Software Licenses', 'Server Inventory'],
+  validationRules: [
+    'Academic Year must exist in master data',
+    'All numeric fields must be positive numbers',
+    'Internet Bandwidth must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_ict_template.csv',
+};
+
+// Hostels Tab
+const hostelsTab: RepositoryTabConfig = {
+  id: 'hostels',
+  label: 'Hostels',
+  icon: 'Home',
+  fields: [
+    { key: 'hostelName', label: 'Hostel Name', type: 'text', required: true, csvColumn: 'Hostel Name' },
+    { key: 'hostelType', label: 'Hostel Type', type: 'select', required: true, csvColumn: 'Hostel Type', selectOptions: ['Boys', 'Girls', 'Staff'] },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'occupied', label: 'Occupied', type: 'number', required: true, csvColumn: 'Occupied' },
+    { key: 'rooms', label: 'Rooms', type: 'number', required: true, csvColumn: 'Rooms' },
+    { key: 'wardens', label: 'Wardens', type: 'number', required: true, csvColumn: 'Wardens' },
+    { key: 'diningFacility', label: 'Dining Facility', type: 'select', required: true, csvColumn: 'Dining Facility', selectOptions: ['Yes', 'No'] },
+    { key: 'wifiAvailable', label: 'WiFi Available', type: 'select', required: true, csvColumn: 'WiFi Available', selectOptions: ['Yes', 'No'] },
+    { key: 'medicalFacility', label: 'Medical Facility', type: 'select', required: true, csvColumn: 'Medical Facility', selectOptions: ['Yes', 'No'] },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive'] },
+  ],
+  requiredEvidence: ['Hostel Register', 'Occupancy Report', 'Photographs'],
+  validationRules: [
+    'Hostel Name is required',
+    'Capacity must be a positive number',
+    'Occupied cannot exceed Capacity',
+    'Rooms must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_hostels_template.csv',
+};
+
+// Sports Facilities Tab
+const sportsFacilitiesTab: RepositoryTabConfig = {
+  id: 'sports-facilities',
+  label: 'Sports Facilities',
+  icon: 'Trophy',
+  fields: [
+    { key: 'facilityName', label: 'Facility Name', type: 'text', required: true, csvColumn: 'Facility Name' },
+    { key: 'indoorOutdoor', label: 'Indoor/Outdoor', type: 'select', required: true, csvColumn: 'Indoor/Outdoor', selectOptions: ['Indoor', 'Outdoor'] },
+    { key: 'area', label: 'Area (Sq. m)', type: 'number', required: true, csvColumn: 'Area' },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'equipmentAvailable', label: 'Equipment Available', type: 'select', required: true, csvColumn: 'Equipment Available', selectOptions: ['Yes', 'No', 'Partial'] },
+    { key: 'coachAvailable', label: 'Coach Available', type: 'select', required: true, csvColumn: 'Coach Available', selectOptions: ['Yes', 'No'] },
+    { key: 'usage', label: 'Usage', type: 'text', required: true, csvColumn: 'Usage' },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive'] },
+  ],
+  requiredEvidence: ['Photographs', 'Ground Layout', 'Sports Inventory'],
+  validationRules: [
+    'Facility Name is required',
+    'Area must be a positive number',
+    'Capacity must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_sports_template.csv',
+};
+
+// Seminar Halls & Auditoriums Tab
+const seminarHallsTab: RepositoryTabConfig = {
+  id: 'seminar-halls',
+  label: 'Seminar Halls & Auditoriums',
+  icon: 'Presentation',
+  fields: [
+    { key: 'hallName', label: 'Hall Name', type: 'text', required: true, csvColumn: 'Hall Name' },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'airConditioned', label: 'Air Conditioned', type: 'select', required: true, csvColumn: 'Air Conditioned', selectOptions: ['Yes', 'No'] },
+    { key: 'audioSystem', label: 'Audio System', type: 'select', required: true, csvColumn: 'Audio System', selectOptions: ['Yes', 'No'] },
+    { key: 'projector', label: 'Projector', type: 'select', required: true, csvColumn: 'Projector', selectOptions: ['Yes', 'No'] },
+    { key: 'smartDisplay', label: 'Smart Display', type: 'select', required: true, csvColumn: 'Smart Display', selectOptions: ['Yes', 'No'] },
+    { key: 'internet', label: 'Internet', type: 'select', required: true, csvColumn: 'Internet', selectOptions: ['Yes', 'No'] },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive'] },
+  ],
+  requiredEvidence: ['Photographs', 'Asset Register', 'Usage Register'],
+  validationRules: [
+    'Hall Name is required',
+    'Capacity must be a positive number',
+  ],
+  templateFile: '/templates/infrastructure_seminar_halls_template.csv',
+};
+
+// Transport Tab
+const transportTab: RepositoryTabConfig = {
+  id: 'transport',
+  label: 'Transport',
+  icon: 'Bus',
+  fields: [
+    { key: 'vehicleNumber', label: 'Vehicle Number', type: 'text', required: true, csvColumn: 'Vehicle Number' },
+    { key: 'vehicleType', label: 'Vehicle Type', type: 'select', required: true, csvColumn: 'Vehicle Type', selectOptions: ['Bus', 'Mini Bus', 'Van', 'Car', 'Ambulance', 'Other'] },
+    { key: 'capacity', label: 'Capacity', type: 'number', required: true, csvColumn: 'Capacity' },
+    { key: 'yearOfPurchase', label: 'Year of Purchase', type: 'number', required: true, csvColumn: 'Year of Purchase' },
+    { key: 'route', label: 'Route', type: 'text', required: true, csvColumn: 'Route' },
+    { key: 'driverName', label: 'Driver Name', type: 'text', required: true, csvColumn: 'Driver Name' },
+    { key: 'fitnessValidity', label: 'Fitness Validity', type: 'date', required: true, csvColumn: 'Fitness Validity' },
+    { key: 'insuranceValidity', label: 'Insurance Validity', type: 'date', required: true, csvColumn: 'Insurance Validity' },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Under Maintenance', 'Inactive', 'Condemned'] },
+  ],
+  requiredEvidence: ['RC Book', 'Insurance', 'Fitness Certificate', 'Photographs'],
+  validationRules: [
+    'Vehicle Number is required and must be unique',
+    'Capacity must be a positive number',
+    'Fitness Validity must be a valid date',
+    'Insurance Validity must be a valid date',
+  ],
+  templateFile: '/templates/infrastructure_transport_template.csv',
+};
+
+// ============ GREEN CAMPUS & SUSTAINABILITY MODULE ============
+
+// Green Campus Initiatives Tab
+const greenInitiativesTab: RepositoryTabConfig = {
+  id: 'green-initiatives',
+  label: 'Green Campus Initiatives',
+  icon: 'Leaf',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'initiativeName', label: 'Initiative Name', type: 'text', required: true, csvColumn: 'Initiative Name' },
+    { key: 'initiativeCategory', label: 'Initiative Category', type: 'select', required: true, csvColumn: 'Initiative Category', selectOptions: ['Solar', 'Rain Water Harvesting', 'Waste Management', 'Tree Plantation', 'Energy Conservation', 'Water Conservation', 'Plastic Free', 'Carbon Reduction', 'Other'] },
+    { key: 'description', label: 'Description', type: 'text', required: false, csvColumn: 'Description' },
+    { key: 'startDate', label: 'Start Date', type: 'date', required: true, csvColumn: 'Start Date' },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Planned', 'In Progress', 'Completed'] },
+    { key: 'responsibleDepartment', label: 'Responsible Department', type: 'select', required: true, csvColumn: 'Responsible Department', selectOptions: ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'Administration', 'Maintenance'] },
+  ],
+  requiredEvidence: ['Initiative Report', 'Approval Order', 'Progress Report', 'Photographs'],
+  validationRules: [
+    'Academic Year is required',
+    'Initiative Name is required',
+    'Initiative Category is required',
+    'Start Date must be a valid date',
+    'Status is required',
+  ],
+  templateFile: '/templates/green_initiatives_template.csv',
+};
+
+// Energy Management Tab
+const energyManagementTab: RepositoryTabConfig = {
+  id: 'energy-management',
+  label: 'Energy Management',
+  icon: 'Zap',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'electricityConsumption', label: 'Electricity Consumption (kWh)', type: 'number', required: true, csvColumn: 'Electricity Consumption (kWh)' },
+    { key: 'solarPowerCapacity', label: 'Solar Power Capacity (kW)', type: 'number', required: false, csvColumn: 'Solar Power Capacity (kW)' },
+    { key: 'renewableEnergyGenerated', label: 'Renewable Energy Generated (kWh)', type: 'number', required: false, csvColumn: 'Renewable Energy Generated (kWh)' },
+    { key: 'dgPowerConsumption', label: 'DG Power Consumption', type: 'number', required: false, csvColumn: 'DG Power Consumption' },
+  ],
+  requiredEvidence: ['Energy Audit', 'Electricity Bills', 'Installation Report', 'Generation Report', 'Fuel Records'],
+  validationRules: [
+    'Academic Year is required',
+    'Electricity Consumption must be a positive number',
+    'Solar Power Capacity must be a positive number if provided',
+  ],
+  templateFile: '/templates/energy_management_template.csv',
+};
+
+// Water Management Tab
+const waterManagementTab: RepositoryTabConfig = {
+  id: 'water-management',
+  label: 'Water Management',
+  icon: 'Droplets',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'waterSource', label: 'Water Source', type: 'select', required: true, csvColumn: 'Water Source', selectOptions: ['Borewell', 'Municipal', 'Tanker', 'River', 'Rain Water', 'Mixed'] },
+    { key: 'waterConsumption', label: 'Water Consumption (KL)', type: 'number', required: true, csvColumn: 'Water Consumption (KL)' },
+    { key: 'rainWaterHarvesting', label: 'Rain Water Harvesting', type: 'select', required: true, csvColumn: 'Rain Water Harvesting', selectOptions: ['Yes', 'No'] },
+    { key: 'stpAvailable', label: 'STP Available', type: 'select', required: false, csvColumn: 'STP Available', selectOptions: ['Yes', 'No'] },
+    { key: 'recycledWaterUsage', label: 'Recycled Water Usage (%)', type: 'number', required: false, csvColumn: 'Recycled Water Usage (%)' },
+  ],
+  requiredEvidence: ['Water Audit', 'Water Bills', 'Photographs', 'STP Report', 'Audit Report'],
+  validationRules: [
+    'Academic Year is required',
+    'Water Source is required',
+    'Water Consumption must be a positive number',
+    'Recycled Water Usage must be between 0 and 100',
+  ],
+  templateFile: '/templates/water_management_template.csv',
+};
+
+// Waste Management Tab
+const wasteManagementTab: RepositoryTabConfig = {
+  id: 'waste-management',
+  label: 'Waste Management',
+  icon: 'Trash2',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'wasteType', label: 'Waste Type', type: 'select', required: true, csvColumn: 'Waste Type', selectOptions: ['Solid', 'Liquid', 'E-Waste', 'Biomedical', 'Hazardous', 'Construction'] },
+    { key: 'disposalMethod', label: 'Disposal Method', type: 'select', required: true, csvColumn: 'Disposal Method', selectOptions: ['Recycle', 'Vendor', 'Compost', 'Incineration', 'Landfill', 'STP'] },
+    { key: 'quantity', label: 'Quantity', type: 'number', required: false, csvColumn: 'Quantity' },
+  ],
+  requiredEvidence: ['Waste Report', 'Disposal Records', 'Vendor Agreement', 'Disposal Register'],
+  validationRules: [
+    'Academic Year is required',
+    'Waste Type is required',
+    'Disposal Method is required',
+    'Quantity must be a positive number if provided',
+  ],
+  templateFile: '/templates/waste_management_template.csv',
+};
+
+// Green Audit Tab
+const greenAuditTab: RepositoryTabConfig = {
+  id: 'green-audit',
+  label: 'Green Audit',
+  icon: 'ClipboardCheck',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'auditConducted', label: 'Audit Conducted', type: 'select', required: true, csvColumn: 'Audit Conducted', selectOptions: ['Yes', 'No'] },
+    { key: 'auditAgency', label: 'Audit Agency', type: 'text', required: false, csvColumn: 'Audit Agency' },
+    { key: 'score', label: 'Score', type: 'number', required: false, csvColumn: 'Score' },
+  ],
+  requiredEvidence: ['Audit Certificate', 'Agreement', 'Audit Report'],
+  validationRules: [
+    'Academic Year is required',
+    'Audit Conducted is required',
+    'Score must be a positive number if provided',
+  ],
+  templateFile: '/templates/green_audit_template.csv',
+};
+
+// ============ SAFETY & SECURITY MODULE ============
+
+// Fire Safety Tab
+const fireSafetyTab: RepositoryTabConfig = {
+  id: 'fire-safety',
+  label: 'Fire Safety',
+  icon: 'Flame',
+  fields: [
+    { key: 'building', label: 'Building', type: 'select', required: true, csvColumn: 'Building', selectOptions: ['Main Block', 'Academic Block A', 'Academic Block B', 'Workshop Block', 'Library Block', 'Admin Block', 'Hostel Block A', 'Hostel Block B', 'Auditorium'] },
+    { key: 'fireExtinguishersCount', label: 'Fire Extinguishers Count', type: 'number', required: true, csvColumn: 'Fire Extinguishers Count' },
+    { key: 'fireAlarmAvailable', label: 'Fire Alarm Available', type: 'select', required: true, csvColumn: 'Fire Alarm Available', selectOptions: ['Yes', 'No'] },
+    { key: 'fireHydrantAvailable', label: 'Fire Hydrant Available', type: 'select', required: false, csvColumn: 'Fire Hydrant Available', selectOptions: ['Yes', 'No'] },
+    { key: 'lastInspectionDate', label: 'Last Inspection Date', type: 'date', required: true, csvColumn: 'Last Inspection Date' },
+    { key: 'nextDueDate', label: 'Next Due Date', type: 'date', required: true, csvColumn: 'Next Due Date' },
+  ],
+  requiredEvidence: ['Building Records', 'Fire Safety Register', 'AMC Report', 'Inspection Report', 'Inspection Certificate'],
+  validationRules: [
+    'Building is required',
+    'Fire Extinguishers Count must be a positive number',
+    'Fire Alarm Available is required',
+    'Last Inspection Date must be a valid date',
+    'Next Due Date must be after Last Inspection Date',
+  ],
+  templateFile: '/templates/fire_safety_template.csv',
+};
+
+// Security Infrastructure Tab
+const securityInfrastructureTab: RepositoryTabConfig = {
+  id: 'security-infrastructure',
+  label: 'Security Infrastructure',
+  icon: 'Camera',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'cctvCameras', label: 'CCTV Cameras', type: 'number', required: true, csvColumn: 'CCTV Cameras' },
+    { key: 'securityPersonnel', label: 'Security Personnel', type: 'number', required: true, csvColumn: 'Security Personnel' },
+    { key: 'entryControlSystem', label: 'Entry Control System', type: 'select', required: false, csvColumn: 'Entry Control System', selectOptions: ['Yes', 'No'] },
+    { key: 'visitorManagementSystem', label: 'Visitor Management System', type: 'select', required: false, csvColumn: 'Visitor Management System', selectOptions: ['Yes', 'No'] },
+  ],
+  requiredEvidence: ['Security Report', 'Inventory', 'HR Records', 'System Report'],
+  validationRules: [
+    'Academic Year is required',
+    'CCTV Cameras must be a positive number',
+    'Security Personnel must be a positive number',
+  ],
+  templateFile: '/templates/security_infrastructure_template.csv',
+};
+
+// Emergency Preparedness Tab
+const emergencyPreparednessTab: RepositoryTabConfig = {
+  id: 'emergency-preparedness',
+  label: 'Emergency Preparedness',
+  icon: 'AlertTriangle',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'disasterManagementPlan', label: 'Disaster Management Plan', type: 'select', required: true, csvColumn: 'Disaster Management Plan', selectOptions: ['Yes', 'No'] },
+    { key: 'mockDrillsConducted', label: 'Mock Drills Conducted', type: 'number', required: false, csvColumn: 'Mock Drills Conducted' },
+    { key: 'firstAidKits', label: 'First Aid Kits', type: 'number', required: true, csvColumn: 'First Aid Kits' },
+    { key: 'medicalRoomAvailable', label: 'Medical Room Available', type: 'select', required: true, csvColumn: 'Medical Room Available', selectOptions: ['Yes', 'No'] },
+  ],
+  requiredEvidence: ['Emergency Plan', 'Policy Document', 'Drill Report', 'Inventory', 'Photos'],
+  validationRules: [
+    'Academic Year is required',
+    'Disaster Management Plan is required',
+    'First Aid Kits must be a positive number',
+    'Medical Room Available is required',
+  ],
+  templateFile: '/templates/emergency_preparedness_template.csv',
+};
+
+// Insurance & Compliance Tab
+const insuranceComplianceTab: RepositoryTabConfig = {
+  id: 'insurance-compliance',
+  label: 'Insurance & Compliance',
+  icon: 'ShieldCheck',
+  fields: [
+    { key: 'policyName', label: 'Policy Name', type: 'text', required: true, csvColumn: 'Policy Name' },
+    { key: 'coverage', label: 'Coverage', type: 'text', required: true, csvColumn: 'Coverage' },
+    { key: 'startDate', label: 'Start Date', type: 'date', required: true, csvColumn: 'Start Date' },
+    { key: 'expiryDate', label: 'Expiry Date', type: 'date', required: true, csvColumn: 'Expiry Date' },
+    { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Expired'] },
+  ],
+  requiredEvidence: ['Policy Copy', 'Insurance Document'],
+  validationRules: [
+    'Policy Name is required',
+    'Coverage is required',
+    'Start Date must be a valid date',
+    'Expiry Date must be after Start Date',
+    'Status is required',
+  ],
+  templateFile: '/templates/insurance_compliance_template.csv',
+};
+
+// ============ UTILITIES MODULE ============
+
+// Power Infrastructure Tab
+const powerInfrastructureTab: RepositoryTabConfig = {
+  id: 'power-infrastructure',
+  label: 'Power Infrastructure',
+  icon: 'Zap',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'connectedLoad', label: 'Connected Load (kVA)', type: 'number', required: true, csvColumn: 'Connected Load (kVA)' },
+    { key: 'transformerCapacity', label: 'Transformer Capacity', type: 'number', required: false, csvColumn: 'Transformer Capacity' },
+    { key: 'dgSets', label: 'DG Sets', type: 'number', required: false, csvColumn: 'DG Sets' },
+    { key: 'upsCapacity', label: 'UPS Capacity (kVA)', type: 'number', required: false, csvColumn: 'UPS Capacity (kVA)' },
+    { key: 'powerBackupAvailable', label: 'Power Backup Available', type: 'select', required: true, csvColumn: 'Power Backup Available', selectOptions: ['Yes', 'No'] },
+  ],
+  requiredEvidence: ['Electricity Bills', 'Electrical Approval', 'Electrical Drawing', 'Inventory', 'Purchase Records', 'AMC'],
+  validationRules: [
+    'Academic Year is required',
+    'Connected Load must be a positive number',
+    'Power Backup Available is required',
+  ],
+  templateFile: '/templates/power_infrastructure_template.csv',
+};
+
+// Water Supply Tab
+const waterSupplyTab: RepositoryTabConfig = {
+  id: 'water-supply',
+  label: 'Water Supply',
+  icon: 'Droplets',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'waterSources', label: 'Water Sources', type: 'select', required: true, csvColumn: 'Water Sources', selectOptions: ['Borewell', 'Municipal', 'Tanker', 'Mixed'] },
+    { key: 'dailyCapacity', label: 'Daily Capacity (KL)', type: 'number', required: true, csvColumn: 'Daily Capacity (KL)' },
+    { key: 'storageCapacity', label: 'Storage Capacity (KL)', type: 'number', required: false, csvColumn: 'Storage Capacity (KL)' },
+  ],
+  requiredEvidence: ['Water Bills', 'Water Report', 'Water Records', 'Engineering Records'],
+  validationRules: [
+    'Academic Year is required',
+    'Water Sources is required',
+    'Daily Capacity must be a positive number',
+  ],
+  templateFile: '/templates/water_supply_template.csv',
+};
+
+// Internet & Network Tab
+const internetNetworkTab: RepositoryTabConfig = {
+  id: 'internet-network',
+  label: 'Internet & Network',
+  icon: 'Wifi',
+  fields: [
+    { key: 'academicYear', label: 'Academic Year', type: 'select', required: true, csvColumn: 'Academic Year', selectOptions: ['2024-25', '2023-24', '2022-23', '2021-22', '2020-21'] },
+    { key: 'ispName', label: 'ISP Name', type: 'text', required: true, csvColumn: 'ISP Name' },
+    { key: 'bandwidth', label: 'Bandwidth (Mbps)', type: 'number', required: true, csvColumn: 'Bandwidth (Mbps)' },
+    { key: 'wifiAccessPoints', label: 'WiFi Access Points', type: 'number', required: false, csvColumn: 'WiFi Access Points' },
+    { key: 'networkUptime', label: 'Network Uptime (%)', type: 'number', required: false, csvColumn: 'Network Uptime (%)' },
+  ],
+  requiredEvidence: ['ISP Bills', 'Agreement', 'ISP Invoice', 'Network Diagram', 'Monitoring Report'],
+  validationRules: [
+    'Academic Year is required',
+    'ISP Name is required',
+    'Bandwidth must be a positive number',
+    'Network Uptime must be between 0 and 100',
+  ],
+  templateFile: '/templates/internet_network_template.csv',
+};
+
+// Utility Assets Tab
+const utilityAssetsTab: RepositoryTabConfig = {
+  id: 'utility-assets',
+  label: 'Utility Assets',
+  icon: 'Settings',
+  fields: [
+    { key: 'assetName', label: 'Asset Name', type: 'text', required: true, csvColumn: 'Asset Name' },
+    { key: 'category', label: 'Category', type: 'select', required: true, csvColumn: 'Category', selectOptions: ['Generator', 'UPS', 'Transformer', 'Solar Panel', 'Water Pump', 'STP', 'Other'] },
+    { key: 'installationDate', label: 'Installation Date', type: 'date', required: false, csvColumn: 'Installation Date' },
+    { key: 'amcAvailable', label: 'AMC Available', type: 'select', required: false, csvColumn: 'AMC Available', selectOptions: ['Yes', 'No'] },
+    { key: 'operationalStatus', label: 'Operational Status', type: 'select', required: true, csvColumn: 'Operational Status', selectOptions: ['Active', 'Inactive'] },
+  ],
+  requiredEvidence: ['Asset Register', 'Inventory', 'Invoice', 'AMC Copy', 'Inspection Report'],
+  validationRules: [
+    'Asset Name is required',
+    'Category is required',
+    'Operational Status is required',
+  ],
+  templateFile: '/templates/utility_assets_template.csv',
+};
+
+// ============ INFRASTRUCTURE REPOSITORY MODULE CONFIG ============
+export const infrastructureRepositoryConfig: RepositoryModuleConfig = {
+  id: 'infrastructure',
+  label: 'Infrastructure Repository',
+  description: 'Manage institution-wide infrastructure and facilities data for accreditation',
+  icon: 'Building2',
+  color: 'text-emerald-600',
+  gradient: 'from-emerald-500 to-emerald-600',
+  tabs: [
+    buildingsTab,
+    classroomsTab,
+    laboratoriesTab,
+    equipmentTab,
+    libraryTab,
+    ictInfrastructureTab,
+    hostelsTab,
+    sportsFacilitiesTab,
+    seminarHallsTab,
+    transportTab,
+  ],
+};
+
+// ============ GREEN CAMPUS & SUSTAINABILITY MODULE CONFIG ============
+export const greenCampusRepositoryConfig: RepositoryModuleConfig = {
+  id: 'green-campus',
+  label: 'Green Campus & Sustainability',
+  description: 'Maintain institutional sustainability initiatives and environmental practices',
+  icon: 'Leaf',
+  color: 'text-green-600',
+  gradient: 'from-green-500 to-green-600',
+  tabs: [
+    greenInitiativesTab,
+    energyManagementTab,
+    waterManagementTab,
+    wasteManagementTab,
+    greenAuditTab,
+  ],
+};
+
+// ============ SAFETY & SECURITY MODULE CONFIG ============
+export const safetySecurityRepositoryConfig: RepositoryModuleConfig = {
+  id: 'safety-security',
+  label: 'Safety & Security',
+  description: 'Maintain all campus safety, emergency preparedness, security infrastructure, and compliance',
+  icon: 'ShieldCheck',
+  color: 'text-red-600',
+  gradient: 'from-red-500 to-red-600',
+  tabs: [
+    fireSafetyTab,
+    securityInfrastructureTab,
+    emergencyPreparednessTab,
+    insuranceComplianceTab,
+  ],
+};
+
+// ============ UTILITIES MODULE CONFIG ============
+export const utilitiesRepositoryConfig: RepositoryModuleConfig = {
+  id: 'utilities',
+  label: 'Utilities',
+  description: 'Maintain institution-wide utility infrastructure, capacity, consumption, and operational readiness',
+  icon: 'Settings',
+  color: 'text-amber-600',
+  gradient: 'from-amber-500 to-amber-600',
+  tabs: [
+    powerInfrastructureTab,
+    waterSupplyTab,
+    internetNetworkTab,
+    utilityAssetsTab,
+  ],
+};
+
+// ============ INFRASTRUCTURE SUPPORTING DOCUMENTS CATEGORIES ============
+export const infrastructureDocumentCategories = [
+  { id: 'campus-master-plan', label: 'Campus Master Plan', icon: 'Map', count: 3 },
+  { id: 'building-approval', label: 'Building Approval', icon: 'FileCheck', count: 8 },
+  { id: 'library-reports', label: 'Library Reports', icon: 'BookOpen', count: 4 },
+  { id: 'ict-reports', label: 'ICT Reports', icon: 'Monitor', count: 3 },
+  { id: 'calibration-certificates', label: 'Calibration Certificates', icon: 'Award', count: 12 },
+  { id: 'laboratory-safety', label: 'Laboratory Safety', icon: 'ShieldCheck', count: 6 },
+  { id: 'amc-documents', label: 'AMC Documents', icon: 'FileText', count: 8 },
+];
+
+// ============ GREEN CAMPUS SUPPORTING DOCUMENTS ============
+export const greenCampusDocumentCategories = [
+  { id: 'green-audit-report', label: 'Green Audit Report', icon: 'Leaf', count: 3 },
+  { id: 'energy-audit-report', label: 'Energy Audit Report', icon: 'Zap', count: 2 },
+  { id: 'environment-audit', label: 'Environment Audit', icon: 'Globe', count: 2 },
+  { id: 'water-audit', label: 'Water Audit', icon: 'Droplets', count: 1 },
+  { id: 'solar-installation', label: 'Solar Installation Certificate', icon: 'Sun', count: 2 },
+  { id: 'rain-water-harvesting', label: 'Rain Water Harvesting Photos', icon: 'CloudRain', count: 4 },
+  { id: 'waste-disposal', label: 'Waste Disposal Agreements', icon: 'Trash2', count: 3 },
+  { id: 'plantation-reports', label: 'Plantation Reports', icon: 'TreePine', count: 2 },
+  { id: 'environmental-policy', label: 'Environmental Policy', icon: 'FileText', count: 1 },
+];
+
+// ============ SAFETY & SECURITY SUPPORTING DOCUMENTS ============
+export const safetySecurityDocumentCategories = [
+  { id: 'fire-noc', label: 'Fire NOC', icon: 'Flame', count: 5 },
+  { id: 'fire-inspection', label: 'Fire Inspection Reports', icon: 'FileCheck', count: 4 },
+  { id: 'disaster-management', label: 'Disaster Management Plan', icon: 'AlertTriangle', count: 1 },
+  { id: 'mock-drill-reports', label: 'Mock Drill Reports', icon: 'Siren', count: 3 },
+  { id: 'cctv-layout', label: 'CCTV Layout', icon: 'Camera', count: 2 },
+  { id: 'security-policy', label: 'Security Policy', icon: 'Shield', count: 1 },
+  { id: 'insurance-policies', label: 'Insurance Policies', icon: 'ShieldCheck', count: 4 },
+  { id: 'first-aid-register', label: 'First Aid Register', icon: 'Heart', count: 1 },
+  { id: 'safety-committee', label: 'Safety Committee Minutes', icon: 'Users', count: 3 },
+];
+
+// ============ UTILITIES SUPPORTING DOCUMENTS ============
+export const utilitiesDocumentCategories = [
+  { id: 'electricity-bills', label: 'Electricity Bills', icon: 'Zap', count: 12 },
+  { id: 'generator-maintenance', label: 'Generator Maintenance Records', icon: 'Settings', count: 4 },
+  { id: 'ups-amc', label: 'UPS AMC', icon: 'Battery', count: 3 },
+  { id: 'network-diagram', label: 'Network Diagram', icon: 'Network', count: 2 },
+  { id: 'isp-agreements', label: 'ISP Agreements', icon: 'Wifi', count: 2 },
+  { id: 'water-supply-reports', label: 'Water Supply Reports', icon: 'Droplets', count: 3 },
+  { id: 'utility-asset-register', label: 'Utility Asset Register', icon: 'ClipboardList', count: 1 },
+  { id: 'maintenance-logs', label: 'Maintenance Logs', icon: 'FileText', count: 6 },
+];
+
+// ============ MOCK SUMMARY DATA ============
+export const infrastructureSummaryData: Record<string, RepositorySummary> = {
+  'buildings': { recordsUploaded: 12, pendingValidation: 1, pendingVerification: 2, verified: 8, approved: 8, rejected: 0, lastUpdated: '2025-01-12 09:00' },
+  'classrooms': { recordsUploaded: 85, pendingValidation: 3, pendingVerification: 8, verified: 68, approved: 65, rejected: 2, lastUpdated: '2025-01-11 14:30' },
+  'laboratories': { recordsUploaded: 42, pendingValidation: 2, pendingVerification: 5, verified: 32, approved: 30, rejected: 1, lastUpdated: '2025-01-12 10:15' },
+  'equipment': { recordsUploaded: 320, pendingValidation: 12, pendingVerification: 25, verified: 260, approved: 250, rejected: 5, lastUpdated: '2025-01-12 16:00' },
+  'library': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-10 11:00' },
+  'ict-infrastructure': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 3, approved: 3, rejected: 0, lastUpdated: '2025-01-09 15:30' },
+  'hostels': { recordsUploaded: 8, pendingValidation: 0, pendingVerification: 1, verified: 6, approved: 6, rejected: 0, lastUpdated: '2025-01-08 12:00' },
+  'sports-facilities': { recordsUploaded: 15, pendingValidation: 1, pendingVerification: 2, verified: 10, approved: 10, rejected: 0, lastUpdated: '2025-01-11 09:45' },
+  'seminar-halls': { recordsUploaded: 6, pendingValidation: 0, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-07 16:30' },
+  'transport': { recordsUploaded: 22, pendingValidation: 2, pendingVerification: 3, verified: 15, approved: 14, rejected: 1, lastUpdated: '2025-01-12 08:00' },
+  // Green Campus & Sustainability
+  'green-initiatives': { recordsUploaded: 12, pendingValidation: 1, pendingVerification: 2, verified: 8, approved: 7, rejected: 0, lastUpdated: '2025-01-10 14:00' },
+  'energy-management': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-10 10:00' },
+  'water-management': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 3, approved: 3, rejected: 0, lastUpdated: '2025-01-09 11:00' },
+  'waste-management': { recordsUploaded: 8, pendingValidation: 1, pendingVerification: 1, verified: 5, approved: 5, rejected: 0, lastUpdated: '2025-01-09 14:30' },
+  'green-audit': { recordsUploaded: 3, pendingValidation: 0, pendingVerification: 0, verified: 3, approved: 3, rejected: 0, lastUpdated: '2025-01-08 09:00' },
+  // Safety & Security
+  'fire-safety': { recordsUploaded: 9, pendingValidation: 1, pendingVerification: 1, verified: 6, approved: 6, rejected: 0, lastUpdated: '2025-01-11 10:00' },
+  'security-infrastructure': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-10 16:00' },
+  'emergency-preparedness': { recordsUploaded: 4, pendingValidation: 0, pendingVerification: 1, verified: 3, approved: 3, rejected: 0, lastUpdated: '2025-01-09 09:30' },
+  'insurance-compliance': { recordsUploaded: 6, pendingValidation: 0, pendingVerification: 0, verified: 5, approved: 5, rejected: 1, lastUpdated: '2025-01-08 14:00' },
+  // Utilities
+  'power-infrastructure': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-11 08:30' },
+  'water-supply': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 0, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-10 09:00' },
+  'internet-network': { recordsUploaded: 5, pendingValidation: 0, pendingVerification: 1, verified: 3, approved: 3, rejected: 0, lastUpdated: '2025-01-09 15:00' },
+  'utility-assets': { recordsUploaded: 18, pendingValidation: 2, pendingVerification: 3, verified: 12, approved: 11, rejected: 0, lastUpdated: '2025-01-11 11:00' },
+};
+
+// ============ INFRASTRUCTURE UPLOAD HISTORY ============
+export const infrastructureUploadHistory = [
+  { id: 'inf-1', fileName: 'buildings_2024_25.csv', tab: 'Buildings', repository: 'infrastructure', uploadedAt: '2025-01-12 09:00', recordsCount: 12, validRecords: 12, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-2', fileName: 'classrooms_all_blocks.csv', tab: 'Classrooms', repository: 'infrastructure', uploadedAt: '2025-01-11 14:30', recordsCount: 85, validRecords: 82, invalidRecords: 3, status: 'pending', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'iqac_verification' },
+  { id: 'inf-3', fileName: 'lab_equipment_cse.csv', tab: 'Equipment', repository: 'infrastructure', uploadedAt: '2025-01-12 16:00', recordsCount: 120, validRecords: 118, invalidRecords: 2, status: 'pending', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'hod_review' },
+  { id: 'inf-4', fileName: 'transport_fleet_2025.csv', tab: 'Transport', repository: 'infrastructure', uploadedAt: '2025-01-12 08:00', recordsCount: 22, validRecords: 20, invalidRecords: 2, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-5', fileName: 'ict_inventory_2024_25.csv', tab: 'ICT Infrastructure', repository: 'infrastructure', uploadedAt: '2025-01-09 15:30', recordsCount: 5, validRecords: 5, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-6', fileName: 'green_initiatives_2024_25.csv', tab: 'Green Campus Initiatives', repository: 'green-campus', uploadedAt: '2025-01-10 14:00', recordsCount: 12, validRecords: 12, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-7', fileName: 'energy_management_2024_25.csv', tab: 'Energy Management', repository: 'green-campus', uploadedAt: '2025-01-10 10:00', recordsCount: 5, validRecords: 5, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-8', fileName: 'fire_safety_2024_25.csv', tab: 'Fire Safety', repository: 'safety-security', uploadedAt: '2025-01-11 10:00', recordsCount: 9, validRecords: 9, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-9', fileName: 'security_infrastructure_2024_25.csv', tab: 'Security Infrastructure', repository: 'safety-security', uploadedAt: '2025-01-10 16:00', recordsCount: 5, validRecords: 5, invalidRecords: 0, status: 'pending', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'iqac_verification' },
+  { id: 'inf-10', fileName: 'power_infrastructure_2024_25.csv', tab: 'Power Infrastructure', repository: 'utilities', uploadedAt: '2025-01-11 08:30', recordsCount: 5, validRecords: 5, invalidRecords: 0, status: 'approved', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'approved' },
+  { id: 'inf-11', fileName: 'internet_network_2024_25.csv', tab: 'Internet & Network', repository: 'utilities', uploadedAt: '2025-01-09 15:00', recordsCount: 5, validRecords: 5, invalidRecords: 0, status: 'pending', uploadedBy: 'Mr. Rajesh Kumar', workflowStatus: 'iqac_verification' },
+];
+
+// ============ INFRASTRUCTURE RECENT ACTIVITIES ============
+export const infrastructureRecentActivities = [
+  { id: '1', action: 'Building information updated', detail: 'Main Academic Block details updated with new floor plan', timestamp: '2025-01-12 09:00', type: 'update' as const },
+  { id: '2', action: 'Laboratory equipment uploaded', detail: '120 equipment records uploaded for CSE department', timestamp: '2025-01-12 16:00', type: 'upload' as const },
+  { id: '3', action: 'Library statistics updated', detail: 'Library resources for 2024-25 academic year updated', timestamp: '2025-01-10 11:00', type: 'update' as const },
+  { id: '4', action: 'ICT inventory uploaded', detail: 'Complete ICT infrastructure data for 2024-25', timestamp: '2025-01-09 15:30', type: 'upload' as const },
+  { id: '5', action: 'Hostel capacity updated', detail: 'Updated occupancy data for all hostels', timestamp: '2025-01-08 12:00', type: 'update' as const },
+  { id: '6', action: 'Transport fleet data uploaded', detail: '22 vehicles registered with fitness and insurance details', timestamp: '2025-01-12 08:00', type: 'upload' as const },
+  { id: '7', action: 'Green campus initiatives uploaded', detail: '12 green initiatives for 2024-25 uploaded', timestamp: '2025-01-10 14:00', type: 'upload' as const },
+  { id: '8', action: 'Fire safety data uploaded', detail: 'Fire safety records for all 9 buildings uploaded', timestamp: '2025-01-11 10:00', type: 'upload' as const },
+  { id: '9', action: 'Power infrastructure updated', detail: 'Power infrastructure data for 2024-25 updated', timestamp: '2025-01-11 08:30', type: 'update' as const },
+  { id: '10', action: 'Security infrastructure uploaded', detail: 'CCTV and security personnel data uploaded', timestamp: '2025-01-10 16:00', type: 'upload' as const },
+  { id: '11', action: 'Energy management data uploaded', detail: 'Annual electricity consumption and solar generation data', timestamp: '2025-01-10 10:00', type: 'upload' as const },
+  { id: '12', action: 'Internet & network data uploaded', detail: 'ISP details and bandwidth information updated', timestamp: '2025-01-09 15:00', type: 'upload' as const },
+];
+
+// ============ ANALYTICS DATA ============
+
+// Green Campus Analytics
+export const greenCampusAnalytics = {
+  greenInitiativesCount: 12,
+  renewableEnergyPercent: 35,
+  waterConservationTrend: [{ year: '2021-22', value: 15 }, { year: '2022-23', value: 22 }, { year: '2023-24', value: 30 }, { year: '2024-25', value: 38 }],
+  wasteRecyclingTrend: [{ year: '2021-22', value: 40 }, { year: '2022-23', value: 52 }, { year: '2023-24', value: 65 }, { year: '2024-25', value: 72 }],
+  carbonReductionInitiatives: 8,
+  greenAuditStatus: 'Completed',
+};
+
+// Safety & Security Analytics
+export const safetySecurityAnalytics = {
+  fireSafetyCompliance: 92,
+  cctvCoverage: 156,
+  emergencyReadiness: 88,
+  safetyInspectionStatus: 'Up to Date',
+  insuranceExpiryAlerts: 2,
+  mockDrillFrequency: 4,
+};
+
+// Utilities Analytics
+export const utilitiesAnalytics = {
+  electricityConsumptionTrend: [{ year: '2021-22', value: 850000 }, { year: '2022-23', value: 820000 }, { year: '2023-24', value: 790000 }, { year: '2024-25', value: 760000 }],
+  internetBandwidthUtilization: 78,
+  waterConsumptionTrend: [{ year: '2021-22', value: 45000 }, { year: '2022-23', value: 42000 }, { year: '2023-24', value: 40000 }, { year: '2024-25', value: 38000 }],
+  utilityAssetHealth: 85,
+  powerBackupReadiness: 95,
+  amcExpiryAlerts: 3,
+};
