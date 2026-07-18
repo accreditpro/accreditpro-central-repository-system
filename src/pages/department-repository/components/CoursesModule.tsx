@@ -32,7 +32,28 @@ import {
   Building2,
   CalendarDays,
   GraduationCap,
+  Target,
+  Lightbulb,
+  ArrowRight,
 } from 'lucide-react';
+
+type BloomsTaxonomyLevel = 'Remember' | 'Understand' | 'Apply' | 'Analyze' | 'Evaluate' | 'Create';
+
+const BLOOMS_TAXONOMY_LEVELS: BloomsTaxonomyLevel[] = [
+  'Remember',
+  'Understand',
+  'Apply',
+  'Analyze',
+  'Evaluate',
+  'Create',
+];
+
+interface CourseOutcome {
+  id: string;
+  code: string; // CO1, CO2, etc.
+  description: string;
+  bloomsLevel: BloomsTaxonomyLevel;
+}
 
 interface CourseRecord {
   id: string;
@@ -58,6 +79,7 @@ interface CourseRecord {
   totalHours: number; // CI + PI + TW + SL
   credits: number; // Total / 30 rounded
   status: string;
+  courseOutcomes: CourseOutcome[];
   validationStatus?: 'valid' | 'invalid';
   errors?: string[];
 }
@@ -102,6 +124,206 @@ function calculateCourseMetrics(
   return { ciHours, piHours, totalHours, credits };
 }
 
+// ===== CO Manager Sub-Component =====
+interface COManagerProps {
+  course: CourseRecord;
+  onUpdate: (outcomes: CourseOutcome[]) => void;
+}
+
+const COManager = ({ course, onUpdate }: COManagerProps) => {
+  const [editingCO, setEditingCO] = useState<CourseOutcome | null>(null);
+  const [newCO, setNewCO] = useState({
+    description: '',
+    bloomsLevel: 'Remember' as BloomsTaxonomyLevel,
+  });
+  const [showCOForm, setShowCOForm] = useState(false);
+
+  const outcomes = course.courseOutcomes;
+  const canAddMore = outcomes.length < 6;
+
+  // Generate next CO code
+  const nextCOCode = () => {
+    const existingCodes = outcomes.map((co) => {
+      const num = parseInt(co.code.replace('CO', ''), 10);
+      return isNaN(num) ? 0 : num;
+    });
+    const maxNum = existingCodes.length > 0 ? Math.max(...existingCodes) : 0;
+    return `CO${maxNum + 1}`;
+  };
+
+  const handleAddCO = () => {
+    if (!newCO.description.trim()) return;
+    const co: CourseOutcome = {
+      id: `co-${Date.now()}`,
+      code: editingCO ? editingCO.code : nextCOCode(),
+      description: newCO.description.trim(),
+      bloomsLevel: newCO.bloomsLevel,
+    };
+
+    if (editingCO) {
+      onUpdate(outcomes.map((o) => (o.id === editingCO.id ? co : o)));
+    } else {
+      onUpdate([...outcomes, co]);
+    }
+
+    setNewCO({ description: '', bloomsLevel: 'Remember' });
+    setEditingCO(null);
+    setShowCOForm(false);
+  };
+
+  const handleEditCO = (co: CourseOutcome) => {
+    setEditingCO(co);
+    setNewCO({ description: co.description, bloomsLevel: co.bloomsLevel });
+    setShowCOForm(true);
+  };
+
+  const handleDeleteCO = (id: string) => {
+    onUpdate(outcomes.filter((o) => o.id !== id));
+  };
+
+  const handleCancel = () => {
+    setShowCOForm(false);
+    setEditingCO(null);
+    setNewCO({ description: '', bloomsLevel: 'Remember' });
+  };
+
+  // Re-number COs after delete
+  const displayOutcomes = outcomes.map((co, idx) => ({
+    ...co,
+    displayCode: `CO${idx + 1}`,
+  }));
+
+  return (
+    <div className="space-y-3">
+      {/* Existing COs List */}
+      {displayOutcomes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-center rounded-lg border border-dashed border-border/50">
+          <Target className="h-8 w-8 text-muted-foreground/30 mb-2" />
+          <p className="text-xs text-muted-foreground font-medium">No Course Outcomes defined yet</p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Add 5-6 COs mapped to Bloom's Taxonomy levels
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {displayOutcomes.map((co) => (
+            <motion.div
+              key={co.id}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/20 transition-colors group"
+            >
+              <div className="flex items-center justify-center h-8 w-10 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-xs font-bold shrink-0">
+                {co.displayCode}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">{co.description}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge
+                    className={cn(
+                      'text-[9px]',
+                      co.bloomsLevel === 'Remember' && 'bg-blue-500/10 text-blue-600',
+                      co.bloomsLevel === 'Understand' && 'bg-teal-500/10 text-teal-600',
+                      co.bloomsLevel === 'Apply' && 'bg-emerald-500/10 text-emerald-600',
+                      co.bloomsLevel === 'Analyze' && 'bg-amber-500/10 text-amber-600',
+                      co.bloomsLevel === 'Evaluate' && 'bg-orange-500/10 text-orange-600',
+                      co.bloomsLevel === 'Create' && 'bg-purple-500/10 text-purple-600',
+                    )}
+                    variant="secondary"
+                  >
+                    {co.bloomsLevel}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditCO(co)}>
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteCO(co.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Add CO Form */}
+      {showCOForm ? (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="p-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 space-y-3"
+        >
+          <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+            {editingCO ? 'Edit Course Outcome' : 'Add New Course Outcome'}
+          </p>
+          <div className="space-y-2">
+            <Label className="text-xs">CO Description *</Label>
+            <textarea
+              value={newCO.description}
+              onChange={(e) => setNewCO({ ...newCO, description: e.target.value })}
+              placeholder="Describe the course outcome..."
+              className="w-full min-h-[60px] px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              rows={2}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Bloom's Taxonomy Level</Label>
+            <Select
+              value={newCO.bloomsLevel}
+              onValueChange={(v) => setNewCO({ ...newCO, bloomsLevel: v as BloomsTaxonomyLevel })}
+            >
+              <SelectTrigger className="mt-1 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BLOOMS_TAXONOMY_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level} className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className={cn(
+                        'h-3.5 w-3.5',
+                        level === 'Remember' && 'text-blue-500',
+                        level === 'Understand' && 'text-teal-500',
+                        level === 'Apply' && 'text-emerald-500',
+                        level === 'Analyze' && 'text-amber-500',
+                        level === 'Evaluate' && 'text-orange-500',
+                        level === 'Create' && 'text-purple-500',
+                      )} />
+                      {level}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button size="sm" className="text-xs h-8" onClick={handleAddCO} disabled={!newCO.description.trim()}>
+              {editingCO ? 'Update CO' : 'Add CO'}
+            </Button>
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={handleCancel}>
+              Cancel
+            </Button>
+          </div>
+        </motion.div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs h-8 gap-1.5 w-full"
+          onClick={() => setShowCOForm(true)}
+          disabled={!canAddMore}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {canAddMore
+            ? `Add CO${outcomes.length + 1} (${6 - outcomes.length} remaining)`
+            : 'Maximum 6 COs reached'}
+        </Button>
+      )}
+    </div>
+  );
+};
+
 // Mock evidence data
 const generateMockEvidence = (): EvidenceRecord[] => [
   { id: '1', documentName: 'Machine Learning', year: 'III Year', semester: 'Semester 5', uploadedBy: 'Dr. Anita Sharma', date: '2025-01-10', status: 'approved' },
@@ -128,6 +350,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
   const [uploadPreview, setUploadPreview] = useState<CourseRecord[]>([]);
   const [uploadStats, setUploadStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [selectedCourseForDetail, setSelectedCourseForDetail] = useState<CourseRecord | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Evidence filter state
@@ -302,22 +525,23 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
           const courseRecord: CourseRecord = {
             id: `upload-${i}`,
             department: row['Department'] || department,
-            year: yearVal,
-            semester: semVal,
-            courseCode: row['Course Code'] || '',
-            courseName: row['Course Name'] || '',
-            facultyName: row['Faculty Name'] || '',
-            courseType: row['Course Type'] || 'Theory',
-            lectureHours: lectureHrs,
-            theoryHours: theoryHrs,
-            practicalHours: practicalHrs,
-            teamWorkHours: twHrs,
-            selfLearningHours: slHrs,
-            ciHours: metrics.ciHours,
-            piHours: metrics.piHours,
-            totalHours: metrics.totalHours,
-            credits: metrics.credits,
-            status: row['Status'] || 'Active',
+          year: yearVal,
+          semester: semVal,
+          courseCode: row['Course Code'] || '',
+          courseName: row['Course Name'] || '',
+          facultyName: row['Faculty Name'] || '',
+          courseType: row['Course Type'] || 'Theory',
+          lectureHours: lectureHrs,
+          theoryHours: theoryHrs,
+          practicalHours: practicalHrs,
+          teamWorkHours: twHrs,
+          selfLearningHours: slHrs,
+          ciHours: metrics.ciHours,
+          piHours: metrics.piHours,
+          totalHours: metrics.totalHours,
+          credits: metrics.credits,
+          status: row['Status'] || 'Active',
+          courseOutcomes: [],
             validationStatus: errors.length > 0 ? 'invalid' : 'valid',
             errors: errors.length > 0 ? errors : undefined,
           };
@@ -387,6 +611,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
       totalHours: metrics.totalHours,
       credits: metrics.credits,
       status: newCourse.status,
+      courseOutcomes: editingCourse ? editingCourse.courseOutcomes : [],
     };
 
     if (editingCourse) {
@@ -720,7 +945,14 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                     <TableRow key={course.id} className="hover:bg-muted/20">
                       <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
                       <TableCell className="text-xs font-medium font-mono whitespace-nowrap">{course.courseCode}</TableCell>
-                      <TableCell className="text-sm font-medium whitespace-nowrap">{course.courseName}</TableCell>
+                      <TableCell className="text-sm font-medium whitespace-nowrap">
+                        <button
+                          onClick={() => setSelectedCourseForDetail(course)}
+                          className="text-left hover:text-indigo-600 hover:underline transition-colors font-medium cursor-pointer"
+                        >
+                          {course.courseName}
+                        </button>
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{course.facultyName || '-'}</TableCell>
                       <TableCell className="text-center whitespace-nowrap">
                         <Badge variant="outline" className={cn('text-[10px]',
@@ -796,112 +1028,47 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
         </CardContent>
       </Card>
 
-      {/* Evidence Repository */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-indigo-600" />
-              Evidence Repository — {selectedYear} / {selectedSemester}
-            </CardTitle>
-            <Badge variant="secondary" className="text-[10px]">{filteredEvidence.length} documents</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Evidence Filters */}
-          <div className="flex flex-wrap items-center gap-3 mb-3">
-            <div className="relative flex-1 min-w-[180px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                className="h-8 text-xs pl-8"
-                placeholder="Search by course name..."
-                value={evidenceSearch}
-                onChange={(e) => setEvidenceSearch(e.target.value)}
-              />
+      {/* Evidence Summary by Course */}
+      {filteredCourses.length > 0 && (
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                CO Overview — {selectedYear} / {selectedSemester}
+              </CardTitle>
+              <Badge variant="secondary" className="text-[10px]">
+                {filteredCourses.reduce((sum, c) => sum + c.courseOutcomes.length, 0)} COs defined
+              </Badge>
             </div>
-            <Select value={evidenceFilterStatus} onValueChange={setEvidenceFilterStatus}>
-              <SelectTrigger className="h-8 w-[120px] text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All Status</SelectItem>
-                <SelectItem value="pending" className="text-xs">Pending</SelectItem>
-                <SelectItem value="verified" className="text-xs">Verified</SelectItem>
-                <SelectItem value="approved" className="text-xs">Approved</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" className="text-xs h-8 gap-1.5">
-              <Upload className="h-3.5 w-3.5" /> Upload Evidence
-            </Button>
-          </div>
-
-          {/* Evidence Table */}
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="text-[10px] font-semibold">Document Name (Course)</TableHead>
-                  <TableHead className="text-[10px] font-semibold w-[70px]">Year</TableHead>
-                  <TableHead className="text-[10px] font-semibold w-[80px]">Semester</TableHead>
-                  <TableHead className="text-[10px] font-semibold">Uploaded By</TableHead>
-                  <TableHead className="text-[10px] font-semibold w-[90px]">Date</TableHead>
-                  <TableHead className="text-[10px] font-semibold w-[80px]">Status</TableHead>
-                  <TableHead className="text-[10px] font-semibold text-right w-[140px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEvidence.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">
-                      No evidence documents for {selectedYear} / {selectedSemester}.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEvidence.map((ev) => (
-                    <TableRow key={ev.id} className="hover:bg-muted/20">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-xs font-medium">{ev.documentName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs">{ev.year.replace(' Year', '')}</TableCell>
-                      <TableCell className="text-xs">{ev.semester}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{ev.uploadedBy}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{ev.date}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={cn('text-[9px]',
-                          ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                          ev.status === 'verified' && 'bg-blue-500/10 text-blue-600',
-                          ev.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                        )}>
-                          {ev.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Upload">
-                            <Upload className="h-3 w-3 text-indigo-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Preview">
-                            <Eye className="h-3 w-3 text-blue-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Download">
-                            <DownloadCloud className="h-3 w-3 text-emerald-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Reupload">
-                            <RefreshCw className="h-3 w-3 text-amber-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              Click on a course name above to view and manage its Course Outcomes and Evidence documents.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
+              {filteredCourses.map((course) => (
+                <button
+                  key={course.id}
+                  onClick={() => setSelectedCourseForDetail(course)}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{course.courseName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{course.courseCode}</p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
+                    <Badge variant="outline" className="text-[9px]">
+                      {course.courseOutcomes.length}/6 COs
+                    </Badge>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Future Integration Info */}
       <Card className="border-border/50 bg-muted/20">
@@ -923,6 +1090,144 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
           </div>
         </CardContent>
       </Card>
+
+      {/* Course Detail Dialog — Course Outcomes & Evidence */}
+      <Dialog open={!!selectedCourseForDetail} onOpenChange={(open) => { if (!open) setSelectedCourseForDetail(null); }}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-indigo-600" />
+              {selectedCourseForDetail?.courseName}
+            </DialogTitle>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <Badge variant="outline" className="text-[10px]">{selectedCourseForDetail?.courseCode}</Badge>
+              <Badge variant="outline" className="text-[10px]">{selectedCourseForDetail?.courseType}</Badge>
+              <Badge variant="outline" className="text-[10px]">{selectedCourseForDetail?.facultyName}</Badge>
+              <Badge className="bg-indigo-600 text-white text-[10px]">{selectedCourseForDetail?.credits} Credits</Badge>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 py-2">
+            {/* ===== Course Outcomes Section ===== */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-emerald-600" />
+                  <h3 className="text-sm font-semibold">Course Outcomes (COs)</h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {(selectedCourseForDetail?.courseOutcomes.length || 0)} / 6
+                  </Badge>
+                </div>
+              </div>
+              <Separator />
+
+              {selectedCourseForDetail && (
+                <COManager
+                  course={selectedCourseForDetail}
+                  onUpdate={(updatedOutcomes) => {
+                    setCourses((prev) =>
+                      prev.map((c) =>
+                        c.id === selectedCourseForDetail.id
+                          ? { ...c, courseOutcomes: updatedOutcomes }
+                          : c
+                      )
+                    );
+                    setSelectedCourseForDetail((prev) =>
+                      prev ? { ...prev, courseOutcomes: updatedOutcomes } : prev
+                    );
+                  }}
+                />
+              )}
+            </div>
+
+            {/* ===== Evidence Repository ===== */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-indigo-600" />
+                  <h3 className="text-sm font-semibold">Evidence Repository</h3>
+                </div>
+                <Button variant="outline" size="sm" className="text-xs h-7 gap-1.5">
+                  <Upload className="h-3 w-3" /> Upload Evidence
+                </Button>
+              </div>
+              <Separator />
+
+              {selectedCourseForDetail && (
+                <div className="rounded-lg border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="text-[10px] font-semibold">Document Name</TableHead>
+                        <TableHead className="text-[10px] font-semibold w-[80px]">Semester</TableHead>
+                        <TableHead className="text-[10px] font-semibold">Uploaded By</TableHead>
+                        <TableHead className="text-[10px] font-semibold w-[90px]">Date</TableHead>
+                        <TableHead className="text-[10px] font-semibold w-[80px]">Status</TableHead>
+                        <TableHead className="text-[10px] font-semibold text-right w-[120px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(() => {
+                        const courseEvidence = evidence.filter(
+                          (e) =>
+                            e.documentName.toLowerCase().includes(selectedCourseForDetail.courseName.toLowerCase()) ||
+                            e.documentName.toLowerCase().includes(selectedCourseForDetail.courseCode.toLowerCase())
+                        );
+                        return courseEvidence.length > 0 ? (
+                          courseEvidence.map((ev) => (
+                            <TableRow key={ev.id} className="hover:bg-muted/20">
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                  <span className="text-xs font-medium">{ev.documentName}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs">{ev.semester}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{ev.uploadedBy}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{ev.date}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className={cn('text-[9px]',
+                                  ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
+                                  ev.status === 'verified' && 'bg-blue-500/10 text-blue-600',
+                                  ev.status === 'pending' && 'bg-amber-500/10 text-amber-600',
+                                )}>
+                                  {ev.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-0.5">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" title="Preview">
+                                    <Eye className="h-3 w-3 text-blue-600" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" title="Download">
+                                    <DownloadCloud className="h-3 w-3 text-emerald-600" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-xs text-muted-foreground">
+                              <div className="flex flex-col items-center gap-2">
+                                <FileText className="h-8 w-8 text-muted-foreground/30" />
+                                <p>No evidence documents uploaded for this course yet.</p>
+                                <Button variant="outline" size="sm" className="text-xs h-7 gap-1.5 mt-1">
+                                  <Upload className="h-3 w-3" /> Upload First Document
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })()}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Course Dialog - NBA Format */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingCourse(null); } }}>

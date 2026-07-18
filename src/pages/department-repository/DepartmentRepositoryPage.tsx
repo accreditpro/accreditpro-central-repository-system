@@ -14,6 +14,7 @@ import { UploadHistoryView } from './components/UploadHistoryView';
 import { VerificationStatusView } from './components/VerificationStatusView';
 import { ProfileView } from './components/ProfileView';
 import { AcademicCalendarModule } from './components/AcademicCalendarModule';
+import { CourseRepositoryModule } from './components/course-repository/CourseRepositoryModule';
 import {
   academicRepositoryConfig,
   facultyRepositoryConfig,
@@ -21,6 +22,7 @@ import {
   researchRepositoryConfig,
   alumniRepositoryConfig,
   studentDevOutcomesConfig,
+  departmentInfrastructureConfig,
   departmentInfo,
 } from './repository-configs';
 import { SidebarView } from './types';
@@ -41,6 +43,8 @@ import {
   Menu,
   Calendar,
   UsersRound,
+  Building2,
+  BookMarked,
 } from 'lucide-react';
 
 // Academic years for the last 7 years
@@ -57,12 +61,14 @@ const ACADEMIC_YEARS = [
 const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'mission-vision', label: 'Mission & Vision', icon: Target, separator: true },
+  { id: 'course-repository', label: 'Course Repository ⭐', icon: BookMarked },
   { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
   { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
   { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2 },
-  { id: 'student-dev-outcomes-repository', label: 'Student Dev & Outcomes', icon: UsersRound, separator: true },
+  { id: 'student-dev-outcomes-repository', label: 'Student Dev & Outcomes', icon: UsersRound },
+  { id: 'infrastructure-repository', label: 'Infrastructure Repository', icon: Building2, separator: true },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
@@ -76,6 +82,7 @@ const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
   'research-repository': researchRepositoryConfig,
   'alumni-repository': alumniRepositoryConfig,
   'student-dev-outcomes-repository': studentDevOutcomesConfig,
+  'infrastructure-repository': departmentInfrastructureConfig,
 };
 
 export const DepartmentRepositoryPage = () => {
@@ -90,12 +97,15 @@ export const DepartmentRepositoryPage = () => {
         return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
       case 'mission-vision':
         return <DepartmentMissionVision />;
+      case 'course-repository':
+        return <CourseRepositoryModule />;
       case 'academic-repository':
       case 'faculty-repository':
       case 'student-repository':
       case 'research-repository':
       case 'alumni-repository':
       case 'student-dev-outcomes-repository':
+      case 'infrastructure-repository':
         return (
           <RepositoryWorkspace
             config={repositoryConfigMap[activeView]}

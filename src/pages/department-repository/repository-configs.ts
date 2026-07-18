@@ -59,30 +59,6 @@ export const academicRepositoryConfig: RepositoryModuleConfig = {
   gradient: 'from-violet-500 to-violet-600',
   tabs: [
     {
-      id: 'courses',
-      label: 'Courses',
-      icon: 'FileText',
-      fields: [
-        { key: 'courseCode', label: 'Course Code', type: 'text', required: true, csvColumn: 'Course Code', validationRules: ['unique'] },
-        { key: 'courseName', label: 'Course Name', type: 'text', required: true, csvColumn: 'Course Name' },
-        { key: 'program', label: 'Program', type: 'select', required: true, csvColumn: 'Program', masterDataSource: 'programOfferings' },
-        { key: 'semester', label: 'Semester', type: 'number', required: true, csvColumn: 'Semester', validationRules: ['1-8'] },
-        { key: 'courseType', label: 'Course Type', type: 'select', required: true, csvColumn: 'Course Type', selectOptions: ['Theory', 'Lab', 'Theory + Lab', 'Project', 'Seminar', 'Internship'] },
-        { key: 'credits', label: 'Credits', type: 'number', required: true, csvColumn: 'Credits', validationRules: ['> 0'] },
-        { key: 'theoryHours', label: 'Theory Hours', type: 'number', required: true, csvColumn: 'Theory Hours' },
-        { key: 'labHours', label: 'Lab Hours', type: 'number', required: true, csvColumn: 'Lab Hours' },
-        { key: 'status', label: 'Status', type: 'select', required: true, csvColumn: 'Status', selectOptions: ['Active', 'Inactive', 'Proposed'] },
-      ],
-      requiredEvidence: ['Syllabus', 'Curriculum Document', 'Course Structure'],
-      validationRules: [
-        'Course Code must be unique',
-        'Program must exist in master data',
-        'Credits must be > 0',
-        'Semester must be valid (1-8)',
-      ],
-      templateFile: '/templates/courses_template.csv',
-    },
-    {
       id: 'academic-calendar',
       label: 'Academic Calendar',
       icon: 'Calendar',
@@ -1338,6 +1314,31 @@ export const studentDevOutcomesConfig: RepositoryModuleConfig = {
   ],
 };
 
+// ============ DEPARTMENT INFRASTRUCTURE REPOSITORY ============
+export const departmentInfrastructureConfig: RepositoryModuleConfig = {
+  id: 'infrastructure',
+  label: 'Infrastructure Repository',
+  description: 'Maintain all department-level infrastructure — classrooms, labs, equipment, software, and assets',
+  icon: 'Building2',
+  color: 'text-amber-600',
+  gradient: 'from-amber-500 to-amber-600',
+  tabs: [
+    { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'classrooms', label: 'Classrooms', icon: 'School', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'tutorial-rooms', label: 'Tutorial Rooms', icon: 'Presentation', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'laboratories', label: 'Laboratories', icon: 'FlaskConical', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'staff-rooms', label: 'Staff Rooms', icon: 'Users', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'faculty-cabins', label: 'Faculty Cabins', icon: 'UserCircle', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'hod-cabin', label: 'HOD Cabin', icon: 'User', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'smart-classrooms', label: 'Smart Classrooms', icon: 'Monitor', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'ict-classrooms', label: 'ICT Enabled Classrooms', icon: 'Wifi', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'lab-equipment', label: 'Lab Equipment', icon: 'Wrench', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'software-licenses', label: 'Software & Licenses', icon: 'Package', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'dept-assets', label: 'Department Assets', icon: 'Archive', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+    { id: 'supporting-documents', label: 'Supporting Documents', icon: 'FileText', fields: [], requiredEvidence: [], validationRules: [], templateFile: '' },
+  ],
+};
+
 // All repository configs
 export const allRepositoryConfigs: RepositoryModuleConfig[] = [
   academicRepositoryConfig,
@@ -1346,6 +1347,7 @@ export const allRepositoryConfigs: RepositoryModuleConfig[] = [
   researchRepositoryConfig,
   alumniRepositoryConfig,
   studentDevOutcomesConfig,
+  departmentInfrastructureConfig,
 ];
 
 // ============ MOCK DATA ============
@@ -1357,6 +1359,7 @@ export const dashboardKPIs: KPICard[] = [
   { id: 'student-completion', label: 'Student Repository', value: 72, suffix: '%', icon: 'BookOpen', color: 'text-emerald-600 bg-emerald-500/10', trend: 8, trendLabel: 'vs last month' },
   { id: 'research-completion', label: 'Research Repository', value: 65, suffix: '%', icon: 'FlaskConical', color: 'text-pink-600 bg-pink-500/10', trend: 4, trendLabel: 'vs last month' },
   { id: 'alumni-completion', label: 'Alumni Repository', value: 58, suffix: '%', icon: 'Users2', color: 'text-teal-600 bg-teal-500/10', trend: 6, trendLabel: 'vs last month' },
+  { id: 'infrastructure-completion', label: 'Infrastructure Repository', value: 71, suffix: '%', icon: 'Building2', color: 'text-amber-600 bg-amber-500/10', trend: 4, trendLabel: 'vs last month' },
   { id: 'pending-reviews', label: 'Pending Reviews', value: 14, icon: 'Clock', color: 'text-orange-600 bg-orange-500/10', trend: -3, trendLabel: 'vs last week' },
   { id: 'pending-verification', label: 'Pending Verification', value: 8, icon: 'Shield', color: 'text-cyan-600 bg-cyan-500/10', trend: -2, trendLabel: 'cleared' },
   { id: 'pending-evidence', label: 'Pending Evidence', value: 12, icon: 'FileText', color: 'text-amber-600 bg-amber-500/10', trend: -4, trendLabel: 'uploaded' },

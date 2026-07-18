@@ -7,7 +7,6 @@ import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
 import { AcademicCalendarModule } from './AcademicCalendarModule';
-import { CoursesModule } from './CoursesModule';
 import { AddOnProgramsModule } from './AddOnProgramsModule';
 import { ValueAddedCoursesModule } from './ValueAddedCoursesModule';
 import { AcademicTimetableModule } from './AcademicTimetableModule';
@@ -19,6 +18,7 @@ import { FacultyEvidenceModule } from './FacultyEvidenceModule';
 import { FacultyProfessionalDevelopmentModule } from './FacultyProfessionalDevelopmentModule';
 import { StudentRepositoryModule } from './StudentRepositoryModule';
 import { StudentDevOutcomesModule } from './StudentDevOutcomesModule';
+import { DepartmentInfrastructureModule } from './DepartmentInfrastructureModule';
 import { ResearchModule } from './ResearchModule';
 import {
   GraduationCap,
@@ -143,6 +143,11 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
     return <StudentDevOutcomesModule config={config} academicYear={academicYear} />;
   }
 
+  // Render Department Infrastructure Repository with its own dedicated module
+  if (config.id === 'infrastructure') {
+    return <DepartmentInfrastructureModule config={config} academicYear={academicYear} />;
+  }
+
   // Render Research Repository with its own dedicated module (Faculty Research, Student Research, Dept Project Dev, Dashboard)
   if (config.id === 'research') {
     return <ResearchModule config={config} academicYear={academicYear} />;
@@ -207,11 +212,6 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'academic-calendar' && config.id === 'academic' ? (
               <AcademicCalendarModule
-                department={departmentInfo.department}
-                academicYear={academicYear || '2025-26'}
-              />
-            ) : tab.id === 'courses' && config.id === 'academic' ? (
-              <CoursesModule
                 department={departmentInfo.department}
                 academicYear={academicYear || '2025-26'}
               />
