@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { StatCard } from './mock-data';
+import type { DashboardStatCard } from './types';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import {
@@ -37,7 +37,7 @@ const colorMap: Record<string, { bg: string; text: string; chart: string }> = {
 };
 
 interface StatCardsProps {
-  data: StatCard[];
+  data: DashboardStatCard[];
 }
 
 export const StatCards = ({ data }: StatCardsProps) => {

@@ -6,8 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -24,9 +30,16 @@ import {
   FileText,
   TrendingUp,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { institutionAdminService, AcademicYearApiResponse, CreateAcademicYearRequest, ProgramApiResponse, CreateProgramRequest, DepartmentApiResponse, CreateDepartmentRequest, SpecializationApiResponse, CreateSpecializationRequest, RegulationApiResponse, CreateRegulationRequest, ProgramOfferingApiResponse, CreateProgramOfferingRequest, CreateProgramOfferingResponse, ProgramIntakeApiResponse, CreateProgramIntakeRequest, CreateProgramIntakeResponse } from '@/services/institution-admin.service';
+import { AcademicStructureSummary } from '@/types/institution-admin.types';
+import { Skeleton } from '@/components/ui/skeleton';
+
 import {
   masterPrograms,
   departments,
@@ -48,40 +61,52 @@ import {
 
 // Dashboard Tab
 const DashboardTab = () => {
-  const activePrograms = masterPrograms.filter((p) => p.status === 'active').length;
-  const activeDepts = departments.filter((d) => d.status === 'active').length;
-  const activeSpecs = specializations.filter((s) => s.status === 'active').length;
-  const activeRegulations = academicRegulations.filter((r) => r.status === 'active').length;
-  const activeOfferings = programOfferings.filter((o) => o.status === 'active').length;
-  const totalIntake = programIntakes
-    .filter((i) => i.academicYear === '2025-26')
-    .reduce((sum, i) => sum + i.sanctionedIntake, 0);
+  const { isAuthenticated } = useAuth();
 
-  const cards = [
-    { label: 'Academic Years', value: academicYears.length, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
-    { label: 'Programs', value: activePrograms, icon: GraduationCap, color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' },
-    { label: 'Departments', value: activeDepts, icon: Building2, color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30' },
-    { label: 'Specializations', value: activeSpecs, icon: Layers, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
-    { label: 'Regulations', value: activeRegulations, icon: BookOpen, color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30' },
-    { label: 'Program Offerings', value: activeOfferings, icon: Combine, color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30' },
-    { label: 'Total Intake (2025-26)', value: totalIntake, icon: Users, color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30' },
-  ];
+  const { data: summary, isLoading, error, refetch } = useQuery<AcademicStructureSummary>({
+    queryKey: ['academicStructureSummary'],
+    queryFn: () => institutionAdminService.getAcademicStructureSummary(),
+    enabled: isAuthenticated,
+  });
 
-  // Program Distribution
-  const programDist = masterPrograms
-    .filter((p) => p.status === 'active')
-    .map((p) => ({
-      name: p.name,
-      departments: departments.filter((d) => d.program === p.name && d.status === 'active').length,
-    }));
+  const cards = summary
+    ? [
+        { label: 'Academic Years', value: summary.academicYears, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
+        { label: 'Programs', value: summary.programs, icon: GraduationCap, color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' },
+        { label: 'Departments', value: summary.departments, icon: Building2, color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30' },
+        { label: 'Specializations', value: summary.specializations, icon: Layers, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
+        { label: 'Regulations', value: summary.regulations, icon: BookOpen, color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30' },
+        { label: 'Program Offering', value: summary.programOfferings, icon: Combine, color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30' },
+        { label: 'Total Intake (Current Year)', value: summary.totalIntakeCurrentYear, icon: Users, color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30' },
+      ]
+    : [];
 
-  // Department Distribution
-  const deptDist = departments
-    .filter((d) => d.status === 'active')
-    .map((d) => ({
-      name: d.code,
-      offerings: programOfferings.filter((o) => o.departmentId === d.id).length,
-    }));
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {[...Array(7)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4 text-center">
+                <Skeleton className="h-8 w-8 mx-auto rounded-lg mb-2" />
+                <Skeleton className="h-8 w-16 mx-auto mb-2" />
+                <Skeleton className="h-4 w-24 mx-auto" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load academic summary.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -109,17 +134,17 @@ const DashboardTab = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {programDist.map((p) => (
-                <div key={p.name} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{p.name}</span>
+              {summary?.programDistribution.map((p) => (
+                <div key={p.programName} className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{p.programName}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full"
-                        style={{ width: `${(p.departments / 12) * 100}%` }}
+                        style={{ width: `${(p.departmentCount / (summary.departments || 1)) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground w-8">{p.departments} depts</span>
+                    <span className="text-xs text-muted-foreground w-8">{p.departmentCount} depts</span>
                   </div>
                 </div>
               ))}
@@ -131,25 +156,29 @@ const DashboardTab = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Intake Trend (2025-26)
+              Intake Trend
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {deptDist.filter((d) => d.offerings > 0).map((d) => (
-                <div key={d.name} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{d.name}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full"
-                        style={{ width: `${(d.offerings / 8) * 100}%` }}
-                      />
+              {summary?.intakeTrend && summary.intakeTrend.length > 0 ? (
+                summary.intakeTrend.map((t) => (
+                  <div key={t.year} className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{t.year}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: `${(t.count / (summary.totalIntakeCurrentYear || 1)) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground w-12">{t.count}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground w-12">{d.offerings} offerings</span>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No intake trend data available.</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -160,22 +189,155 @@ const DashboardTab = () => {
 
 // Academic Years Tab
 const AcademicYearsTab = () => {
-  const [years, setYears] = useState<AcademicYear[]>(academicYears);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  const setActive = (id: string) => {
-    setYears((prev) =>
-      prev.map((y) => ({ ...y, status: y.id === id ? 'active' : 'inactive' }))
-    );
-    toast.success('Active academic year updated');
+  // ── Form state ──
+  const [formYear, setFormYear] = useState('');
+  const [formStartDate, setFormStartDate] = useState('');
+  const [formEndDate, setFormEndDate] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('INACTIVE');
+
+  // ── Query: fetch all academic years ──
+  const {
+    data: apiYears,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<AcademicYearApiResponse[]>({
+    queryKey: ['academicYears'],
+    queryFn: () => institutionAdminService.getAcademicYears(),
+    enabled: isAuthenticated,
+  });
+
+  // Map API response to the local AcademicYear shape
+  const years: AcademicYear[] = (apiYears ?? []).map((y) => ({
+    id: String(y.id),
+    year: y.year,
+    startDate: y.startDate,
+    endDate: y.endDate,
+    status: y.status === 'ACTIVE' ? 'active' : 'inactive',
+  }));
+
+  // ── Mutation: activate academic year ──
+  const activateMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.activateAcademicYear(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
+      toast.success('Active academic year updated');
+    },
+    onError: () => {
+      toast.error('Failed to activate academic year');
+    },
+  });
+
+  // ── Mutation: create academic year ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateAcademicYearRequest) =>
+      institutionAdminService.createAcademicYear(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
+      setShowAddDialog(false);
+      // Reset form
+      setFormYear('');
+      setFormStartDate('');
+      setFormEndDate('');
+      setFormStatus('INACTIVE');
+      toast.success('Academic year added');
+    },
+    onError: () => {
+      toast.error('Failed to add academic year');
+    },
+  });
+
+  // ── Mutation: delete academic year ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteAcademicYear(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
+      toast.success('Academic year deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete academic year');
+    },
+  });
+
+  const handleSetActive = (id: string) => {
+    const year = apiYears?.find((y) => String(y.id) === id);
+    if (year) {
+      activateMutation.mutate(year.id);
+    }
   };
+
+  const handleDelete = (id: string) => {
+    const year = apiYears?.find((y) => String(y.id) === id);
+    if (year) {
+      deleteMutation.mutate(year.id);
+    }
+  };
+
+  const handleCreate = () => {
+    if (!formYear || !formStartDate || !formEndDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      year: formYear,
+      startDate: formStartDate,
+      endDate: formEndDate,
+      status: formStatus,
+    });
+  };
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="grid gap-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-9 w-9 rounded-lg" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load academic years.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Academic Years</h3>
-          <p className="text-xs text-muted-foreground">Only one academic year can be active at a time. Cannot delete if repository data exists.</p>
+          <p className="text-xs text-muted-foreground">
+            Only one academic year can be active at a time. Cannot delete if repository data exists.
+          </p>
         </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
@@ -190,63 +352,154 @@ const AcademicYearsTab = () => {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Academic Year</Label>
-                <Input placeholder="e.g., 2026-27" />
+                <Label>Academic Year *</Label>
+                <Input
+                  placeholder="e.g., 2026-27"
+                  value={formYear}
+                  onChange={(e) => setFormYear(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Start Date *</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={formStartDate}
+                  onChange={(e) => setFormStartDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>End Date *</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={formEndDate}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="inactive">
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Academic year added'); }}>Add</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  setFormYear('');
+                  setFormStartDate('');
+                  setFormEndDate('');
+                  setFormStatus('INACTIVE');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-3">
-        {years.map((year) => (
-          <Card key={year.id} className={year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${year.status === 'active' ? 'bg-primary/10' : 'bg-muted'}`}>
-                  <Calendar className={`h-4 w-4 ${year.status === 'active' ? 'text-primary' : 'text-muted-foreground'}`} />
-                </div>
-                <div>
-                  <p className="font-semibold">{year.year}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(year.startDate).toLocaleDateString()} - {new Date(year.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {year.status === 'active' ? (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setActive(year.id)}>
-                    Set Active
-                  </Button>
-                )}
-              </div>
+        {years.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              No academic years found. Click "Add Academic Year" to create one.
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          years.map((year) => (
+            <Card
+              key={year.id}
+              className={
+                year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''
+              }
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      year.status === 'active' ? 'bg-primary/10' : 'bg-muted'
+                    }`}
+                  >
+                    <Calendar
+                      className={`h-4 w-4 ${
+                        year.status === 'active'
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{year.year}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(year.startDate).toLocaleDateString()} —{' '}
+                      {new Date(year.endDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Academic Year</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete <strong>{year.year}</strong>?
+                          This action cannot be undone. Years with existing repository data
+                          cannot be deleted.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(year.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  {year.status === 'active' ? (
+                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      Active
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetActive(year.id)}
+                      disabled={activateMutation.isPending}
+                    >
+                      {activateMutation.isPending ? 'Activating…' : 'Set Active'}
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
@@ -254,15 +507,156 @@ const AcademicYearsTab = () => {
 
 // Programs Tab
 const ProgramsTab = () => {
-  const [programs, setPrograms] = useState<Program[]>(masterPrograms);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  const toggleProgram = (id: string) => {
-    setPrograms((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled, status: p.enabled ? 'inactive' : 'active' } : p))
-    );
-    toast.success('Program status updated');
+  // ── Form state ──
+  const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formLevel, setFormLevel] = useState<'UG' | 'PG' | 'Doctoral'>('UG');
+  const [formDuration, setFormDuration] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+
+  // ── Query: fetch all programs ──
+  const {
+    data: apiPrograms,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<ProgramApiResponse[]>({
+    queryKey: ['programs'],
+    queryFn: () => institutionAdminService.getPrograms(),
+    enabled: isAuthenticated,
+  });
+
+  // Map API response to the local Program shape
+  const programs: Program[] = (apiPrograms ?? []).map((p) => ({
+    id: String(p.id),
+    programCode: p.programCode,
+    name: p.name,
+    level: p.level,
+    duration: p.durationYears,
+    status: p.status === 'ACTIVE' ? 'active' : 'inactive',
+    enabled: p.status === 'ACTIVE',
+    isCustom: p.isCustom,
+  }));
+
+  // ── Mutation: toggle program status ──
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
+      institutionAdminService.toggleProgramStatus(id, { status: newStatus }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      toast.success('Program status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update program status');
+    },
+  });
+
+  // ── Mutation: create program ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateProgramRequest) =>
+      institutionAdminService.createProgram(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Custom program added');
+    },
+    onError: () => {
+      toast.error('Failed to add program');
+    },
+  });
+
+  // ── Mutation: delete program ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteProgram(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      toast.success('Program deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete program');
+    },
+  });
+
+  const resetForm = () => {
+    setFormCode('');
+    setFormName('');
+    setFormLevel('UG');
+    setFormDuration('');
+    setFormStatus('ACTIVE');
   };
+
+  const handleToggle = (id: string) => {
+    const apiProgram = apiPrograms?.find((p) => String(p.id) === id);
+    if (apiProgram) {
+      const newStatus = apiProgram.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      toggleMutation.mutate({ id: apiProgram.id, newStatus });
+    }
+  };
+
+  const handleCreate = () => {
+    if (!formCode || !formName || !formDuration) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      programCode: formCode,
+      name: formName,
+      level: formLevel,
+      duration: Number(formDuration),
+      isCustom: true,
+      status: formStatus,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const apiProgram = apiPrograms?.find((p) => String(p.id) === id);
+    if (apiProgram) {
+      deleteMutation.mutate(apiProgram.id);
+    }
+  };
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-9 w-40" />
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-10" />
+                <Skeleton className="h-4 w-16 ml-auto" />
+                <Skeleton className="h-6 w-10" />
+                <Skeleton className="h-6 w-8" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load programs.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -282,15 +676,26 @@ const ProgramsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Program Code *</Label>
-                <Input placeholder="e.g., BSC" />
+                <Input
+                  placeholder="e.g., BSC"
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Program Name *</Label>
-                <Input placeholder="e.g., B.Sc" />
+                <Input
+                  placeholder="e.g., B.Sc"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Program Level *</Label>
-                <Select>
+                <Select
+                  value={formLevel}
+                  onValueChange={(v: 'UG' | 'PG' | 'Doctoral') => setFormLevel(v)}
+                >
                   <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UG">UG</SelectItem>
@@ -301,22 +706,40 @@ const ProgramsTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Duration (Years) *</Label>
-                <Input type="number" placeholder="e.g., 3" />
+                <Input
+                  type="number"
+                  placeholder="e.g., 4"
+                  value={formDuration}
+                  onChange={(e) => setFormDuration(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Custom program added'); }}>Add Program</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add Program'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -335,27 +758,72 @@ const ProgramsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {programs.map((program) => (
-              <tr key={program.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
-                <td className="py-3 px-4 font-medium">
-                  {program.name}
-                  {program.isCustom && <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>}
-                </td>
-                <td className="py-3 px-4">
-                  <Badge variant="secondary">{program.level}</Badge>
-                </td>
-                <td className="py-3 px-4 text-center">{program.duration} Years</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
-                    {program.status === 'active' ? 'Active' : 'Inactive'}
-                  </Badge>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <Switch checked={program.enabled} onCheckedChange={() => toggleProgram(program.id)} className="scale-75" />
+            {programs.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                  No programs found. Click "Add Custom Program" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              programs.map((program) => (
+                <tr key={program.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
+                  <td className="py-3 px-4 font-medium">
+                    {program.name}
+                    {program.isCustom && <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>}
+                  </td>
+                  <td className="py-3 px-4">
+                    <Badge variant="secondary">{program.level}</Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">{program.duration} Years</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
+                      {program.status === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Switch
+                        checked={program.enabled}
+                        onCheckedChange={() => handleToggle(program.id)}
+                        disabled={toggleMutation.isPending}
+                        className="scale-75"
+                      />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Program</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete <strong>{program.name}</strong>?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(program.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -365,21 +833,171 @@ const ProgramsTab = () => {
 
 // Departments Tab
 const DepartmentsTab = () => {
-  const [depts, setDepts] = useState<Department[]>(departments);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
 
+  // ── Form state ──
+  const [formName, setFormName] = useState('');
+  const [formCode, setFormCode] = useState('');
+  const [formProgramId, setFormProgramId] = useState('');
+  const [formEstYear, setFormEstYear] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+
+  // ── Query: fetch all departments ──
+  const {
+    data: apiDepartments,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<DepartmentApiResponse[]>({
+    queryKey: ['departments'],
+    queryFn: () => institutionAdminService.getDepartments(),
+    enabled: isAuthenticated,
+  });
+
+  // ── Query: fetch programs for dropdown ──
+  const { data: apiProgramsForDept } = useQuery<ProgramApiResponse[]>({
+    queryKey: ['programs'],
+    queryFn: () => institutionAdminService.getPrograms(),
+    enabled: showAddDialog,
+  });
+
+  // Map API response to local Department shape
+  const depts: Department[] = (apiDepartments ?? []).map((d) => ({
+    id: String(d.id),
+    name: d.name,
+    code: d.code,
+    program: d.program,
+    programId: String(d.programId),
+    coordinator: d.coordinator ?? '',
+    repositoryCompletion: d.repositoryCompletion ?? 0,
+    establishedYear: d.establishedYear ?? undefined,
+    status: d.status === 'ACTIVE' ? 'active' : 'inactive',
+    enabled: d.status === 'ACTIVE',
+  }));
+
+  // Search filter
   const filtered = depts.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()) ||
     d.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleDept = (id: string) => {
-    setDepts((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, enabled: !d.enabled, status: d.enabled ? 'inactive' : 'active' } : d))
-    );
-    toast.success('Department status updated');
+  // ── Mutation: toggle department status ──
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
+      institutionAdminService.toggleDepartmentStatus(id, { status: newStatus }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      toast.success('Department status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update department status');
+    },
+  });
+
+  // ── Mutation: create department ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateDepartmentRequest) =>
+      institutionAdminService.createDepartment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Department added');
+    },
+    onError: () => {
+      toast.error('Failed to add department');
+    },
+  });
+
+  // ── Mutation: delete department ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteDepartment(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      toast.success('Department deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete department');
+    },
+  });
+
+  const resetForm = () => {
+    setFormName('');
+    setFormCode('');
+    setFormProgramId('');
+    setFormEstYear('');
+    setFormStatus('ACTIVE');
   };
+
+  const handleToggle = (id: string) => {
+    const apiDept = apiDepartments?.find((d) => String(d.id) === id);
+    if (apiDept) {
+      const newStatus = apiDept.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      toggleMutation.mutate({ id: apiDept.id, newStatus });
+    }
+  };
+
+  const handleCreate = () => {
+    if (!formCode || !formName || !formProgramId) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      name: formName,
+      code: formCode,
+      programId: Number(formProgramId),
+      establishedYear: formEstYear ? Number(formEstYear) : undefined,
+      status: formStatus,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const apiDept = apiDepartments?.find((d) => String(d.id) === id);
+    if (apiDept) {
+      deleteMutation.mutate(apiDept.id);
+    }
+  };
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-9 w-60" />
+          <Skeleton className="h-9 w-44" />
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-12 ml-auto" />
+                <Skeleton className="h-5 w-14" />
+                <Skeleton className="h-6 w-8" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load departments.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -407,41 +1025,67 @@ const DepartmentsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Department Code *</Label>
-                <Input placeholder="e.g., AERO" />
+                <Input
+                  placeholder="e.g., AERO"
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Department Name *</Label>
-                <Input placeholder="e.g., Aerospace Engineering" />
+                <Input
+                  placeholder="e.g., Aerospace Engineering"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Program *</Label>
-                <Select>
+                <Select value={formProgramId} onValueChange={setFormProgramId}>
                   <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
                   <SelectContent>
-                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    {(apiProgramsForDept ?? []).filter((p) => p.status === 'ACTIVE').map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Established Year</Label>
-                <Input type="number" placeholder="e.g., 2020" />
+                <Input
+                  type="number"
+                  placeholder="e.g., 2020"
+                  value={formEstYear}
+                  onChange={(e) => setFormEstYear(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Department added'); }}>Add Department</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add Department'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -460,22 +1104,67 @@ const DepartmentsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((dept) => (
-              <tr key={dept.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
-                <td className="py-3 px-4 font-medium">{dept.name}</td>
-                <td className="py-3 px-4">{dept.program}</td>
-                <td className="py-3 px-4 text-center">{dept.establishedYear || '-'}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={dept.status === 'active' ? 'default' : 'secondary'}>
-                    {dept.status}
-                  </Badge>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <Switch checked={dept.enabled} onCheckedChange={() => toggleDept(dept.id)} className="scale-75" />
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                  {search ? 'No departments match your search.' : 'No departments found. Click "Add Custom Department" to create one.'}
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((dept) => (
+                <tr key={dept.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
+                  <td className="py-3 px-4 font-medium">{dept.name}</td>
+                  <td className="py-3 px-4">{dept.program}</td>
+                  <td className="py-3 px-4 text-center">{dept.establishedYear || '-'}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={dept.status === 'active' ? 'default' : 'secondary'}>
+                      {dept.status === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Switch
+                        checked={dept.enabled}
+                        onCheckedChange={() => handleToggle(dept.id)}
+                        disabled={toggleMutation.isPending}
+                        className="scale-75"
+                      />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete <strong>{dept.name}</strong>?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(dept.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -485,19 +1174,163 @@ const DepartmentsTab = () => {
 
 // Specializations Tab
 const SpecializationsTab = () => {
-  const [specs, setSpecs] = useState<Specialization[]>(specializations);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
+  // ── Form state ──
+  const [formName, setFormName] = useState('');
+  const [formDeptId, setFormDeptId] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+
+  // ── Query: fetch all specializations ──
+  const {
+    data: apiSpecs,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<SpecializationApiResponse[]>({
+    queryKey: ['specializations'],
+    queryFn: () => institutionAdminService.getSpecializations(),
+    enabled: isAuthenticated,
+  });
+
+  // ── Query: fetch departments for dropdown ──
+  const { data: apiDeptsForSpec } = useQuery<DepartmentApiResponse[]>({
+    queryKey: ['departments'],
+    queryFn: () => institutionAdminService.getDepartments(),
+    enabled: showAddDialog,
+  });
+
+  // Map API response to local Specialization shape
+  const specs: Specialization[] = (apiSpecs ?? []).map((s) => ({
+    id: String(s.id),
+    name: s.name,
+    departmentId: String(s.departmentId),
+    departmentName: s.departmentName,
+    status: s.status === 'ACTIVE' ? 'active' : 'inactive',
+    enabled: s.status === 'ACTIVE',
+  }));
+
+  // Group by department name
   const grouped = specs.reduce<Record<string, Specialization[]>>((acc, s) => {
     if (!acc[s.departmentName]) acc[s.departmentName] = [];
     acc[s.departmentName].push(s);
     return acc;
   }, {});
 
-  const toggleSpec = (id: string) => {
-    setSpecs((prev) => prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled, status: s.enabled ? 'inactive' : 'active' } : s)));
-    toast.success('Specialization updated');
+  // ── Mutation: toggle status ──
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
+      institutionAdminService.toggleSpecializationStatus(id, { status: newStatus }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      toast.success('Specialization status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update specialization');
+    },
+  });
+
+  // ── Mutation: create specialization ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateSpecializationRequest) =>
+      institutionAdminService.createSpecialization(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Specialization added');
+    },
+    onError: () => {
+      toast.error('Failed to add specialization');
+    },
+  });
+
+  // ── Mutation: delete specialization ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteSpecialization(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      toast.success('Specialization deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete specialization');
+    },
+  });
+
+  const resetForm = () => {
+    setFormName('');
+    setFormDeptId('');
+    setFormStatus('ACTIVE');
   };
+
+  const handleToggle = (id: string) => {
+    const apiSpec = apiSpecs?.find((s) => String(s.id) === id);
+    if (apiSpec) {
+      const newStatus = apiSpec.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      toggleMutation.mutate({ id: apiSpec.id, newStatus });
+    }
+  };
+
+  const handleCreate = () => {
+    if (!formName || !formDeptId) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      name: formName,
+      departmentId: Number(formDeptId),
+      status: formStatus,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const apiSpec = apiSpecs?.find((s) => String(s.id) === id);
+    if (apiSpec) {
+      deleteMutation.mutate(apiSpec.id);
+    }
+  };
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-52" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="grid gap-4">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="py-3 px-4">
+                <Skeleton className="h-5 w-48" />
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map((j) => (
+                    <Skeleton key={j} className="h-10 rounded-lg" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load specializations.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -517,65 +1350,127 @@ const SpecializationsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Specialization Name *</Label>
-                <Input placeholder="e.g., Machine Learning" />
+                <Input
+                  placeholder="e.g., Machine Learning"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
-                <Select>
+                <Select value={formDeptId} onValueChange={setFormDeptId}>
                   <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
                   <SelectContent>
-                    {departments.filter((d) => d.status === 'active').map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.code} - {d.name}</SelectItem>
+                    {(apiDeptsForSpec ?? []).filter((d) => d.status === 'ACTIVE').map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>{d.code} — {d.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Specialization added'); }}>Add</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-4">
-        {Object.entries(grouped).map(([dept, items]) => (
-          <Card key={dept}>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                {dept}
-                <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {items.map((spec) => (
-                  <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{spec.name}</span>
-                      <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
-                        {spec.status}
-                      </Badge>
-                    </div>
-                    <Switch checked={spec.enabled} onCheckedChange={() => toggleSpec(spec.id)} className="scale-75" />
-                  </div>
-                ))}
-              </div>
+        {Object.keys(grouped).length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              No specializations found. Click "Add Specialization" to create one.
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          Object.entries(grouped).map(([dept, items]) => (
+            <Card key={dept}>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  {dept}
+                  <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {items.map((spec) => (
+                    <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{spec.name}</span>
+                        <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
+                          {spec.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Switch
+                          checked={spec.enabled}
+                          onCheckedChange={() => handleToggle(spec.id)}
+                          disabled={toggleMutation.isPending}
+                          className="scale-75"
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Specialization</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete <strong>{spec.name}</strong>?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(spec.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
@@ -583,9 +1478,221 @@ const SpecializationsTab = () => {
 
 // Academic Regulations Tab
 const AcademicRegulationsTab = () => {
-  const [regs] = useState<AcademicRegulation[]>(academicRegulations);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [viewReg, setViewReg] = useState<AcademicRegulation | null>(null);
+  const [viewReg, setViewReg] = useState<RegulationApiResponse | null>(null);
+
+  // ── Form state ──
+  const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formProgramId, setFormProgramId] = useState('');
+  const [formAcademicYearIntroduced, setFormAcademicYearIntroduced] = useState('');
+  const [formEffFromBatch, setFormEffFromBatch] = useState('');
+  const [formEffToBatch, setFormEffToBatch] = useState('');
+  const [formDuration, setFormDuration] = useState('');
+  const [formTotalCredits, setFormTotalCredits] = useState('');
+  const [formCoreCredits, setFormCoreCredits] = useState('');
+  const [formProfElectiveCredits, setFormProfElectiveCredits] = useState('');
+  const [formOpenElectiveCredits, setFormOpenElectiveCredits] = useState('');
+  const [formLabCredits, setFormLabCredits] = useState('');
+  const [formProjectCredits, setFormProjectCredits] = useState('');
+  const [formInternshipCredits, setFormInternshipCredits] = useState('');
+  const [formInternalMarks, setFormInternalMarks] = useState('');
+  const [formExternalMarks, setFormExternalMarks] = useState('');
+  const [formPassingMarks, setFormPassingMarks] = useState('');
+  const [formGradingSystem, setFormGradingSystem] = useState('');
+  const [formCgpaScale, setFormCgpaScale] = useState('');
+  const [formInternshipMandatory, setFormInternshipMandatory] = useState(false);
+  const [formInternshipDuration, setFormInternshipDuration] = useState('');
+  const [formIndustryTraining, setFormIndustryTraining] = useState(false);
+  const [formMiniProject, setFormMiniProject] = useState(false);
+  const [formMajorProject, setFormMajorProject] = useState(false);
+  const [formCapstoneProject, setFormCapstoneProject] = useState(false);
+  const [formApprovedBy, setFormApprovedBy] = useState('');
+  const [formApprovalDate, setFormApprovalDate] = useState('');
+  const [formBosApproval, setFormBosApproval] = useState('');
+  const [formAcademicCouncilApproval, setFormAcademicCouncilApproval] = useState('');
+  const [formDocuments, setFormDocuments] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+
+  // ── Query: fetch all regulations ──
+  const {
+    data: apiRegulations,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<RegulationApiResponse[]>({
+    queryKey: ['regulations'],
+    queryFn: () => institutionAdminService.getRegulations(),
+    enabled: isAuthenticated,
+  });
+
+  // ── Query: fetch programs for dropdown ──
+  const { data: apiProgramsForReg } = useQuery<ProgramApiResponse[]>({
+    queryKey: ['programs'],
+    queryFn: () => institutionAdminService.getPrograms(),
+    enabled: showAddDialog,
+  });
+
+  // ── Query: fetch academic years for dropdown ──
+  const { data: apiAcademicYearsForReg } = useQuery<AcademicYearApiResponse[]>({
+    queryKey: ['academicYears'],
+    queryFn: () => institutionAdminService.getAcademicYears(),
+    enabled: showAddDialog,
+  });
+
+  // ── Mutation: toggle regulation status ──
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
+      institutionAdminService.toggleRegulationStatus(id, { status: newStatus }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['regulations'] });
+      toast.success('Regulation status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update regulation status');
+    },
+  });
+
+  // ── Mutation: create regulation ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateRegulationRequest) =>
+      institutionAdminService.createRegulation(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['regulations'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Regulation added successfully');
+    },
+    onError: () => {
+      toast.error('Failed to add regulation');
+    },
+  });
+
+  const resetForm = () => {
+    setFormCode('');
+    setFormName('');
+    setFormProgramId('');
+    setFormAcademicYearIntroduced('');
+    setFormEffFromBatch('');
+    setFormEffToBatch('');
+    setFormDuration('');
+    setFormTotalCredits('');
+    setFormCoreCredits('');
+    setFormProfElectiveCredits('');
+    setFormOpenElectiveCredits('');
+    setFormLabCredits('');
+    setFormProjectCredits('');
+    setFormInternshipCredits('');
+    setFormInternalMarks('');
+    setFormExternalMarks('');
+    setFormPassingMarks('');
+    setFormGradingSystem('');
+    setFormCgpaScale('');
+    setFormInternshipMandatory(false);
+    setFormInternshipDuration('');
+    setFormIndustryTraining(false);
+    setFormMiniProject(false);
+    setFormMajorProject(false);
+    setFormCapstoneProject(false);
+    setFormApprovedBy('');
+    setFormApprovalDate('');
+    setFormBosApproval('');
+    setFormAcademicCouncilApproval('');
+    setFormDocuments('');
+    setFormStatus('ACTIVE');
+  };
+
+  const handleToggle = (id: string) => {
+    const apiReg = apiRegulations?.find((r) => String(r.id) === id);
+    if (apiReg) {
+      const newStatus = apiReg.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      toggleMutation.mutate({ id: apiReg.id, newStatus });
+    }
+  };
+
+  const handleCreate = () => {
+    if (!formCode || !formName || !formProgramId || !formAcademicYearIntroduced || !formEffFromBatch || !formDuration) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      regulationCode: formCode,
+      regulationName: formName,
+      programId: Number(formProgramId),
+      academicYearIntroduced: formAcademicYearIntroduced,
+      effectiveFromBatch: formEffFromBatch,
+      effectiveToBatch: formEffToBatch,
+      duration: Number(formDuration),
+      totalCredits: formTotalCredits ? Number(formTotalCredits) : 0,
+      coreCredits: formCoreCredits ? Number(formCoreCredits) : 0,
+      professionalElectiveCredits: formProfElectiveCredits ? Number(formProfElectiveCredits) : 0,
+      openElectiveCredits: formOpenElectiveCredits ? Number(formOpenElectiveCredits) : 0,
+      laboratoryCredits: formLabCredits ? Number(formLabCredits) : 0,
+      projectCredits: formProjectCredits ? Number(formProjectCredits) : 0,
+      internshipCredits: formInternshipCredits ? Number(formInternshipCredits) : 0,
+      internalMarks: formInternalMarks ? Number(formInternalMarks) : 0,
+      externalMarks: formExternalMarks ? Number(formExternalMarks) : 0,
+      passingMarks: formPassingMarks ? Number(formPassingMarks) : 0,
+      gradingSystem: formGradingSystem || '',
+      cgpaScale: formCgpaScale ? Number(formCgpaScale) : 0,
+      internshipMandatory: formInternshipMandatory,
+      internshipDuration: formInternshipDuration || '',
+      industryTrainingMandatory: formIndustryTraining,
+      miniProjectMandatory: formMiniProject,
+      majorProjectMandatory: formMajorProject,
+      capstoneProjectMandatory: formCapstoneProject,
+      approvedBy: formApprovedBy || '',
+      approvalDate: formApprovalDate || '',
+      bosApproval: formBosApproval || '',
+      academicCouncilApproval: formAcademicCouncilApproval || '',
+      documents: formDocuments || '',
+      status: formStatus,
+    });
+  };
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-12 ml-auto" />
+                <Skeleton className="h-5 w-14" />
+                <Skeleton className="h-6 w-8" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load regulations.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const activePrograms = (apiProgramsForReg ?? []).filter((p) => p.status === 'ACTIVE');
+  const activeAcademicYears = apiAcademicYearsForReg ?? [];
 
   return (
     <div className="space-y-4">
@@ -608,29 +1715,29 @@ const AcademicRegulationsTab = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Regulation Code *</Label>
-                    <Input placeholder="e.g., R24" />
+                    <Input placeholder="e.g., R24" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Regulation Name *</Label>
-                    <Input placeholder="e.g., Regulation 2024" />
+                    <Input placeholder="e.g., Regulation 2024" value={formName} onChange={(e) => setFormName(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Program *</Label>
-                    <Select>
+                    <Select value={formProgramId} onValueChange={setFormProgramId}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
-                        {masterPrograms.filter((p) => p.status === 'active').map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        {activePrograms.map((p) => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Academic Year Introduced *</Label>
-                    <Select>
+                    <Select value={formAcademicYearIntroduced} onValueChange={setFormAcademicYearIntroduced}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
-                        {academicYears.map((y) => (
+                        {activeAcademicYears.map((y) => (
                           <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
                         ))}
                       </SelectContent>
@@ -638,23 +1745,23 @@ const AcademicRegulationsTab = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Effective From Batch *</Label>
-                    <Input placeholder="e.g., 2024" />
+                    <Input placeholder="e.g., 2024" value={formEffFromBatch} onChange={(e) => setFormEffFromBatch(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Effective To Batch</Label>
-                    <Input placeholder="e.g., 2027" />
+                    <Input placeholder="e.g., 2027" value={formEffToBatch} onChange={(e) => setFormEffToBatch(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Duration *</Label>
-                    <Input type="number" placeholder="e.g., 4" />
+                    <Label>Duration (Years) *</Label>
+                    <Input type="number" placeholder="e.g., 4" value={formDuration} onChange={(e) => setFormDuration(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select defaultValue="active">
+                    <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -664,30 +1771,83 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Total Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Core Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Professional Elective Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Open Elective Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Laboratory Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Project Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Internship Credits</Label><Input type="number" /></div>
+                  <div className="space-y-2"><Label>Total Credits</Label><Input type="number" value={formTotalCredits} onChange={(e) => setFormTotalCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Core Credits</Label><Input type="number" value={formCoreCredits} onChange={(e) => setFormCoreCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Professional Elective Credits</Label><Input type="number" value={formProfElectiveCredits} onChange={(e) => setFormProfElectiveCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Open Elective Credits</Label><Input type="number" value={formOpenElectiveCredits} onChange={(e) => setFormOpenElectiveCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Laboratory Credits</Label><Input type="number" value={formLabCredits} onChange={(e) => setFormLabCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Project Credits</Label><Input type="number" value={formProjectCredits} onChange={(e) => setFormProjectCredits(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Internship Credits</Label><Input type="number" value={formInternshipCredits} onChange={(e) => setFormInternshipCredits(e.target.value)} /></div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Internal Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>External Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Passing Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Grading System</Label><Input placeholder="e.g., CGPA Based" /></div>
-                  <div className="space-y-2"><Label>CGPA Scale</Label><Input type="number" /></div>
+                  <div className="space-y-2"><Label>Internal Marks</Label><Input type="number" value={formInternalMarks} onChange={(e) => setFormInternalMarks(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>External Marks</Label><Input type="number" value={formExternalMarks} onChange={(e) => setFormExternalMarks(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Passing Marks</Label><Input type="number" value={formPassingMarks} onChange={(e) => setFormPassingMarks(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Grading System</Label><Input placeholder="e.g., CGPA Based" value={formGradingSystem} onChange={(e) => setFormGradingSystem(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>CGPA Scale</Label><Input type="number" value={formCgpaScale} onChange={(e) => setFormCgpaScale(e.target.value)} /></div>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Mandatory Requirements</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="flex items-center justify-between p-2 rounded-lg border">
+                    <Label className="text-xs">Internship Mandatory</Label>
+                    <Switch checked={formInternshipMandatory} onCheckedChange={setFormInternshipMandatory} className="scale-75" />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg border">
+                    <Label className="text-xs">Industry Training</Label>
+                    <Switch checked={formIndustryTraining} onCheckedChange={setFormIndustryTraining} className="scale-75" />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg border">
+                    <Label className="text-xs">Mini Project</Label>
+                    <Switch checked={formMiniProject} onCheckedChange={setFormMiniProject} className="scale-75" />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg border">
+                    <Label className="text-xs">Major Project</Label>
+                    <Switch checked={formMajorProject} onCheckedChange={setFormMajorProject} className="scale-75" />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg border">
+                    <Label className="text-xs">Capstone Project</Label>
+                    <Switch checked={formCapstoneProject} onCheckedChange={setFormCapstoneProject} className="scale-75" />
+                  </div>
+                </div>
+                {formInternshipMandatory && (
+                  <div className="mt-3">
+                    <Label>Internship Duration</Label>
+                    <Input placeholder="e.g., 8 weeks" value={formInternshipDuration} onChange={(e) => setFormInternshipDuration(e.target.value)} />
+                  </div>
+                )}
+              </div>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Approvals</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Approved By</Label><Input placeholder="e.g., Academic Council" value={formApprovedBy} onChange={(e) => setFormApprovedBy(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Approval Date</Label><Input type="date" value={formApprovalDate} onChange={(e) => setFormApprovalDate(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>BoS Approval</Label><Input placeholder="e.g., Approved - BoS/2024/02" value={formBosApproval} onChange={(e) => setFormBosApproval(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Academic Council Approval</Label><Input placeholder="e.g., Approved - AC/2024/03" value={formAcademicCouncilApproval} onChange={(e) => setFormAcademicCouncilApproval(e.target.value)} /></div>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Documents</h4>
+                <div className="space-y-2">
+                  <Label>Document References</Label>
+                  <Input placeholder="Comma-separated document names" value={formDocuments} onChange={(e) => setFormDocuments(e.target.value)} />
+                  <p className="text-xs text-muted-foreground">Enter comma-separated document names</p>
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Regulation added'); }}>Add Regulation</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add Regulation'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -707,23 +1867,41 @@ const AcademicRegulationsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {regs.map((reg) => (
-              <tr key={reg.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
-                <td className="py-3 px-4">{reg.regulationName}</td>
-                <td className="py-3 px-4">{reg.program}</td>
-                <td className="py-3 px-4 text-center text-xs">{reg.effectiveFromBatch} - {reg.effectiveToBatch}</td>
-                <td className="py-3 px-4 text-center">{reg.creditStructure.totalCredits}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={reg.status === 'active' ? 'default' : 'secondary'}>{reg.status}</Badge>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)}>
-                    <Eye className="h-3.5 w-3.5" />
-                  </Button>
+            {!apiRegulations || apiRegulations.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                  No regulations found. Click "Add Regulation" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              apiRegulations.map((reg) => (
+                <tr key={reg.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
+                  <td className="py-3 px-4">{reg.regulationName}</td>
+                  <td className="py-3 px-4">{reg.programName}</td>
+                  <td className="py-3 px-4 text-center text-xs">{reg.effectiveFromBatch}{reg.effectiveToBatch ? ` - ${reg.effectiveToBatch}` : ''}</td>
+                  <td className="py-3 px-4 text-center">{reg.totalCredits}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={reg.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                      {reg.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Switch
+                        checked={reg.status === 'ACTIVE'}
+                        onCheckedChange={() => handleToggle(String(reg.id))}
+                        disabled={toggleMutation.isPending}
+                        className="scale-75"
+                      />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -737,33 +1915,33 @@ const AcademicRegulationsTab = () => {
           {viewReg && (
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><Label className="text-xs text-muted-foreground">Program</Label><p className="text-sm font-medium">{viewReg.program}</p></div>
+                <div><Label className="text-xs text-muted-foreground">Program</Label><p className="text-sm font-medium">{viewReg.programName}</p></div>
                 <div><Label className="text-xs text-muted-foreground">Duration</Label><p className="text-sm font-medium">{viewReg.duration} Years</p></div>
-                <div><Label className="text-xs text-muted-foreground">Effective Batch</Label><p className="text-sm font-medium">{viewReg.effectiveFromBatch} - {viewReg.effectiveToBatch}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant={viewReg.status === 'active' ? 'default' : 'secondary'}>{viewReg.status}</Badge></div>
+                <div><Label className="text-xs text-muted-foreground">Effective Batch</Label><p className="text-sm font-medium">{viewReg.effectiveFromBatch}{viewReg.effectiveToBatch ? ` - ${viewReg.effectiveToBatch}` : ''}</p></div>
+                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant={viewReg.status === 'ACTIVE' ? 'default' : 'secondary'}>{viewReg.status === 'ACTIVE' ? 'Active' : 'Inactive'}</Badge></div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Total Credits</p><p className="text-lg font-bold">{viewReg.creditStructure.totalCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Core</p><p className="text-lg font-bold">{viewReg.creditStructure.coreCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Prof. Elective</p><p className="text-lg font-bold">{viewReg.creditStructure.professionalElectiveCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Open Elective</p><p className="text-lg font-bold">{viewReg.creditStructure.openElectiveCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Laboratory</p><p className="text-lg font-bold">{viewReg.creditStructure.laboratoryCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Project</p><p className="text-lg font-bold">{viewReg.creditStructure.projectCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internship</p><p className="text-lg font-bold">{viewReg.creditStructure.internshipCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Total Credits</p><p className="text-lg font-bold">{viewReg.totalCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Core</p><p className="text-lg font-bold">{viewReg.coreCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Prof. Elective</p><p className="text-lg font-bold">{viewReg.professionalElectiveCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Open Elective</p><p className="text-lg font-bold">{viewReg.openElectiveCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Laboratory</p><p className="text-lg font-bold">{viewReg.laboratoryCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Project</p><p className="text-lg font-bold">{viewReg.projectCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internship</p><p className="text-lg font-bold">{viewReg.internshipCredits}</p></div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internal</p><p className="text-lg font-bold">{viewReg.evaluationScheme.internalMarks}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">External</p><p className="text-lg font-bold">{viewReg.evaluationScheme.externalMarks}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Passing</p><p className="text-lg font-bold">{viewReg.evaluationScheme.passingMarks}%</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Grading</p><p className="text-sm font-bold">{viewReg.evaluationScheme.gradingSystem}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.evaluationScheme.cgpaScale}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internal</p><p className="text-lg font-bold">{viewReg.internalMarks}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">External</p><p className="text-lg font-bold">{viewReg.externalMarks}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Passing</p><p className="text-lg font-bold">{viewReg.passingMarks}%</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Grading</p><p className="text-sm font-bold">{viewReg.gradingSystem}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.cgpaScale}</p></div>
                 </div>
               </div>
               <Separator />
@@ -771,17 +1949,17 @@ const AcademicRegulationsTab = () => {
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Internship Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span>Internship Mandatory</span><Badge variant={viewReg.internshipRequirements.internshipMandatory ? 'default' : 'secondary'}>{viewReg.internshipRequirements.internshipMandatory ? 'Yes' : 'No'}</Badge></div>
-                    {viewReg.internshipRequirements.internshipDuration && <div className="flex justify-between text-sm"><span>Duration</span><span className="font-medium">{viewReg.internshipRequirements.internshipDuration}</span></div>}
-                    <div className="flex justify-between text-sm"><span>Industry Training</span><Badge variant={viewReg.internshipRequirements.industryTrainingMandatory ? 'default' : 'secondary'}>{viewReg.internshipRequirements.industryTrainingMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Internship Mandatory</span><Badge variant={viewReg.internshipMandatory ? 'default' : 'secondary'}>{viewReg.internshipMandatory ? 'Yes' : 'No'}</Badge></div>
+                    {viewReg.internshipDuration && <div className="flex justify-between text-sm"><span>Duration</span><span className="font-medium">{viewReg.internshipDuration}</span></div>}
+                    <div className="flex justify-between text-sm"><span>Industry Training</span><Badge variant={viewReg.industryTrainingMandatory ? 'default' : 'secondary'}>{viewReg.industryTrainingMandatory ? 'Yes' : 'No'}</Badge></div>
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Project Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span>Mini Project</span><Badge variant={viewReg.projectRequirements.miniProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.miniProjectMandatory ? 'Yes' : 'No'}</Badge></div>
-                    <div className="flex justify-between text-sm"><span>Major Project</span><Badge variant={viewReg.projectRequirements.majorProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.majorProjectMandatory ? 'Yes' : 'No'}</Badge></div>
-                    <div className="flex justify-between text-sm"><span>Capstone Project</span><Badge variant={viewReg.projectRequirements.capstoneProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.capstoneProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Mini Project</span><Badge variant={viewReg.miniProjectMandatory ? 'default' : 'secondary'}>{viewReg.miniProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Major Project</span><Badge variant={viewReg.majorProjectMandatory ? 'default' : 'secondary'}>{viewReg.majorProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Capstone Project</span><Badge variant={viewReg.capstoneProjectMandatory ? 'default' : 'secondary'}>{viewReg.capstoneProjectMandatory ? 'Yes' : 'No'}</Badge></div>
                   </div>
                 </div>
               </div>
@@ -789,22 +1967,24 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Approvals</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs text-muted-foreground">Approved By</Label><p className="text-sm font-medium">{viewReg.approvals.approvedBy}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">Approval Date</Label><p className="text-sm font-medium">{viewReg.approvals.approvalDate}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">BoS Approval</Label><p className="text-sm font-medium">{viewReg.approvals.bosApproval}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">Academic Council</Label><p className="text-sm font-medium">{viewReg.approvals.academicCouncilApproval}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Approved By</Label><p className="text-sm font-medium">{viewReg.approvedBy || '-'}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Approval Date</Label><p className="text-sm font-medium">{viewReg.approvalDate || '-'}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">BoS Approval</Label><p className="text-sm font-medium">{viewReg.bosApproval || '-'}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Academic Council</Label><p className="text-sm font-medium">{viewReg.academicCouncilApproval || '-'}</p></div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Documents</h4>
                 <div className="flex flex-wrap gap-2">
-                  {viewReg.documents.map((doc) => (
-                    <Badge key={doc} variant="outline" className="flex items-center gap-1">
+                  {viewReg.documents ? viewReg.documents.split(',').map((doc, i) => (
+                    <Badge key={i} variant="outline" className="flex items-center gap-1">
                       <FileText className="h-3 w-3" />
-                      {doc}
+                      {doc.trim()}
                     </Badge>
-                  ))}
+                  )) : (
+                    <p className="text-xs text-muted-foreground">No documents attached</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -817,27 +1997,192 @@ const AcademicRegulationsTab = () => {
 
 // Program Offerings Tab
 const ProgramOfferingsTab = () => {
-  const [offerings] = useState<ProgramOffering[]>(programOfferings);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterYearId, setFilterYearId] = useState<string>('all');
 
-  const filtered = filterYear === 'all'
-    ? offerings
-    : offerings.filter((o) => o.academicYear === filterYear);
+  // ── Form state ──
+  const [formAcademicYearId, setFormAcademicYearId] = useState('');
+  const [formProgramId, setFormProgramId] = useState('');
+  const [formDepartmentId, setFormDepartmentId] = useState('');
+  const [formSpecializationId, setFormSpecializationId] = useState('');
+  const [formRegulationId, setFormRegulationId] = useState('');
+  const [formDuration, setFormDuration] = useState('');
+  const [formGeneratedName, setFormGeneratedName] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+
+  // ── Determine the academicYearId to pass as a query param ──
+  const filterAcademicYearId = filterYearId === 'all' ? undefined : Number(filterYearId);
+
+  // ── Query: fetch all program offerings ──
+  const {
+    data: apiOfferings,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<ProgramOfferingApiResponse[]>({
+    queryKey: ['programOfferings', filterAcademicYearId],
+    queryFn: () => institutionAdminService.getProgramOfferings({
+      academicYearId: filterAcademicYearId,
+    }),
+    enabled: isAuthenticated,
+  });
+
+  // ── Queries for dropdown data (only when dialog is open) ──
+  const { data: apiYearsForOffering } = useQuery<AcademicYearApiResponse[]>({
+    queryKey: ['academicYears'],
+    queryFn: () => institutionAdminService.getAcademicYears(),
+    enabled: showAddDialog,
+  });
+
+  const { data: apiProgramsForOffering } = useQuery<ProgramApiResponse[]>({
+    queryKey: ['programs'],
+    queryFn: () => institutionAdminService.getPrograms(),
+    enabled: showAddDialog,
+  });
+
+  const { data: apiDeptsForOffering } = useQuery<DepartmentApiResponse[]>({
+    queryKey: ['departments'],
+    queryFn: () => institutionAdminService.getDepartments(),
+    enabled: showAddDialog,
+  });
+
+  const { data: apiSpecsForOffering } = useQuery<SpecializationApiResponse[]>({
+    queryKey: ['specializations'],
+    queryFn: () => institutionAdminService.getSpecializations(),
+    enabled: showAddDialog,
+  });
+
+  const { data: apiRegsForOffering } = useQuery<RegulationApiResponse[]>({
+    queryKey: ['regulations'],
+    queryFn: () => institutionAdminService.getRegulations(),
+    enabled: showAddDialog,
+  });
+
+  // ── Mutation: create program offering ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateProgramOfferingRequest) =>
+      institutionAdminService.createProgramOffering(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programOfferings'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Program offering created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create program offering');
+    },
+  });
+
+  // ── Mutation: delete program offering ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteProgramOffering(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programOfferings'] });
+      toast.success('Program offering deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete program offering');
+    },
+  });
+
+  const resetForm = () => {
+    setFormAcademicYearId('');
+    setFormProgramId('');
+    setFormDepartmentId('');
+    setFormSpecializationId('');
+    setFormRegulationId('');
+    setFormDuration('');
+    setFormGeneratedName('');
+    setFormStatus('ACTIVE');
+  };
+
+  const handleCreate = () => {
+    if (!formAcademicYearId || !formProgramId || !formDepartmentId || !formRegulationId || !formDuration) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      academicYearId: Number(formAcademicYearId),
+      programId: Number(formProgramId),
+      departmentId: Number(formDepartmentId),
+      specializationId: formSpecializationId ? Number(formSpecializationId) : 0,
+      regulationId: Number(formRegulationId),
+      duration: Number(formDuration),
+      generatedName: formGeneratedName || autoName,
+      status: formStatus,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const offering = apiOfferings?.find((o) => String(o.id) === id);
+    if (offering) {
+      deleteMutation.mutate(offering.id);
+    }
+  };
+
+  // Auto-generate name when program, department, specialization, and regulation are selected
+  const selectedProgram = apiProgramsForOffering?.find((p) => String(p.id) === formProgramId);
+  const selectedDept = apiDeptsForOffering?.find((d) => String(d.id) === formDepartmentId);
+  const selectedSpec = apiSpecsForOffering?.find((s) => String(s.id) === formSpecializationId);
+  const selectedReg = apiRegsForOffering?.find((r) => String(r.id) === formRegulationId);
+  const autoName = [selectedProgram?.name, selectedDept?.code, selectedSpec?.name, selectedReg?.regulationCode]
+    .filter(Boolean)
+    .join(' ');
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-8 ml-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load program offerings.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Program Offerings</h3>
-          <Select value={filterYear} onValueChange={setFilterYear}>
+          <Select value={filterYearId} onValueChange={setFilterYearId}>
             <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Filter year" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYears.map((y) => (
-                <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
+              {(apiYearsForOffering ?? []).map((y) => (
+                <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -849,7 +2194,7 @@ const ProgramOfferingsTab = () => {
               Create Offering
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Program Offering</DialogTitle>
             </DialogHeader>
@@ -859,67 +2204,88 @@ const ProgramOfferingsTab = () => {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Academic Year *</Label>
-                <Select>
+                <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {academicYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
+                    {(apiYearsForOffering ?? []).map((y) => (
+                      <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Program *</Label>
-                <Select>
+                <Select value={formProgramId} onValueChange={setFormProgramId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    {(apiProgramsForOffering ?? []).filter((p) => p.status === 'ACTIVE').map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
-                <Select>
+                <Select value={formDepartmentId} onValueChange={setFormDepartmentId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {departments.filter((d) => d.status === 'active').map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.code} - {d.name}</SelectItem>
+                    {(apiDeptsForOffering ?? []).filter((d) => d.status === 'ACTIVE').map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>{d.code} - {d.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Specialization</Label>
-                <Select>
+                <Select value={formSpecializationId} onValueChange={setFormSpecializationId}>
                   <SelectTrigger><SelectValue placeholder="Select (optional)" /></SelectTrigger>
                   <SelectContent>
-                    {specializations.filter((s) => s.status === 'active').map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    {(apiSpecsForOffering ?? []).filter((s) => s.status === 'ACTIVE').map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Regulation *</Label>
-                <Select>
+                <Select value={formRegulationId} onValueChange={setFormRegulationId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {academicRegulations.filter((r) => r.status === 'active').map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{r.regulationCode} - {r.regulationName}</SelectItem>
+                    {(apiRegsForOffering ?? []).filter((r) => r.status === 'ACTIVE').map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>{r.regulationCode} - {r.regulationName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Duration (Years) *</Label>
-                <Input type="number" placeholder="e.g., 4" />
+                <Input type="number" placeholder="e.g., 4" value={formDuration} onChange={(e) => setFormDuration(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Generated Name</Label>
+                <Input
+                  placeholder="Auto-generated or specify manually"
+                  value={formGeneratedName || autoName}
+                  onChange={(e) => setFormGeneratedName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Auto-generated: <strong>{autoName}</strong></p>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Program offering created'); }}>Create</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creating…' : 'Create'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -941,57 +2307,247 @@ const ProgramOfferingsTab = () => {
               <th className="text-left py-3 px-4 font-medium">Regulation</th>
               <th className="text-center py-3 px-4 font-medium">Duration</th>
               <th className="text-center py-3 px-4 font-medium">Status</th>
+              <th className="text-center py-3 px-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((offering) => (
-              <tr key={offering.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
-                <td className="py-3 px-4">{offering.academicYear}</td>
-                <td className="py-3 px-4">{offering.program}</td>
-                <td className="py-3 px-4">{offering.department}</td>
-                <td className="py-3 px-4">{offering.specialization}</td>
-                <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
-                <td className="py-3 px-4 text-center">{offering.duration}Y</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={offering.status === 'active' ? 'default' : 'secondary'}>{offering.status}</Badge>
+            {!apiOfferings || apiOfferings.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                  No program offerings found. Click "Create Offering" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              apiOfferings.map((offering) => {
+                const academicYear = apiYearsForOffering?.find((y) => y.id === offering.academicYearId);
+                return (
+                  <tr key={offering.id} className="border-t hover:bg-muted/30">
+                    <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
+                    <td className="py-3 px-4">{academicYear?.year ?? offering.academicYearId}</td>
+                    <td className="py-3 px-4">{offering.program}</td>
+                    <td className="py-3 px-4">{offering.department}</td>
+                    <td className="py-3 px-4">{offering.specialization || '-'}</td>
+                    <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
+                    <td className="py-3 px-4 text-center">{offering.durationYears}Y</td>
+                    <td className="py-3 px-4 text-center">
+                      <Badge variant={offering.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                        {offering.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Program Offering</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete <strong>{offering.generatedName}</strong>?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(String(offering.id))}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
     </div>
   );
-};
-
-// Program Intake Tab
+};// Program Intake Tab
 const ProgramIntakeTab = () => {
-  const [intakes] = useState<ProgramIntake[]>(programIntakes);
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterYearId, setFilterYearId] = useState<string>('all');
 
-  const filtered = filterYear === 'all'
-    ? intakes
-    : intakes.filter((i) => i.academicYear === filterYear);
+  // ── Form state ──
+  const [formAcademicYearId, setFormAcademicYearId] = useState('');
+  const [formProgramOfferingId, setFormProgramOfferingId] = useState('');
+  const [formSanctionedIntake, setFormSanctionedIntake] = useState('');
+  const [formAdmittedIntake, setFormAdmittedIntake] = useState('');
+  const [formLateralEntryIntake, setFormLateralEntryIntake] = useState('');
+  const [formApprovalAuthority, setFormApprovalAuthority] = useState('');
+  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
-  const totalSanctioned = filtered.reduce((s, i) => s + i.sanctionedIntake, 0);
-  const totalAdmitted = filtered.reduce((s, i) => s + i.admittedIntake, 0);
-  const totalVacant = filtered.reduce((s, i) => s + i.vacantSeats, 0);
+  // ── Determine the academicYearId to pass as a query param ──
+  const filterAcademicYearId = filterYearId === 'all' ? undefined : Number(filterYearId);
+
+  // ── Query: fetch all program intakes ──
+  const {
+    data: apiIntakes,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<ProgramIntakeApiResponse[]>({
+    queryKey: ['programIntakes', filterAcademicYearId],
+    queryFn: () => institutionAdminService.getProgramIntakes({
+      academicYearId: filterAcademicYearId,
+    }),
+    enabled: isAuthenticated,
+  });
+
+  // ── Queries for dropdown data (only when dialog is open) ──
+  const { data: apiYearsForIntake } = useQuery<AcademicYearApiResponse[]>({
+    queryKey: ['academicYears'],
+    queryFn: () => institutionAdminService.getAcademicYears(),
+    enabled: showAddDialog,
+  });
+
+  const { data: apiOfferingsForIntake } = useQuery<ProgramOfferingApiResponse[]>({
+    queryKey: ['programOfferings'],
+    queryFn: () => institutionAdminService.getProgramOfferings(),
+    enabled: showAddDialog,
+  });
+
+  // Compute auto vacant seats
+  const computedVacantSeats = Math.max(
+    0,
+    (Number(formSanctionedIntake) || 0) - (Number(formAdmittedIntake) || 0)
+  );
+
+  // ── Mutation: create program intake ──
+  const createMutation = useMutation({
+    mutationFn: (data: CreateProgramIntakeRequest) =>
+      institutionAdminService.createProgramIntake(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programIntakes'] });
+      setShowAddDialog(false);
+      resetForm();
+      toast.success('Program intake created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create program intake');
+    },
+  });
+
+  // ── Mutation: delete program intake ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => institutionAdminService.deleteProgramIntake(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programIntakes'] });
+      toast.success('Program intake deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete program intake');
+    },
+  });
+
+  const resetForm = () => {
+    setFormAcademicYearId('');
+    setFormProgramOfferingId('');
+    setFormSanctionedIntake('');
+    setFormAdmittedIntake('');
+    setFormLateralEntryIntake('');
+    setFormApprovalAuthority('');
+    setFormStatus('ACTIVE');
+  };
+
+  const handleCreate = () => {
+    if (!formAcademicYearId || !formProgramOfferingId || !formSanctionedIntake || !formAdmittedIntake) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    createMutation.mutate({
+      academicYearId: Number(formAcademicYearId),
+      programOfferingId: Number(formProgramOfferingId),
+      sanctionedIntake: Number(formSanctionedIntake),
+      admittedIntake: Number(formAdmittedIntake),
+      lateralEntryIntake: formLateralEntryIntake ? Number(formLateralEntryIntake) : 0,
+      approvalAuthority: formApprovalAuthority || '',
+      status: formStatus,
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const intake = apiIntakes?.find((i) => String(i.id) === id);
+    if (intake) {
+      deleteMutation.mutate(intake.id);
+    }
+  };
+
+  // ── Summary totals ──
+  const totalSanctioned = (apiIntakes ?? []).reduce((s, i) => s + i.sanctionedIntake, 0);
+  const totalAdmitted = (apiIntakes ?? []).reduce((s, i) => s + i.admittedIntake, 0);
+  const totalVacant = (apiIntakes ?? []).reduce((s, i) => s + i.vacantSeats, 0);
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-lg" />
+          ))}
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-8 ml-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">Failed to load program intakes.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Program Intake</h3>
-          <Select value={filterYear} onValueChange={setFilterYear}>
+          <Select value={filterYearId} onValueChange={setFilterYearId}>
             <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Filter year" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYears.map((y) => (
-                <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
+              {(apiYearsForIntake ?? []).map((y) => (
+                <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -1003,7 +2559,7 @@ const ProgramIntakeTab = () => {
               Add Intake
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add Program Intake</DialogTitle>
             </DialogHeader>
@@ -1013,22 +2569,22 @@ const ProgramIntakeTab = () => {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Academic Year *</Label>
-                <Select>
+                <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {academicYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
+                    {(apiYearsForIntake ?? []).map((y) => (
+                      <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Program Offering *</Label>
-                <Select>
+                <Select value={formProgramOfferingId} onValueChange={setFormProgramOfferingId}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {programOfferings.filter((o) => o.status === 'active').map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.generatedName}</SelectItem>
+                    {(apiOfferingsForIntake ?? []).filter((o) => o.status === 'ACTIVE').map((o) => (
+                      <SelectItem key={o.id} value={String(o.id)}>{o.generatedName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1036,39 +2592,41 @@ const ProgramIntakeTab = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Sanctioned Intake *</Label>
-                  <Input type="number" placeholder="e.g., 120" />
+                  <Input type="number" placeholder="e.g., 120" value={formSanctionedIntake} onChange={(e) => setFormSanctionedIntake(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Admitted Intake *</Label>
-                  <Input type="number" placeholder="e.g., 118" />
+                  <Input type="number" placeholder="e.g., 118" value={formAdmittedIntake} onChange={(e) => setFormAdmittedIntake(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Lateral Entry Intake</Label>
-                  <Input type="number" placeholder="e.g., 12" />
+                  <Input type="number" placeholder="e.g., 12" value={formLateralEntryIntake} onChange={(e) => setFormLateralEntryIntake(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Vacant Seats (Auto)</Label>
-                  <Input disabled placeholder="Auto calculated" className="bg-muted" />
+                  <Input disabled value={computedVacantSeats} className="bg-muted" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Approval Authority</Label>
-                <Input placeholder="e.g., AICTE" />
+                <Input placeholder="e.g., AICTE" value={formApprovalAuthority} onChange={(e) => setFormApprovalAuthority(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Intake record added'); }}>Add Intake</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add Intake'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1108,27 +2666,74 @@ const ProgramIntakeTab = () => {
               <th className="text-center py-3 px-4 font-medium">Vacant</th>
               <th className="text-left py-3 px-4 font-medium">Authority</th>
               <th className="text-center py-3 px-4 font-medium">Status</th>
+              <th className="text-center py-3 px-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((intake) => (
-              <tr key={intake.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-semibold">{intake.programOffering}</td>
-                <td className="py-3 px-4">{intake.academicYear}</td>
-                <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
-                <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
-                <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
-                    {intake.vacantSeats}
-                  </Badge>
-                </td>
-                <td className="py-3 px-4">{intake.approvalAuthority}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={intake.status === 'active' ? 'default' : 'secondary'}>{intake.status}</Badge>
+            {!apiIntakes || apiIntakes.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                  No program intakes found. Click "Add Intake" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              apiIntakes.map((intake) => {
+                const offering = apiOfferingsForIntake?.find((o) => o.id === intake.programOfferingId);
+                const academicYear = apiYearsForIntake?.find((y) => y.id === intake.academicYearId);
+                return (
+                  <tr key={intake.id} className="border-t hover:bg-muted/30">
+                    <td className="py-3 px-4 font-semibold">{offering?.generatedName ?? intake.programOfferingId}</td>
+                    <td className="py-3 px-4">{academicYear?.year ?? intake.academicYearId}</td>
+                    <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
+                    <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
+                    <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
+                    <td className="py-3 px-4 text-center">
+                      <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
+                        {intake.vacantSeats}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">{intake.approvalAuthority || '-'}</td>
+                    <td className="py-3 px-4 text-center">
+                      <Badge variant={intake.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                        {intake.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Program Intake</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this intake record?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(String(intake.id))}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -1139,7 +2744,6 @@ const ProgramIntakeTab = () => {
     </div>
   );
 };
-
 // Main Academic Structure Page
 export const AcademicStructurePage = () => {
   const location = useLocation();

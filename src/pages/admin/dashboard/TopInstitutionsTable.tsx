@@ -2,12 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Institution } from './mock-data';
+import type { TopInstitutionData } from './types';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TopInstitutionsTableProps {
-  institutions: Institution[];
+  institutions: TopInstitutionData[];
 }
 
 export const TopInstitutionsTable = ({ institutions }: TopInstitutionsTableProps) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Download, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,33 +15,82 @@ import { RecentActivities } from './dashboard/RecentActivities';
 import { TopInstitutionsTable } from './dashboard/TopInstitutionsTable';
 import { DashboardSkeleton } from './dashboard/DashboardSkeleton';
 import { ErrorState } from './dashboard/ErrorState';
-import {
-  statCards,
-  topInstitutions,
-  recentActivities,
-} from './dashboard/mock-data';
+import { adminService } from '@/services/admin.service';
+import type { AdminDashboardData } from './dashboard/types';
 
 type DashboardState = 'loading' | 'success' | 'error';
 
 export const AdminDashboard = () => {
   const [state, setState] = useState<DashboardState>('loading');
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Simulate data loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const fetchDashboard = useCallback(async () => {
+    setState('loading');
+    setErrorMessage('');
+
+    // Step 1: Try the summary endpoint first (all data in one call)
+    const summaryResult = await adminService.getDashboardSummary().catch((err) => {
+      console.warn('[Dashboard] Summary endpoint failed, falling back to individual endpoints:', err?.message);
+      return null;
+    });
+
+    if (summaryResult) {
+      setData({
+        stats: summaryResult.stats || [],
+        institutionGrowth: summaryResult.institutionGrowth || [],
+        categoryDistribution: summaryResult.categoryDistribution || [],
+        repositoryCompletion: summaryResult.repositoryCompletion || [],
+        topInstitutions: summaryResult.topInstitutions || [],
+        recentActivities: summaryResult.recentActivities || [],
+      });
+      setLastRefresh(new Date());
       setState('success');
-    }, 1200);
-    return () => clearTimeout(timer);
+      return;
+    }
+
+    // Step 2: Fallback — fetch all data from individual endpoints in parallel
+    const [stats, institutionGrowth, categoryDistribution, repositoryCompletion, topInstitutions, recentActivities] =
+      await Promise.allSettled([
+        adminService.getDashboardStats(),
+        adminService.getInstitutionGrowth(),
+        adminService.getCategoryDistribution(),
+        adminService.getRepositoryCompletion(),
+        adminService.getTopInstitutions(),
+        adminService.getRecentActivities(),
+      ]);
+
+    const unwrap = <T,>(result: PromiseSettledResult<T>): T[] => {
+      if (result.status === 'fulfilled') {
+        return Array.isArray(result.value) ? result.value : [];
+      }
+      console.warn('[Dashboard] Endpoint failed:', result.reason?.message);
+      return [];
+    };
+
+    setData({
+      stats: unwrap(stats),
+      institutionGrowth: unwrap(institutionGrowth),
+      categoryDistribution: unwrap(categoryDistribution),
+      repositoryCompletion: unwrap(repositoryCompletion),
+      topInstitutions: unwrap(topInstitutions),
+      recentActivities: unwrap(recentActivities),
+    });
+
+    setLastRefresh(new Date());
+    setState('success');
   }, []);
 
-  const handleRefresh = () => {
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setLastRefresh(new Date());
-      setIsRefreshing(false);
-    }, 800);
+    await fetchDashboard();
+    setIsRefreshing(false);
   };
 
   if (state === 'loading') {
@@ -59,11 +108,8 @@ export const AdminDashboard = () => {
         </div>
         <ErrorState
           title="Failed to load dashboard"
-          message="We couldn't fetch the latest data. Please check your connection and try again."
-          onRetry={() => {
-            setState('loading');
-            setTimeout(() => setState('success'), 1200);
-          }}
+          message={errorMessage || "We couldn't fetch the latest data. Please check your connection and try again."}
+          onRetry={fetchDashboard}
         />
       </div>
     );
@@ -107,26 +153,25 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Stat Cards */}
-      <StatCards data={statCards} />
+      <StatCards data={data?.stats || []} />
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InstitutionGrowthChart />
-        <CategoryDistributionChart />
+        <InstitutionGrowthChart data={data?.institutionGrowth || []} />
+        <CategoryDistributionChart data={data?.categoryDistribution || []} />
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RepositoryCompletionChart />
-        <TopInstitutionsChart />
+        <RepositoryCompletionChart data={data?.repositoryCompletion || []} />
+        <TopInstitutionsChart institutions={data?.topInstitutions || []} />
       </div>
 
       {/* Tables & Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TopInstitutionsTable institutions={topInstitutions} />
-        <RecentActivities activities={recentActivities} />
+        <TopInstitutionsTable institutions={data?.topInstitutions || []} />
+        <RecentActivities activities={data?.recentActivities || []} />
       </div>
     </motion.div>
   );
 };
-

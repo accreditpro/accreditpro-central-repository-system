@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '@/store';
@@ -16,13 +16,17 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
 import { UserRole } from '@/types/auth.types';
 import { Toaster } from '@/components/ui/sonner';
+import { RouteLoadingSpinner } from '@/components/shared/RouteLoadingSpinner';
+import { AUTH_UNAUTHORIZED_EVENT } from '@/services/api.service';
 
 // Pages
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
 import { InstitutionsPage } from '@/pages/admin/institutions/InstitutionsPage';
+import { InstitutionDetailPage } from '@/pages/admin/institutions/InstitutionDetailPage';
 import { CreateInstitutionPage } from '@/pages/admin/institutions/create/CreateInstitutionPage';
+import { EditInstitutionPage } from '@/pages/admin/institutions/edit/EditInstitutionPage';
 import { TemplatesPage } from '@/pages/admin/templates/TemplatesPage';
 import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
 import { DepartmentPage } from '@/pages/department/DepartmentPage';
@@ -67,13 +71,50 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
+/**
+ * AuthEventListener — invisible component placed inside <BrowserRouter>
+ * that listens for the global `auth:unauthorized` custom event emitted by
+ * the axios response interceptor when a non-auth API call receives a 401.
+ *
+ * Instead of the old approach (window.location.href full page reload which
+ * destroyed Redux state and caused a double logout), we gracefully clear
+ * the Redux session and navigate via React Router.
+ */
+const AuthEventListener = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleUnauthorized = useCallback(() => {
+    // Clear Redux state and localStorage via the normal logout flow
+    logout();
+    // Navigate to login using React Router — no full page reload
+    navigate('/login', { replace: true });
+  }, [logout, navigate]);
+
+  useEffect(() => {
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () =>
+      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [handleUnauthorized]);
+
+  return null;
+};
+
 const AppInitializer = ({ children }: { children: React.ReactNode }) => {
-  const { initialize } = useAuth();
+  const { initialize, isLoading } = useAuth();
   useTheme();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // ── Full-page loading screen while auth state is being restored ──
+  // Prevent protected routes from flashing a redirect to /login
+  // before the persisted session has been checked against localStorage
+  // and optionally validated against the backend (/api/auth/me).
+  if (isLoading) {
+    return <RouteLoadingSpinner message="Restoring your session…" />;
+  }
 
   return <>{children}</>;
 };
@@ -105,6 +146,8 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="institutions" element={<InstitutionsPage />} />
         <Route path="institutions/create" element={<CreateInstitutionPage />} />
+        <Route path="institutions/:id/edit" element={<EditInstitutionPage />} />
+        <Route path="institutions/:id" element={<InstitutionDetailPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="users" element={<PlaceholderPage title="User Management" />} />
@@ -247,6 +290,7 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <AuthEventListener />
           <AppInitializer>
             <AppRoutes />
           </AppInitializer>

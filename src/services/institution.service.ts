@@ -17,7 +17,7 @@ const categories: InstitutionCategory[] = [
   'Engineering', 'Medical', 'Arts & Science', 'Management', 'Law', 'Education', 'Pharmacy',
 ];
 
-const statuses: InstitutionStatus[] = ['active', 'inactive', 'pending', 'suspended'];
+const statuses: InstitutionStatus[] = ['ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED'];
 
 const institutionNames = [
   'National Institute of Technology, Trichy',
@@ -56,7 +56,7 @@ const generateMockInstitutions = (): Institution[] => {
   return institutionNames.map((name, index) => {
     const category = categories[index % categories.length];
     const state = indianStates[index % indianStates.length];
-    const status = index < 20 ? 'active' : statuses[index % statuses.length];
+    const status = index < 20 ? 'ACTIVE' : statuses[index % statuses.length];
     const code = name
       .split(/[\s,]+/)
       .filter((w) => w.length > 2)
@@ -136,6 +136,8 @@ class InstitutionService {
           break;
         case 'above-75':
           filtered = filtered.filter((inst) => inst.repositoryCompletion > 75);
+          break;
+        default:
           break;
       }
     }

@@ -3,9 +3,19 @@ import { loginAsync, logoutAsync, clearError, initializeAuth } from '@/store/sli
 import { LoginCredentials, LoginResponse, UserRole } from '@/types/auth.types';
 import { useCallback } from 'react';
 
+/**
+ * useAuth — Primary auth hook for the application.
+ *
+ * Provides:
+ * - Auth state (user, isAuthenticated, isLoading, error)
+ * - Actions: login, logout, initialize, resetError
+ * - Helper: hasRole for role-based access checks
+ */
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isLoading, error } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading, error } = useAppSelector(
+    (state) => state.auth
+  );
 
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<LoginResponse> => {

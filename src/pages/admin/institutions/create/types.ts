@@ -7,13 +7,13 @@ export const basicInfoSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number (10 digits starting with 6-9)'),
-  website: z.string().url('Invalid URL').optional().or(z.literal('')),
-  logo: z.string().optional(),
+  website: z.string().url('Invalid URL').or(z.literal('')).default(''),
+  logo: z.string().default(''),
 });
 
 export const addressSchema = z.object({
   addressLine1: z.string().min(5, 'Address must be at least 5 characters'),
-  addressLine2: z.string().optional().or(z.literal('')),
+  addressLine2: z.string().default(''),
   state: z.string().min(1, 'State is required'),
   district: z.string().min(2, 'District is required'),
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),

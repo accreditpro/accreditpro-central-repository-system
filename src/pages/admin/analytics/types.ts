@@ -51,3 +51,25 @@ export interface RecentActivityItem {
 }
 
 export type ExportFormat = 'csv' | 'excel' | 'pdf';
+
+/** Raw recent activity item as returned by the overview API */
+export interface RecentActivityRawItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  institution: string;
+  timestamp: string;
+  user: string;
+}
+
+/** Full analytics overview returned by GET /api/admin/analytics/overview */
+export interface AnalyticsOverviewData {
+  summaryCards: AnalyticsCard[];
+  institutionGrowth: InstitutionGrowthData[];
+  categoryDistribution: { name: string; value: number; fill: string }[];
+  topInstitutions: TopInstitutionData[];
+  repositoryCompletion: RepositoryCompletionData[];
+  activityHeatmap: ActivityHeatmapData[];
+  recentActivity: RecentActivityRawItem[];
+}

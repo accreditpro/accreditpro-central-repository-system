@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Activity } from './mock-data';
+import type { RecentActivityData } from './types';
 import {
   FileText,
   UserPlus,
@@ -21,7 +21,7 @@ const activityConfig: Record<string, { icon: React.ComponentType<{ className?: s
 };
 
 interface RecentActivitiesProps {
-  activities: Activity[];
+  activities: RecentActivityData[];
 }
 
 export const RecentActivities = ({ activities }: RecentActivitiesProps) => {

@@ -68,6 +68,7 @@ export const TemplatesPage = () => {
   const [uploadDescription, setUploadDescription] = useState('');
   const [replaceNotes, setReplaceNotes] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -183,7 +184,7 @@ export const TemplatesPage = () => {
   const handleDownload = async (template: Template) => {
     try {
       await templateService.downloadTemplate(template.id);
-      toast.success(`Downloading ${template.name}.${template.fileType}`);
+      toast.success(`Downloading ${template.name}`);
     } catch {
       toast.error('Failed to download template');
     }
@@ -198,9 +199,8 @@ export const TemplatesPage = () => {
 
   const getStatusBadge = (status: TemplateStatus) => {
     const config: Record<TemplateStatus, { label: string; className: string }> = {
-      active: { label: 'Active', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-      inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-      draft: { label: 'Draft', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+      ACTIVE: { label: 'Active', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+      INACTIVE: { label: 'Inactive', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
     };
     const { label, className } = config[status];
     return (
@@ -211,7 +211,7 @@ export const TemplatesPage = () => {
   };
 
   const getFileIcon = (fileType: string) => {
-    return fileType === 'xlsx' ? (
+    return fileType === 'XLSX' ? (
       <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
         <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
       </div>
@@ -334,9 +334,19 @@ export const TemplatesPage = () => {
                           <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuItem
                               className="text-xs gap-2 cursor-pointer"
-                              onClick={() => {
+                              onClick={async () => {
+                                // Immediately show list data, then refresh with API
                                 setSelectedTemplate(template);
                                 setShowVersionSheet(true);
+                                setDetailLoading(true);
+                                try {
+                                  const detail = await templateService.getTemplateById(template.id);
+                                  setSelectedTemplate(detail);
+                                } catch {
+                                  // Keep list data if detail fetch fails
+                                } finally {
+                                  setDetailLoading(false);
+                                }
                               }}
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -375,7 +385,7 @@ export const TemplatesPage = () => {
                               className="text-xs gap-2 cursor-pointer"
                               onClick={() => handleDeactivate(template)}
                             >
-                              {template.status === 'active' ? (
+                              {template.status === 'ACTIVE' ? (
                                 <>
                                   <PowerOff className="h-3.5 w-3.5" />
                                   Deactivate
@@ -581,7 +591,11 @@ export const TemplatesPage = () => {
         <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <History className="h-4 w-4" />
+              {detailLoading ? (
+                <span className="h-4 w-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              ) : (
+                <History className="h-4 w-4" />
+              )}
               {selectedTemplate?.name}
             </SheetTitle>
             <SheetDescription>{selectedTemplate?.description}</SheetDescription>

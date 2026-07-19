@@ -7,22 +7,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, X, SlidersHorizontal } from 'lucide-react';
-import { InstitutionFilters as IFilters, InstitutionCategory } from '@/types/institution.types';
-import { Badge } from '@/components/ui/badge';
+import { Search, X } from 'lucide-react';
+import { InstitutionFilters as IFilters } from '@/types/institution.types';
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Puducherry',
+];
+
+const CATEGORIES = [
+  'Engineering', 'Medical', 'Arts & Science', 'Management', 'Law', 'Education', 'Pharmacy',
+];
 
 interface InstitutionFiltersProps {
   filters: IFilters;
   onFilterChange: (filters: IFilters) => void;
-  states: string[];
-  categories: InstitutionCategory[];
 }
 
 export const InstitutionFilters = ({
   filters,
   onFilterChange,
-  states,
-  categories,
 }: InstitutionFiltersProps) => {
   const activeFilterCount = [
     filters.status !== 'all',
@@ -75,10 +83,10 @@ export const InstitutionFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-xs">All Status</SelectItem>
-              <SelectItem value="active" className="text-xs">Active</SelectItem>
-              <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
-              <SelectItem value="pending" className="text-xs">Pending</SelectItem>
-              <SelectItem value="suspended" className="text-xs">Suspended</SelectItem>
+              <SelectItem value="ACTIVE" className="text-xs">Active</SelectItem>
+              <SelectItem value="INACTIVE" className="text-xs">Inactive</SelectItem>
+              <SelectItem value="PENDING" className="text-xs">Pending</SelectItem>
+              <SelectItem value="SUSPENDED" className="text-xs">Suspended</SelectItem>
             </SelectContent>
           </Select>
 
@@ -91,7 +99,7 @@ export const InstitutionFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-xs">All Categories</SelectItem>
-              {categories.map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
               ))}
             </SelectContent>
@@ -106,7 +114,7 @@ export const InstitutionFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-xs">All States</SelectItem>
-              {states.map((state) => (
+              {INDIAN_STATES.map((state) => (
                 <SelectItem key={state} value={state} className="text-xs">{state}</SelectItem>
               ))}
             </SelectContent>

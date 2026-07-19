@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,6 +53,10 @@ import { StudentDevelopmentDashboard } from './components/StudentDevelopmentDash
 import { StudentDevelopmentDocumentsView } from './components/StudentDevelopmentDocumentsView';
 import { CoordinatorSidebar } from '@/components/layout/CoordinatorSidebar';
 import { useAuth } from '@/hooks/useAuth';
+import { facultyService } from '@/services/faculty.service';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { toggleNotificationPanel } from '@/store/slices/uiSlice';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -85,7 +89,39 @@ const navItems: NavItem[] = [
 
 export default function StudentDevelopmentRepositoryPage() {
   const { user } = useAuth();
+  const departmentId = user?.departmentId ?? 0;
   const dispatch = useAppDispatch();
+
+  // ── Repository Metrics (Section 10.2) ──
+  const [studentMetrics, setStudentMetrics] = useState<{
+    dataCompleteness: number;
+    evidenceCompleteness: number;
+    verificationPercent: number;
+    readinessScore: number;
+  } | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!departmentId) return;
+    setMetricsLoading(true);
+    facultyService.getAllMetrics(departmentId)
+      .then((allMetrics) => {
+        const repoMetrics = allMetrics.find(m => m.repositoryType === 'student');
+        if (repoMetrics) {
+          setStudentMetrics({
+            dataCompleteness: repoMetrics.dataCompleteness,
+            evidenceCompleteness: repoMetrics.evidenceCompleteness,
+            verificationPercent: repoMetrics.verificationPercent,
+            readinessScore: repoMetrics.readinessScore,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('[StudentRepo] Failed to load metrics:', err);
+        setStudentMetrics(null);
+      })
+      .finally(() => setMetricsLoading(false));
+  }, [departmentId]);
   const { notifications } = useAppSelector((state) => state.ui);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -368,7 +404,37 @@ export default function StudentDevelopmentRepositoryPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">{renderContent()}</div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Repository Metrics Score Cards (Section 10.2) */}
+          {activeView !== 'dashboard' && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: 'Data Completeness', value: studentMetrics?.dataCompleteness ?? 0, textColor: 'text-indigo-600', barColor: 'bg-indigo-500' },
+                { label: 'Evidence Score', value: studentMetrics?.evidenceCompleteness ?? 0, textColor: 'text-violet-600', barColor: 'bg-violet-500' },
+                { label: 'Verification Score', value: studentMetrics?.verificationPercent ?? 0, textColor: 'text-emerald-600', barColor: 'bg-emerald-500' },
+                { label: 'Readiness Score', value: studentMetrics?.readinessScore ?? 0, textColor: 'text-amber-600', barColor: 'bg-amber-500' },
+              ].map((metric) => (
+                <div
+                  key={metric.label}
+                  className="p-3 rounded-xl border border-border/50 bg-card"
+                >
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {metricsLoading ? (
+                      <Skeleton className="h-7 w-16" />
+                    ) : (
+                      <>
+                        <span className={cn('text-xl font-bold', metric.textColor)}>{Math.round(metric.value)}%</span>
+                        <Progress value={metric.value} className="h-1.5 flex-1" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {renderContent()}
+        </div>
       </main>
     </div>
   );

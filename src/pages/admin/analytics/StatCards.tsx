@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Building2, Users, FileText, Database, CheckCircle2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Building2, Users, FileText, Database, CheckCircle2, PieChart, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { AnalyticsCard } from './types';
@@ -10,6 +10,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
   Database,
   CheckCircle2,
+  PieChart,
 };
 
 const colorMap: Record<string, string> = {
@@ -18,6 +19,7 @@ const colorMap: Record<string, string> = {
   FileText: 'from-pink-500 to-pink-600',
   Database: 'from-amber-500 to-amber-600',
   CheckCircle2: 'from-emerald-500 to-emerald-600',
+  PieChart: 'from-cyan-500 to-cyan-600',
 };
 
 interface StatCardsProps {
