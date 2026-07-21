@@ -6,11 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { RepositoryKPICards } from './components/RepositoryKPICards';
 import { RepositoryTabContent } from './components/RepositoryTabContent';
-import { CurriculumTab } from './components/CurriculumTab';
-import { CoursesTab } from './components/CoursesTab';
-import { AcademicCalendarTab } from './components/AcademicCalendarTab';
-import { ValueAddedCoursesTab } from './components/ValueAddedCoursesTab';
-import { MoocsTab } from './components/MoocsTab';
 import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { academicRepositoryTabs, repositoryMetrics } from './repository-config';
 import {
@@ -19,8 +14,6 @@ import {
   FileText,
   Calendar,
   Award,
-  Globe,
-  FolderOpen,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -29,8 +22,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
   Calendar,
   Award,
-  Globe,
-  FolderOpen,
 };
 
 export const AcademicRepositoryPage = () => {
@@ -106,19 +97,7 @@ export const AcademicRepositoryPage = () => {
 
             {academicRepositoryTabs.map((tab) => (
               <TabsContent key={tab.id} value={tab.id} className="mt-4">
-                {tab.id === 'curriculum' ? (
-                  <CurriculumTab />
-                ) : tab.id === 'courses' ? (
-                  <CoursesTab />
-                ) : tab.id === 'academic-calendar' ? (
-                  <AcademicCalendarTab />
-                ) : tab.id === 'value-added-courses' ? (
-                  <ValueAddedCoursesTab />
-                ) : tab.id === 'moocs' ? (
-                  <MoocsTab />
-                ) : (
-                  <RepositoryTabContent tabConfig={tab} />
-                )}
+                <RepositoryTabContent tabConfig={tab} />
               </TabsContent>
             ))}
           </Tabs>

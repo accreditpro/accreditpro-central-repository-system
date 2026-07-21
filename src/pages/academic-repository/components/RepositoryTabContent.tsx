@@ -38,12 +38,10 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const summary = repositorySummaries[tabConfig.id];
   const tabEvidence = evidenceDocuments.filter(d =>
-    d.category.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0]) ||
-    tabConfig.id === 'supporting-documents'
+    d.category.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0])
   );
   const tabUploads = uploadHistoryData.filter(u =>
-    u.tab.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0]) ||
-    tabConfig.id === 'supporting-documents'
+    u.tab.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0])
   );
 
   const handleDownloadTemplate = () => {
@@ -222,7 +220,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(tabConfig.id === 'supporting-documents' ? evidenceDocuments : tabEvidence.slice(0, 4)).map((doc) => (
+                {tabEvidence.slice(0, 4).map((doc) => (
                   <TableRow key={doc.id} className="hover:bg-muted/20">
                     <TableCell>
                       <div className="flex items-center gap-2">

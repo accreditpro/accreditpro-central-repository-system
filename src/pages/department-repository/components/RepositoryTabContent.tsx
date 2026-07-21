@@ -31,11 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { RepositoryTabConfig } from '../types';
 import {
-  repositorySummaries,
   evidenceDocuments,
-  workflowSteps,
-  mockValidationResult,
-  uploadHistory,
   masterData,
   coordinatorContext,
 } from '../repository-configs';
@@ -43,14 +39,10 @@ import { CSVUploadDialog } from './CSVUploadDialog';
 import {
   Download,
   Upload,
-  CheckCircle2,
-  Clock,
-  XCircle,
   FileText,
   Eye,
   Replace,
   DownloadCloud,
-  Shield,
   Pencil,
   Trash2,
   Plus,
@@ -59,7 +51,7 @@ import {
 
 interface RepositoryTabContentProps {
   tabConfig: RepositoryTabConfig;
-  repositoryId: string;
+  repositoryId?: string;
 }
 
 // Generate mock table data based on tab config fields
@@ -172,7 +164,7 @@ const generateMockData = (tabConfig: RepositoryTabConfig): Record<string, string
   return rows;
 };
 
-export const RepositoryTabContent = ({ tabConfig, repositoryId }: RepositoryTabContentProps) => {
+export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [tableData, setTableData] = useState<Record<string, string>[]>(() => generateMockData(tabConfig));
   const [editingRow, setEditingRow] = useState<number | null>(null);
@@ -180,19 +172,9 @@ export const RepositoryTabContent = ({ tabConfig, repositoryId }: RepositoryTabC
   const [searchQuery, setSearchQuery] = useState('');
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  const summary = repositorySummaries[tabConfig.id] || {
-    recordsUploaded: 0, pendingValidation: 0, pendingVerification: 0,
-    verified: 0, approved: 0, rejected: 0, lastUpdated: '-',
-  };
-
   const tabEvidence = evidenceDocuments.filter(d =>
     d.category.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0]) ||
     tabConfig.id.includes('documents')
-  );
-
-  const tabUploads = uploadHistory.filter(u =>
-    u.repository === repositoryId &&
-    (u.tab.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0]) || tabConfig.id.includes('documents'))
   );
 
   const handleDownloadTemplate = () => {
@@ -437,78 +419,6 @@ export const RepositoryTabContent = ({ tabConfig, repositoryId }: RepositoryTabC
         </Card>
       )}
 
-      {/* Validation Results */}
-      {tabConfig.fields.length > 0 && (
-        <Card className="border-border/50">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-sm font-semibold">Validation Results</CardTitle>
-                <CardDescription className="text-xs">Latest validation report</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" className="text-xs h-7">
-                <Download className="h-3 w-3 mr-1" /> Error Report
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-              <div className="p-2 rounded-lg bg-muted/50 text-center">
-                <p className="text-sm font-bold">{mockValidationResult.totalRows}</p>
-                <p className="text-[9px] text-muted-foreground">Total Rows</p>
-              </div>
-              <div className="p-2 rounded-lg bg-emerald-500/5 text-center">
-                <p className="text-sm font-bold text-emerald-600">{mockValidationResult.validRows}</p>
-                <p className="text-[9px] text-muted-foreground">Valid</p>
-              </div>
-              <div className="p-2 rounded-lg bg-red-500/5 text-center">
-                <p className="text-sm font-bold text-red-600">{mockValidationResult.invalidRows}</p>
-                <p className="text-[9px] text-muted-foreground">Invalid</p>
-              </div>
-              <div className="p-2 rounded-lg bg-amber-500/5 text-center">
-                <p className="text-sm font-bold text-amber-600">{mockValidationResult.warnings}</p>
-                <p className="text-[9px] text-muted-foreground">Warnings</p>
-              </div>
-              <div className="p-2 rounded-lg bg-red-500/5 text-center">
-                <p className="text-sm font-bold text-red-600">{mockValidationResult.errors.filter(e => e.severity === 'error').length}</p>
-                <p className="text-[9px] text-muted-foreground">Errors</p>
-              </div>
-            </div>
-
-            {mockValidationResult.errors.length > 0 && (
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="text-[10px]">Row</TableHead>
-                      <TableHead className="text-[10px]">Column</TableHead>
-                      <TableHead className="text-[10px]">Value</TableHead>
-                      <TableHead className="text-[10px]">Message</TableHead>
-                      <TableHead className="text-[10px]">Severity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockValidationResult.errors.map((err, i) => (
-                      <TableRow key={i} className="hover:bg-muted/20">
-                        <TableCell className="text-xs font-mono">{err.row}</TableCell>
-                        <TableCell className="text-xs font-medium">{err.column}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{err.value || '(empty)'}</TableCell>
-                        <TableCell className="text-xs">{err.message}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={cn('text-[9px]', err.severity === 'error' ? 'bg-red-500/10 text-red-600' : 'bg-amber-500/10 text-amber-600')}>
-                            {err.severity}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Evidence Repository */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
@@ -574,112 +484,6 @@ export const RepositoryTabContent = ({ tabConfig, repositoryId }: RepositoryTabC
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Workflow Status */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Workflow Status</CardTitle>
-          <CardDescription className="text-xs">Data Upload → Validation → Evidence Upload → HOD Review → IQAC Verification → Approved</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-0 overflow-x-auto pb-2">
-            {workflowSteps.map((step, index, arr) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center min-w-[80px]">
-                  <div className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all',
-                    step.status === 'completed' && 'bg-emerald-500 border-emerald-500 text-white',
-                    step.status === 'current' && 'border-indigo-500 bg-indigo-500/10 text-indigo-600',
-                    step.status === 'pending' && 'border-muted-foreground/30 text-muted-foreground/40',
-                  )}>
-                    {step.status === 'completed' ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : step.status === 'current' ? (
-                      <Clock className="h-3.5 w-3.5" />
-                    ) : (
-                      <span className="text-[10px] font-medium">{index + 1}</span>
-                    )}
-                  </div>
-                  <span className={cn(
-                    'text-[9px] mt-1 font-medium text-center',
-                    step.status === 'current' ? 'text-indigo-600' : step.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    {step.label}
-                  </span>
-                  {step.timestamp && (
-                    <span className="text-[8px] text-muted-foreground">{step.timestamp.split(' ')[0]}</span>
-                  )}
-                  {step.actor && (
-                    <span className="text-[8px] text-muted-foreground">{step.actor}</span>
-                  )}
-                </div>
-                {index < arr.length - 1 && (
-                  <div className={cn(
-                    'h-0.5 w-4 sm:w-8 rounded-full',
-                    step.status === 'completed' ? 'bg-emerald-500' : 'bg-muted-foreground/20'
-                  )} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 pt-3 border-t">
-            <p className="text-[10px] text-muted-foreground">
-              <span className="font-medium">Note:</span> As Department Coordinator, you can Upload, Update, and Re-submit data.
-              Verification and Approval are performed by HOD and IQAC respectively.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Upload History */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Upload History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="text-[10px]">File</TableHead>
-                  <TableHead className="text-[10px]">Uploaded</TableHead>
-                  <TableHead className="text-[10px]">Records</TableHead>
-                  <TableHead className="text-[10px]">Valid/Invalid</TableHead>
-                  <TableHead className="text-[10px]">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tabUploads.length > 0 ? tabUploads.map((record) => (
-                  <TableRow key={record.id} className="hover:bg-muted/20">
-                    <TableCell className="text-xs font-medium">{record.fileName}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
-                    <TableCell className="text-xs">{record.recordsCount}</TableCell>
-                    <TableCell className="text-xs">
-                      <span className="text-emerald-600">{record.validRecords}</span>/{' '}
-                      <span className="text-red-600">{record.invalidRecords}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={cn('text-[9px]',
-                        record.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                        record.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                        record.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                      )}>
-                        {record.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                )) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-xs text-muted-foreground">
-                      No upload history for this section yet.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>

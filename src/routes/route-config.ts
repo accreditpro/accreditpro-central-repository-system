@@ -78,6 +78,12 @@ export const appNavigationConfig: NavItem[] = [
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
+    title: 'Governance & Committees',
+    href: '/app/governance',
+    icon: 'Shield',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
     title: 'Role Management',
     href: '/app/roles',
     icon: 'Shield',
@@ -99,6 +105,12 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Activity Logs',
     href: '/app/activity-logs',
     icon: 'ClipboardList',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'Supporting Documents',
+    href: '/app/supporting-documents',
+    icon: 'FileSpreadsheet',
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {

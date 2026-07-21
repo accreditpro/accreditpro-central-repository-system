@@ -42,47 +42,36 @@ import {
   Trash2,
   Upload,
   Download,
-  Menu,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { tpoTabConfigs } from './tpo-configs';
 import { TPODashboard } from './components/TPODashboard';
 import { TPODocumentsView } from './components/TPODocumentsView';
-import { CoordinatorSidebar } from '@/components/layout/CoordinatorSidebar';
-import { useAuth } from '@/hooks/useAuth';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { toggleNotificationPanel } from '@/store/slices/uiSlice';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
-import { Bell } from 'lucide-react';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
 interface NavItem {
   id: ViewType;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ReactNode;
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'recruiters', label: 'Recruiters', icon: Building2 },
-  { id: 'placement-offers', label: 'Placement Offers', icon: Briefcase },
-  { id: 'internships', label: 'Internships', icon: UserCheck },
-  { id: 'higher-education', label: 'Higher Education', icon: BookOpen },
-  { id: 'entrepreneurship-startups', label: 'Entrepreneurship & Startups', icon: Rocket },
-  { id: 'training-activities', label: 'Training Activities', icon: Presentation },
-  { id: 'placement-statistics', label: 'Placement Statistics', icon: BarChart3 },
-  { id: 'documents', label: 'Supporting Documents', icon: FileText },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+  { id: 'recruiters', label: 'Recruiters', icon: <Building2 className="h-4 w-4" /> },
+  { id: 'placement-offers', label: 'Placement Offers', icon: <Briefcase className="h-4 w-4" /> },
+  { id: 'internships', label: 'Internships', icon: <UserCheck className="h-4 w-4" /> },
+  { id: 'higher-education', label: 'Higher Education', icon: <BookOpen className="h-4 w-4" /> },
+  { id: 'entrepreneurship-startups', label: 'Entrepreneurship & Startups', icon: <Rocket className="h-4 w-4" /> },
+  { id: 'training-activities', label: 'Training Activities', icon: <Presentation className="h-4 w-4" /> },
+  { id: 'placement-statistics', label: 'Placement Statistics', icon: <BarChart3 className="h-4 w-4" /> },
+  { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
 export default function TPORepositoryPage() {
-  const { user } = useAuth();
-  const dispatch = useAppDispatch();
-  const { notifications } = useAppSelector((state) => state.ui);
-  const unreadCount = notifications.filter((n) => !n.read).length;
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
@@ -304,63 +293,40 @@ export default function TPORepositoryPage() {
     );
   };
 
-  const currentLabel = navItems.find((i) => i.id === activeView)?.label || 'Dashboard';
-
   return (
-    <div className="flex h-screen">
-      <CoordinatorSidebar
-        subtitle="TPO Coordinator"
-        activeView={activeView}
-        onNavigate={(id) => {
-          setActiveView(id);
-          setSearchQuery('');
-        }}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-        items={navItems}
-      />
-
-      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-        <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-background/80 px-4 md:px-6 backdrop-blur-xl">
-          
-          {/* Left Side: Menu Toggle & Title */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden h-8 w-8 shrink-0"
-              onClick={() => setMobileSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">{currentLabel}</h1>
-          </div>
-
-          {/* Right Side: Action Buttons */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8"
-              onClick={() => dispatch(toggleNotificationPanel())}
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive animate-pulse" />
-              )}
-            </Button>
-
-            <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
-
-            {user && <UserProfileMenu user={user} />}
-          </div>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}>
+        <div className="flex items-center justify-between p-3 border-b">
+          {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">TPO Repository</span>}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={activeView === item.id ? 'secondary' : 'ghost'}
+              className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
+              onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+              title={sidebarCollapsed ? item.label : undefined}
+            >
+              {item.icon}
+              {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
+            </Button>
+          ))}
+        </nav>
+      </aside>
 
-        <div className="flex-1 overflow-y-auto p-6">{renderContent()}</div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-6">
+        {renderContent()}
       </main>
     </div>
   );

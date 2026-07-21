@@ -241,3 +241,4 @@ export interface MoocListParams {
   page?: number;
   size?: number;
 }
+

@@ -208,8 +208,10 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         return row['Student Registration Number'] && row['Semester'] ? `${row['Student Registration Number']}|${row['Semester']}` : null;
       case 'student-progression':
         return row['Student Registration Number'] && row['Academic Year'] ? `${row['Student Registration Number']}|${row['Academic Year']}` : null;
-      case 'scholarship-financial-support':
+      case 'scholarship-freeship':
         return row['Student Registration Number'] && row['Scholarship Name'] ? `${row['Student Registration Number']}|${row['Scholarship Name']}` : null;
+      case 'mooc-online-certifications':
+        return row['Student Registration Number'] && row['Course Name'] ? `${row['Student Registration Number']}|${row['Course Name']}` : null;
       case 'student-achievements':
         return row['Student Registration Number'] && row['Achievement Name'] ? `${row['Student Registration Number']}|${row['Achievement Name']}` : null;
       case 'publications':
@@ -238,7 +240,8 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       case 'student-diversity': return 'Student Registration Number';
       case 'academic-performance': return 'Registration Number + Semester';
       case 'student-progression': return 'Registration Number + Academic Year';
-      case 'scholarship-financial-support': return 'Registration Number + Scholarship';
+      case 'scholarship-freeship': return 'Registration Number + Scholarship Name';
+      case 'mooc-online-certifications': return 'Registration Number + Course Name';
       case 'student-achievements': return 'Registration Number + Achievement';
       case 'publications': return 'Publication Title';
       case 'patents': return 'Application Number';

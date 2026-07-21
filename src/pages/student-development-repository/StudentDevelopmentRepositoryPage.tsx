@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,87 +46,40 @@ import {
   Trash2,
   Upload,
   Download,
-  Menu,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { studentDevTabConfigs } from './student-development-configs';
 import { StudentDevelopmentDashboard } from './components/StudentDevelopmentDashboard';
 import { StudentDevelopmentDocumentsView } from './components/StudentDevelopmentDocumentsView';
-import { CoordinatorSidebar } from '@/components/layout/CoordinatorSidebar';
-import { useAuth } from '@/hooks/useAuth';
-import { facultyService } from '@/services/faculty.service';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { toggleNotificationPanel } from '@/store/slices/uiSlice';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
-import { Bell } from 'lucide-react';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
 interface NavItem {
   id: ViewType;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ReactNode;
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'nss', label: 'NSS', icon: Heart },
-  { id: 'ncc', label: 'NCC', icon: Shield },
-  { id: 'sports-activities', label: 'Sports Activities', icon: Trophy },
-  { id: 'cultural-activities', label: 'Cultural Activities', icon: Music },
-  { id: 'extension-activities', label: 'Extension Activities', icon: HandHeart },
-  { id: 'community-outreach', label: 'Community Outreach', icon: Users },
-  { id: 'clubs', label: 'Clubs & Societies', icon: Layers },
-  { id: 'student-chapters', label: 'Student Chapters', icon: BookMarked },
-  { id: 'student-achievements', label: 'Student Achievements', icon: Award },
-  { id: 'student-awards', label: 'Student Awards', icon: Medal },
-  { id: 'events', label: 'Events', icon: Calendar },
-  { id: 'documents', label: 'Supporting Documents', icon: FileText },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+  { id: 'nss', label: 'NSS', icon: <Heart className="h-4 w-4" /> },
+  { id: 'ncc', label: 'NCC', icon: <Shield className="h-4 w-4" /> },
+  { id: 'sports-activities', label: 'Sports Activities', icon: <Trophy className="h-4 w-4" /> },
+  { id: 'cultural-activities', label: 'Cultural Activities', icon: <Music className="h-4 w-4" /> },
+  { id: 'extension-activities', label: 'Extension Activities', icon: <HandHeart className="h-4 w-4" /> },
+  { id: 'community-outreach', label: 'Community Outreach', icon: <Users className="h-4 w-4" /> },
+  { id: 'clubs', label: 'Clubs & Societies', icon: <Layers className="h-4 w-4" /> },
+  { id: 'student-chapters', label: 'Student Chapters', icon: <BookMarked className="h-4 w-4" /> },
+  { id: 'student-achievements', label: 'Student Achievements', icon: <Award className="h-4 w-4" /> },
+  { id: 'student-awards', label: 'Student Awards', icon: <Medal className="h-4 w-4" /> },
+  { id: 'events', label: 'Events', icon: <Calendar className="h-4 w-4" /> },
+  { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
 export default function StudentDevelopmentRepositoryPage() {
-  const { user } = useAuth();
-  const departmentId = user?.departmentId ?? 0;
-  const dispatch = useAppDispatch();
-
-  // ── Repository Metrics (Section 10.2) ──
-  const [studentMetrics, setStudentMetrics] = useState<{
-    dataCompleteness: number;
-    evidenceCompleteness: number;
-    verificationPercent: number;
-    readinessScore: number;
-  } | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!departmentId) return;
-    setMetricsLoading(true);
-    facultyService.getAllMetrics(departmentId)
-      .then((allMetrics) => {
-        const repoMetrics = allMetrics.find(m => m.repositoryType === 'student');
-        if (repoMetrics) {
-          setStudentMetrics({
-            dataCompleteness: repoMetrics.dataCompleteness,
-            evidenceCompleteness: repoMetrics.evidenceCompleteness,
-            verificationPercent: repoMetrics.verificationPercent,
-            readinessScore: repoMetrics.readinessScore,
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('[StudentRepo] Failed to load metrics:', err);
-        setStudentMetrics(null);
-      })
-      .finally(() => setMetricsLoading(false));
-  }, [departmentId]);
-  const { notifications } = useAppSelector((state) => state.ui);
-  const unreadCount = notifications.filter((n) => !n.read).length;
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
@@ -348,93 +301,40 @@ export default function StudentDevelopmentRepositoryPage() {
     );
   };
 
-  const currentLabel = navItems.find((i) => i.id === activeView)?.label || 'Dashboard';
-
   return (
-    <div className="flex h-screen">
-      <CoordinatorSidebar
-        subtitle="Student Development Coordinator"
-        activeView={activeView}
-        onNavigate={(id) => {
-          setActiveView(id);
-          setSearchQuery('');
-        }}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-        items={navItems}
-      />
-
-      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-        <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-background/80 px-4 md:px-6 backdrop-blur-xl">
-          
-          {/* Left Side: Menu Toggle & Title */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden h-8 w-8 shrink-0"
-              onClick={() => setMobileSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">{currentLabel}</h1>
-          </div>
-
-          {/* Right Side: Action Buttons */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8"
-              onClick={() => dispatch(toggleNotificationPanel())}
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive animate-pulse" />
-              )}
-            </Button>
-
-            <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
-
-            {user && <UserProfileMenu user={user} />}
-          </div>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-64'}`}>
+        <div className="flex items-center justify-between p-3 border-b">
+          {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">Student Development</span>}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={activeView === item.id ? 'secondary' : 'ghost'}
+              className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
+              onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+              title={sidebarCollapsed ? item.label : undefined}
+            >
+              {item.icon}
+              {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
+            </Button>
+          ))}
+        </nav>
+      </aside>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Repository Metrics Score Cards (Section 10.2) */}
-          {activeView !== 'dashboard' && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              {[
-                { label: 'Data Completeness', value: studentMetrics?.dataCompleteness ?? 0, textColor: 'text-indigo-600', barColor: 'bg-indigo-500' },
-                { label: 'Evidence Score', value: studentMetrics?.evidenceCompleteness ?? 0, textColor: 'text-violet-600', barColor: 'bg-violet-500' },
-                { label: 'Verification Score', value: studentMetrics?.verificationPercent ?? 0, textColor: 'text-emerald-600', barColor: 'bg-emerald-500' },
-                { label: 'Readiness Score', value: studentMetrics?.readinessScore ?? 0, textColor: 'text-amber-600', barColor: 'bg-amber-500' },
-              ].map((metric) => (
-                <div
-                  key={metric.label}
-                  className="p-3 rounded-xl border border-border/50 bg-card"
-                >
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {metricsLoading ? (
-                      <Skeleton className="h-7 w-16" />
-                    ) : (
-                      <>
-                        <span className={cn('text-xl font-bold', metric.textColor)}>{Math.round(metric.value)}%</span>
-                        <Progress value={metric.value} className="h-1.5 flex-1" />
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {renderContent()}
-        </div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-6">
+        {renderContent()}
       </main>
     </div>
   );

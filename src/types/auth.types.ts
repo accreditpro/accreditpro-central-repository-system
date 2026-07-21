@@ -24,6 +24,8 @@ export enum UserRole {
   FINANCE_COORDINATOR = 'FINANCE_COORDINATOR',
   TPO_COORDINATOR = 'TPO_COORDINATOR',
   STUDENT_DEVELOPMENT_COORDINATOR = 'STUDENT_DEVELOPMENT_COORDINATOR',
+  EXAMINATION_OFFICER = 'EXAMINATION_OFFICER',
+  HEAD_OF_DEPARTMENT = 'HEAD_OF_DEPARTMENT',
 }
 
 /** User object as returned by backend — /api/auth/login and /api/auth/me */
@@ -33,6 +35,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  avatar?: string;
   institutionId: number | null;
   institutionName: string | null;
   department: string | null;

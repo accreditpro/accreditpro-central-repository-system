@@ -20,7 +20,7 @@ import {
   MoocResponse,
   CreateMoocRequest,
   UpdateMoocRequest,
-  MoocListParams,
+  MoocListParams
 } from '@/types/academic.types';
 
 /**
@@ -343,6 +343,7 @@ class AcademicService {
   async deleteMooc(departmentId: number, id: number): Promise<void> {
     await apiService.delete<void>(`${this.baseUrl(departmentId)}/moocs/${id}`);
   }
+
 }
 
 export const academicService = new AcademicService();

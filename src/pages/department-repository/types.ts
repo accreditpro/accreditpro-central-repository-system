@@ -136,16 +136,20 @@ export interface ColumnMapping {
   status: 'auto' | 'manual' | 'unmapped';
 }
 
-export type RepositoryModule = 'academic' | 'faculty' | 'student' | 'research' | 'alumni';
+export type RepositoryModule = 'academic' | 'faculty' | 'student' | 'research' | 'alumni' | 'student-dev-outcomes';
 export type WorkflowStatus = 'draft' | 'submitted' | 'validated' | 'evidence_pending' | 'hod_review' | 'iqac_verification' | 'approved' | 'rejected';
 
 export type SidebarView =
   | 'dashboard'
+  | 'mission-vision'
+  | 'course-repository'
   | 'academic-repository'
   | 'faculty-repository'
   | 'student-repository'
   | 'research-repository'
   | 'alumni-repository'
+  | 'student-dev-outcomes-repository'
+  | 'infrastructure-repository'
   | 'documents'
   | 'upload-history'
   | 'verification-status'

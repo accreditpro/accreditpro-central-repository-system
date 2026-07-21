@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '@/store';
@@ -11,22 +11,21 @@ import { InfrastructureCoordinatorLayout } from '@/layouts/InfrastructureCoordin
 import { FinanceCoordinatorLayout } from '@/layouts/FinanceCoordinatorLayout';
 import { TPOCoordinatorLayout } from '@/layouts/TPOCoordinatorLayout';
 import { StudentDevelopmentCoordinatorLayout } from '@/layouts/StudentDevelopmentCoordinatorLayout';
+import { ExaminationOfficerLayout } from '@/layouts/ExaminationOfficerLayout';
+import HODLayout from '@/layouts/HODLayout';
+import PrincipalLayout from '@/layouts/PrincipalLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
 import { UserRole } from '@/types/auth.types';
 import { Toaster } from '@/components/ui/sonner';
-import { RouteLoadingSpinner } from '@/components/shared/RouteLoadingSpinner';
-import { AUTH_UNAUTHORIZED_EVENT } from '@/services/api.service';
 
 // Pages
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
 import { InstitutionsPage } from '@/pages/admin/institutions/InstitutionsPage';
-import { InstitutionDetailPage } from '@/pages/admin/institutions/InstitutionDetailPage';
 import { CreateInstitutionPage } from '@/pages/admin/institutions/create/CreateInstitutionPage';
-import { EditInstitutionPage } from '@/pages/admin/institutions/edit/EditInstitutionPage';
 import { TemplatesPage } from '@/pages/admin/templates/TemplatesPage';
 import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
 import { DepartmentPage } from '@/pages/department/DepartmentPage';
@@ -36,12 +35,17 @@ import { InfrastructureRepositoryPage } from '@/pages/infrastructure-repository/
 import FinanceRepositoryPage from '@/pages/finance-repository/FinanceRepositoryPage';
 import TPORepositoryPage from '@/pages/tpo-repository/TPORepositoryPage';
 import StudentDevelopmentRepositoryPage from '@/pages/student-development-repository/StudentDevelopmentRepositoryPage';
+import { ExaminationRepositoryPage } from '@/pages/examination-repository/ExaminationRepositoryPage';
+import HODDashboardPage from '@/pages/hod-dashboard/HODDashboardPage';
+import PrincipalDashboardPage from '@/pages/principal-dashboard/PrincipalDashboardPage';
+import SupportingDocumentsPage from '@/pages/institution-admin/supporting-documents/SupportingDocumentsPage';
 
 // Institution Admin Pages
 import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashboard';
 import { InstitutionProfilePage } from '@/pages/institution-admin/InstitutionProfilePage';
 import { AcademicStructurePage } from '@/pages/institution-admin/AcademicStructurePage';
 import { UserManagementPage } from '@/pages/institution-admin/UserManagementPage';
+import { GovernancePage } from '@/pages/institution-admin/governance/GovernancePage';
 import {
   RoleManagementPage,
   RepositoryMonitoringPage,
@@ -71,49 +75,24 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
-/**
- * AuthEventListener — invisible component placed inside <BrowserRouter>
- * that listens for the global `auth:unauthorized` custom event emitted by
- * the axios response interceptor when a non-auth API call receives a 401.
- *
- * Instead of the old approach (window.location.href full page reload which
- * destroyed Redux state and caused a double logout), we gracefully clear
- * the Redux session and navigate via React Router.
- */
-const AuthEventListener = () => {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleUnauthorized = useCallback(() => {
-    // Clear Redux state and localStorage via the normal logout flow
-    logout();
-    // Navigate to login using React Router — no full page reload
-    navigate('/login', { replace: true });
-  }, [logout, navigate]);
-
-  useEffect(() => {
-    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
-    return () =>
-      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
-  }, [handleUnauthorized]);
-
-  return null;
-};
-
 const AppInitializer = ({ children }: { children: React.ReactNode }) => {
-  const { initialize, isLoading } = useAuth();
+  const { initialize } = useAuth();
+  const [initialized, setInitialized] = useState(false);
   useTheme();
 
   useEffect(() => {
-    initialize();
+    initialize().finally(() => setInitialized(true));
   }, [initialize]);
 
-  // ── Full-page loading screen while auth state is being restored ──
-  // Prevent protected routes from flashing a redirect to /login
-  // before the persisted session has been checked against localStorage
-  // and optionally validated against the backend (/api/auth/me).
-  if (isLoading) {
-    return <RouteLoadingSpinner message="Restoring your session…" />;
+  if (!initialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
@@ -146,61 +125,11 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="institutions" element={<InstitutionsPage />} />
         <Route path="institutions/create" element={<CreateInstitutionPage />} />
-        <Route path="institutions/:id/edit" element={<EditInstitutionPage />} />
-        <Route path="institutions/:id" element={<InstitutionDetailPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="users" element={<PlaceholderPage title="User Management" />} />
         <Route path="settings" element={<PlaceholderPage title="Platform Settings" />} />
         <Route path="reports" element={<PlaceholderPage title="Reports" />} />
-        <Route index element={<Navigate to="dashboard" replace />} />
-      </Route>
-
-      {/* App Routes - All authenticated users */}
-      <Route
-        path="/app"
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="dashboard" element={<InstitutionDashboard />} />
-        <Route path="institution-profile" element={<InstitutionProfilePage />} />
-        <Route path="academic-structure" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/academic-years" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/programs" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/departments" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/specializations" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/regulations" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/offerings" element={<AcademicStructurePage />} />
-        <Route path="academic-structure/intake" element={<AcademicStructurePage />} />
-        <Route path="users" element={<UserManagementPage />} />
-        <Route path="roles" element={<RoleManagementPage />} />
-        <Route path="repository-monitoring" element={<RepositoryMonitoringPage />} />
-        <Route path="readiness" element={<ReadinessDashboardPage />} />
-        <Route path="activity-logs" element={<ActivityLogsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="department" element={<DepartmentPage />} />
-        <Route path="academic-repository" element={<AcademicRepositoryPage />} />
-        <Route path="documents" element={<PlaceholderPage title="Documents" />} />
-        <Route path="reports" element={<PlaceholderPage title="Reports" />} />
-        <Route
-          path="accreditation"
-          element={
-            <ProtectedRoute
-              allowedRoles={[
-                UserRole.SUPER_ADMIN,
-                UserRole.INSTITUTION_ADMIN,
-                UserRole.IQAC_COORDINATOR,
-                UserRole.PRINCIPAL,
-              ]}
-            >
-              <PlaceholderPage title="Accreditation" />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="profile" element={<PlaceholderPage title="Profile" />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -264,6 +193,93 @@ const AppRoutes = () => {
         <Route index element={<StudentDevelopmentRepositoryPage />} />
       </Route>
 
+      {/* Examination Officer Routes - No outer sidebar */}
+      <Route
+        path="/app/examination-repository"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.EXAMINATION_OFFICER]}>
+            <ExaminationOfficerLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ExaminationRepositoryPage />} />
+      </Route>
+
+      {/* HOD Routes */}
+      <Route
+        path="/app/hod-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.HEAD_OF_DEPARTMENT]}>
+            <HODLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<HODDashboardPage />} />
+      </Route>
+
+      {/* Principal Routes */}
+      <Route
+        path="/app/principal-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PRINCIPAL]}>
+            <PrincipalLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<PrincipalDashboardPage />} />
+      </Route>
+
+      {/* App Routes - All authenticated users */}
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<InstitutionDashboard />} />
+        <Route path="institution-profile" element={<InstitutionProfilePage />} />
+        <Route path="academic-structure" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/academic-years" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/programs" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/departments" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/specializations" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/regulations" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/offerings" element={<AcademicStructurePage />} />
+        <Route path="academic-structure/intake" element={<AcademicStructurePage />} />
+        <Route path="users" element={<UserManagementPage />} />
+        <Route path="governance" element={<GovernancePage />} />
+        <Route path="roles" element={<RoleManagementPage />} />
+        <Route path="repository-monitoring" element={<RepositoryMonitoringPage />} />
+        <Route path="readiness" element={<ReadinessDashboardPage />} />
+        <Route path="activity-logs" element={<ActivityLogsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="department" element={<DepartmentPage />} />
+        <Route path="academic-repository" element={<AcademicRepositoryPage />} />
+        <Route path="documents" element={<PlaceholderPage title="Documents" />} />
+        <Route path="reports" element={<PlaceholderPage title="Reports" />} />
+        <Route
+          path="accreditation"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                UserRole.SUPER_ADMIN,
+                UserRole.INSTITUTION_ADMIN,
+                UserRole.IQAC_COORDINATOR,
+                UserRole.PRINCIPAL,
+              ]}
+            >
+              <PlaceholderPage title="Accreditation" />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="supporting-documents" element={<SupportingDocumentsPage />} />
+        <Route path="supporting-documents/academic" element={<SupportingDocumentsPage />} />
+        <Route path="profile" element={<PlaceholderPage title="Profile" />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+      </Route>
+
       {/* Legacy routes - redirect to new structure */}
       <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
       <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
@@ -290,7 +306,6 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AuthEventListener />
           <AppInitializer>
             <AppRoutes />
           </AppInitializer>
