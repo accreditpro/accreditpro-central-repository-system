@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,9 @@ import {
   CalendarDays,
   GraduationCap,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, ApiValueAddedCourse } from '@/services/academic-repository.service';
+import { apiService } from '@/services/api.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -101,7 +104,33 @@ const SEMESTERS_MAP: Record<string, string[]> = {
 // Evidence types for per-course documents
 type EvidenceDocType = 'geoTaggedPhotos' | 'registeredStudentsList' | 'attendedStudentsList';
 
+const mapYearOfStudyToLabel = (y: string) => {
+  if (y === '1') return 'I Year';
+  if (y === '2') return 'II Year';
+  if (y === '3') return 'III Year';
+  if (y === '4') return 'IV Year';
+  return 'III Year';
+};
+
+const mapLabelToYearOfStudy = (y: string) => {
+  if (y === 'I Year') return '1';
+  if (y === 'II Year') return '2';
+  if (y === 'III Year') return '3';
+  if (y === 'IV Year') return '4';
+  return '3';
+};
+
+const mapSemesterToLabel = (s: string) => {
+  return `Semester ${s}`;
+};
+
+const mapLabelToSemester = (s: string) => {
+  return s.replace('Semester ', '');
+};
+
 export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAddedCoursesModuleProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
   const [courses, setCourses] = useState<ValueAddedCourseRecord[]>([]);
@@ -138,6 +167,72 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     certificationProvided: 'Yes' as 'Yes' | 'No',
     certificatesIssued: '',
   });
+
+  const loadCourses = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getValueAddedCourses(academicYear, departmentId);
+      if (res?.content) {
+        const mappedCourses: ValueAddedCourseRecord[] = res.content.map((item: any) => ({
+          id: String(item.id),
+          department,
+          year: mapYearOfStudyToLabel(item.yearOfStudy),
+          semester: mapSemesterToLabel(item.semester),
+          courseName: item.courseName || '',
+          fromDate: item.fromDate || '',
+          toDate: item.toDate || '',
+          timeFrom: item.timeFrom || '',
+          timeTo: item.timeTo || '',
+          courseInstructor: item.courseInstructor || '',
+          duration: item.duration || '',
+          studentsEnrolled: item.studentsEnrolled?.toString() || '0',
+          studentsParticipated: item.studentsParticipated?.toString() || '0',
+          certificationProvided: (item.certificationProvided ? 'Yes' : 'No') as 'Yes' | 'No',
+          certificatesIssued: item.certificatesIssued?.toString() || '0',
+        }));
+        setCourses(mappedCourses);
+      }
+    } catch (err) {
+      console.error('Failed to load value added courses:', err);
+    }
+  }, [academicYear, departmentId, department]);
+
+  const loadEvidence = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getEvidenceDocuments(academicYear, departmentId, {
+        sectionName: 'courses',
+      });
+      if (res?.content) {
+        const newMap: Record<string, Record<EvidenceDocType, any>> = {};
+        const sortedContent = [...res.content].sort((a: any, b: any) => a.id - b.id);
+        sortedContent.forEach((ev: any) => {
+          const cId = String(ev.recordId);
+          if (!newMap[cId]) {
+            newMap[cId] = {
+              geoTaggedPhotos: { status: 'not-uploaded' },
+              registeredStudentsList: { status: 'not-uploaded' },
+              attendedStudentsList: { status: 'not-uploaded' },
+            };
+          }
+          if (ev.documentType) {
+            newMap[cId][ev.documentType as EvidenceDocType] = {
+              status: 'uploaded',
+              fileName: ev.fileName,
+              uploadedAt: ev.uploadedAt,
+              id: ev.id,
+            };
+          }
+        });
+        setCourseEvidenceMap(newMap);
+      }
+    } catch (err) {
+      console.error('Failed to load evidence documents:', err);
+    }
+  }, [academicYear, departmentId]);
+
+  useEffect(() => {
+    loadCourses();
+    loadEvidence();
+  }, [loadCourses, loadEvidence]);
 
   // Update semester when year changes
   const handleYearChange = (year: string) => {
@@ -257,32 +352,32 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     setSelectedFile(file);
   }, [uploadEvidenceDialog, validateFile]);
 
-  const handleConfirmUpload = useCallback(() => {
+  const handleConfirmUpload = useCallback(async () => {
     if (!selectedFile || !uploadEvidenceDialog) return;
 
     const { courseId, docType } = uploadEvidenceDialog;
-    const now = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-    setCourseEvidenceMap((prev) => ({
-      ...prev,
-      [courseId]: {
-        ...(prev[courseId] || {
-          geoTaggedPhotos: { status: 'not-uploaded' },
-          registeredStudentsList: { status: 'not-uploaded' },
-          attendedStudentsList: { status: 'not-uploaded' },
-        }),
-        [docType]: {
-          status: 'uploaded' as const,
-          fileName: selectedFile.name,
-          uploadedAt: now,
-        },
-      },
-    }));
-
-    setUploadEvidenceDialog(null);
-    setSelectedFile(null);
-    setUploadError(null);
-  }, [selectedFile, uploadEvidenceDialog]);
+    try {
+      const payload = {
+        academicYear,
+        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+        semester: mapLabelToSemester(selectedSemester),
+        sectionName: 'courses',
+        recordId: courseId,
+        documentType: docType
+      };
+      
+      await academicRepositoryService.uploadEvidenceDocument(departmentId, 1, selectedFile, payload);
+      await loadEvidence();
+      
+      setUploadEvidenceDialog(null);
+      setSelectedFile(null);
+      setUploadError(null);
+    } catch (err) {
+      console.error('Failed to upload evidence:', err);
+      setUploadError('Failed to upload evidence');
+    }
+  }, [selectedFile, uploadEvidenceDialog, academicYear, selectedYear, selectedSemester, departmentId, loadEvidence]);
 
   const handlePreviewEvidence = useCallback((courseId: string, docType: EvidenceDocType) => {
     const ev = courseEvidenceMap[courseId]?.[docType];
@@ -291,13 +386,17 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     }
   }, [courseEvidenceMap]);
 
-  const handleDownloadEvidence = useCallback((courseId: string, docType: EvidenceDocType) => {
+  const handleDownloadEvidence = useCallback(async (courseId: string, docType: EvidenceDocType) => {
     const ev = courseEvidenceMap[courseId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      const link = document.createElement('a');
-      link.href = '#';
-      link.download = ev.fileName;
-      link.click();
+    if (ev?.status === 'uploaded' && ev.id) {
+      try {
+        const res = await academicRepositoryService.downloadEvidenceDocument(ev.id);
+        if (res?.downloadUrl) {
+          await apiService.download(res.downloadUrl, ev.fileName || 'document');
+        }
+      } catch (err) {
+        console.error('Failed to download evidence:', err);
+      }
     }
   }, [courseEvidenceMap]);
 
@@ -357,48 +456,121 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [department, selectedYear, selectedSemester]);
 
-  const handleImportUploaded = useCallback(() => {
+  const handleImportUploaded = useCallback(async () => {
     const validRecords = uploadPreview.filter((r) => r.validationStatus === 'valid');
-    setCourses((prev) => [...prev, ...validRecords]);
+    
+    if (validRecords.length > 0) {
+      const coursesByGroup: Record<string, typeof validRecords> = {};
+      validRecords.forEach(c => {
+        const year = c.year || selectedYear;
+        const semester = c.semester || selectedSemester;
+        const key = `${year}|${semester}`;
+        if (!coursesByGroup[key]) coursesByGroup[key] = [];
+        coursesByGroup[key].push(c);
+      });
+
+      try {
+        for (const [key, groupCourses] of Object.entries(coursesByGroup)) {
+          const [year, semester] = key.split('|');
+          const payload = {
+            academicYear,
+            yearOfStudy: mapLabelToYearOfStudy(year),
+            semester: mapLabelToSemester(semester),
+            courses: groupCourses.map(c => ({
+              courseName: c.courseName,
+              fromDate: c.fromDate,
+              toDate: c.toDate,
+              timeFrom: c.timeFrom,
+              timeTo: c.timeTo,
+              courseInstructor: c.courseInstructor,
+              duration: c.duration,
+              studentsEnrolled: parseInt(c.studentsEnrolled) || 0,
+              studentsParticipated: parseInt(c.studentsParticipated) || 0,
+              certificationProvided: c.certificationProvided === 'Yes',
+              certificatesIssued: parseInt(c.certificatesIssued) || 0
+            }))
+          };
+          await academicRepositoryService.bulkSaveValueAddedCourses(departmentId, payload);
+        }
+        await loadCourses();
+
+        const firstCourse = validRecords[0];
+        if (firstCourse.year && YEARS_OF_STUDY.includes(firstCourse.year)) {
+          setSelectedYear(firstCourse.year);
+        }
+        const semOptions = SEMESTERS_MAP[firstCourse.year || selectedYear] || [];
+        if (firstCourse.semester && semOptions.includes(firstCourse.semester)) {
+          setSelectedSemester(firstCourse.semester);
+        }
+      } catch (err) {
+        console.error('Failed to bulk save imported value added courses:', err);
+      }
+    }
+
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [uploadPreview]);
+  }, [uploadPreview, academicYear, departmentId, loadCourses, selectedYear, selectedSemester]);
 
   // Add/Edit course handlers
-  const handleAddCourse = useCallback(() => {
+  const handleAddCourse = useCallback(async () => {
     if (!newCourse.courseName || !newCourse.courseInstructor) return;
 
-    const record: ValueAddedCourseRecord = {
-      id: editingCourse?.id || `vac-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      ...newCourse,
-    };
+    try {
+      const courseData: ApiValueAddedCourse = {
+        academicYear,
+        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+        semester: mapLabelToSemester(selectedSemester),
+        courseName: newCourse.courseName,
+        fromDate: newCourse.fromDate,
+        toDate: newCourse.toDate,
+        timeFrom: newCourse.timeFrom,
+        timeTo: newCourse.timeTo,
+        courseInstructor: newCourse.courseInstructor,
+        duration: newCourse.duration,
+        studentsEnrolled: parseInt(newCourse.studentsEnrolled) || 0,
+        studentsParticipated: parseInt(newCourse.studentsParticipated) || 0,
+        certificationProvided: newCourse.certificationProvided === 'Yes',
+        certificatesIssued: parseInt(newCourse.certificatesIssued) || 0
+      };
 
-    if (editingCourse) {
-      setCourses((prev) => prev.map((c) => (c.id === editingCourse.id ? record : c)));
+      if (editingCourse && !editingCourse.id.toString().startsWith('vac-') && !editingCourse.id.toString().startsWith('csv-')) {
+        await academicRepositoryService.updateValueAddedCourse(editingCourse.id, departmentId, courseData);
+      } else if (!editingCourse) {
+        await academicRepositoryService.createValueAddedCourse(departmentId, courseData);
+      } else {
+        // Local only fallback
+        const record: ValueAddedCourseRecord = {
+          id: editingCourse.id,
+          department,
+          year: selectedYear,
+          semester: selectedSemester,
+          ...newCourse,
+        };
+        setCourses((prev) => prev.map((c) => (c.id === editingCourse.id ? record : c)));
+      }
+
+      await loadCourses();
+
+      setNewCourse({
+        courseName: '',
+        fromDate: '',
+        toDate: '',
+        timeFrom: '',
+        timeTo: '',
+        courseInstructor: '',
+        duration: '',
+        studentsEnrolled: '',
+        studentsParticipated: '',
+        certificationProvided: 'Yes',
+        certificatesIssued: '',
+      });
+      setShowAddDialog(false);
       setEditingCourse(null);
-    } else {
-      setCourses((prev) => [...prev, record]);
+    } catch (err) {
+      console.error('Failed to save course:', err);
     }
-
-    setNewCourse({
-      courseName: '',
-      fromDate: '',
-      toDate: '',
-      timeFrom: '',
-      timeTo: '',
-      courseInstructor: '',
-      duration: '',
-      studentsEnrolled: '',
-      studentsParticipated: '',
-      certificationProvided: 'Yes',
-      certificatesIssued: '',
-    });
-    setShowAddDialog(false);
-  }, [newCourse, editingCourse, department, selectedYear, selectedSemester]);
+  }, [newCourse, editingCourse, department, selectedYear, selectedSemester, academicYear, departmentId, loadCourses]);
 
   const handleEditCourse = useCallback((course: ValueAddedCourseRecord) => {
     setEditingCourse(course);
@@ -418,27 +590,78 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     setShowAddDialog(true);
   }, []);
 
-  const handleDeleteCourse = useCallback((id: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const handleDeleteCourse = useCallback(async (id: string) => {
+    if (!id.startsWith('vac-') && !id.startsWith('csv-')) {
+      try {
+        await academicRepositoryService.deleteValueAddedCourse(id, departmentId);
+        await loadCourses();
+      } catch (err) {
+        console.error('Failed to delete course:', err);
+      }
+    } else {
+      setCourses((prev) => prev.filter((c) => c.id !== id));
+    }
+  }, [departmentId, loadCourses]);
 
-  const handleSave = useCallback(() => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2000);
-  }, []);
+  const handleSave = useCallback(async () => {
+    const yearSemCourses = courses.filter(
+      (c) => c.year === selectedYear && c.semester === selectedSemester
+    );
+    
+    const unsavedCourses = yearSemCourses.filter(c => c.id.startsWith('vac-') || c.id.startsWith('csv-'));
+    
+    if (unsavedCourses.length > 0) {
+      try {
+        const payload = {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          courses: unsavedCourses.map(c => ({
+            courseName: c.courseName,
+            fromDate: c.fromDate,
+            toDate: c.toDate,
+            timeFrom: c.timeFrom,
+            timeTo: c.timeTo,
+            courseInstructor: c.courseInstructor,
+            duration: c.duration,
+            studentsEnrolled: parseInt(c.studentsEnrolled) || 0,
+            studentsParticipated: parseInt(c.studentsParticipated) || 0,
+            certificationProvided: c.certificationProvided === 'Yes',
+            certificatesIssued: parseInt(c.certificatesIssued) || 0
+          }))
+        };
+        await academicRepositoryService.bulkSaveValueAddedCourses(departmentId, payload);
+        await loadCourses();
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      } catch (err) {
+        console.error('Bulk save failed:', err);
+      }
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+  }, [courses, selectedYear, selectedSemester, academicYear, departmentId, loadCourses]);
 
   const handleDownloadTemplate = useCallback(() => {
-    const headers = 'Course Name,From Date,To Date,Time From,Time To,Course Instructor,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
-    const sample = 'Python for Data Science,01-Jan-2025,15-Jan-2025,10:00,12:00,Dr. Smith,30 hrs,45,42,Yes,42';
-    const csv = `${headers}\n${sample}`;
+    const header = 'Course Name,From Date,To Date,Time From,Time To,Course Instructor,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
+    let rows: string[] = [];
+    if (filteredCourses && filteredCourses.length > 0) {
+      rows = filteredCourses.map(c => `"${c.courseName}","${c.fromDate}","${c.toDate}","${c.timeFrom}","${c.timeTo}","${c.courseInstructor}","${c.duration}","${c.studentsEnrolled}","${c.studentsParticipated}","${c.certificationProvided}","${c.certificatesIssued}"`);
+    } else {
+      rows = [
+        '"Python for Data Science","2025-01-01","2025-01-15","10:00","12:00","Dr. Smith","30 hrs","45","42","Yes","42"'
+      ];
+    }
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'value_added_courses_template.csv';
+    link.download = `value_added_courses_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, []);
+  }, [selectedYear, selectedSemester, filteredCourses]);
 
   // Evidence rendering helper
   const renderEvidenceSection = useCallback((courseId: string) => {
@@ -464,7 +687,7 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
             return (
               <div key={key} className={cn(
                 'rounded-lg border p-2.5 transition-all',
-                isUploaded ? 'bg-emerald-50/50 border-emerald-200/60' : 'bg-muted/20 border-border/40'
+                isUploaded ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-muted/20 border-border/40'
               )}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] font-medium truncate">{label}</span>
@@ -508,6 +731,14 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                         onClick={() => handleDownloadEvidence(courseId, key)}
                       >
                         <DownloadCloud className="h-2.5 w-2.5" /> Download
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[9px] gap-1 flex-1 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                        onClick={() => handleUploadEvidence(courseId, key)}
+                      >
+                        <Upload className="h-2.5 w-2.5" /> Re-upload
                       </Button>
                     </>
                   )}

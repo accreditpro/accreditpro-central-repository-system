@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, AcademicRepositorySummary } from '@/services/academic-repository.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -126,12 +128,40 @@ interface RepositoryWorkspaceProps {
 
 export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: RepositoryWorkspaceProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
-  const metrics = repositoryHealth[config.id];
+  const { user } = useAuth();
+  const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
 
   // Reset active tab when config changes (e.g., switching between repositories)
   useEffect(() => {
     setActiveTab(config.tabs[initialTabIndex ?? 0]?.id || '');
   }, [config.id, initialTabIndex]);
+
+  useEffect(() => {
+    if (config.id === 'academic') {
+      const departmentId = user?.departmentId || 101;
+      const year = academicYear || '2025-26';
+      academicRepositoryService.getDashboardSummary(year, departmentId)
+        .then(setAcademicSummary)
+        .catch(console.error);
+    }
+  }, [config.id, academicYear, user]);
+
+  let metrics = repositoryHealth[config.id] || {
+    dataCompleteness: 0,
+    evidenceCompleteness: 0,
+    verificationPercent: 0,
+    readinessScore: 0
+  };
+
+  if (config.id === 'academic' && academicSummary) {
+    metrics = {
+      ...metrics,
+      dataCompleteness: academicSummary.dataCompleteness,
+      evidenceCompleteness: academicSummary.evidenceScore,
+      verificationPercent: academicSummary.verificationScore,
+      readinessScore: academicSummary.readinessScore,
+    };
+  }
 
   // Render Student Repository with its own dedicated module (with Department/Year/Semester selectors)
   if (config.id === 'student') {

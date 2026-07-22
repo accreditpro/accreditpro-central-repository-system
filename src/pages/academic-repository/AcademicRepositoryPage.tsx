@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, AcademicRepositorySummary } from '@/services/academic-repository.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -26,6 +28,25 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export const AcademicRepositoryPage = () => {
   const [activeTab, setActiveTab] = useState('programs');
+  const { user } = useAuth();
+  const [summary, setSummary] = useState<AcademicRepositorySummary | null>(null);
+
+  useEffect(() => {
+    // We use a default departmentId if not present on user object, and hardcoded academic year per page structure
+    const departmentId = user?.departmentId || 101;
+    const academicYear = '2025-2026';
+    
+    academicRepositoryService.getDashboardSummary(academicYear, departmentId)
+      .then(setSummary)
+      .catch(console.error);
+  }, [user]);
+
+  const metrics = summary || {
+    dataCompleteness: 0,
+    evidenceScore: 0,
+    verificationScore: 0,
+    readinessScore: 0
+  };
 
   return (
     <div className="space-y-6 p-1">
@@ -52,10 +73,10 @@ export const AcademicRepositoryPage = () => {
         {/* Header Score Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: 'Repository Completion', value: repositoryMetrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
-            { label: 'Evidence Score', value: repositoryMetrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
-            { label: 'Verification Score', value: repositoryMetrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
-            { label: 'Readiness Score', value: repositoryMetrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
+            { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
+            { label: 'Evidence Score', value: metrics.evidenceScore, color: 'text-violet-600 bg-violet-500/10' },
+            { label: 'Verification Score', value: metrics.verificationScore, color: 'text-emerald-600 bg-emerald-500/10' },
+            { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
           ].map((metric) => (
             <div
               key={metric.label}

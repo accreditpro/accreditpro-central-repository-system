@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ import {
   BookOpen,
   Users,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, ApiTimetableEntry } from '@/services/academic-repository.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -92,7 +94,33 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+const mapYearOfStudyToLabel = (y: string) => {
+  if (y === '1') return 'I Year';
+  if (y === '2') return 'II Year';
+  if (y === '3') return 'III Year';
+  if (y === '4') return 'IV Year';
+  return 'III Year';
+};
+
+const mapLabelToYearOfStudy = (y: string) => {
+  if (y === 'I Year') return '1';
+  if (y === 'II Year') return '2';
+  if (y === 'III Year') return '3';
+  if (y === 'IV Year') return '4';
+  return '3';
+};
+
+const mapSemesterToLabel = (s: string) => {
+  return `Semester ${s}`;
+};
+
+const mapLabelToSemester = (s: string) => {
+  return s.replace('Semester ', '');
+};
+
 export const AcademicTimetableModule = ({ department, academicYear }: AcademicTimetableModuleProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
@@ -116,6 +144,35 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
     classInCharge: '',
     wef: '',
   });
+
+  const loadTimetable = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getTimetableEntries(academicYear, departmentId);
+      if (res?.content) {
+        const mappedEntries: TimetableEntry[] = res.content.map((item: any) => ({
+          id: String(item.id),
+          department,
+          year: mapYearOfStudyToLabel(item.yearOfStudy),
+          semester: mapSemesterToLabel(item.semester),
+          section: item.section || 'A',
+          period: item.period || 1,
+          day: item.day || 'Monday',
+          timeFrom: item.timeFrom || '',
+          timeTo: item.timeTo || '',
+          courseCode: item.courseCode || '',
+          classInCharge: item.classInCharge || '',
+          wef: item.wef || '',
+        }));
+        setEntries(mappedEntries);
+      }
+    } catch (err) {
+      console.error('Failed to load timetable entries:', err);
+    }
+  }, [academicYear, departmentId, department]);
+
+  useEffect(() => {
+    loadTimetable();
+  }, [loadTimetable]);
 
   // Update semester when year changes
   const handleYearChange = (year: string) => {
@@ -166,29 +223,23 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
     const header = 'Department,Year,Semester,Section,Period,Day,Time From,Time To,Course Code,Class In-Charge,W.E.F';
-    const sampleRows = [
-      `${department},${selectedYear},${selectedSemester},${selectedSection},1,Monday,09:00,09:50,CS501,Dr. Anita Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},2,Monday,09:50,10:40,CS502,Mr. Anil Reddy,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},3,Monday,10:50,11:40,CS503,Dr. Priya Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},4,Monday,11:40,12:30,CS504,Dr. Rajesh Kumar,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},5,Monday,13:30,14:20,CS505-LAB,Dr. Anita Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},6,Monday,14:20,15:10,CS505-LAB,Dr. Anita Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},1,Tuesday,09:00,09:50,CS502,Mr. Anil Reddy,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},2,Tuesday,09:50,10:40,CS503,Dr. Priya Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},3,Tuesday,10:50,11:40,CS501,Dr. Anita Sharma,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},4,Tuesday,11:40,12:30,CS506,Dr. Sunita Patel,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},5,Tuesday,13:30,14:20,CS504,Dr. Rajesh Kumar,2025-07-01`,
-      `${department},${selectedYear},${selectedSemester},${selectedSection},6,Tuesday,14:20,15:10,CS507,Mr. Anil Reddy,2025-07-01`,
-    ];
-    const csv = [header, ...sampleRows].join('\n');
+    let rows: string[] = [];
+    if (filteredEntries && filteredEntries.length > 0) {
+      rows = filteredEntries.map(e => `"${department}","${e.year}","${e.semester}","${e.section}","${e.period}","${e.day}","${e.timeFrom}","${e.timeTo}","${e.courseCode}","${e.classInCharge}","${e.wef}"`);
+    } else {
+      rows = [
+        `"${department}","${selectedYear}","${selectedSemester}","${selectedSection}","1","Monday","09:00","09:50","CS501","Dr. Anita Sharma","2025-07-01"`
+      ];
+    }
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_timetable_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_Sec${selectedSection}_template.csv`;
+    a.download = `academic_timetable_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_Sec${selectedSection}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester, selectedSection]);
+  }, [department, selectedYear, selectedSemester, selectedSection, filteredEntries]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -279,62 +330,109 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
   );
 
   // Import uploaded entries (only valid ones)
-  const handleImportUploaded = useCallback(() => {
-    const validEntries = uploadPreview.filter((e) => e.validationStatus === 'valid');
-    const newEntries = validEntries.map((e, idx) => ({
-      ...e,
-      id: `entry-${Date.now()}-${idx}`,
-      validationStatus: undefined as TimetableEntry['validationStatus'],
-      errors: undefined,
-    }));
-    setEntries((prev) => [...prev, ...newEntries]);
-    // Auto-switch to the year/semester/section of the first imported record
-    if (newEntries.length > 0) {
-      const first = newEntries[0];
-      if (first.year && YEARS_OF_STUDY.includes(first.year)) {
-        setSelectedYear(first.year);
-      }
-      if (first.semester) {
-        setSelectedSemester(first.semester);
-      }
-      if (first.section && SECTIONS.includes(first.section)) {
-        setSelectedSection(first.section);
+  const handleImportUploaded = useCallback(async () => {
+    const validRecords = uploadPreview.filter((e) => e.validationStatus === 'valid');
+    
+    if (validRecords.length > 0) {
+      const recordsByGroup: Record<string, typeof validRecords> = {};
+      validRecords.forEach(c => {
+        const year = c.year || selectedYear;
+        const semester = c.semester || selectedSemester;
+        const section = c.section || selectedSection;
+        const key = `${year}|${semester}|${section}`;
+        if (!recordsByGroup[key]) recordsByGroup[key] = [];
+        recordsByGroup[key].push(c);
+      });
+
+      try {
+        for (const [key, groupRecords] of Object.entries(recordsByGroup)) {
+          const [year, semester, section] = key.split('|');
+          const payload = {
+            academicYear,
+            yearOfStudy: mapLabelToYearOfStudy(year),
+            semester: mapLabelToSemester(semester),
+            section: section,
+            entries: groupRecords.map(c => ({
+              period: c.period,
+              day: c.day,
+              timeFrom: c.timeFrom,
+              timeTo: c.timeTo,
+              courseCode: c.courseCode,
+              classInCharge: c.classInCharge,
+              wef: c.wef
+            }))
+          };
+          await academicRepositoryService.bulkSaveTimetable(departmentId, payload);
+        }
+        await loadTimetable();
+
+        const first = validRecords[0];
+        if (first.year && YEARS_OF_STUDY.includes(first.year)) {
+          setSelectedYear(first.year);
+        }
+        const semOptions = SEMESTERS_MAP[first.year || selectedYear] || [];
+        if (first.semester && semOptions.includes(first.semester)) {
+          setSelectedSemester(first.semester);
+        }
+        if (first.section && SECTIONS.includes(first.section)) {
+          setSelectedSection(first.section);
+        }
+      } catch (err) {
+        console.error('Failed to bulk save imported timetable entries:', err);
       }
     }
+
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [uploadPreview]);
+  }, [uploadPreview, academicYear, departmentId, loadTimetable, selectedYear, selectedSemester, selectedSection]);
 
   // Add entry manually
-  const handleAddEntry = useCallback(() => {
+  const handleAddEntry = useCallback(async () => {
     if (!newEntry.courseCode || !newEntry.classInCharge) return;
 
-    const entry: TimetableEntry = {
-      id: editingEntry ? editingEntry.id : `entry-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      section: selectedSection,
-      period: parseInt(newEntry.period),
-      day: newEntry.day,
-      timeFrom: newEntry.timeFrom,
-      timeTo: newEntry.timeTo,
-      courseCode: newEntry.courseCode,
-      classInCharge: newEntry.classInCharge,
-      wef: newEntry.wef,
-    };
+    try {
+      const entryData: ApiTimetableEntry = {
+        academicYear,
+        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+        semester: mapLabelToSemester(selectedSemester),
+        section: selectedSection,
+        period: parseInt(newEntry.period),
+        day: newEntry.day,
+        timeFrom: newEntry.timeFrom,
+        timeTo: newEntry.timeTo,
+        courseCode: newEntry.courseCode,
+        classInCharge: newEntry.classInCharge,
+        wef: newEntry.wef,
+      };
 
-    if (editingEntry) {
-      setEntries((prev) => prev.map((e) => (e.id === editingEntry.id ? entry : e)));
-    } else {
-      setEntries((prev) => [...prev, entry]);
+      if (editingEntry && !editingEntry.id.toString().startsWith('entry-') && !editingEntry.id.toString().startsWith('upload-')) {
+        await academicRepositoryService.updateTimetableEntry(editingEntry.id, departmentId, entryData);
+      } else if (!editingEntry) {
+        await academicRepositoryService.createTimetableEntry(departmentId, entryData);
+      } else {
+        // Local only fallback
+        const entry: TimetableEntry = {
+          id: editingEntry.id,
+          department,
+          year: selectedYear,
+          semester: selectedSemester,
+          section: selectedSection,
+          ...newEntry,
+          period: parseInt(newEntry.period)
+        };
+        setEntries((prev) => prev.map((e) => (e.id === editingEntry.id ? entry : e)));
+      }
+
+      await loadTimetable();
+
+      setNewEntry({ period: '1', day: 'Monday', timeFrom: '', timeTo: '', courseCode: '', classInCharge: '', wef: '' });
+      setShowAddDialog(false);
+      setEditingEntry(null);
+    } catch (err) {
+      console.error('Failed to save timetable entry:', err);
     }
-
-    setNewEntry({ period: '1', day: 'Monday', timeFrom: '', timeTo: '', courseCode: '', classInCharge: '', wef: '' });
-    setShowAddDialog(false);
-    setEditingEntry(null);
-  }, [newEntry, department, selectedYear, selectedSemester, selectedSection, editingEntry]);
+  }, [newEntry, department, selectedYear, selectedSemester, selectedSection, editingEntry, academicYear, departmentId, loadTimetable]);
 
   // Edit entry
   const handleEditEntry = useCallback((entry: TimetableEntry) => {
@@ -352,15 +450,56 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
   }, []);
 
   // Delete entry
-  const handleDeleteEntry = useCallback((id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+  const handleDeleteEntry = useCallback(async (id: string) => {
+    if (!id.startsWith('entry-') && !id.startsWith('upload-')) {
+      try {
+        await academicRepositoryService.deleteTimetableEntry(id, departmentId);
+        await loadTimetable();
+      } catch (err) {
+        console.error('Failed to delete entry:', err);
+      }
+    } else {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+    }
+  }, [departmentId, loadTimetable]);
 
   // Save Timetable
-  const handleSaveTimetable = useCallback(() => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-  }, []);
+  const handleSaveTimetable = useCallback(async () => {
+    const records = entries.filter(
+      (e) => e.year === selectedYear && e.semester === selectedSemester && e.section === selectedSection
+    );
+    
+    const unsavedRecords = records.filter(p => p.id.startsWith('entry-') || p.id.startsWith('upload-'));
+    
+    if (unsavedRecords.length > 0) {
+      try {
+        const payload = {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          section: selectedSection,
+          entries: unsavedRecords.map(p => ({
+            period: p.period,
+            day: p.day,
+            timeFrom: p.timeFrom,
+            timeTo: p.timeTo,
+            courseCode: p.courseCode,
+            classInCharge: p.classInCharge,
+            wef: p.wef
+          }))
+        };
+        await academicRepositoryService.bulkSaveTimetable(departmentId, payload);
+        await loadTimetable();
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 4000);
+      } catch (err) {
+        console.error('Bulk save failed:', err);
+      }
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+    }
+  }, [entries, selectedYear, selectedSemester, selectedSection, academicYear, departmentId, loadTimetable]);
 
   const totalEntriesForContext = filteredEntries.length;
 
@@ -878,7 +1017,7 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-5xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <Upload className="h-4 w-4" />
@@ -952,7 +1091,7 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={entry.errors?.join(', ')}>
+                              <span className="text-[9px] text-red-600 max-w-[200px] truncate" title={entry.errors?.join(', ')}>
                                 {entry.errors?.[0]}
                               </span>
                             </div>
@@ -968,7 +1107,7 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
               {uploadStats.invalid > 0 && (
                 <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2">
                     {uploadPreview
                       .filter((e) => e.validationStatus === 'invalid')
                       .map((e, idx) => (

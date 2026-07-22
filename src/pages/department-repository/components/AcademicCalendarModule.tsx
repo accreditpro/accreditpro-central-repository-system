@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, ApiCalendarEvent } from '@/services/academic-repository.service';
 import {
   Calendar,
   Download,
@@ -97,7 +99,37 @@ function getEventStatus(startDate: string, endDate: string): 'upcoming' | 'compl
   return 'ongoing';
 }
 
+const mapYearOfStudyToLabel = (y: string) => {
+  if (y === '1') return 'I Year';
+  if (y === '2') return 'II Year';
+  if (y === '3') return 'III Year';
+  if (y === '4') return 'IV Year';
+  return 'III Year';
+};
+
+const mapLabelToYearOfStudy = (y: string) => {
+  if (y === 'I Year') return '1';
+  if (y === 'II Year') return '2';
+  if (y === 'III Year') return '3';
+  if (y === 'IV Year') return '4';
+  return '3';
+};
+
+const mapSemesterToLabel = (s: string) => {
+  if (s === '1') return 'Semester I';
+  if (s === '2') return 'Semester II';
+  return 'Semester I';
+};
+
+const mapLabelToSemester = (s: string) => {
+  if (s === 'Semester I') return '1';
+  if (s === 'Semester II') return '2';
+  return '1';
+};
+
 export const AcademicCalendarModule = ({ department, academicYear }: AcademicCalendarModuleProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester I');
@@ -118,6 +150,31 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
     startDate: '',
     endDate: '',
   });
+
+  const loadEvents = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getCalendarEvents(academicYear, departmentId);
+      if (res?.content) {
+        const mappedEvents: CalendarEvent[] = res.content.map((item: any) => ({
+          id: String(item.id),
+          department,
+          year: mapYearOfStudyToLabel(item.yearOfStudy),
+          semester: mapSemesterToLabel(item.semester),
+          description: item.description,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          duration: item.duration || calculateDuration(item.startDate, item.endDate),
+        }));
+        setEvents(mappedEvents);
+      }
+    } catch (err) {
+      console.error('Failed to load events:', err);
+    }
+  }, [academicYear, departmentId, department]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   // Filtered events
   const filteredEvents = useMemo(() => {
@@ -154,24 +211,23 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
     const header = 'Department,Year,Semester,Description,Start Date,End Date,Duration';
-    const sampleRows = [
-      `${department},${selectedYear},${selectedSemester},Commencement of Class Work,2025-07-01,2025-07-01,1`,
-      `${department},${selectedYear},${selectedSemester},Orientation Program,2025-07-02,2025-07-03,2`,
-      `${department},${selectedYear},${selectedSemester},First Internal Examination,2025-09-05,2025-09-07,3`,
-      `${department},${selectedYear},${selectedSemester},Industrial Visit,2025-09-20,2025-09-20,1`,
-      `${department},${selectedYear},${selectedSemester},Second Internal Examination,2025-11-10,2025-11-12,3`,
-      `${department},${selectedYear},${selectedSemester},Practical Examinations,2025-12-05,2025-12-10,6`,
-      `${department},${selectedYear},${selectedSemester},Theory Examinations,2025-12-15,2025-12-24,10`,
-    ];
-    const csv = [header, ...sampleRows].join('\n');
+    let rows: string[] = [];
+    if (filteredEvents && filteredEvents.length > 0) {
+      rows = filteredEvents.map(e => `"${department}","${e.year}","${e.semester}","${e.description}","${e.startDate}","${e.endDate}","${e.duration}"`);
+    } else {
+      rows = [
+        `"${department}","${selectedYear}","${selectedSemester}","Commencement of Class Work","2025-07-01","2025-07-01","1"`
+      ];
+    }
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_calendar_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_template.csv`;
+    a.download = `academic_calendar_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester]);
+  }, [department, selectedYear, selectedSemester, filteredEvents]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -266,57 +322,107 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
     [department, selectedYear, selectedSemester]
   );
 
-  // Import uploaded events (only valid ones)
-  const handleImportUploaded = useCallback(() => {
+  // Import uploaded events (only valid ones) and auto-save to backend
+  const handleImportUploaded = useCallback(async () => {
     const validEvents = uploadPreview.filter((e) => e.status === 'valid');
-    const newEvents = validEvents.map((e, idx) => ({
-      ...e,
-      id: `event-${Date.now()}-${idx}`,
-      status: undefined as CalendarEvent['status'],
-      errors: undefined,
-    }));
-    setEvents((prev) => [...prev, ...newEvents]);
-    // Auto-switch to the year/semester of the first imported record so user can see results
-    if (newEvents.length > 0) {
-      const firstEvent = newEvents[0];
-      if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
-        setSelectedYear(firstEvent.year);
-      }
-      if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
-        setSelectedSemester(firstEvent.semester);
+    
+    if (validEvents.length > 0) {
+      // Group events by year and semester since API requires them at root level
+      const eventsByGroup: Record<string, typeof validEvents> = {};
+      validEvents.forEach(e => {
+        const year = e.year || selectedYear;
+        const semester = e.semester || selectedSemester;
+        const key = `${year}|${semester}`;
+        if (!eventsByGroup[key]) eventsByGroup[key] = [];
+        eventsByGroup[key].push(e);
+      });
+
+      try {
+        for (const [key, groupEvents] of Object.entries(eventsByGroup)) {
+          const [year, semester] = key.split('|');
+          const payload = {
+            academicYear,
+            yearOfStudy: mapLabelToYearOfStudy(year),
+            semester: mapLabelToSemester(semester),
+            events: groupEvents.map(e => ({
+              description: e.description,
+              startDate: e.startDate,
+              endDate: e.endDate
+            }))
+          };
+          await academicRepositoryService.bulkSaveCalendarEvents(departmentId, payload);
+        }
+        await loadEvents();
+
+        // Auto-switch to the year/semester of the first imported record so user can see results
+        const firstEvent = validEvents[0];
+        if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
+          setSelectedYear(firstEvent.year);
+        }
+        if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
+          setSelectedSemester(firstEvent.semester);
+        }
+      } catch (err) {
+        console.error('Failed to bulk save imported events:', err);
       }
     }
+
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [uploadPreview]);
+  }, [uploadPreview, academicYear, departmentId, loadEvents, selectedYear, selectedSemester]);
 
   // Add event manually
-  const handleAddEvent = useCallback(() => {
+  const handleAddEvent = useCallback(async () => {
     if (!newEvent.description || !newEvent.startDate || !newEvent.endDate) return;
 
     const duration = calculateDuration(newEvent.startDate, newEvent.endDate);
-    const event: CalendarEvent = {
-      id: `event-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      description: newEvent.description,
-      startDate: newEvent.startDate,
-      endDate: newEvent.endDate,
-      duration,
-    };
+    
+    try {
+      if (editingEvent && !editingEvent.id.toString().startsWith('upload-') && !editingEvent.id.toString().startsWith('event-')) {
+        // Numeric ID implies it exists on backend
+        await academicRepositoryService.updateCalendarEvent(editingEvent.id, departmentId, {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          description: newEvent.description,
+          startDate: newEvent.startDate,
+          endDate: newEvent.endDate,
+        });
+        await loadEvents();
+      } else if (!editingEvent) {
+        // New event
+        await academicRepositoryService.createCalendarEvent(departmentId, {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          description: newEvent.description,
+          startDate: newEvent.startDate,
+          endDate: newEvent.endDate,
+        });
+        await loadEvents();
+      } else {
+        // Was a local unsaved event, just update local state
+        const event: CalendarEvent = {
+          id: editingEvent.id,
+          department,
+          year: selectedYear,
+          semester: selectedSemester,
+          description: newEvent.description,
+          startDate: newEvent.startDate,
+          endDate: newEvent.endDate,
+          duration,
+        };
+        setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? event : e)));
+      }
 
-    if (editingEvent) {
-      setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? { ...event, id: editingEvent.id } : e)));
-    } else {
-      setEvents((prev) => [...prev, event]);
+      setNewEvent({ description: '', startDate: '', endDate: '' });
+      setShowAddDialog(false);
+      setEditingEvent(null);
+    } catch (err) {
+      console.error('Failed to save event:', err);
     }
-
-    setNewEvent({ description: '', startDate: '', endDate: '' });
-    setShowAddDialog(false);
-    setEditingEvent(null);
-  }, [newEvent, department, selectedYear, selectedSemester, editingEvent]);
+  }, [newEvent, department, selectedYear, selectedSemester, editingEvent, academicYear, departmentId, loadEvents]);
 
   // Edit event
   const handleEditEvent = useCallback((event: CalendarEvent) => {
@@ -330,20 +436,53 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
   }, []);
 
   // Delete event
-  const handleDeleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+  const handleDeleteEvent = useCallback(async (id: string) => {
+    if (!id.startsWith('upload-') && !id.startsWith('event-')) {
+      try {
+        await academicRepositoryService.deleteCalendarEvent(id, departmentId);
+        await loadEvents();
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      }
+    } else {
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    }
+  }, [departmentId, loadEvents]);
 
   // Save Calendar
-  const handleSaveCalendar = useCallback(() => {
+  const handleSaveCalendar = useCallback(async () => {
     const yearSemEvents = events.filter(
       (e) => e.year === selectedYear && e.semester === selectedSemester
     );
-    // Simulate save
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-    console.log('Saving calendar events:', yearSemEvents);
-  }, [events, selectedYear, selectedSemester]);
+    
+    // Find unsaved events (e.g. from CSV import)
+    const unsavedEvents = yearSemEvents.filter(e => e.id.startsWith('upload-') || e.id.startsWith('event-'));
+    
+    if (unsavedEvents.length > 0) {
+      try {
+        const payload = {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          events: unsavedEvents.map(e => ({
+            description: e.description,
+            startDate: e.startDate,
+            endDate: e.endDate
+          }))
+        };
+        await academicRepositoryService.bulkSaveCalendarEvents(departmentId, payload);
+        await loadEvents();
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 4000);
+      } catch (err) {
+        console.error('Bulk save failed:', err);
+      }
+    } else {
+      // If nothing to save, just simulate
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+    }
+  }, [events, selectedYear, selectedSemester, academicYear, departmentId, loadEvents]);
 
   const totalEventsForYearSem = events.filter(
     (e) => e.year === selectedYear && e.semester === selectedSemester

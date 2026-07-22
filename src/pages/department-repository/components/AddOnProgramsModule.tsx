@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,9 +32,12 @@ import {
   RefreshCw,
   Building2,
   CalendarDays,
-  GraduationCap,
   BookOpen,
+  GraduationCap,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { academicRepositoryService, ApiAddOnProgram } from '@/services/academic-repository.service';
+import { apiService } from '@/services/api.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -103,7 +106,33 @@ const SEMESTERS_MAP: Record<string, string[]> = {
 // Evidence types for per-program documents
 type EvidenceDocType = 'geoTaggedPhotos' | 'registeredStudentsList' | 'attendedStudentsList';
 
+const mapYearOfStudyToLabel = (y: string) => {
+  if (y === '1') return 'I Year';
+  if (y === '2') return 'II Year';
+  if (y === '3') return 'III Year';
+  if (y === '4') return 'IV Year';
+  return 'III Year';
+};
+
+const mapLabelToYearOfStudy = (y: string) => {
+  if (y === 'I Year') return '1';
+  if (y === 'II Year') return '2';
+  if (y === 'III Year') return '3';
+  if (y === 'IV Year') return '4';
+  return '3';
+};
+
+const mapSemesterToLabel = (s: string) => {
+  return `Semester ${s}`;
+};
+
+const mapLabelToSemester = (s: string) => {
+  return s.replace('Semester ', '');
+};
+
 export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsModuleProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
   const [programs, setPrograms] = useState<AddOnProgramRecord[]>([]);
@@ -140,6 +169,72 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     certificationProvided: 'Yes' as 'Yes' | 'No',
     certificatesIssued: '',
   });
+
+  const loadPrograms = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getAddOnPrograms(academicYear, departmentId);
+      if (res?.content) {
+        const mappedPrograms: AddOnProgramRecord[] = res.content.map((item: any) => ({
+          id: String(item.id),
+          department,
+          year: mapYearOfStudyToLabel(item.yearOfStudy),
+          semester: mapSemesterToLabel(item.semester),
+          topic: item.topic || '',
+          fromDate: item.fromDate || '',
+          toDate: item.toDate || '',
+          timeFrom: item.timeFrom || '',
+          timeTo: item.timeTo || '',
+          coordinator: item.coordinator || '',
+          duration: item.duration || '',
+          studentsEnrolled: item.studentsEnrolled?.toString() || '0',
+          studentsParticipated: item.studentsParticipated?.toString() || '0',
+          certificationProvided: (item.certificationProvided ? 'Yes' : 'No') as 'Yes' | 'No',
+          certificatesIssued: item.certificatesIssued?.toString() || '0',
+        }));
+        setPrograms(mappedPrograms);
+      }
+    } catch (err) {
+      console.error('Failed to load add on programs:', err);
+    }
+  }, [academicYear, departmentId, department]);
+
+  const loadEvidence = useCallback(async () => {
+    try {
+      const res = await academicRepositoryService.getEvidenceDocuments(academicYear, departmentId, {
+        sectionName: 'addon-programs',
+      });
+      if (res?.content) {
+        const newMap: Record<string, Record<EvidenceDocType, any>> = {};
+        const sortedContent = [...res.content].sort((a: any, b: any) => a.id - b.id);
+        sortedContent.forEach((ev: any) => {
+          const cId = String(ev.recordId);
+          if (!newMap[cId]) {
+            newMap[cId] = {
+              geoTaggedPhotos: { status: 'not-uploaded' },
+              registeredStudentsList: { status: 'not-uploaded' },
+              attendedStudentsList: { status: 'not-uploaded' },
+            };
+          }
+          if (ev.documentType) {
+            newMap[cId][ev.documentType as EvidenceDocType] = {
+              status: 'uploaded',
+              fileName: ev.fileName,
+              uploadedAt: ev.uploadedAt,
+              id: ev.id,
+            };
+          }
+        });
+        setProgramEvidenceMap(newMap);
+      }
+    } catch (err) {
+      console.error('Failed to load evidence documents:', err);
+    }
+  }, [academicYear, departmentId]);
+
+  useEffect(() => {
+    loadPrograms();
+    loadEvidence();
+  }, [loadPrograms, loadEvidence]);
 
   // Update semester when year changes
   const handleYearChange = (year: string) => {
@@ -261,32 +356,32 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     setSelectedFile(file);
   }, [uploadDialog, validateFile]);
 
-  const handleConfirmUpload = useCallback(() => {
+  const handleConfirmUpload = useCallback(async () => {
     if (!selectedFile || !uploadDialog) return;
 
     const { programId, docType } = uploadDialog;
-    const now = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-    setProgramEvidenceMap((prev) => ({
-      ...prev,
-      [programId]: {
-        ...(prev[programId] || {
-          geoTaggedPhotos: { status: 'not-uploaded' },
-          registeredStudentsList: { status: 'not-uploaded' },
-          attendedStudentsList: { status: 'not-uploaded' },
-        }),
-        [docType]: {
-          status: 'uploaded' as const,
-          fileName: selectedFile.name,
-          uploadedAt: now,
-        },
-      },
-    }));
-
-    setUploadDialog(null);
-    setSelectedFile(null);
-    setUploadError(null);
-  }, [selectedFile, uploadDialog]);
+    try {
+      const payload = {
+        academicYear,
+        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+        semester: mapLabelToSemester(selectedSemester),
+        sectionName: 'addon-programs',
+        recordId: programId,
+        documentType: docType
+      };
+      
+      await academicRepositoryService.uploadEvidenceDocument(departmentId, 1, selectedFile, payload);
+      await loadEvidence();
+      
+      setUploadDialog(null);
+      setSelectedFile(null);
+      setUploadError(null);
+    } catch (err) {
+      console.error('Failed to upload evidence:', err);
+      setUploadError('Failed to upload evidence');
+    }
+  }, [selectedFile, uploadDialog, academicYear, selectedYear, selectedSemester, departmentId, loadEvidence]);
 
   const handlePreviewEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
     const ev = programEvidenceMap[programId]?.[docType];
@@ -295,34 +390,40 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     }
   }, [programEvidenceMap]);
 
-  const handleDownloadEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
+  const handleDownloadEvidence = useCallback(async (programId: string, docType: EvidenceDocType) => {
     const ev = programEvidenceMap[programId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      // Simulate download
-      const link = document.createElement('a');
-      link.href = '#';
-      link.download = ev.fileName;
-      link.click();
+    if (ev?.status === 'uploaded' && ev.id) {
+      try {
+        const res = await academicRepositoryService.downloadEvidenceDocument(ev.id);
+        if (res?.downloadUrl) {
+          await apiService.download(res.downloadUrl, ev.fileName || 'document');
+        }
+      } catch (err) {
+        console.error('Failed to download evidence:', err);
+      }
     }
   }, [programEvidenceMap]);
 
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
     const header = 'Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
-    const sampleRows = [
-      `${department},${selectedYear},${selectedSemester},Python for Data Science,2025-01-15,2025-01-20,09:00,12:00,Dr. Anita Sharma,30 Hours,120,115,Yes,110`,
-      `${department},${selectedYear},${selectedSemester},AWS Cloud Practitioner,2025-02-01,2025-02-10,14:00,17:00,Mr. Anil Reddy,40 Hours,80,75,Yes,70`,
-      `${department},${selectedYear},${selectedSemester},Soft Skills & Communication,2025-02-15,2025-02-20,10:00,13:00,Dr. Priya Sharma,20 Hours,150,140,No,0`,
-    ];
-    const csv = [header, ...sampleRows].join('\n');
+    let rows: string[] = [];
+    if (filteredPrograms && filteredPrograms.length > 0) {
+      rows = filteredPrograms.map(p => `"${department}","${p.year}","${p.semester}","${p.topic}","${p.fromDate}","${p.toDate}","${p.timeFrom}","${p.timeTo}","${p.coordinator}","${p.duration}","${p.studentsEnrolled}","${p.studentsParticipated}","${p.certificationProvided}","${p.certificatesIssued}"`);
+    } else {
+      rows = [
+        `"${department}","${selectedYear}","${selectedSemester}","Python for Data Science","2025-01-15","2025-01-20","09:00","12:00","Dr. Anita Sharma","30 Hours","120","115","Yes","110"`
+      ];
+    }
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `addon_programs_template_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
+    a.download = `addon_programs_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester]);
+  }, [department, selectedYear, selectedSemester, filteredPrograms]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -415,62 +516,109 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   );
 
   // Import uploaded programs (only valid ones)
-  const handleImportUploaded = useCallback(() => {
-    const validPrograms = uploadPreview.filter((p) => p.validationStatus === 'valid');
-    const newPrograms = validPrograms.map((p, idx) => ({
-      ...p,
-      id: `program-${Date.now()}-${idx}`,
-      validationStatus: undefined as AddOnProgramRecord['validationStatus'],
-      errors: undefined,
-    }));
-    setPrograms((prev) => [...prev, ...newPrograms]);
-    // Auto-switch to the year/semester of the first imported record so user can see results
-    if (newPrograms.length > 0) {
-      const firstProgram = newPrograms[0];
-      if (firstProgram.year && YEARS_OF_STUDY.includes(firstProgram.year)) {
-        setSelectedYear(firstProgram.year);
-      }
-      if (firstProgram.semester) {
-        setSelectedSemester(firstProgram.semester);
+  const handleImportUploaded = useCallback(async () => {
+    const validRecords = uploadPreview.filter((p) => p.validationStatus === 'valid');
+    
+    if (validRecords.length > 0) {
+      const programsByGroup: Record<string, typeof validRecords> = {};
+      validRecords.forEach(c => {
+        const year = c.year || selectedYear;
+        const semester = c.semester || selectedSemester;
+        const key = `${year}|${semester}`;
+        if (!programsByGroup[key]) programsByGroup[key] = [];
+        programsByGroup[key].push(c);
+      });
+
+      try {
+        for (const [key, groupPrograms] of Object.entries(programsByGroup)) {
+          const [year, semester] = key.split('|');
+          const payload = {
+            academicYear,
+            yearOfStudy: mapLabelToYearOfStudy(year),
+            semester: mapLabelToSemester(semester),
+            programs: groupPrograms.map(c => ({
+              topic: c.topic,
+              fromDate: c.fromDate,
+              toDate: c.toDate,
+              timeFrom: c.timeFrom,
+              timeTo: c.timeTo,
+              coordinator: c.coordinator,
+              duration: c.duration,
+              studentsEnrolled: parseInt(c.studentsEnrolled) || 0,
+              studentsParticipated: parseInt(c.studentsParticipated) || 0,
+              certificationProvided: c.certificationProvided === 'Yes',
+              certificatesIssued: parseInt(c.certificatesIssued) || 0
+            }))
+          };
+          await academicRepositoryService.bulkSaveAddOnPrograms(departmentId, payload);
+        }
+        await loadPrograms();
+
+        const firstProgram = validRecords[0];
+        if (firstProgram.year && YEARS_OF_STUDY.includes(firstProgram.year)) {
+          setSelectedYear(firstProgram.year);
+        }
+        const semOptions = SEMESTERS_MAP[firstProgram.year || selectedYear] || [];
+        if (firstProgram.semester && semOptions.includes(firstProgram.semester)) {
+          setSelectedSemester(firstProgram.semester);
+        }
+      } catch (err) {
+        console.error('Failed to bulk save imported add on programs:', err);
       }
     }
+
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [uploadPreview]);
+  }, [uploadPreview, academicYear, departmentId, loadPrograms, selectedYear, selectedSemester]);
 
   // Add program manually
-  const handleAddProgram = useCallback(() => {
+  const handleAddProgram = useCallback(async () => {
     if (!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator) return;
 
-    const program: AddOnProgramRecord = {
-      id: editingProgram ? editingProgram.id : `program-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      topic: newProgram.topic,
-      fromDate: newProgram.fromDate,
-      toDate: newProgram.toDate,
-      timeFrom: newProgram.timeFrom,
-      timeTo: newProgram.timeTo,
-      coordinator: newProgram.coordinator,
-      duration: newProgram.duration,
-      studentsEnrolled: newProgram.studentsEnrolled || '0',
-      studentsParticipated: newProgram.studentsParticipated || '0',
-      certificationProvided: newProgram.certificationProvided,
-      certificatesIssued: newProgram.certificatesIssued || '0',
-    };
+    try {
+      const programData: ApiAddOnProgram = {
+        academicYear,
+        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+        semester: mapLabelToSemester(selectedSemester),
+        topic: newProgram.topic,
+        fromDate: newProgram.fromDate,
+        toDate: newProgram.toDate,
+        timeFrom: newProgram.timeFrom,
+        timeTo: newProgram.timeTo,
+        coordinator: newProgram.coordinator,
+        duration: newProgram.duration,
+        studentsEnrolled: parseInt(newProgram.studentsEnrolled) || 0,
+        studentsParticipated: parseInt(newProgram.studentsParticipated) || 0,
+        certificationProvided: newProgram.certificationProvided === 'Yes',
+        certificatesIssued: parseInt(newProgram.certificatesIssued) || 0
+      };
 
-    if (editingProgram) {
-      setPrograms((prev) => prev.map((p) => (p.id === editingProgram.id ? program : p)));
-    } else {
-      setPrograms((prev) => [...prev, program]);
+      if (editingProgram && !editingProgram.id.toString().startsWith('program-') && !editingProgram.id.toString().startsWith('upload-')) {
+        await academicRepositoryService.updateAddOnProgram(editingProgram.id, departmentId, programData);
+      } else if (!editingProgram) {
+        await academicRepositoryService.createAddOnProgram(departmentId, programData);
+      } else {
+        // Local only fallback
+        const program: AddOnProgramRecord = {
+          id: editingProgram.id,
+          department,
+          year: selectedYear,
+          semester: selectedSemester,
+          ...newProgram,
+        };
+        setPrograms((prev) => prev.map((p) => (p.id === editingProgram.id ? program : p)));
+      }
+
+      await loadPrograms();
+
+      setNewProgram({ topic: '', fromDate: '', toDate: '', timeFrom: '', timeTo: '', coordinator: '', duration: '', studentsEnrolled: '', studentsParticipated: '', certificationProvided: 'Yes', certificatesIssued: '' });
+      setShowAddDialog(false);
+      setEditingProgram(null);
+    } catch (err) {
+      console.error('Failed to save program:', err);
     }
-
-    setNewProgram({ topic: '', fromDate: '', toDate: '', timeFrom: '', timeTo: '', coordinator: '', duration: '', studentsEnrolled: '', studentsParticipated: '', certificationProvided: 'Yes', certificatesIssued: '' });
-    setShowAddDialog(false);
-    setEditingProgram(null);
-  }, [newProgram, department, selectedYear, selectedSemester, editingProgram]);
+  }, [newProgram, department, selectedYear, selectedSemester, editingProgram, academicYear, departmentId, loadPrograms]);
 
   // Edit program
   const handleEditProgram = useCallback((program: AddOnProgramRecord) => {
@@ -492,15 +640,59 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   }, []);
 
   // Delete program
-  const handleDeleteProgram = useCallback((id: string) => {
-    setPrograms((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const handleDeleteProgram = useCallback(async (id: string) => {
+    if (!id.startsWith('program-') && !id.startsWith('upload-')) {
+      try {
+        await academicRepositoryService.deleteAddOnProgram(id, departmentId);
+        await loadPrograms();
+      } catch (err) {
+        console.error('Failed to delete program:', err);
+      }
+    } else {
+      setPrograms((prev) => prev.filter((p) => p.id !== id));
+    }
+  }, [departmentId, loadPrograms]);
 
   // Save Programs
-  const handleSavePrograms = useCallback(() => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-  }, []);
+  const handleSavePrograms = useCallback(async () => {
+    const yearSemPrograms = programs.filter(
+      (p) => p.year === selectedYear && p.semester === selectedSemester
+    );
+    
+    const unsavedPrograms = yearSemPrograms.filter(p => p.id.startsWith('program-') || p.id.startsWith('upload-'));
+    
+    if (unsavedPrograms.length > 0) {
+      try {
+        const payload = {
+          academicYear,
+          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
+          semester: mapLabelToSemester(selectedSemester),
+          programs: unsavedPrograms.map(p => ({
+            topic: p.topic,
+            fromDate: p.fromDate,
+            toDate: p.toDate,
+            timeFrom: p.timeFrom,
+            timeTo: p.timeTo,
+            coordinator: p.coordinator,
+            duration: p.duration,
+            studentsEnrolled: parseInt(p.studentsEnrolled) || 0,
+            studentsParticipated: parseInt(p.studentsParticipated) || 0,
+            certificationProvided: p.certificationProvided === 'Yes',
+            certificatesIssued: parseInt(p.certificatesIssued) || 0
+          }))
+        };
+        await academicRepositoryService.bulkSaveAddOnPrograms(departmentId, payload);
+        await loadPrograms();
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 4000);
+      } catch (err) {
+        console.error('Bulk save failed:', err);
+      }
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+    }
+  }, [programs, selectedYear, selectedSemester, academicYear, departmentId, loadPrograms]);
 
   const totalProgramsForYearSem = programs.filter(
     (p) => p.year === selectedYear && p.semester === selectedSemester
@@ -1051,7 +1243,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-5xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <Upload className="h-4 w-4" />
@@ -1127,7 +1319,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={program.errors?.join(', ')}>
+                              <span className="text-[9px] text-red-600 max-w-[200px] truncate" title={program.errors?.join(', ')}>
                                 {program.errors?.[0]}
                               </span>
                             </div>
@@ -1143,7 +1335,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               {uploadStats.invalid > 0 && (
                 <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2">
                     {uploadPreview
                       .filter((p) => p.validationStatus === 'invalid')
                       .map((p, idx) => (

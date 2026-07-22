@@ -134,7 +134,7 @@ export const DepartmentRepositoryPage = () => {
       case 'profile':
         return <ProfileView />;
       default:
-        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
+        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} academicYear={selectedAcademicYear} departmentId={user?.departmentId ?? 0} />;
     }
   };
 
