@@ -1,4 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { getFacultyEvidenceSummary, getFacultyEvidenceDocuments, uploadFacultyEvidenceDocument, deleteFacultyEvidenceDocumentVersion, downloadFacultyEvidenceDocumentVersion, getFacultyEvidenceActivity } from '@/services/faculty-repository.service';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,6 +129,30 @@ const mockFaculty: FacultyMember[] = [
   { id: '6', empCode: 'EMP006', name: 'Dr. Meena Iyer', designation: 'Associate Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: true, hasPromotion: true, completionPercentage: 85, mandatoryDocs: 12, uploadedDocs: 10, pendingDocs: 2 },
 ];
 
+function mergeBackendDocs(folders: EvidenceFolderItem[], backendDocs: any[]): EvidenceFolderItem[] {
+  return folders.map(folder => {
+    const updatedDocuments = folder.documents.map(doc => {
+      const backendDoc = backendDocs.find(d => d.categoryId === folder.id && d.documentCode === doc.id);
+      if (backendDoc) {
+        const normalizedVersions = (backendDoc.versions || []).map((v: any) => ({
+          ...v,
+          id: v.id || v.versionId
+        }));
+        return {
+          ...doc,
+          status: backendDoc.status.toLowerCase(),
+          currentVersion: backendDoc.currentVersion || 1,
+          versions: normalizedVersions,
+          uploadedOn: normalizedVersions.length > 0 ? new Date(normalizedVersions[0].uploadedAt).toLocaleDateString() : undefined,
+          uploadedBy: normalizedVersions.length > 0 ? normalizedVersions[0].uploadedBy : undefined,
+        };
+      }
+      return doc;
+    });
+    return { ...folder, documents: updatedDocuments };
+  });
+}
+
 function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
   const folders: EvidenceFolderItem[] = [
     {
@@ -133,12 +160,12 @@ function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
       name: 'Faculty Profile',
       description: 'Personal identification and appointment documents',
       documents: [
-        { id: 'fp-photo', name: 'Passport Size Photograph', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'photo.jpg', fileSize: '250 KB', fileType: 'jpg', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
-        { id: 'fp-aadhaar', name: 'Aadhaar Card', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'aadhaar.pdf', fileSize: '1.2 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
-        { id: 'fp-pan', name: 'PAN Card', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'pan_card.pdf', fileSize: '800 KB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
-        { id: 'fp-appointment', name: 'Appointment Order', mandatory: true, status: 'approved', currentVersion: 2, versions: [{ id: 'v1', version: 1, fileName: 'appointment_v1.pdf', fileSize: '1.5 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '05-Jan-2026', status: 'approved' }, { id: 'v2', version: 2, fileName: 'appointment_v2.pdf', fileSize: '1.6 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '15-Jan-2026', status: 'approved' }], uploadedOn: '15-Jan-2026', uploadedBy: 'Admin' },
-        { id: 'fp-joining', name: 'Joining Report', mandatory: true, status: 'approved', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'joining_report.pdf', fileSize: '900 KB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '05-Jan-2026', status: 'approved' }], uploadedOn: '05-Jan-2026', uploadedBy: 'Admin' },
-        { id: 'fp-resume', name: 'Resume / CV', mandatory: true, status: faculty.completionPercentage >= 75 ? 'uploaded' : 'not_uploaded', currentVersion: faculty.completionPercentage >= 75 ? 1 : undefined, versions: faculty.completionPercentage >= 75 ? [{ id: 'v1', version: 1, fileName: 'resume.pdf', fileSize: '2.1 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '12-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.completionPercentage >= 75 ? '12-Jan-2026' : undefined, uploadedBy: faculty.completionPercentage >= 75 ? faculty.name : undefined },
+        { id: 'fp-photo', name: 'Passport Size Photograph', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'fp-aadhaar', name: 'Aadhaar Card', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'fp-pan', name: 'PAN Card', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'fp-appointment', name: 'Appointment Order', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'fp-joining', name: 'Joining Report', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'fp-resume', name: 'Resume / CV', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'fp-id-card', name: 'Employee ID Card', mandatory: false, status: 'not_uploaded', versions: [] },
       ],
     },
@@ -147,10 +174,10 @@ function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
       name: 'Qualifications',
       description: 'Academic degree certificates and transcripts',
       documents: [
-        { id: 'q-degree', name: 'Degree Certificate', mandatory: true, status: 'approved', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'degree_certificate.pdf', fileSize: '3.2 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'approved' }], uploadedOn: '08-Jan-2026', uploadedBy: faculty.name },
-        { id: 'q-marks', name: 'Consolidated Marks Memo', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'marks_memo.pdf', fileSize: '2.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'uploaded' }], uploadedOn: '08-Jan-2026', uploadedBy: faculty.name },
-        { id: 'q-phd', name: 'PhD Certificate', mandatory: true, status: faculty.hasPhD ? 'approved' : 'not_uploaded', currentVersion: faculty.hasPhD ? 1 : undefined, versions: faculty.hasPhD ? [{ id: 'v1', version: 1, fileName: 'phd_certificate.pdf', fileSize: '1.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'approved' }] : [], uploadedOn: faculty.hasPhD ? '08-Jan-2026' : undefined, uploadedBy: faculty.hasPhD ? faculty.name : undefined, conditionalField: 'hasPhD', conditionalValue: 'true' },
-        { id: 'q-provisional', name: 'Provisional Certificate', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'provisional.pdf', fileSize: '1.1 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '09-Jan-2026', status: 'uploaded' }], uploadedOn: '09-Jan-2026', uploadedBy: faculty.name },
+        { id: 'q-degree', name: 'Degree Certificate', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'q-marks', name: 'Consolidated Marks Memo', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'q-phd', name: 'PhD Certificate', mandatory: true, status: 'not_uploaded', versions: [], conditionalField: 'hasPhD', conditionalValue: 'true' },
+        { id: 'q-provisional', name: 'Provisional Certificate', mandatory: false, status: 'not_uploaded', versions: [] },
         { id: 'q-equivalence', name: 'Equivalence Certificate', mandatory: false, status: 'not_uploaded', versions: [] },
       ],
     },
@@ -159,12 +186,12 @@ function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
       name: 'Employment Information',
       description: 'Employment orders, promotions, and experience documents',
       documents: [
-        { id: 'ei-appointment', name: 'Appointment Order', mandatory: true, status: 'approved', currentVersion: 1, versions: [], referenceNote: 'Already available in Faculty Profile', uploadedOn: '15-Jan-2026', uploadedBy: 'Admin' },
-        { id: 'ei-promotion', name: 'Promotion Order', mandatory: true, status: faculty.hasPromotion ? 'uploaded' : 'not_uploaded', currentVersion: faculty.hasPromotion ? 1 : undefined, versions: faculty.hasPromotion ? [{ id: 'v1', version: 1, fileName: 'promotion_order.pdf', fileSize: '1.3 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '20-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.hasPromotion ? '20-Jan-2026' : undefined, uploadedBy: faculty.hasPromotion ? 'Admin' : undefined, conditionalField: 'hasPromotion', conditionalValue: 'true' },
+        { id: 'ei-appointment', name: 'Appointment Order', mandatory: true, status: 'not_uploaded', versions: [], referenceNote: 'Already available in Faculty Profile' },
+        { id: 'ei-promotion', name: 'Promotion Order', mandatory: true, status: 'not_uploaded', versions: [], conditionalField: 'hasPromotion', conditionalValue: 'true' },
         { id: 'ei-increment', name: 'Increment Order', mandatory: false, status: 'not_uploaded', versions: [] },
         { id: 'ei-relieving', name: 'Relieving Order', mandatory: false, status: 'not_uploaded', versions: [] },
         { id: 'ei-pay-revision', name: 'Pay Revision Order', mandatory: false, status: 'not_uploaded', versions: [] },
-        { id: 'ei-experience', name: 'Experience Certificates', mandatory: false, status: faculty.completionPercentage >= 85 ? 'uploaded' : 'not_uploaded', currentVersion: faculty.completionPercentage >= 85 ? 1 : undefined, versions: faculty.completionPercentage >= 85 ? [{ id: 'v1', version: 1, fileName: 'experience_cert.pdf', fileSize: '950 KB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '22-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.completionPercentage >= 85 ? '22-Jan-2026' : undefined, uploadedBy: faculty.completionPercentage >= 85 ? faculty.name : undefined },
+        { id: 'ei-experience', name: 'Experience Certificates', mandatory: false, status: 'not_uploaded', versions: [] },
       ],
     },
   ];
@@ -178,13 +205,13 @@ function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
       conditionalField: 'facultyType',
       conditionalValue: 'Professor of Practice',
       documents: [
-        { id: 'pop-appointment', name: 'Appointment Order', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'pop_appointment.pdf', fileSize: '1.4 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: 'Admin' },
-        { id: 'pop-industry-exp', name: 'Industry Experience Certificate', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'industry_exp.pdf', fileSize: '1.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
+        { id: 'pop-appointment', name: 'Appointment Order', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'pop-industry-exp', name: 'Industry Experience Certificate', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'pop-resume', name: 'Resume', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'pop-recommendation', name: 'Industry Recommendation Letter', mandatory: false, status: 'not_uploaded', versions: [] },
         { id: 'pop-contract', name: 'Contract / Agreement', mandatory: false, status: 'not_uploaded', versions: [] },
         { id: 'pop-aicte', name: 'AICTE Approval', mandatory: false, status: 'not_uploaded', versions: [] },
-        { id: 'pop-geotagged', name: 'Geo-tagged Photographs', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'geotagged_photos.zip', fileSize: '5.2 MB', fileType: 'zip', uploadedBy: faculty.name, uploadedAt: '12-Jan-2026', status: 'uploaded' }], uploadedOn: '12-Jan-2026', uploadedBy: faculty.name },
+        { id: 'pop-geotagged', name: 'Geo-tagged Photographs', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'pop-registered-students', name: 'Registered Students List', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'pop-attended-students', name: 'Attended Students List', mandatory: true, status: 'not_uploaded', versions: [] },
         { id: 'pop-session-report', name: 'Session Completion Report', mandatory: false, status: 'not_uploaded', versions: [] },
@@ -254,7 +281,108 @@ interface FacultyEvidenceModuleProps {
 // MAIN COMPONENT
 // ============================================================
 
-export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps) {
+export function FacultyEvidenceModule({ department, academicYear }: FacultyEvidenceModuleProps) {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
+
+  const [faculties, setFaculties] = useState<FacultyMember[]>([]);
+  const [backendDocuments, setBackendDocuments] = useState<any[]>([]);
+  const [activityLog, setActivityLog] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Fetch summary on load
+  const fetchSummary = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getFacultyEvidenceSummary(academicYear, departmentId);
+      console.log('fetchSummary response:', res);
+      if (res && Array.isArray(res)) {
+        const mapped = res.map((item: any) => ({
+          id: item.facultyId,
+          empCode: item.facultyId,
+          name: item.facultyName,
+          designation: item.designation,
+          department: department,
+          facultyType: item.facultyType || 'Regular',
+          hasPhD: item.hasPhD || false,
+          hasPromotion: item.hasPromotion || false,
+          mandatoryDocs: item.mandatoryDocsCount || 0,
+          uploadedDocs: item.uploadedDocsCount || 0,
+          pendingDocs: item.pendingDocsCount || 0,
+          completionPercentage: item.completionPercentage || 0,
+        }));
+        console.log('mapped faculties:', mapped);
+        setFaculties(mapped);
+      } else if (res && res.data && Array.isArray(res.data)) {
+        // Just in case it wasn't unwrapped
+        const mapped = res.data.map((item: any) => ({
+          id: item.facultyId,
+          empCode: item.facultyId,
+          name: item.facultyName,
+          designation: item.designation,
+          department: department,
+          facultyType: item.facultyType || 'Regular',
+          hasPhD: item.hasPhD || false,
+          hasPromotion: item.hasPromotion || false,
+          mandatoryDocs: item.mandatoryDocsCount || 0,
+          uploadedDocs: item.uploadedDocsCount || 0,
+          pendingDocs: item.pendingDocsCount || 0,
+          completionPercentage: item.completionPercentage || 0,
+        }));
+        console.log('mapped faculties from res.data:', mapped);
+        setFaculties(mapped);
+      } else {
+        console.warn('fetchSummary response is not an array:', res);
+        setFaculties(mockFaculty);
+      }
+    } catch (err) {
+      console.error('fetchSummary Error:', err);
+      toast.error('Failed to load faculty evidence summary');
+      setFaculties(mockFaculty); // Fallback
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, [academicYear, departmentId]);
+
+  // Fetch documents and activity when faculty is selected
+  const fetchFacultyDetails = async (facultyId: string) => {
+    try {
+      const [docsRes, actRes] = await Promise.all([
+        getFacultyEvidenceDocuments(facultyId, academicYear, departmentId),
+        getFacultyEvidenceActivity(facultyId, academicYear, departmentId, 10)
+      ]);
+      console.log('docsRes:', docsRes);
+      console.log('actRes:', actRes);
+      
+      if (docsRes && Array.isArray(docsRes)) {
+        setBackendDocuments(docsRes);
+      } else if (docsRes && docsRes.data && Array.isArray(docsRes.data)) {
+        setBackendDocuments(docsRes.data);
+      } else {
+        setBackendDocuments([]);
+      }
+      
+      if (actRes && Array.isArray(actRes)) {
+        setActivityLog(actRes);
+      } else if (actRes && actRes.data && Array.isArray(actRes.data)) {
+        setActivityLog(actRes.data);
+      } else {
+        setActivityLog([]);
+      }
+    } catch (err) {
+      console.error('fetchFacultyDetails Error:', err);
+      toast.error('Failed to load faculty details');
+      setBackendDocuments([]);
+      setActivityLog([]);
+    }
+  };
+
   const [selectedFaculty, setSelectedFaculty] = useState<FacultyMember | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<EvidenceFolderItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -264,31 +392,95 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
   const [selectedDocument, setSelectedDocument] = useState<EvidenceDocumentItem | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
+  useEffect(() => {
+    if (selectedFaculty) {
+      fetchFacultyDetails(selectedFaculty.empCode);
+    }
+  }, [selectedFaculty, academicYear, departmentId]);
+
   // Faculty list filtering
+
+  const handleUpload = async () => {
+    if (!selectedFile || !selectedFaculty || !selectedFolder || !selectedDocument) return;
+    
+    try {
+      setIsUploading(true);
+      const res = await uploadFacultyEvidenceDocument(selectedFaculty.empCode, selectedFile, {
+        categoryId: selectedFolder.id,
+        documentCode: selectedDocument.id,
+        documentName: selectedDocument.name,
+        departmentId: departmentId,
+        academicYear: academicYear,
+        uploadedBy: user?.name || 'Admin',
+      });
+      if (true) { // Upload successful if no error thrown
+        toast.success(res.message || 'Document uploaded successfully');
+        setUploadDialogOpen(false);
+        setSelectedFile(null);
+        // Refresh details
+        fetchFacultyDetails(selectedFaculty.empCode);
+        fetchSummary(); // Refresh summary counts
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload document');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (versionId: string | number) => {
+    try {
+      const res = await deleteFacultyEvidenceDocumentVersion(versionId);
+      if (true) { // Upload successful if no error thrown
+        toast.success('Document deleted successfully');
+        if (selectedFaculty) {
+          fetchFacultyDetails(selectedFaculty.empCode);
+          fetchSummary();
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const handleDownload = async (versionId: string | number, fileName: string) => {
+    try {
+      await downloadFacultyEvidenceDocumentVersion(versionId, fileName);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to download document');
+    }
+  };
+
   const filteredFaculty = useMemo(() => {
-    let list = mockFaculty;
+    let list = faculties.length > 0 ? faculties : mockFaculty;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(f => f.name.toLowerCase().includes(q) || f.empCode.toLowerCase().includes(q) || f.designation.toLowerCase().includes(q));
     }
     return list;
-  }, [searchQuery]);
+  }, [faculties, searchQuery]);
 
   // Summary metrics
   const summaryMetrics = useMemo(() => {
     const totalCategories = 4;
-    const totalMandatory = mockFaculty.reduce((sum, f) => sum + f.mandatoryDocs, 0);
-    const totalUploaded = mockFaculty.reduce((sum, f) => sum + f.uploadedDocs, 0);
-    const totalPending = mockFaculty.reduce((sum, f) => sum + f.pendingDocs, 0);
-    const avgCompletion = Math.round(mockFaculty.reduce((sum, f) => sum + f.completionPercentage, 0) / mockFaculty.length);
+    const totalMandatory = (faculties.length > 0 ? faculties : mockFaculty).reduce((sum, f) => sum + f.mandatoryDocs, 0);
+    const totalUploaded = (faculties.length > 0 ? faculties : mockFaculty).reduce((sum, f) => sum + f.uploadedDocs, 0);
+    const totalPending = (faculties.length > 0 ? faculties : mockFaculty).reduce((sum, f) => sum + f.pendingDocs, 0);
+    const facultyList = faculties.length > 0 ? faculties : mockFaculty;
+    const avgCompletion = facultyList.length > 0 ? Math.round(facultyList.reduce((sum, f) => sum + f.completionPercentage, 0) / facultyList.length) : 0;
     return { totalCategories, totalMandatory, totalUploaded, totalPending, avgCompletion };
-  }, []);
+  }, [faculties]);
 
   // ============================================================
   // RENDER: Document Detail View (inside a folder)
   // ============================================================
   if (selectedFaculty && selectedFolder) {
-    const applicableDocs = selectedFolder.documents.filter(doc => {
+    // We need the merged folder for the document list view
+    const mergedSelectedFolder = mergeBackendDocs([selectedFolder], backendDocuments)[0];
+    const applicableDocs = mergedSelectedFolder.documents.filter(doc => {
       if (doc.conditionalField === 'hasPhD' && !selectedFaculty.hasPhD) return false;
       if (doc.conditionalField === 'hasPromotion' && !selectedFaculty.hasPromotion) return false;
       return true;
@@ -440,7 +632,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                             ) : doc.referenceNote ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast('Please view this document in its source category.')}>
                                     <Eye className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -450,7 +642,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                               <>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => doc.versions.length > 0 && handleDownload(doc.versions[doc.versions.length - 1].id, doc.versions[doc.versions.length - 1].fileName)}>
                                       <Eye className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -458,7 +650,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => doc.versions.length > 0 && handleDownload(doc.versions[doc.versions.length - 1].id, doc.versions[doc.versions.length - 1].fileName)}>
                                       <Download className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -474,7 +666,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => doc.versions.length > 0 && handleDelete(doc.versions[doc.versions.length - 1].id)}>
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -523,6 +715,9 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                 <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm font-medium">Drag & drop your file here</p>
                 <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
+                <input type='file' className='hidden' id='file-upload' onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                <Button variant='outline' size='sm' className='mt-2' onClick={() => document.getElementById('file-upload')?.click()}>Select File</Button>
+                {selectedFile && <p className='text-xs font-semibold mt-2 text-emerald-600'>{selectedFile.name}</p>}
                 <div className="flex items-center justify-center gap-2 mt-3">
                   <Badge variant="outline" className="text-[10px]">PDF</Badge>
                   <Badge variant="outline" className="text-[10px]">JPG</Badge>
@@ -534,7 +729,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-              <Button onClick={() => setUploadDialogOpen(false)}>Upload</Button>
+              <Button onClick={handleUpload} disabled={!selectedFile || isUploading}>{isUploading ? 'Uploading...' : 'Upload'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -562,10 +757,10 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge className={cn('text-[10px]', getStatusColor(ver.status))}>{getStatusLabel(ver.status)}</Badge>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(ver.id, ver.fileName)}>
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(ver.id, ver.fileName)}>
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -583,7 +778,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
   // RENDER: Evidence Repository Dashboard (folder view for selected faculty)
   // ============================================================
   if (selectedFaculty) {
-    const folders = generateFolders(selectedFaculty);
+    const folders = mergeBackendDocs(generateFolders(selectedFaculty), backendDocuments);
     const totalMandatory = folders.reduce((sum, f) => sum + calculateFolderCompletion(f, selectedFaculty).mandatory, 0);
     const totalUploaded = folders.reduce((sum, f) => sum + calculateFolderCompletion(f, selectedFaculty).uploaded, 0);
     const totalPending = totalMandatory - totalUploaded;
@@ -741,23 +936,23 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
           </CardHeader>
           <CardContent className="pb-4">
             <div className="space-y-2">
-              {[
-                { action: 'Uploaded Resume / CV', by: selectedFaculty.name, date: '12-Jan-2026', version: 'v1' },
-                { action: 'Approved Appointment Order', by: 'HOD', date: '15-Jan-2026', version: 'v2' },
-                { action: 'Uploaded Degree Certificate', by: selectedFaculty.name, date: '08-Jan-2026', version: 'v1' },
-              ].map((activity, idx) => (
-                <div key={idx} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span className="text-xs">{activity.action}</span>
+              {activityLog.length > 0 ? (
+                activityLog.map((activity, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span className="text-xs">{activity.action}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{activity.performedBy || activity.by}</span>
+                      <span>{activity.date}</span>
+                      {activity.version && <Badge variant="outline" className="text-[9px] px-1">{activity.version}</Badge>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{activity.by}</span>
-                    <span>{activity.date}</span>
-                    <Badge variant="outline" className="text-[9px] px-1">{activity.version}</Badge>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-4 text-xs text-muted-foreground">No recent activity</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -781,7 +976,7 @@ export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps
       {/* Summary Dashboard Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Total Faculty', value: mockFaculty.length, icon: Users, color: 'text-indigo-600 bg-indigo-500/10' },
+          { label: 'Total Faculty', value: faculties.length > 0 ? faculties.length : mockFaculty.length, icon: Users, color: 'text-indigo-600 bg-indigo-500/10' },
           { label: 'Total Categories', value: summaryMetrics.totalCategories, icon: FolderOpen, color: 'text-violet-600 bg-violet-500/10' },
           { label: 'Avg. Uploaded', value: summaryMetrics.totalUploaded, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
           { label: 'Avg. Pending', value: summaryMetrics.totalPending, icon: AlertTriangle, color: 'text-amber-600 bg-amber-500/10' },

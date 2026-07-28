@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import * as facultyRepositoryService from '@/services/faculty-repository.service';
 import {
   Search,
   Plus,
@@ -212,6 +214,8 @@ const mockDeptOrganized: DeptOrganizedFDP[] = [
 // ============ COMPONENT ============
 
 export const FacultyProfessionalDevelopmentModule = ({ department, academicYear }: FacultyProfessionalDevelopmentModuleProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -221,13 +225,240 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // States for API Data
+  const [memberships, setMemberships] = useState<ProfessionalMembership[]>([]);
+  const [fdpParticipations, setFdpParticipations] = useState<FDPParticipation[]>([]);
+  const [resourcePersons, setResourcePersons] = useState<ResourcePerson[]>([]);
+  const [moocs, setMoocs] = useState<MOOCCertification[]>([]);
+  const [deptOrganized, setDeptOrganized] = useState<DeptOrganizedFDP[]>([]);
+  const [evidenceList, setEvidenceList] = useState<any[]>([]);
+  const [showGlobalEvidenceDialog, setShowGlobalEvidenceDialog] = useState(false);
+  const [globalEvidenceFormData, setGlobalEvidenceFormData] = useState<any>({});
+  const [uploadingGlobalEvidence, setUploadingGlobalEvidence] = useState(false);
+
+  // Loading state
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchMemberships = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getMemberships(academicYear, departmentId);
+      if (res?.content) setMemberships(res.content);
+    } catch (e) { console.error('Failed to fetch memberships', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchFDPs = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getFDPParticipations(academicYear, departmentId);
+      if (res?.content) setFdpParticipations(res.content);
+    } catch (e) { console.error('Failed to fetch FDPs', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchResourcePersons = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getResourcePersons(academicYear, departmentId);
+      if (res?.content) setResourcePersons(res.content);
+    } catch (e) { console.error('Failed to fetch Resource Persons', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchMOOCs = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getMOOCs(academicYear, departmentId);
+      if (res?.content) setMoocs(res.content);
+    } catch (e) { console.error('Failed to fetch MOOCs', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchDeptOrganized = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getDeptOrganizedPrograms(academicYear, departmentId);
+      if (res?.content) setDeptOrganized(res.content);
+    } catch (e) { console.error('Failed to fetch Dept Organized', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchEvidence = useCallback(async () => {
+    try {
+      const res = await facultyRepositoryService.getFacultyEvidence(academicYear, departmentId);
+      if (res?.content) setEvidenceList(res.content);
+      else if (Array.isArray(res)) setEvidenceList(res);
+    } catch (e) { console.error('Failed to fetch evidence', e); }
+  }, [academicYear, departmentId]);
+
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.all([fetchMemberships(), fetchFDPs(), fetchResourcePersons(), fetchMOOCs(), fetchDeptOrganized(), fetchEvidence()]);
+    setIsLoading(false);
+  }, [fetchMemberships, fetchFDPs, fetchResourcePersons, fetchMOOCs, fetchDeptOrganized, fetchEvidence]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  const [formData, setFormData] = useState<any>({});
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+
+  const handleGlobalEvidenceUpload = async () => {
+    if (!globalEvidenceFormData.documentType || !globalEvidenceFormData.associatedRecord || !globalEvidenceFormData.file) {
+      alert('Please fill all required fields');
+      return;
+    }
+    setUploadingGlobalEvidence(true);
+    try {
+      const recordParts = globalEvidenceFormData.associatedRecord.split('::');
+      const sectionName = recordParts[0];
+      const recordId = recordParts[1];
+
+      await facultyRepositoryService.uploadFacultyEvidence(
+        departmentId,
+        user?.id || 1,
+        globalEvidenceFormData.file,
+        {
+          academicYear,
+          sectionName,
+          recordId,
+          documentType: globalEvidenceFormData.documentType
+        }
+      );
+      setShowGlobalEvidenceDialog(false);
+      setGlobalEvidenceFormData({});
+      fetchAllData();
+    } catch (e) {
+      console.error('Failed to upload evidence', e);
+      alert('Failed to upload evidence');
+    } finally {
+      setUploadingGlobalEvidence(false);
+    }
+  };
+
+  const handleDelete = async (id: string, type: SubTab) => {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    try {
+      if (type === 'memberships') await facultyRepositoryService.deleteMembership(id, academicYear, departmentId);
+      else if (type === 'fdp-participation') await facultyRepositoryService.deleteFDPParticipation(id, academicYear, departmentId);
+      else if (type === 'resource-person') await facultyRepositoryService.deleteResourcePerson(id, academicYear, departmentId);
+      else if (type === 'moocs') await facultyRepositoryService.deleteMOOC(id, academicYear, departmentId);
+      else if (type === 'dept-organized') await facultyRepositoryService.deleteDeptOrganizedProgram(id, academicYear, departmentId);
+      fetchAllData();
+    } catch (e) { console.error('Delete failed', e); }
+  };
+
+  const handleEdit = (record: any, type: SubTab) => {
+    setEditingRecord(record);
+    setFormData(record);
+    setActiveSubTab(type);
+    setShowAddDialog(true);
+  };
+
+  
+  const handleAddRecord = () => {
+    setEditingRecord(null);
+    setFormData({});
+    setShowAddDialog(true);
+  };
+
+  const handleSaveRecord = async () => {
+    try {
+      const payload = { ...formData, academicYear };
+      if (editingRecord) {
+        if (activeSubTab === 'memberships') await facultyRepositoryService.updateMembership(editingRecord.id, academicYear, departmentId, payload);
+        else if (activeSubTab === 'fdp-participation') await facultyRepositoryService.updateFDPParticipation(editingRecord.id, academicYear, departmentId, payload);
+        else if (activeSubTab === 'resource-person') await facultyRepositoryService.updateResourcePerson(editingRecord.id, academicYear, departmentId, payload);
+        else if (activeSubTab === 'moocs') await facultyRepositoryService.updateMOOC(editingRecord.id, academicYear, departmentId, payload);
+        else if (activeSubTab === 'dept-organized') await facultyRepositoryService.updateDeptOrganizedProgram(editingRecord.id, academicYear, departmentId, payload);
+      } else {
+        if (activeSubTab === 'memberships') await facultyRepositoryService.createMembership(academicYear, departmentId, payload);
+        else if (activeSubTab === 'fdp-participation') await facultyRepositoryService.createFDPParticipation(academicYear, departmentId, payload);
+        else if (activeSubTab === 'resource-person') await facultyRepositoryService.createResourcePerson(academicYear, departmentId, payload);
+        else if (activeSubTab === 'moocs') await facultyRepositoryService.createMOOC(academicYear, departmentId, payload);
+        else if (activeSubTab === 'dept-organized') await facultyRepositoryService.createDeptOrganizedProgram(academicYear, departmentId, payload);
+      }
+      setShowAddDialog(false);
+      fetchAllData();
+    } catch (e) { console.error('Save failed', e); }
+  };
+
+  
+  const handleExport = () => {
+    let dataToExport: any[] = [];
+    let filename = '';
+
+    if (activeSubTab === 'memberships') {
+      dataToExport = memberships;
+      filename = 'professional-memberships.csv';
+    } else if (activeSubTab === 'fdp-participation') {
+      dataToExport = fdpParticipations;
+      filename = 'fdp-participation.csv';
+    } else if (activeSubTab === 'resource-person') {
+      dataToExport = resourcePersons;
+      filename = 'resource-persons.csv';
+    } else if (activeSubTab === 'moocs') {
+      dataToExport = moocs;
+      filename = 'moocs-certifications.csv';
+    } else if (activeSubTab === 'dept-organized') {
+      dataToExport = deptOrganized;
+      filename = 'dept-organized.csv';
+    }
+
+    if (dataToExport.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    const headers = Object.keys(dataToExport[0]).filter(k => k !== 'evidence' && k !== 'id');
+    const csvRows = [];
+    csvRows.push(headers.join(','));
+
+    for (const row of dataToExport) {
+      const values = headers.map(header => {
+        const escaped = ('' + (row[header] || '')).replace(/"/g, '""');
+        return '"' + escaped + '"';
+      });
+      csvRows.push(values.join(','));
+    }
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFileToUpload(e.target.files[0]);
+    }
+  };
+
+  const handleUploadCSV = async () => {
+    if (!fileToUpload) return;
+    try {
+      if (activeSubTab === 'memberships') await facultyRepositoryService.uploadMembershipsCSV(departmentId, fileToUpload, academicYear);
+      else if (activeSubTab === 'fdp-participation') await facultyRepositoryService.uploadFDPParticipationsCSV(departmentId, fileToUpload, academicYear);
+      else if (activeSubTab === 'resource-person') await facultyRepositoryService.uploadResourcePersonsCSV(departmentId, fileToUpload, academicYear);
+      else if (activeSubTab === 'moocs') await facultyRepositoryService.uploadMOOCsCSV(departmentId, fileToUpload, academicYear);
+      else if (activeSubTab === 'dept-organized') await facultyRepositoryService.uploadDeptOrganizedCSV(departmentId, fileToUpload, academicYear);
+      setShowCSVDialog(false);
+      fetchAllData();
+    } catch (e) { console.error('Upload failed', e); }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      alert("Template download not implemented on the backend for this module yet.");
+    } catch (e) { console.error('Download template failed', e); }
+  };
+
   // Analytics data
   const analyticsData = {
-    totalMemberships: mockMemberships.length,
-    totalFDPs: mockFDPParticipations.length,
-    totalResourcePerson: mockResourcePersons.length,
-    totalMOOCs: mockMOOCs.length,
-    totalDeptOrganized: mockDeptOrganized.length,
+    totalMemberships: memberships.length,
+    totalFDPs: fdpParticipations.length,
+    totalResourcePerson: resourcePersons.length,
+    totalMOOCs: moocs.length,
+    totalDeptOrganized: deptOrganized.length,
     completionPercentage: 78,
     pendingEvidence: 5,
     approvedRecords: 12,
@@ -337,9 +568,9 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
 
   // ============ PROFESSIONAL MEMBERSHIPS VIEW ============
   const renderMemberships = () => {
-    const filtered = mockMemberships.filter(m => {
+    const filtered = memberships.filter(m => {
       const matchesSearch = searchQuery === '' || m.facultyName.toLowerCase().includes(searchQuery.toLowerCase()) || m.professionalSocietyName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
+      const matchesStatus = filterStatus === 'all' || m.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
@@ -370,10 +601,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <Button size="sm" variant="outline" onClick={() => setShowCSVDialog(true)}>
               <Upload className="h-3.5 w-3.5 mr-1" /> CSV Upload
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handleExport}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Button size="sm" onClick={handleAddRecord}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
             </Button>
           </div>
@@ -416,13 +647,13 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                       <td className="p-3">{getStatusBadge(row.status)}</td>
                       <td className="p-3">
                         <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}>
-                          <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
+                          <FileText className="h-3 w-3 mr-1" /> {(row.evidence?.length || 0)}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEdit(row, 'memberships')}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(row.id, 'memberships')}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -440,16 +671,22 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <span className="text-xs px-2">Page {currentPage}</span>
             <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-3 w-3" /></Button>
           </div>
+          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {memberships.length} records</p>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-3 w-3" /></Button>
+            <span className="text-xs px-2">Page {currentPage}</span>
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-3 w-3" /></Button>
+          </div>
         </div>
       </div>
     );
   };
 
-  // ============ FDP PARTICIPATION VIEW ============
-  const renderFDPParticipation = () => {
-    const filtered = mockFDPParticipations.filter(m => {
+  // ============ FDP / STTP PARTICIPATION VIEW ============
+  const renderFDPs = () => {
+    const filtered = fdpParticipations.filter(m => {
       const matchesSearch = searchQuery === '' || m.facultyName.toLowerCase().includes(searchQuery.toLowerCase()) || m.programTitle.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
+      const matchesStatus = filterStatus === 'all' || m.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
@@ -478,10 +715,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <Button size="sm" variant="outline" onClick={() => setShowCSVDialog(true)}>
               <Upload className="h-3.5 w-3.5 mr-1" /> CSV Upload
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handleExport}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Button size="sm" onClick={handleAddRecord}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
             </Button>
           </div>
@@ -529,13 +766,13 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                       <td className="p-3">{getStatusBadge(row.status)}</td>
                       <td className="p-3">
                         <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}>
-                          <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
+                          <FileText className="h-3 w-3 mr-1" /> {(row.evidence?.length || 0)}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEdit(row, 'fdp-participation')}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(row.id, 'fdp-participation')}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -546,7 +783,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
         </Card>
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {mockFDPParticipations.length} records</p>
+          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {fdpParticipations.length} records</p>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-3 w-3" /></Button>
             <span className="text-xs px-2">Page {currentPage}</span>
@@ -558,10 +795,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
   };
 
   // ============ RESOURCE PERSON VIEW ============
-  const renderResourcePerson = () => {
-    const filtered = mockResourcePersons.filter(m => {
+  const renderResourcePersons = () => {
+    const filtered = resourcePersons.filter(m => {
       const matchesSearch = searchQuery === '' || m.facultyName.toLowerCase().includes(searchQuery.toLowerCase()) || m.eventName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
+      const matchesStatus = filterStatus === 'all' || m.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
@@ -590,10 +827,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <Button size="sm" variant="outline" onClick={() => setShowCSVDialog(true)}>
               <Upload className="h-3.5 w-3.5 mr-1" /> CSV Upload
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handleExport}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Button size="sm" onClick={handleAddRecord}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
             </Button>
           </div>
@@ -639,13 +876,13 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                       <td className="p-3">{getStatusBadge(row.status)}</td>
                       <td className="p-3">
                         <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}>
-                          <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
+                          <FileText className="h-3 w-3 mr-1" /> {(row.evidence?.length || 0)}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEdit(row, 'resource-person')}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(row.id, 'resource-person')}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -656,7 +893,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
         </Card>
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {mockResourcePersons.length} records</p>
+          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {resourcePersons.length} records</p>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-3 w-3" /></Button>
             <span className="text-xs px-2">Page {currentPage}</span>
@@ -667,11 +904,11 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
     );
   };
 
-  // ============ MOOCS VIEW ============
+  // ============ MOOCs VIEW ============
   const renderMOOCs = () => {
-    const filtered = mockMOOCs.filter(m => {
-      const matchesSearch = searchQuery === '' || m.facultyName.toLowerCase().includes(searchQuery.toLowerCase()) || m.courseName.toLowerCase().includes(searchQuery.toLowerCase()) || m.platform.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
+    const filtered = moocs.filter(m => {
+      const matchesSearch = searchQuery === '' || m.facultyName.toLowerCase().includes(searchQuery.toLowerCase()) || m.courseName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || m.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
@@ -700,10 +937,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <Button size="sm" variant="outline" onClick={() => setShowCSVDialog(true)}>
               <Upload className="h-3.5 w-3.5 mr-1" /> CSV Upload
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handleExport}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Button size="sm" onClick={handleAddRecord}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
             </Button>
           </div>
@@ -751,13 +988,13 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                       <td className="p-3">{getStatusBadge(row.status)}</td>
                       <td className="p-3">
                         <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}>
-                          <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
+                          <FileText className="h-3 w-3 mr-1" /> {(row.evidence?.length || 0)}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEdit(row, 'moocs')}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(row.id, 'moocs')}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -768,7 +1005,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
         </Card>
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {mockMOOCs.length} records</p>
+          <p className="text-xs text-muted-foreground">Showing {filtered.length} of {moocs.length} records</p>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-3 w-3" /></Button>
             <span className="text-xs px-2">Page {currentPage}</span>
@@ -779,11 +1016,11 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
     );
   };
 
-  // ============ DEPT ORGANIZED FDP VIEW ============
+  // ============ DEPT ORGANIZED VIEW ============
   const renderDeptOrganized = () => {
-    const filtered = mockDeptOrganized.filter(m => {
+    const filtered = deptOrganized.filter(m => {
       const matchesSearch = searchQuery === '' || m.programName.toLowerCase().includes(searchQuery.toLowerCase()) || m.theme.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
+      const matchesStatus = filterStatus === 'all' || m.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesSearch && matchesStatus;
     });
 
@@ -812,10 +1049,10 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             <Button size="sm" variant="outline" onClick={() => setShowCSVDialog(true)}>
               <Upload className="h-3.5 w-3.5 mr-1" /> CSV Upload
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handleExport}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <Button size="sm" onClick={handleAddRecord}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
             </Button>
           </div>
@@ -859,13 +1096,13 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                       <td className="p-3">{getStatusBadge(row.status)}</td>
                       <td className="p-3">
                         <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}>
-                          <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
+                          <FileText className="h-3 w-3 mr-1" /> {(row.evidence?.length || 0)}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEdit(row, 'dept-organized')}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(row.id, 'dept-organized')}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -892,22 +1129,22 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Supporting Documents</h3>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setShowGlobalEvidenceDialog(true)}>
           <Upload className="h-3.5 w-3.5 mr-1" /> Upload Document
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { name: 'FDP Approval Letters', count: 3, icon: FileText },
-          { name: 'Event Brochures', count: 5, icon: FileText },
-          { name: 'Attendance Registers', count: 4, icon: FileText },
-          { name: 'Participant Lists', count: 6, icon: Users },
-          { name: 'Feedback Summaries', count: 3, icon: FileText },
-          { name: 'Event Reports', count: 4, icon: FileText },
-          { name: 'Geo-tagged Photographs', count: 12, icon: FileText },
-          { name: 'Certificates Issued', count: 8, icon: Award },
-          { name: 'Circulars & Notifications', count: 5, icon: FileText },
+          { name: 'FDP Approval Letters', icon: FileText },
+          { name: 'Event Brochures', icon: FileText },
+          { name: 'Attendance Registers', icon: FileText },
+          { name: 'Participant Lists', icon: Users },
+          { name: 'Feedback Summaries', icon: FileText },
+          { name: 'Event Reports', icon: FileText },
+          { name: 'Geo-tagged Photographs', icon: FileText },
+          { name: 'Certificates Issued', icon: Award },
+          { name: 'Circulars & Notifications', icon: FileText },
         ].map((doc) => (
           <Card key={doc.name} className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer">
             <CardContent className="p-4">
@@ -917,7 +1154,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-medium">{doc.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{doc.count} documents</p>
+                  <p className="text-[10px] text-muted-foreground">{evidenceList.filter((e: any) => e.documentType === doc.name).length} documents</p>
                 </div>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
                   <Eye className="h-3.5 w-3.5" />
@@ -980,8 +1217,8 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
 
         <TabsContent value="dashboard" className="mt-4">{renderDashboard()}</TabsContent>
         <TabsContent value="memberships" className="mt-4">{renderMemberships()}</TabsContent>
-        <TabsContent value="fdp-participation" className="mt-4">{renderFDPParticipation()}</TabsContent>
-        <TabsContent value="resource-person" className="mt-4">{renderResourcePerson()}</TabsContent>
+        <TabsContent value="fdp-participation" className="mt-4">{renderFDPs()}</TabsContent>
+        <TabsContent value="resource-person" className="mt-4">{renderResourcePersons()}</TabsContent>
         <TabsContent value="moocs" className="mt-4">{renderMOOCs()}</TabsContent>
         <TabsContent value="dept-organized" className="mt-4">{renderDeptOrganized()}</TabsContent>
         <TabsContent value="supporting-docs" className="mt-4">{renderSupportingDocs()}</TabsContent>
@@ -1043,67 +1280,67 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
           <div className="space-y-4">
             {activeSubTab === 'memberships' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
-                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input className="h-9 text-sm" placeholder="Faculty name" /></div>
-                <div className="space-y-2"><Label className="text-xs">Professional Society *</Label><Input className="h-9 text-sm" placeholder="e.g., IEEE, ACM" /></div>
+                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input value={formData.employeeId || ''} onChange={e => setFormData({...formData, employeeId: e.target.value})} className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
+                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input value={formData.facultyName || ''} onChange={e => setFormData({...formData, facultyName: e.target.value})} className="h-9 text-sm" placeholder="Faculty name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Professional Society *</Label><Input value={formData.professionalSocietyName || ''} onChange={e => setFormData({...formData, professionalSocietyName: e.target.value})} className="h-9 text-sm" placeholder="e.g., IEEE, ACM" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Society Type *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
-                    <SelectContent><SelectItem value="National">National</SelectItem><SelectItem value="International">International</SelectItem></SelectContent>
+                  <Select value={formData.societyType || ''} onValueChange={v => setFormData({...formData, societyType: v.toUpperCase().replace(/[-\s]+/g, '_')})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent><SelectItem value="NATIONAL">National</SelectItem><SelectItem value="INTERNATIONAL">International</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Membership Number *</Label><Input className="h-9 text-sm" placeholder="Membership #" /></div>
-                <div className="space-y-2"><Label className="text-xs">Membership Grade</Label><Input className="h-9 text-sm" placeholder="e.g., Senior Member" /></div>
-                <div className="space-y-2"><Label className="text-xs">Position Held</Label><Input className="h-9 text-sm" placeholder="e.g., Chapter Chair" /></div>
-                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Expiry Date</Label><Input type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Membership Number *</Label><Input value={formData.membershipNumber || ''} onChange={e => setFormData({...formData, membershipNumber: e.target.value})} className="h-9 text-sm" placeholder="Membership #" /></div>
+                <div className="space-y-2"><Label className="text-xs">Membership Grade</Label><Input value={formData.membershipGrade || ''} onChange={e => setFormData({...formData, membershipGrade: e.target.value})} className="h-9 text-sm" placeholder="e.g., Senior Member" /></div>
+                <div className="space-y-2"><Label className="text-xs">Position Held</Label><Input value={formData.positionHeld || ''} onChange={e => setFormData({...formData, positionHeld: e.target.value})} className="h-9 text-sm" placeholder="e.g., Chapter Chair" /></div>
+                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input type="date" value={formData.membershipStartDate || ''} onChange={e => setFormData({...formData, membershipStartDate: e.target.value})} className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Expiry Date</Label><Input type="date" value={formData.membershipExpiryDate || ''} onChange={e => setFormData({...formData, membershipExpiryDate: e.target.value})} className="h-9 text-sm" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Active Status *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
+                  <Select value={formData.activeStatus || ''} onValueChange={v => setFormData({...formData, activeStatus: v.toUpperCase().replace(/[-\s]+/g, '_')})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="EXPIRED">Expired</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2 space-y-2"><Label className="text-xs">Remarks</Label><Input className="h-9 text-sm" placeholder="Optional remarks" /></div>
+                <div className="col-span-2 space-y-2"><Label className="text-xs">Remarks</Label><Input value={formData.remarks || ''} onChange={e => setFormData({...formData, remarks: e.target.value})} className="h-9 text-sm" placeholder="Optional remarks" /></div>
               </div>
             )}
             {activeSubTab === 'fdp-participation' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
-                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input className="h-9 text-sm" placeholder="Faculty name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input value={formData.employeeId || ""} onChange={e => setFormData({...formData, employeeId: e.target.value})} className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
+                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input value={formData.facultyName || ""} onChange={e => setFormData({...formData, facultyName: e.target.value})} className="h-9 text-sm" placeholder="Faculty name" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Program Type *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.programType || ""} onValueChange={v => setFormData({...formData, programType: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="FDP">FDP</SelectItem><SelectItem value="STTP">STTP</SelectItem><SelectItem value="Workshop">Workshop</SelectItem><SelectItem value="Seminar">Seminar</SelectItem><SelectItem value="Conference">Conference</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Program Title *</Label><Input className="h-9 text-sm" placeholder="Program title" /></div>
-                <div className="space-y-2"><Label className="text-xs">Theme / Area</Label><Input className="h-9 text-sm" placeholder="e.g., AI/ML" /></div>
-                <div className="space-y-2"><Label className="text-xs">Organized By *</Label><Input className="h-9 text-sm" placeholder="Organization" /></div>
+                <div className="space-y-2"><Label className="text-xs">Program Title *</Label><Input value={formData.programTitle || ""} onChange={e => setFormData({...formData, programTitle: e.target.value})} className="h-9 text-sm" placeholder="Program title" /></div>
+                <div className="space-y-2"><Label className="text-xs">Theme / Area</Label><Input value={formData.themeArea || ""} onChange={e => setFormData({...formData, themeArea: e.target.value})} className="h-9 text-sm" placeholder="e.g., AI/ML" /></div>
+                <div className="space-y-2"><Label className="text-xs">Organized By *</Label><Input value={formData.organizedBy || ""} onChange={e => setFormData({...formData, organizedBy: e.target.value})} className="h-9 text-sm" placeholder="Organization" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">External / Internal *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.externalInternal || ""} onValueChange={v => setFormData({...formData, externalInternal: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="External">External</SelectItem><SelectItem value="Internal">Internal</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Mode *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.mode || ""} onValueChange={v => setFormData({...formData, mode: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Offline">Offline</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">End Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Duration (Days)</Label><Input type="number" className="h-9 text-sm" placeholder="5" /></div>
-                <div className="space-y-2"><Label className="text-xs">Location</Label><Input className="h-9 text-sm" placeholder="Location" /></div>
+                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input value={formData.startDate || ""} onChange={e => setFormData({...formData, startDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">End Date *</Label><Input value={formData.endDate || ""} onChange={e => setFormData({...formData, endDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Duration (Days)</Label><Input value={formData.durationDays || ""} onChange={e => setFormData({...formData, durationDays: e.target.value})} type="number" className="h-9 text-sm" placeholder="5" /></div>
+                <div className="space-y-2"><Label className="text-xs">Location</Label><Input value={formData.location || ""} onChange={e => setFormData({...formData, location: e.target.value})} className="h-9 text-sm" placeholder="Location" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Participation Status</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.participationStatus || ""} onValueChange={v => setFormData({...formData, participationStatus: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Completed">Completed</SelectItem><SelectItem value="Registered">Registered</SelectItem><SelectItem value="In Progress">In Progress</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Certificate Received</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.certificateReceived || ""} onValueChange={v => setFormData({...formData, certificateReceived: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
                   </Select>
                 </div>
@@ -1111,39 +1348,39 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             )}
             {activeSubTab === 'resource-person' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
-                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input className="h-9 text-sm" placeholder="Faculty name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input value={formData.employeeId || ""} onChange={e => setFormData({...formData, employeeId: e.target.value})} className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
+                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input value={formData.facultyName || ""} onChange={e => setFormData({...formData, facultyName: e.target.value})} className="h-9 text-sm" placeholder="Faculty name" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Event Type *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.eventType || ""} onValueChange={v => setFormData({...formData, eventType: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="FDP">FDP</SelectItem><SelectItem value="STTP">STTP</SelectItem><SelectItem value="Workshop">Workshop</SelectItem><SelectItem value="Seminar">Seminar</SelectItem><SelectItem value="Conference">Conference</SelectItem><SelectItem value="Guest Lecture">Guest Lecture</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Event Name *</Label><Input className="h-9 text-sm" placeholder="Event name" /></div>
-                <div className="space-y-2"><Label className="text-xs">Topic Delivered *</Label><Input className="h-9 text-sm" placeholder="Topic" /></div>
-                <div className="space-y-2"><Label className="text-xs">Organized By *</Label><Input className="h-9 text-sm" placeholder="Organization" /></div>
-                <div className="space-y-2"><Label className="text-xs">Organization</Label><Input className="h-9 text-sm" placeholder="Organization name" /></div>
-                <div className="space-y-2"><Label className="text-xs">Location</Label><Input className="h-9 text-sm" placeholder="Location" /></div>
+                <div className="space-y-2"><Label className="text-xs">Event Name *</Label><Input value={formData.eventName || ""} onChange={e => setFormData({...formData, eventName: e.target.value})} className="h-9 text-sm" placeholder="Event name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Topic Delivered *</Label><Input value={formData.topicDelivered || ""} onChange={e => setFormData({...formData, topicDelivered: e.target.value})} className="h-9 text-sm" placeholder="Topic" /></div>
+                <div className="space-y-2"><Label className="text-xs">Organized By *</Label><Input value={formData.organizedBy || ""} onChange={e => setFormData({...formData, organizedBy: e.target.value})} className="h-9 text-sm" placeholder="Organization" /></div>
+                <div className="space-y-2"><Label className="text-xs">Organization</Label><Input value={formData.organization || ""} onChange={e => setFormData({...formData, organization: e.target.value})} className="h-9 text-sm" placeholder="Organization name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Location</Label><Input value={formData.location || ""} onChange={e => setFormData({...formData, location: e.target.value})} className="h-9 text-sm" placeholder="Location" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Mode</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.mode || ""} onValueChange={v => setFormData({...formData, mode: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Offline">Offline</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">End Date</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Duration</Label><Input className="h-9 text-sm" placeholder="e.g., 3 Hours" /></div>
-                <div className="space-y-2"><Label className="text-xs">Audience Type</Label><Input className="h-9 text-sm" placeholder="e.g., Faculty, Students" /></div>
-                <div className="space-y-2"><Label className="text-xs">Number of Participants</Label><Input type="number" className="h-9 text-sm" placeholder="0" /></div>
+                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input value={formData.startDate || ""} onChange={e => setFormData({...formData, startDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">End Date</Label><Input value={formData.endDate || ""} onChange={e => setFormData({...formData, endDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Duration</Label><Input value={formData.duration || ""} onChange={e => setFormData({...formData, duration: e.target.value})} className="h-9 text-sm" placeholder="e.g., 3 Hours" /></div>
+                <div className="space-y-2"><Label className="text-xs">Audience Type</Label><Input value={formData.audienceType || ""} onChange={e => setFormData({...formData, audienceType: e.target.value})} className="h-9 text-sm" placeholder="e.g., Faculty, Students" /></div>
+                <div className="space-y-2"><Label className="text-xs">Number of Participants</Label><Input type="number" value={formData.numberOfParticipants || ""} onChange={e => setFormData({...formData, numberOfParticipants: e.target.value})} className="h-9 text-sm" placeholder="0" /></div>
               </div>
             )}
             {activeSubTab === 'moocs' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
-                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input className="h-9 text-sm" placeholder="Faculty name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Employee ID *</Label><Input value={formData.employeeId || ""} onChange={e => setFormData({...formData, employeeId: e.target.value})} className="h-9 text-sm" placeholder="e.g., CSE001" /></div>
+                <div className="space-y-2"><Label className="text-xs">Faculty Name *</Label><Input value={formData.facultyName || ""} onChange={e => setFormData({...formData, facultyName: e.target.value})} className="h-9 text-sm" placeholder="Faculty name" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Platform *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.platform || ""} onValueChange={v => setFormData({...formData, platform: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
                       {['NPTEL', 'SWAYAM', 'SWAYAM Plus', 'Coursera', 'edX', 'Udemy', 'Microsoft Learn', 'AWS Academy', 'Google Cloud Skills Boost', 'Oracle University', 'Cisco Networking Academy'].map(p => (
                         <SelectItem key={p} value={p}>{p}</SelectItem>
@@ -1151,53 +1388,54 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Course Name *</Label><Input className="h-9 text-sm" placeholder="Course name" /></div>
-                <div className="space-y-2"><Label className="text-xs">Course Category</Label><Input className="h-9 text-sm" placeholder="e.g., AI/ML" /></div>
-                <div className="space-y-2"><Label className="text-xs">Conducted By</Label><Input className="h-9 text-sm" placeholder="e.g., IIT Madras" /></div>
-                <div className="space-y-2"><Label className="text-xs">Start Date</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Completion Date</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Duration (Hours)</Label><Input type="number" className="h-9 text-sm" placeholder="0" /></div>
-                <div className="space-y-2"><Label className="text-xs">Grade</Label><Input className="h-9 text-sm" placeholder="e.g., Elite + Gold" /></div>
-                <div className="space-y-2"><Label className="text-xs">Score</Label><Input className="h-9 text-sm" placeholder="e.g., 92%" /></div>
+                <div className="space-y-2"><Label className="text-xs">Course Name *</Label><Input value={formData.courseName || ""} onChange={e => setFormData({...formData, courseName: e.target.value})} className="h-9 text-sm" placeholder="Course name" /></div>
+                <div className="space-y-2"><Label className="text-xs">Course Category</Label><Input value={formData.courseCategory || ""} onChange={e => setFormData({...formData, courseCategory: e.target.value})} className="h-9 text-sm" placeholder="e.g., AI/ML" /></div>
+                <div className="space-y-2"><Label className="text-xs">Conducted By</Label><Input value={formData.conductedBy || ""} onChange={e => setFormData({...formData, conductedBy: e.target.value})} className="h-9 text-sm" placeholder="e.g., IIT Madras" /></div>
+                <div className="space-y-2"><Label className="text-xs">Start Date</Label><Input value={formData.startDate || ""} onChange={e => setFormData({...formData, startDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Completion Date</Label><Input value={formData.completionDate || ""} onChange={e => setFormData({...formData, completionDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Duration (Hours)</Label><Input value={formData.durationHours || ""} onChange={e => setFormData({...formData, durationHours: e.target.value})} type="number" className="h-9 text-sm" placeholder="0" /></div>
+                <div className="space-y-2"><Label className="text-xs">Grade</Label><Input value={formData.grade || ""} onChange={e => setFormData({...formData, grade: e.target.value})} className="h-9 text-sm" placeholder="e.g., Elite + Gold" /></div>
+                <div className="space-y-2"><Label className="text-xs">Score</Label><Input value={formData.score || ""} onChange={e => setFormData({...formData, score: e.target.value})} className="h-9 text-sm" placeholder="e.g., 92%" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Certification Status</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.certificationStatus || ""} onValueChange={v => setFormData({...formData, certificationStatus: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Certified">Certified</SelectItem><SelectItem value="In Progress">In Progress</SelectItem><SelectItem value="Not Certified">Not Certified</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Certificate ID</Label><Input className="h-9 text-sm" placeholder="Certificate ID" /></div>
+                <div className="space-y-2"><Label className="text-xs">Certificate ID</Label><Input value={formData.certificateId || ""} onChange={e => setFormData({...formData, certificateId: e.target.value})} className="h-9 text-sm" placeholder="Certificate ID" /></div>
               </div>
             )}
             {activeSubTab === 'dept-organized' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2"><Label className="text-xs">Program Name *</Label><Input className="h-9 text-sm" placeholder="Program name" /></div>
+                <div className="col-span-2 space-y-2"><Label className="text-xs">Program Name *</Label><Input value={formData.programName || ""} onChange={e => setFormData({...formData, programName: e.target.value})} className="h-9 text-sm" placeholder="Program name" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Program Type *</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent><SelectItem value="FDP">FDP</SelectItem><SelectItem value="STTP">STTP</SelectItem><SelectItem value="Workshop">Workshop</SelectItem><SelectItem value="Seminar">Seminar</SelectItem></SelectContent>
+                  <Select value={formData.programType || ""} onValueChange={v => setFormData({...formData, programType: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="FDP">FDP</SelectItem><SelectItem value="STTP">STTP</SelectItem><SelectItem value="Workshop">Workshop</SelectItem><SelectItem value="Seminar">Seminar</SelectItem><SelectItem value="Conference">Conference</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label className="text-xs">Theme *</Label><Input className="h-9 text-sm" placeholder="Theme" /></div>
-                <div className="space-y-2"><Label className="text-xs">Collaborating Organization</Label><Input className="h-9 text-sm" placeholder="Organization" /></div>
-                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">End Date *</Label><Input type="date" className="h-9 text-sm" /></div>
-                <div className="space-y-2"><Label className="text-xs">Duration</Label><Input className="h-9 text-sm" placeholder="e.g., 5 Days" /></div>
-                <div className="space-y-2"><Label className="text-xs">Chief Guest</Label><Input className="h-9 text-sm" placeholder="Chief guest" /></div>
-                <div className="col-span-2 space-y-2"><Label className="text-xs">Resource Persons</Label><Input className="h-9 text-sm" placeholder="Comma-separated names" /></div>
-                <div className="space-y-2"><Label className="text-xs">Number of Participants</Label><Input type="number" className="h-9 text-sm" placeholder="0" /></div>
+                <div className="space-y-2"><Label className="text-xs">Theme *</Label><Input value={formData.theme || ""} onChange={e => setFormData({...formData, theme: e.target.value})} className="h-9 text-sm" placeholder="Theme" /></div>
+                <div className="space-y-2"><Label className="text-xs">Organized By *</Label><Input value={formData.organizedBy || ""} onChange={e => setFormData({...formData, organizedBy: e.target.value})} className="h-9 text-sm" placeholder="Organizing entity" /></div>
+                <div className="space-y-2"><Label className="text-xs">Collaborating Organization</Label><Input value={formData.collaboratingOrganization || ""} onChange={e => setFormData({...formData, collaboratingOrganization: e.target.value})} className="h-9 text-sm" placeholder="Organization" /></div>
+                <div className="space-y-2"><Label className="text-xs">Start Date *</Label><Input value={formData.startDate || ""} onChange={e => setFormData({...formData, startDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">End Date *</Label><Input value={formData.endDate || ""} onChange={e => setFormData({...formData, endDate: e.target.value})} type="date" className="h-9 text-sm" /></div>
+                <div className="space-y-2"><Label className="text-xs">Duration</Label><Input value={formData.duration || ""} onChange={e => setFormData({...formData, duration: e.target.value})} className="h-9 text-sm" placeholder="e.g., 5 Days" /></div>
+                <div className="space-y-2"><Label className="text-xs">Chief Guest</Label><Input value={formData.chiefGuest || ""} onChange={e => setFormData({...formData, chiefGuest: e.target.value})} className="h-9 text-sm" placeholder="Chief guest" /></div>
+                <div className="col-span-2 space-y-2"><Label className="text-xs">Resource Persons</Label><Input value={formData.resourcePersons || ""} onChange={e => setFormData({...formData, resourcePersons: e.target.value})} className="h-9 text-sm" placeholder="Comma-separated names" /></div>
+                <div className="space-y-2"><Label className="text-xs">Number of Participants</Label><Input type="number" value={formData.numberOfParticipants || ""} onChange={e => setFormData({...formData, numberOfParticipants: e.target.value})} className="h-9 text-sm" placeholder="0" /></div>
                 <div className="space-y-2">
                   <Label className="text-xs">Mode</Label>
-                  <Select><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={formData.mode || ""} onValueChange={v => setFormData({...formData, mode: v})}><SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Offline">Offline</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2 space-y-2"><Label className="text-xs">Remarks</Label><Input className="h-9 text-sm" placeholder="Optional remarks" /></div>
+                <div className="col-span-2 space-y-2"><Label className="text-xs">Remarks</Label><Input value={formData.remarks || ""} onChange={e => setFormData({...formData, remarks: e.target.value})} className="h-9 text-sm" placeholder="Optional remarks" /></div>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={() => setShowAddDialog(false)}>Save Record</Button>
+            <Button onClick={handleSaveRecord}>Save Record</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1210,27 +1448,110 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Download Template
               </Button>
               <span className="text-xs text-muted-foreground">Download the CSV template first</span>
             </div>
             <Separator />
-            <div className="border rounded-lg p-6 border-dashed border-border/80 text-center">
+            <div className="border rounded-lg p-6 border-dashed border-border/80 text-center relative overflow-hidden">
+              <input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
               <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Upload CSV File</p>
-              <p className="text-xs text-muted-foreground mt-1">Drag & drop or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">{fileToUpload ? fileToUpload.name : 'Drag & drop or click to browse'}</p>
               <Button size="sm" variant="outline" className="mt-3">Browse Files</Button>
             </div>
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
               <p className="text-xs text-amber-800 dark:text-amber-200">
-                <strong>Note:</strong> CSV will not be saved immediately. You will be able to preview, validate, and edit records before saving.
+                <strong>Note:</strong> Records will be processed in the background.
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCSVDialog(false)}>Cancel</Button>
-            <Button onClick={() => setShowCSVDialog(false)}>Upload & Preview</Button>
+            <Button onClick={handleUploadCSV} disabled={!fileToUpload}>Upload & Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Global Evidence Upload Dialog */}
+      <Dialog open={showGlobalEvidenceDialog} onOpenChange={setShowGlobalEvidenceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Supporting Document</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Document Type <span className="text-destructive">*</span></Label>
+              <Select value={globalEvidenceFormData.documentType || ''} onValueChange={(val) => setGlobalEvidenceFormData({ ...globalEvidenceFormData, documentType: val })}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    'FDP Approval Letters',
+                    'Event Brochures',
+                    'Attendance Registers',
+                    'Participant Lists',
+                    'Feedback Summaries',
+                    'Event Reports',
+                    'Geo-tagged Photographs',
+                    'Certificates Issued',
+                    'Circulars & Notifications'
+                  ].map((type) => (
+                    <SelectItem key={type} value={type} className="text-xs">{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Associated Record <span className="text-destructive">*</span></Label>
+              <Select value={globalEvidenceFormData.associatedRecord || ''} onValueChange={(val) => setGlobalEvidenceFormData({ ...globalEvidenceFormData, associatedRecord: val })}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select associated record" />
+                </SelectTrigger>
+                <SelectContent>
+                  {memberships.map((m) => (
+                    <SelectItem key={`memberships::${m.id}`} value={`memberships::${m.id}`} className="text-xs">
+                      [Membership] {m.facultyName} - {m.professionalSocietyName}
+                    </SelectItem>
+                  ))}
+                  {fdpParticipations.map((m) => (
+                    <SelectItem key={`fdp-participation::${m.id}`} value={`fdp-participation::${m.id}`} className="text-xs">
+                      [FDP Part.] {m.facultyName} - {m.programTitle}
+                    </SelectItem>
+                  ))}
+                  {resourcePersons.map((m) => (
+                    <SelectItem key={`resource-person::${m.id}`} value={`resource-person::${m.id}`} className="text-xs">
+                      [Res. Person] {m.facultyName} - {m.eventName}
+                    </SelectItem>
+                  ))}
+                  {moocs.map((m) => (
+                    <SelectItem key={`moocs::${m.id}`} value={`moocs::${m.id}`} className="text-xs">
+                      [MOOCs] {m.facultyName} - {m.courseName}
+                    </SelectItem>
+                  ))}
+                  {deptOrganized.map((m) => (
+                    <SelectItem key={`dept-organized::${m.id}`} value={`dept-organized::${m.id}`} className="text-xs">
+                      [Dept. Org.] {m.programName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">File <span className="text-destructive">*</span></Label>
+              <Input type="file" className="h-8 text-xs file:text-xs file:h-full file:bg-transparent file:border-0" onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  setGlobalEvidenceFormData({ ...globalEvidenceFormData, file: e.target.files[0] });
+                }
+              }} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowGlobalEvidenceDialog(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleGlobalEvidenceUpload} disabled={uploadingGlobalEvidence}>
+              {uploadingGlobalEvidence ? 'Uploading...' : 'Upload'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

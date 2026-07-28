@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,8 @@ import {
   Building2,
   CalendarDays,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import * as facultyRepositoryService from '@/services/faculty-repository.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -84,25 +86,49 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
   const [formData, setFormData] = useState(EMPTY_RECORD);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fetchQualifications = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await facultyRepositoryService.getFacultyQualifications(selectedYear, departmentId);
+      if (res) {
+        setRecords(res.content || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch qualifications', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedYear, departmentId]);
+
+  useEffect(() => {
+    fetchQualifications();
+  }, [fetchQualifications]);
+
   const filteredRecords = useMemo(() => {
     let filtered = records.filter((r) => r.academicYear === selectedYear);
     if (searchQuery) { const q = searchQuery.toLowerCase(); filtered = filtered.filter((r) => r.empCode.toLowerCase().includes(q) || r.facultyName.toLowerCase().includes(q) || r.degree.toLowerCase().includes(q)); }
-    if (filterLevel && filterLevel !== 'all') { filtered = filtered.filter((r) => r.qualificationLevel === filterLevel); }
+    if (filterLevel && filterLevel !== 'all') { filtered = filtered.filter((r) => r.qualificationLevel?.toLowerCase() === filterLevel.toLowerCase()); }
     return filtered;
   }, [records, selectedYear, searchQuery, filterLevel]);
 
   const totalForYear = records.filter((r) => r.academicYear === selectedYear).length;
 
-  const handleDownloadTemplate = useCallback(() => {
-    const sampleRows = ['EMP001,Dr. Anita Sharma,PhD,PhD in Computer Science,Artificial Intelligence,IIT Delhi,2010,Completed,2010-06-15', 'EMP002,Mr. Rajesh Kumar,PG,M.Tech,Data Science,NIT Warangal,2012,Pursuing,'];
-    const csv = [CSV_HEADERS.join(','), ...sampleRows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `faculty_qualification_template_${selectedYear}.csv`; a.click(); URL.revokeObjectURL(url);
-  }, [selectedYear]);
+  const handleDownloadTemplate = useCallback(async () => {
+    try {
+      await facultyRepositoryService.downloadFacultyQualificationsTemplate(selectedYear, departmentId);
+    } catch (error) {
+      console.error('Failed to download template', error);
+    }
+  }, [selectedYear, departmentId]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
@@ -123,20 +149,58 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
     reader.readAsText(file); if (fileInputRef.current) fileInputRef.current.value = '';
   }, [selectedYear]);
 
-  const handleImportUploaded = useCallback(() => {
-    const valid = uploadPreview.filter((r) => r.validationStatus === 'valid').map((r, idx) => ({ ...r, id: `qual-${Date.now()}-${idx}`, validationStatus: undefined as QualificationRecord['validationStatus'], errors: undefined }));
-    setRecords((prev) => [...prev, ...valid]); setShowUploadDialog(false); setUploadPreview([]); setUploadStats(null);
-  }, [uploadPreview]);
+  const handleImportUploaded = useCallback(async () => {
+    const validRecords = uploadPreview.filter((r) => r.validationStatus === 'valid');
+    if (validRecords.length === 0) return;
 
-  const handleSaveRecord = useCallback(() => {
+    const headers = ['EMP Code', 'Faculty Name', 'Qualification Level', 'Degree', 'Specialization', 'University', 'Year of Passing', 'PhD Status', 'PhD Awarded Date', 'Academic Year'];
+    const rows = validRecords.map(r => [
+      r.empCode, r.facultyName, r.qualificationLevel, r.degree, r.specialization, 
+      r.university, r.yearOfPassing, r.phdStatus, r.phdAwardedDate, selectedYear
+    ].map(val => (val !== null && val !== undefined && val !== '') ? `"${val}"` : '').join(','));
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const fileToUpload = new File([blob], 'upload.csv', { type: 'text/csv' });
+
+    try {
+      setIsLoading(true);
+      await facultyRepositoryService.uploadFacultyQualificationsCSV(departmentId, fileToUpload, selectedYear);
+      setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); await fetchQualifications();
+    } catch (error) {
+      console.error('Failed to upload CSV', error);
+    } finally {
+      setIsLoading(false); setShowUploadDialog(false); setUploadPreview([]); setUploadStats(null); setSelectedFile(null);
+    }
+  }, [selectedFile, departmentId, selectedYear, fetchQualifications]);
+
+  const handleSaveRecord = useCallback(async () => {
     if (!formData.empCode || !formData.facultyName) return;
-    const record: QualificationRecord = { id: editingRecord ? editingRecord.id : `qual-${Date.now()}`, academicYear: selectedYear, ...formData };
-    if (editingRecord) { setRecords((prev) => prev.map((r) => (r.id === editingRecord.id ? record : r))); } else { setRecords((prev) => [...prev, record]); }
-    setFormData(EMPTY_RECORD); setShowAddDialog(false); setEditingRecord(null);
-  }, [formData, selectedYear, editingRecord]);
+    setIsLoading(true);
+    try {
+      const payload = { ...formData, academicYear: selectedYear };
+      if (editingRecord) {
+        await facultyRepositoryService.updateFacultyQualification(editingRecord.id, selectedYear, departmentId, payload);
+        setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); fetchQualifications();
+      } else {
+        await facultyRepositoryService.createFacultyQualification(selectedYear, departmentId, payload);
+        setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); fetchQualifications();
+      }
+    } catch (error) {
+      console.error('Failed to save record', error);
+    } finally {
+      setIsLoading(false); setFormData(EMPTY_RECORD); setShowAddDialog(false); setEditingRecord(null);
+    }
+  }, [formData, selectedYear, departmentId, editingRecord, fetchQualifications]);
 
   const handleEdit = useCallback((record: QualificationRecord) => { setEditingRecord(record); const { id: _i, academicYear: _a, validationStatus: _v, errors: _e, ...rest } = record; setFormData(rest); setShowAddDialog(true); }, []);
-  const handleDelete = useCallback((id: string) => { setRecords((prev) => prev.filter((r) => r.id !== id)); }, []);
+  const handleDelete = useCallback(async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    try {
+      await facultyRepositoryService.deleteFacultyQualification(id, selectedYear, departmentId);
+      fetchQualifications();
+    } catch (error) { console.error('Failed to delete', error); }
+  }, [selectedYear, departmentId, fetchQualifications]);
   const handleSaveAll = useCallback(() => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 4000); }, []);
 
   return (
@@ -204,9 +268,9 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
           {filteredRecords.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center"><Award className="h-12 w-12 text-muted-foreground/30 mb-3" /><p className="text-sm text-muted-foreground font-medium">No records yet</p><p className="text-xs text-muted-foreground mt-1">Upload CSV or add manually</p></div>
           ) : (
-            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <div className="overflow-x-auto w-full max-h-[500px] overflow-y-auto">
               <Table className="min-w-[1100px]"><TableHeader><TableRow className="bg-muted/30">
-                <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
+                <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-background shadow-[1px_0_0_0_rgba(0,0,0,0.1)] z-10">#</TableHead>
                 <TableHead className="text-xs font-semibold whitespace-nowrap">EMP Code</TableHead>
                 <TableHead className="text-xs font-semibold whitespace-nowrap">Faculty Name</TableHead>
                 <TableHead className="text-xs font-semibold whitespace-nowrap">Level</TableHead>
@@ -216,11 +280,11 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
                 <TableHead className="text-xs font-semibold whitespace-nowrap">Year of Passing</TableHead>
                 <TableHead className="text-xs font-semibold whitespace-nowrap text-center">PhD Status</TableHead>
                 <TableHead className="text-xs font-semibold whitespace-nowrap">PhD Awarded Date</TableHead>
-                <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">Actions</TableHead>
+                <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-background shadow-[-1px_0_0_0_rgba(0,0,0,0.1)] z-10">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>{filteredRecords.map((r, idx) => (
                 <TableRow key={r.id} className="hover:bg-muted/20">
-                  <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background shadow-[1px_0_0_0_rgba(0,0,0,0.1)] z-10">{idx + 1}</TableCell>
                   <TableCell className="text-xs font-mono whitespace-nowrap">{r.empCode}</TableCell>
                   <TableCell className="text-sm font-medium whitespace-nowrap">{r.facultyName}</TableCell>
                   <TableCell className="whitespace-nowrap"><Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">{r.qualificationLevel}</Badge></TableCell>
@@ -230,7 +294,7 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
                   <TableCell className="text-xs whitespace-nowrap">{r.yearOfPassing || '-'}</TableCell>
                   <TableCell className="text-center whitespace-nowrap"><Badge variant="outline" className={cn('text-[10px]', r.phdStatus === 'Completed' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : r.phdStatus === 'Pursuing' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-gray-500/10 text-gray-600 border-gray-500/20')}>{r.phdStatus || '-'}</Badge></TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{r.phdAwardedDate || '-'}</TableCell>
-                  <TableCell className="text-right sticky right-0 bg-background z-10"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(r)}><Edit2 className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}><Trash2 className="h-3 w-3" /></Button></div></TableCell>
+                  <TableCell className="text-right sticky right-0 bg-background shadow-[-1px_0_0_0_rgba(0,0,0,0.1)] z-10"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(r)}><Edit2 className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}><Trash2 className="h-3 w-3" /></Button></div></TableCell>
                 </TableRow>
               ))}</TableBody></Table>
             </div>
@@ -260,7 +324,7 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
               <div><Label className="text-xs">PhD Awarded Date</Label><Input type="date" value={formData.phdAwardedDate} onChange={(e) => setFormData({ ...formData, phdAwardedDate: e.target.value })} className="mt-1 h-9 text-sm" /></div>
             </div>
           </div>
-          <DialogFooter><Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingRecord(null); }}>Cancel</Button><Button size="sm" onClick={handleSaveRecord} disabled={!formData.empCode || !formData.facultyName}>{editingRecord ? 'Update' : 'Add'}</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingRecord(null); }}>Cancel</Button><Button size="sm" onClick={handleSaveRecord} disabled={!formData.empCode || !formData.facultyName || isLoading}>{editingRecord ? 'Update' : 'Add'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -276,7 +340,7 @@ export const FacultyQualificationModule = ({ department, academicYear }: Faculty
             <ScrollArea className="max-h-[300px] border rounded-lg"><Table><TableHeader><TableRow className="bg-muted/30"><TableHead className="text-xs w-8">#</TableHead><TableHead className="text-xs">EMP Code</TableHead><TableHead className="text-xs">Name</TableHead><TableHead className="text-xs">Degree</TableHead><TableHead className="text-xs text-center">Valid</TableHead></TableRow></TableHeader><TableBody>{uploadPreview.map((r, idx) => (<TableRow key={r.id} className={cn(r.validationStatus === 'invalid' && 'bg-red-500/5')}><TableCell className="text-xs">{idx + 1}</TableCell><TableCell className="text-xs font-mono">{r.empCode}</TableCell><TableCell className="text-xs">{r.facultyName}</TableCell><TableCell className="text-xs">{r.degree}</TableCell><TableCell className="text-center">{r.validationStatus === 'valid' ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" /> : <AlertCircle className="h-4 w-4 text-red-500 mx-auto" />}</TableCell></TableRow>))}</TableBody></Table></ScrollArea>
             {uploadStats.invalid > 0 && (<div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">{uploadPreview.filter(r => r.validationStatus === 'invalid').map((r, i) => <div key={i} className="flex items-start gap-2"><X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" /><p className="text-[11px] text-red-600">Row {uploadPreview.indexOf(r) + 1}: {r.errors?.join('; ')}</p></div>)}</div>)}
           </div>)}
-          <DialogFooter><Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>Cancel</Button><Button size="sm" onClick={handleImportUploaded} disabled={!uploadStats || uploadStats.valid === 0}>Import {uploadStats?.valid || 0} Valid Records</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)} disabled={isLoading}>Cancel</Button><Button size="sm" onClick={handleImportUploaded} disabled={!uploadStats || uploadStats.valid === 0 || isLoading}>{isLoading ? 'Importing...' : `Import ${uploadStats?.valid || 0} Valid Records`}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { academicRepositoryService, AcademicRepositorySummary } from '@/services/academic-repository.service';
+import { getFacultyMetrics, FacultyMetrics } from '@/services/faculty-repository.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -130,6 +131,7 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
   const { user } = useAuth();
   const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
+  const [facultySummary, setFacultySummary] = useState<FacultyMetrics | null>(null);
 
   // Reset active tab when config changes (e.g., switching between repositories)
   useEffect(() => {
@@ -137,11 +139,16 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
   }, [config.id, initialTabIndex]);
 
   useEffect(() => {
+    const departmentId = user?.departmentId || 101;
+    const year = academicYear || '2025-26';
+
     if (config.id === 'academic') {
-      const departmentId = user?.departmentId || 101;
-      const year = academicYear || '2025-26';
       academicRepositoryService.getDashboardSummary(year, departmentId)
         .then(setAcademicSummary)
+        .catch(console.error);
+    } else if (config.id === 'faculty') {
+      getFacultyMetrics(year, departmentId)
+        .then(setFacultySummary)
         .catch(console.error);
     }
   }, [config.id, academicYear, user]);
@@ -160,6 +167,14 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
       evidenceCompleteness: academicSummary.evidenceScore,
       verificationPercent: academicSummary.verificationScore,
       readinessScore: academicSummary.readinessScore,
+    };
+  } else if (config.id === 'faculty' && facultySummary) {
+    metrics = {
+      ...metrics,
+      dataCompleteness: facultySummary.dataCompleteness,
+      evidenceCompleteness: facultySummary.evidenceScore,
+      verificationPercent: facultySummary.verificationScore,
+      readinessScore: facultySummary.readinessScore,
     };
   }
 

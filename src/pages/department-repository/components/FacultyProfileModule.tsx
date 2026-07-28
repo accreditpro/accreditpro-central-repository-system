@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,8 @@ import {
   Building2,
   CalendarDays,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import * as facultyRepositoryService from '@/services/faculty-repository.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -96,6 +98,29 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState(EMPTY_RECORD);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fetchProfiles = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await facultyRepositoryService.getFacultyProfiles(selectedYear, departmentId);
+      if (res) {
+        setRecords(res.content || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profiles', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedYear, departmentId]);
+
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
 
   const filteredRecords = useMemo(() => {
     let filtered = records.filter((r) => r.academicYear === selectedYear);
@@ -104,31 +129,25 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
       filtered = filtered.filter((r) => r.empCode.toLowerCase().includes(q) || r.name.toLowerCase().includes(q) || r.officialEmail.toLowerCase().includes(q));
     }
     if (filterStatus && filterStatus !== 'all') {
-      filtered = filtered.filter((r) => r.status === filterStatus);
+      filtered = filtered.filter((r) => r.status?.toLowerCase() === filterStatus.toLowerCase());
     }
     return filtered;
   }, [records, selectedYear, searchQuery, filterStatus]);
 
   const totalForYear = records.filter((r) => r.academicYear === selectedYear).length;
 
-  const handleDownloadTemplate = useCallback(() => {
-    const sampleRows = [
-      'EMP001,Dr. Anita Sharma,ABCDE1234F,1234-5678-9012,Female,1980-05-15,anita@inst.edu,anita@gmail.com,9876543210,Professor,Active,',
-      'EMP002,Mr. Rajesh Kumar,FGHIJ5678K,2345-6789-0123,Male,1985-08-20,rajesh@inst.edu,rajesh@gmail.com,9876543211,Assistant Professor,Active,',
-    ];
-    const csv = [CSV_HEADERS.join(','), ...sampleRows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `faculty_profile_template_${selectedYear}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [selectedYear]);
+  const handleDownloadTemplate = useCallback(async () => {
+    try {
+      await facultyRepositoryService.downloadFacultyProfilesTemplate(selectedYear, departmentId);
+    } catch (error) {
+      console.error('Failed to download template', error);
+    }
+  }, [selectedYear, departmentId]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
@@ -158,23 +177,68 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [selectedYear]);
 
-  const handleImportUploaded = useCallback(() => {
-    const valid = uploadPreview.filter((r) => r.validationStatus === 'valid').map((r, idx) => ({ ...r, id: `fac-${Date.now()}-${idx}`, validationStatus: undefined as FacultyProfileRecord['validationStatus'], errors: undefined }));
-    setRecords((prev) => [...prev, ...valid]);
-    setShowUploadDialog(false);
-    setUploadPreview([]);
-    setUploadStats(null);
-  }, [uploadPreview]);
+  const handleImportUploaded = useCallback(async () => {
+    const validRecords = uploadPreview.filter((r) => r.validationStatus === 'valid');
+    if (validRecords.length === 0) return;
+    
+    const headers = ['EMP Code', 'Name', 'PAN', 'AADHAR', 'Gender', 'DOB', 'Official Email', 'Personal Email', 'Mobile Number', 'Current Designation', 'Status', 'Date of Leaving', 'Academic Year'];
+    const rows = validRecords.map(r => [
+      r.empCode, r.name, r.pan, r.aadhar, (r.gender || '').toUpperCase(), r.dob, 
+      r.officialEmail, r.personalEmail, r.mobileNumber, r.currentDesignation, 
+      (r.status || 'Active').toUpperCase().replace(/\s+/g, '_'), r.dateOfLeaving, selectedYear
+    ].map(val => (val !== null && val !== undefined && val !== '') ? `"${val}"` : '').join(','));
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const fileToUpload = new File([blob], 'upload.csv', { type: 'text/csv' });
 
-  const handleSaveRecord = useCallback(() => {
+    try {
+      setIsLoading(true);
+      await facultyRepositoryService.uploadFacultyProfilesCSV(departmentId, fileToUpload, selectedYear);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      await fetchProfiles();
+    } catch (error) {
+      console.error('Failed to upload CSV', error);
+    } finally {
+      setIsLoading(false);
+      setShowUploadDialog(false);
+      setUploadPreview([]);
+      setUploadStats(null);
+      setSelectedFile(null);
+    }
+  }, [selectedFile, departmentId, selectedYear, fetchProfiles]);
+
+  const handleSaveRecord = useCallback(async () => {
     if (!formData.empCode || !formData.name) return;
-    const record: FacultyProfileRecord = { id: editingRecord ? editingRecord.id : `fac-${Date.now()}`, academicYear: selectedYear, ...formData };
-    if (editingRecord) { setRecords((prev) => prev.map((r) => (r.id === editingRecord.id ? record : r))); }
-    else { setRecords((prev) => [...prev, record]); }
-    setFormData(EMPTY_RECORD);
-    setShowAddDialog(false);
-    setEditingRecord(null);
-  }, [formData, selectedYear, editingRecord]);
+    setIsLoading(true);
+    try {
+      const payload = { 
+        ...formData, 
+        academicYear: selectedYear,
+        gender: formData.gender ? formData.gender.toUpperCase() : '',
+        status: formData.status ? formData.status.toUpperCase().replace(/\s+/g, '_') : 'ACTIVE'
+      };
+      if (editingRecord) {
+        await facultyRepositoryService.updateFacultyProfile(editingRecord.id, selectedYear, departmentId, payload);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        fetchProfiles();
+      } else {
+        await facultyRepositoryService.createFacultyProfile(selectedYear, departmentId, payload);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        fetchProfiles();
+      }
+    } catch (error) {
+      console.error('Failed to save record', error);
+    } finally {
+      setIsLoading(false);
+      setFormData(EMPTY_RECORD);
+      setShowAddDialog(false);
+      setEditingRecord(null);
+    }
+  }, [formData, selectedYear, departmentId, editingRecord, fetchProfiles]);
 
   const handleEdit = useCallback((record: FacultyProfileRecord) => {
     setEditingRecord(record);
@@ -183,7 +247,15 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
     setShowAddDialog(true);
   }, []);
 
-  const handleDelete = useCallback((id: string) => { setRecords((prev) => prev.filter((r) => r.id !== id)); }, []);
+  const handleDelete = useCallback(async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    try {
+      await facultyRepositoryService.deleteFacultyProfile(id, selectedYear, departmentId);
+      fetchProfiles();
+    } catch (error) {
+      console.error('Failed to delete', error);
+    }
+  }, [selectedYear, departmentId, fetchProfiles]);
 
   const handleSaveAll = useCallback(() => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 4000); }, []);
 
@@ -257,7 +329,7 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
       {/* Search & Filter */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search by EMP code, name, email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-9 text-sm" /></div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}><SelectTrigger className="w-[130px] h-9 text-sm"><Filter className="h-3.5 w-3.5 mr-2" /><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}><SelectTrigger className="w-[130px] h-9 text-sm"><Filter className="h-3.5 w-3.5 mr-2" /><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem>{STATUSES.map((s) => <SelectItem key={s} value={s.toUpperCase().replace(/[-\s]+/g, '_')}>{s}</SelectItem>)}</SelectContent></Select>
         <Badge variant="outline" className="text-xs">{filteredRecords.length} Records</Badge>
       </div>
 
@@ -268,10 +340,10 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
           {filteredRecords.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center"><UserCircle className="h-12 w-12 text-muted-foreground/30 mb-3" /><p className="text-sm text-muted-foreground font-medium">No records yet</p><p className="text-xs text-muted-foreground mt-1">Upload CSV or add manually</p></div>
           ) : (
-            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <div className="overflow-x-auto w-full max-h-[500px] overflow-y-auto">
               <Table className="min-w-[1200px]">
                 <TableHeader><TableRow className="bg-muted/30">
-                  <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
+                  <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-background shadow-[1px_0_0_0_rgba(0,0,0,0.1)] z-10">#</TableHead>
                   <TableHead className="text-xs font-semibold whitespace-nowrap">EMP Code</TableHead>
                   <TableHead className="text-xs font-semibold whitespace-nowrap">Name</TableHead>
                   <TableHead className="text-xs font-semibold whitespace-nowrap">PAN</TableHead>
@@ -284,12 +356,12 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
                   <TableHead className="text-xs font-semibold whitespace-nowrap">Designation</TableHead>
                   <TableHead className="text-xs font-semibold whitespace-nowrap text-center">Status</TableHead>
                   <TableHead className="text-xs font-semibold whitespace-nowrap">Date of Leaving</TableHead>
-                  <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">Actions</TableHead>
+                  <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-background shadow-[-1px_0_0_0_rgba(0,0,0,0.1)] z-10">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {filteredRecords.map((r, idx) => (
                     <TableRow key={r.id} className="hover:bg-muted/20">
-                      <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background shadow-[1px_0_0_0_rgba(0,0,0,0.1)] z-10">{idx + 1}</TableCell>
                       <TableCell className="text-xs font-medium font-mono whitespace-nowrap">{r.empCode}</TableCell>
                       <TableCell className="text-sm font-medium whitespace-nowrap">{r.name}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{r.pan}</TableCell>
@@ -302,7 +374,8 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
                       <TableCell className="text-xs whitespace-nowrap">{r.currentDesignation}</TableCell>
                       <TableCell className="text-center whitespace-nowrap"><Badge variant="outline" className={cn('text-[10px]', r.status === 'Active' && 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', r.status === 'Relieved' && 'bg-red-500/10 text-red-600 border-red-500/20')}>{r.status}</Badge></TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{r.dateOfLeaving || '-'}</TableCell>
-                      <TableCell className="text-right sticky right-0 bg-background z-10"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(r)}><Edit2 className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}><Trash2 className="h-3 w-3" /></Button></div></TableCell>
+                      <TableCell className="text-right sticky right-0 bg-background shadow-[-1px_0_0_0_rgba(0,0,0,0.1)] z-10">
+                        <div className="flex items-center justify-end gap-2"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(r)}><Edit2 className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}><Trash2 className="h-3 w-3" /></Button></div></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -326,7 +399,7 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
               <div><Label className="text-xs">AADHAR</Label><Input value={formData.aadhar} onChange={(e) => setFormData({ ...formData, aadhar: e.target.value })} placeholder="1234-5678-9012" className="mt-1 h-9 text-sm" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Gender</Label><Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{GENDERS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label className="text-xs">Gender</Label><Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{GENDERS.map(g => <SelectItem key={g} value={g.toUpperCase().replace(/[-\s]+/g, '_')}>{g}</SelectItem>)}</SelectContent></Select></div>
               <div><Label className="text-xs">Date of Birth</Label><Input type="date" value={formData.dob} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} className="mt-1 h-9 text-sm" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -338,13 +411,13 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
               <div><Label className="text-xs">Current Designation</Label><Select value={formData.currentDesignation} onValueChange={(v) => setFormData({ ...formData, currentDesignation: v })}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DESIGNATIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Status</Label><Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger><SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label className="text-xs">Status</Label><Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger><SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s.toUpperCase().replace(/[-\s]+/g, '_')}>{s}</SelectItem>)}</SelectContent></Select></div>
               <div><Label className="text-xs">Date of Leaving</Label><Input type="date" value={formData.dateOfLeaving} onChange={(e) => setFormData({ ...formData, dateOfLeaving: e.target.value })} className="mt-1 h-9 text-sm" /></div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingRecord(null); }}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveRecord} disabled={!formData.empCode || !formData.name}>{editingRecord ? 'Update' : 'Add'}</Button>
+            <Button size="sm" onClick={handleSaveRecord} disabled={!formData.empCode || !formData.name || isLoading}>{editingRecord ? 'Update' : 'Add'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -372,7 +445,7 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
               {uploadStats.invalid > 0 && (<div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20"><p className="text-xs font-semibold text-red-700 mb-1">Errors:</p>{uploadPreview.filter(r => r.validationStatus === 'invalid').map((r, i) => <div key={i} className="flex items-start gap-2"><X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" /><p className="text-[11px] text-red-600">Row {uploadPreview.indexOf(r) + 1}: {r.errors?.join('; ')}</p></div>)}</div>)}
             </div>
           )}
-          <DialogFooter><Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>Cancel</Button><Button size="sm" onClick={handleImportUploaded} disabled={!uploadStats || uploadStats.valid === 0}>Import {uploadStats?.valid || 0} Valid Records</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)} disabled={isLoading}>Cancel</Button><Button size="sm" onClick={handleImportUploaded} disabled={!uploadStats || uploadStats.valid === 0 || isLoading}>{isLoading ? 'Importing...' : `Import ${uploadStats?.valid || 0} Valid Records`}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

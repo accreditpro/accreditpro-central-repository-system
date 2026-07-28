@@ -1,0 +1,6 @@
+EMP Code,Name,PAN,AADHAR,Gender,DOB,Official Email,Personal Email,Mobile Number,Current Designation,Status,Date of Leaving,Academic Year
+EMP010,Dr. Anita Sharma,ABCDE1234F,1234-5678-9012,FEMALE,1980-05-15,anita.sharma@college.edu,anita.sharma@gmail.com,9876543210,Professor,ACTIVE,,2025-26
+EMP011,Mr. Rajesh Kumar,FGHIJ5678K,2345-6789-0123,MALE,1985-08-20,rajesh.kumar@college.edu,rajesh.kumar@gmail.com,9876543211,Assistant Professor,ACTIVE,,2025-26
+EMP012,Dr. Priya Reddy,KLMNO9012L,3456-7890-1234,FEMALE,1978-03-10,priya.reddy@college.edu,priya.reddy@gmail.com,9876543212,Associate Professor,ACTIVE,,2025-26
+EMP013,Mr. Suresh Naidu,PQRST3456M,4567-8901-2345,MALE,1990-11-25,suresh.naidu@college.edu,suresh.naidu@gmail.com,9876543213,Lecturer,ACTIVE,,2025-26
+EMP014,Dr. Kavitha Rao,UVWXY7890N,5678-9012-3456,FEMALE,1982-07-18,kavitha.rao@college.edu,kavitha.rao@gmail.com,9876543214,Assistant Professor,ACTIVE,,2025-26

@@ -1,0 +1,5 @@
+Employee ID,Faculty Name,Professional Society Name,Society Type,Membership Number,Membership Grade,Position Held,Membership Start Date,Membership Expiry Date,Active Status,Remarks
+EMP010,Dr. Anita Sharma,IEEE,INTERNATIONAL,IEEE-CSE-98765,Senior Member,Chapter Chair,2018-06-15,2027-06-14,ACTIVE,
+EMP011,Mr. Rajesh Kumar,ACM,INTERNATIONAL,ACM-1234567,Professional Member,,2020-01-10,2026-01-09,ACTIVE,
+EMP012,Dr. Priya Reddy,CSI,NATIONAL,CSI-LM-45678,Life Member,Secretary,2015-03-20,,ACTIVE,Life membership
+EMP014,Dr. Kavitha Rao,ISTE,NATIONAL,ISTE-LM-9876,Life Member,,2019-07-01,,ACTIVE,

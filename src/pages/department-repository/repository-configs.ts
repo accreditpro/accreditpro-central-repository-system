@@ -1368,8 +1368,8 @@ export const dashboardKPIs: KPICard[] = [
 
 // Repository Health Metrics
 export const repositoryHealth: Record<string, RepositoryMetrics> = {
-  academic: { dataCompleteness: 86, evidenceCompleteness: 72, verificationPercent: 78, readinessScore: 79 },
-  faculty: { dataCompleteness: 92, evidenceCompleteness: 68, verificationPercent: 85, readinessScore: 82 },
+  academic: { dataCompleteness: 0, evidenceCompleteness: 0, verificationPercent: 0, readinessScore: 0 },
+  faculty: { dataCompleteness: 0, evidenceCompleteness: 0, verificationPercent: 0, readinessScore: 0 },
   student: { dataCompleteness: 88, evidenceCompleteness: 75, verificationPercent: 70, readinessScore: 78 },
   research: { dataCompleteness: 74, evidenceCompleteness: 60, verificationPercent: 65, readinessScore: 66 },
   alumni: { dataCompleteness: 68, evidenceCompleteness: 55, verificationPercent: 58, readinessScore: 60 },

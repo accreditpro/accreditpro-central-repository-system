@@ -1,0 +1,5 @@
+Employee ID,Faculty Name,Platform,Course Name,Course Category,Conducted By,Start Date,Completion Date,Duration Hours,Grade,Score,Certification Status,Certificate ID
+EMP010,Dr. Anita Sharma,NPTEL,Deep Learning,AI/ML,IIT Madras,2025-01-15,2025-04-10,60,Elite + Gold,92%,Completed,NPTEL-DL-2025-001
+EMP011,Mr. Rajesh Kumar,Coursera,Google Cloud Professional Architect,Cloud Computing,Google,2025-02-01,2025-05-30,80,Pass,88%,Completed,GCPA-2025-XYZ
+EMP012,Dr. Priya Reddy,SWAYAM,Cyber Security,Security,IIT Kanpur,2025-03-01,2025-06-15,45,Elite,85%,Completed,SWAYAM-CS-2025
+EMP014,Dr. Kavitha Rao,edX,Data Science with Python,Data Science,MIT,2025-04-01,2025-07-20,50,Verified,90%,Completed,EDX-DS-2025

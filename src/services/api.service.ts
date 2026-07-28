@@ -158,6 +158,17 @@ class ApiService {
     }
 
     const blob = response.data;
+    
+    // Check if the response is actually a JSON error message instead of a file
+    if (blob.type === 'application/json') {
+      try {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Error downloading file');
+      } catch (e) {
+        throw new Error('Failed to download file');
+      }
+    }
     const blobUrl = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = blobUrl;
