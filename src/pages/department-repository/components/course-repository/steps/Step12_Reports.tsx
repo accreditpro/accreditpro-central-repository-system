@@ -44,6 +44,14 @@ interface Step12Props {
 // REPORT GENERATORS
 // ============================================================
 
+/** Fallback attainment level calculation (mirrors OBE config defaults: L3≥70, L2≥60, L1≥50, L0<50) */
+function getDefaultAttainmentLevel(percentage: number): number {
+  if (percentage >= 70) return 3;
+  if (percentage >= 60) return 2;
+  if (percentage >= 50) return 1;
+  return 0;
+}
+
 /** Trigger a CSV file download */
 function downloadCSV(filename: string, rows: string[]) {
   const csv = rows.join('\n');
@@ -298,9 +306,10 @@ function generateCOAttainmentReport(state: CourseState): { rows: string[]; filen
     return { rows, filename: `co_attainment_${state.details.courseCode}.csv` };
   }
 
-  rows.push('"CO Code","Average Marks","Threshold","Attainment %","Target %","Status"');
+  rows.push('"CO Code","Average Marks","Threshold","Attainment %","Target %","Level","Status"');
   state.attainmentResult.coAttainments.forEach((co) => {
-    rows.push(`"${co.coCode}",${co.averageMarks},${co.threshold},${co.attainment},${co.target},"${co.status}"`);
+    const level = co.attainmentLevel ?? getDefaultAttainmentLevel(co.attainment);
+    rows.push(`"${co.coCode}",${co.averageMarks},${co.threshold},${co.attainment},${co.target},${level},"${co.status}"`);
   });
 
   // Per-assessment contribution
@@ -351,9 +360,10 @@ function generatePOAttainmentReport(state: CourseState): { rows: string[]; filen
     return { rows, filename: `po_attainment_${state.details.courseCode}.csv` };
   }
 
-  rows.push('"PO Code","Description","COs Mapped","Attainment %","Target %","Status"');
+  rows.push('"PO Code","Description","COs Mapped","Attainment %","Target %","Level","Status"');
   state.attainmentResult.poAttainments.forEach((po, idx) => {
-    rows.push(`"${po.poCode}","${NBA_POS[idx]?.shortName || ''}",${po.contribution},${po.attainment},${po.target},"${po.status}"`);
+    const level = po.attainmentLevel ?? getDefaultAttainmentLevel(po.attainment);
+    rows.push(`"${po.poCode}","${NBA_POS[idx]?.shortName || ''}",${po.contribution},${po.attainment},${po.target},${level},"${po.status}"`);
   });
 
   return { rows, filename: `po_attainment_${state.details.courseCode}.csv` };
@@ -371,9 +381,10 @@ function generatePSOAttainmentReport(state: CourseState): { rows: string[]; file
     return { rows, filename: `pso_attainment_${state.details.courseCode}.csv` };
   }
 
-  rows.push('"PSO Code","Description","COs Mapped","Attainment %","Target %","Status"');
+  rows.push('"PSO Code","Description","COs Mapped","Attainment %","Target %","Level","Status"');
   state.attainmentResult.psoAttainments.forEach((pso, idx) => {
-    rows.push(`"${pso.poCode}","${NBA_PSOS[idx]?.description || ''}",${pso.contribution},${pso.attainment},${pso.target},"${pso.status}"`);
+    const level = pso.attainmentLevel ?? getDefaultAttainmentLevel(pso.attainment);
+    rows.push(`"${pso.poCode}","${NBA_PSOS[idx]?.description || ''}",${pso.contribution},${pso.attainment},${pso.target},${level},"${pso.status}"`);
   });
 
   return { rows, filename: `pso_attainment_${state.details.courseCode}.csv` };
@@ -444,21 +455,24 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
   if (state.attainmentResult) {
     rows.push('"=== SECTION 6: ATTAINMENT ==="');
     rows.push('"CO Attainment"');
-    rows.push('"CO","Attainment %","Target","Status"');
+    rows.push('"CO","Attainment %","Target","Level","Status"');
     state.attainmentResult.coAttainments.forEach((c) => {
-      rows.push(`"${c.coCode}",${c.attainment},${c.target},"${c.status}"`);
+      const level = c.attainmentLevel ?? getDefaultAttainmentLevel(c.attainment);
+      rows.push(`"${c.coCode}",${c.attainment},${c.target},${level},"${c.status}"`);
     });
     rows.push('');
     rows.push('"PO Attainment"');
-    rows.push('"PO","Attainment %","COs Mapped","Status"');
+    rows.push('"PO","Attainment %","COs Mapped","Level","Status"');
     state.attainmentResult.poAttainments.forEach((p, i) => {
-      rows.push(`"${p.poCode}",${p.attainment},${p.contribution},"${p.status}"`);
+      const level = p.attainmentLevel ?? getDefaultAttainmentLevel(p.attainment);
+      rows.push(`"${p.poCode}",${p.attainment},${p.contribution},${level},"${p.status}"`);
     });
     rows.push('');
     rows.push('"PSO Attainment"');
-    rows.push('"PSO","Attainment %","COs Mapped","Status"');
+    rows.push('"PSO","Attainment %","COs Mapped","Level","Status"');
     state.attainmentResult.psoAttainments.forEach((p) => {
-      rows.push(`"${p.poCode}",${p.attainment},${p.contribution},"${p.status}"`);
+      const level = p.attainmentLevel ?? getDefaultAttainmentLevel(p.attainment);
+      rows.push(`"${p.poCode}",${p.attainment},${p.contribution},${level},"${p.status}"`);
     });
   }
 

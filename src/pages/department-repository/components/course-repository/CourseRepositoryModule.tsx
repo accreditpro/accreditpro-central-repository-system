@@ -15,8 +15,8 @@ import {
   CourseOutcome,
   COPOMapping,
   POCoverage,
-  GapAnalysis as GapAnalysisType,
-  RevisedMapping,
+  // GapAnalysis as GapAnalysisType,  // Reserved — used in separate section
+  // RevisedMapping,                  // Reserved — used in separate section
   COPSOMapping,
   AssessmentBlueprint,
   MarksUpload,
@@ -35,8 +35,9 @@ import Step2_UploadCourseFile from './steps/Step2_UploadCourseFile';
 import Step3_AICourseAnalysis from './steps/Step3_AICourseAnalysis';
 import Step4_CourseOutcomes from './steps/Step4_CourseOutcomes';
 import Step5_COPOMapping from './steps/Step5_COPOMapping';
-import Step6_GapAnalysis from './steps/Step6_GapAnalysis';
-import Step7_RevisedCOPOMapping from './steps/Step7_RevisedCOPOMapping';
+// Step6 and Step7 are reserved — will be used in a separate section with different calculation approaches
+// import Step6_GapAnalysis from './steps/Step6_GapAnalysis';
+// import Step7_RevisedCOPOMapping from './steps/Step7_RevisedCOPOMapping';
 import Step8_COPSOMapping from './steps/Step8_COPSOMapping';
 import Step9_AssessmentBlueprint from './steps/Step9_AssessmentBlueprint';
 import Step10_MarksUpload from './steps/Step10_MarksUpload';
@@ -142,6 +143,7 @@ export const CourseRepositoryModule = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isExistingCourse, setIsExistingCourse] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ============ Course Workspace State ============
@@ -200,8 +202,8 @@ export const CourseRepositoryModule = () => {
         'ai-course-analysis': 0,
         'course-outcomes': 0,
         'co-po-mapping': 0,
-        'gap-analysis': 0,
-        'revised-co-po-mapping': 0,
+        // 'gap-analysis': 0,          // Reserved — used in separate section
+        // 'revised-co-po-mapping': 0,   // Reserved — used in separate section
         'co-pso-mapping': 0,
         'assessment-blueprint': 0,
         'marks-upload': 0,
@@ -461,6 +463,8 @@ export const CourseRepositoryModule = () => {
         newState.id = courseId;
         newState.details = {
           ...newState.details,
+          department: course.department,
+          regulation: 'R22',
           courseCode: course.courseCode,
           courseName: course.courseName,
           facultyName: course.facultyName,
@@ -475,11 +479,13 @@ export const CourseRepositoryModule = () => {
           teamWorkHours: course.teamWorkHours,
           selfLearningHours: course.selfLearningHours,
           totalHours: course.totalHours,
+          courseType: (['Theory', 'Lab', 'Project'].includes(course.courseType) ? course.courseType : 'Theory') as 'Theory' | 'Lab' | 'Project',
         };
         setCourseState(newState);
       }
     }
     setSelectedCourseId(courseId);
+    setIsExistingCourse(true);
     setView('workspace');
   };
 
@@ -500,6 +506,7 @@ export const CourseRepositoryModule = () => {
             onClick={() => {
               setCourseState(createInitialState());
               setSelectedCourseId(null);
+              setIsExistingCourse(false);
               setView('workspace');
             }}
             className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
@@ -971,6 +978,7 @@ export const CourseRepositoryModule = () => {
         onSave={handleSave}
         onNext={goNext}
         completionPercentage={courseState.completionPercentages['course-details']}
+        isExistingCourse={isExistingCourse}
       />
     ),
     'upload-course-file': (
@@ -987,6 +995,7 @@ export const CourseRepositoryModule = () => {
       <Step3_AICourseAnalysis
         courseFile={courseState.courseFile}
         data={courseState.aiAnalysis}
+        courseDetails={courseState.details}
         onUpdate={(analysis) => setCourseState((prev) => ({ ...prev, aiAnalysis: analysis }))}
         onSave={handleSave}
         onNext={goNext}
@@ -998,6 +1007,7 @@ export const CourseRepositoryModule = () => {
       <Step4_CourseOutcomes
         outcomes={courseState.courseOutcomes}
         aiAnalysis={courseState.aiAnalysis}
+        courseName={courseState.details.courseName}
         onUpdate={(outcomes) => setCourseState((prev) => ({ ...prev, courseOutcomes: outcomes }))}
         onSave={handleSave}
         onNext={goNext}
@@ -1010,6 +1020,8 @@ export const CourseRepositoryModule = () => {
         outcomes={courseState.courseOutcomes}
         mappings={courseState.coPoMapping}
         coverage={courseState.poCoverage}
+        courseName={courseState.details.courseName}
+        courseContent={courseState.aiAnalysis?.rawCourseContent || ''}
         onUpdate={(mappings, coverage) => setCourseState((prev) => ({ ...prev, coPoMapping: mappings, poCoverage: coverage }))}
         onSave={handleSave}
         onNext={goNext}
@@ -1017,31 +1029,40 @@ export const CourseRepositoryModule = () => {
         completionPercentage={courseState.completionPercentages['co-po-mapping']}
       />
     ),
-    'gap-analysis': (
-      <Step6_GapAnalysis
-        outcomes={courseState.courseOutcomes}
-        coverage={courseState.poCoverage}
-        data={courseState.gapAnalysis}
-        onUpdate={(gap) => setCourseState((prev) => ({ ...prev, gapAnalysis: gap }))}
-        onSave={handleSave}
-        onNext={goNext}
-        onPrev={goPrev}
-        completionPercentage={courseState.completionPercentages['gap-analysis']}
-      />
-    ),
-    'revised-co-po-mapping': (
-      <Step7_RevisedCOPOMapping
-        outcomes={courseState.courseOutcomes}
-        mappings={courseState.coPoMapping}
-        coverage={courseState.poCoverage}
-        data={courseState.revisedMapping}
-        onUpdate={(revised) => setCourseState((prev) => ({ ...prev, revisedMapping: revised }))}
-        onSave={handleSave}
-        onNext={goNext}
-        onPrev={goPrev}
-        completionPercentage={courseState.completionPercentages['revised-co-po-mapping']}
-      />
-    ),
+    // Step6 (Gap Analysis) and Step7 (Revised CO-PO) are reserved —
+    // they will be integrated in a separate section with a different calculation approach
+    // 'gap-analysis': (
+    //   <Step6_GapAnalysis
+    //     outcomes={courseState.courseOutcomes}
+    //     coverage={courseState.poCoverage}
+    //     data={courseState.gapAnalysis}
+    //     courseName={courseState.details.courseName}
+    //     courseCode={courseState.details.courseCode}
+    //     department={courseState.details.department}
+    //     program={courseState.details.program}
+    //     regulation={courseState.details.regulation}
+    //     onUpdate={(gap) => setCourseState((prev) => ({ ...prev, gapAnalysis: gap }))}
+    //     onSave={handleSave}
+    //     onNext={goNext}
+    //     onPrev={goPrev}
+    //     completionPercentage={courseState.completionPercentages['gap-analysis']}
+    //   />
+    // ),
+    // 'revised-co-po-mapping': (
+    //   <Step7_RevisedCOPOMapping
+    //     outcomes={courseState.courseOutcomes}
+    //     mappings={courseState.coPoMapping}
+    //     coverage={courseState.poCoverage}
+    //     data={courseState.revisedMapping}
+    //     gapAnalysis={courseState.gapAnalysis}
+    //     courseName={courseState.details.courseName}
+    //     onUpdate={(revised) => setCourseState((prev) => ({ ...prev, revisedMapping: revised }))}
+    //     onSave={handleSave}
+    //     onNext={goNext}
+    //     onPrev={goPrev}
+    //     completionPercentage={courseState.completionPercentages['revised-co-po-mapping']}
+    //   />
+    // ),
     'co-pso-mapping': (
       <Step8_COPSOMapping
         outcomes={courseState.courseOutcomes}
@@ -1063,6 +1084,7 @@ export const CourseRepositoryModule = () => {
         onNext={goNext}
         onPrev={goPrev}
         completionPercentage={courseState.completionPercentages['assessment-blueprint']}
+        courseDetails={courseState.details}
       />
     ),
     'marks-upload': (
@@ -1150,7 +1172,7 @@ export const CourseRepositoryModule = () => {
             Workflow Steps
           </p>
           <Badge variant="outline" className="text-[9px]">
-            Step {workflowSteps.find((s) => s.status === 'current')?.stepNumber || 1} of 12
+            Step {workflowSteps.find((s) => s.status === 'current')?.stepNumber || 1} of 10
           </Badge>
         </div>
         <ProgressStepper

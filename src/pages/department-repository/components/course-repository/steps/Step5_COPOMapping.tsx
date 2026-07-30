@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseOutcome, COPOMapping, POCoverage, MappingLevel, NBA_POS } from '../types';
 import { cn } from '@/lib/utils';
+import { generateCOPOMapping, COPOMappingItem, COPOMappingCourseOutcome } from '@/services/syllabus.service';
+import { AILoadingScreen } from '@/components/shared/AILoadingScreen';
 import {
   GitBranch,
   Sparkles,
@@ -19,12 +21,18 @@ import {
   CheckCircle2,
   Loader2,
   AlertTriangle,
+  AlertCircle,
+  Target,
+  Hash,
+  Brain,
 } from 'lucide-react';
 
 interface Step5Props {
   outcomes: CourseOutcome[];
   mappings: COPOMapping[];
   coverage: POCoverage[];
+  courseName: string;
+  courseContent: string;
   onUpdate: (mappings: COPOMapping[], coverage: POCoverage[]) => void;
   onSave: () => void;
   onNext: () => void;
@@ -32,8 +40,17 @@ interface Step5Props {
   completionPercentage: number;
 }
 
-export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step5Props) {
+/** Helper to find a CO id from its code */
+function findCOId(outcomes: CourseOutcome[], code: string): string | undefined {
+  return outcomes.find((o) => o.code === code)?.id;
+}
+
+export default function Step5_COPOMapping({
+  outcomes, mappings, coverage, courseName, courseContent,
+  onUpdate, onSave, onNext, onPrev, completionPercentage,
+}: Step5Props) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ coId: string; poId: string } | null>(null);
   const [justificationInput, setJustificationInput] = useState('');
 
@@ -54,45 +71,112 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
       );
     } else {
       onUpdate(
-        [...mappings, { coId, poId, level, justification: `AI-generated mapping for ${outcomes.find(o => o.id === coId)?.code} → ${NBA_POS.find(p => p.id === poId)?.code}` }],
+        [...mappings, { coId, poId, level, justification: `Mapped ${outcomes.find(o => o.id === coId)?.code} → ${NBA_POS.find(p => p.id === poId)?.code}` }],
         coverage
       );
     }
   };
 
-  const handleGenerateMapping = () => {
+  /** Helper: convert Roman numeral number to Roman string */
+  const toRoman = (n: number): string => {
+    const map: Record<number, string> = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII' };
+    return map[n] || String(n);
+  };
+
+  /** Build COPOMappingCourseOutcome[] from the CourseOutcome[] for the API */
+  const buildCourseOutcomesForAPI = (): COPOMappingCourseOutcome[] => {
+    return outcomes.map((co) => {
+      // Construct mapped_units as display strings (e.g., "Unit I", "Unit II")
+      const mappedUnits: string[] = co.mappedUnits && co.mappedUnits.length > 0
+        ? co.mappedUnits.map((u) => `Unit ${toRoman(u)}`)
+        : co.unit
+          ? [co.unit]
+          : [];
+
+      // Build blooms_taxonomy_level like "Apply (L3)"
+      const bloomsTaxonomyLevel = co.bloomsLevelCode
+        ? `${co.bloomsLevel} (${co.bloomsLevelCode})`
+        : co.bloomsLevel;
+
+      // mapped_topics is derived from the CourseOutcome's mappedTopics (populated in Step4 from extracted unit topics)
+      const mappedTopics: string[] = co.mappedTopics || [];
+
+      return {
+        co_code: co.code,
+        course_outcome_description: co.description,
+        blooms_taxonomy_level: bloomsTaxonomyLevel,
+        mapped_units: mappedUnits,
+        mapped_topics: mappedTopics,
+      };
+    });
+  };
+
+  /** Call the /generate-co-po API to map COs to POs */
+  const handleGenerateMapping = async () => {
+    if (!courseContent || !courseName) {
+      setGenerateError('Course content is missing. Please complete Step 3 (AI Course Analysis) first.');
+      return;
+    }
+    if (outcomes.length === 0) {
+      setGenerateError('No Course Outcomes defined. Please complete Step 4 first.');
+      return;
+    }
+
     setIsGenerating(true);
-    setTimeout(() => {
-      const mockMappings: COPOMapping[] = [];
-      const pos = NBA_POS.slice(0, 8);
-      outcomes.forEach((co) => {
-        pos.forEach((po, idx) => {
-          const level = (idx < 5 ? (Math.floor(Math.random() * 3) + 1) : 0) as MappingLevel;
-          if (level > 0) {
-            mockMappings.push({
-              coId: co.id,
+    setGenerateError(null);
+
+    try {
+      const courseOutcomesForAPI = buildCourseOutcomesForAPI();
+      const response = await generateCOPOMapping(courseName, courseContent, courseOutcomesForAPI);
+      const matrix = response.data.co_po_mapping.matrix;
+      const poSummary = response.data.co_po_mapping.po_summary;
+      const overall = response.data.co_po_mapping.overall_summary;
+
+      if (!matrix || matrix.length === 0) {
+        setGenerateError('AI returned no CO-PO mappings. Please try again.');
+        setIsGenerating(false);
+        return;
+      }
+
+      // Map API response to COPOMapping[] using actual outcome IDs
+      const newMappings: COPOMapping[] = [];
+      matrix.forEach((item: COPOMappingItem) => {
+        const coId = findCOId(outcomes, item.co_code);
+        if (!coId) return; // skip if CO not found
+        item.po_mappings.forEach((pm) => {
+          const po = NBA_POS.find((p) => p.code === pm.po_code);
+          if (!po) return;
+          if (pm.level > 0) {
+            newMappings.push({
+              coId,
               poId: po.id,
-              level,
-              justification: `${co.code} contributes to ${po.code} through ${co.description.toLowerCase().slice(0, 50)}...`,
+              level: pm.level as MappingLevel,
+              justification: `${item.co_code} contributes to ${pm.po_code} (Level ${pm.level}) — AI-generated mapping`,
             });
           }
         });
       });
 
-      const calculatedCoverage: POCoverage[] = NBA_POS.map((po) => {
-        const mapped = mockMappings.filter((m) => m.poId === po.id && m.level > 0);
+      // Build POCoverage[] from the API's po_summary
+      const newCoverage: POCoverage[] = NBA_POS.map((po) => {
+        const summary = poSummary.find((s) => s.po_code === po.code);
+        const mapped = newMappings.filter((m) => m.poId === po.id && m.level > 0);
         return {
           poId: po.id,
           poCode: po.code,
-          coveragePercentage: mapped.length > 0 ? Math.round((mapped.length / outcomes.length) * 100) : 0,
+          coveragePercentage: summary ? summary.coverage_percentage : 0,
           mappedCOs: mapped.map((m) => outcomes.find((o) => o.id === m.coId)?.code || ''),
-          avgLevel: mapped.length > 0 ? Math.round(mapped.reduce((s, m) => s + m.level, 0) / mapped.length * 10) / 10 : 0,
+          avgLevel: summary ? summary.average : 0,
         };
       });
 
-      onUpdate(mockMappings, calculatedCoverage);
+      onUpdate(newMappings, newCoverage);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate CO-PO mapping';
+      setGenerateError(message);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const getCellColor = (level: MappingLevel) => {
@@ -110,6 +194,41 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
 
   const activePOs = NBA_POS;
 
+  // Count mapped POs from the matrix
+  const mappedPOCount = coverage.filter((c) => c.coveragePercentage > 0).length;
+  const overallAvg = mappings.length > 0
+    ? (mappings.reduce((s, m) => s + m.level, 0) / mappings.length).toFixed(2)
+    : '0.00';
+
+  // ============ AI Loading Screen ============
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AILoadingScreen
+          workflow="co-po-mapping"
+          isProcessing={true}
+          title="CO-PO Articulation Mapping"
+          subtitle="AI is mapping Course Outcomes to Program Outcomes using the articulation matrix"
+          onCancel={() => { setIsGenerating(false); setGenerateError(null); }}
+        />
+      </div>
+    );
+  }
+
+  if (generateError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AILoadingScreen
+          workflow="co-po-mapping"
+          isProcessing={false}
+          error={generateError}
+          onRetry={handleGenerateMapping}
+          onCancel={() => { setGenerateError(null); }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -118,9 +237,19 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
             <GitBranch className="h-5 w-5 text-indigo-600" />
             CO-PO Articulation Matrix
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Map Course Outcomes to Program Outcomes (0-3 scale) with justifications</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Map Course Outcomes to Program Outcomes (0–3 scale) — AI-generated, then review &amp; edit
+          </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <div className="flex items-center gap-2">
+          {mappings.length > 0 && (
+            <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/30 text-[9px] gap-1">
+              <Hash className="h-3 w-3" />
+              {mappedPOCount}/{activePOs.length} POs mapped
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        </div>
       </div>
       <Separator />
 
@@ -134,28 +263,101 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
         </Card>
       ) : (
         <>
-          {/* Generate Button */}
+          {/* Generate Card — shown when no mappings exist yet */}
           {mappings.length === 0 && (
-            <div className="flex justify-center py-8">
-              <Button onClick={handleGenerateMapping} disabled={isGenerating} className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600">
-                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Generate CO-PO Mapping
-              </Button>
-            </div>
+            <Card className="border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                      <GitBranch className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Generate CO-PO Mapping with AI</p>
+                      <p className="text-xs text-muted-foreground">
+                        The AI will analyze your COs and course content to suggest mapping levels (0–3)
+                        between each Course Outcome and Program Outcome
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleGenerateMapping}
+                    disabled={isGenerating}
+                    className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600"
+                  >
+                    {isGenerating ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Mapping...</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4" /> Generate Mapping</>
+                    )}
+                  </Button>
+                </div>
+
+                {generateError && (
+                  <div className="mt-3 flex items-start gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                    <p className="text-[10px] text-red-600">{generateError}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {mappings.length > 0 && (
             <>
+              {/* Overall Summary Bar */}
+              <Card className="border-border/50 bg-gradient-to-r from-indigo-500/[0.03] to-purple-500/[0.03]">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-indigo-600" />
+                        <span className="text-xs font-semibold">{outcomes.length} COs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-semibold">{mappedPOCount}/{activePOs.length} POs mapped</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-amber-600" />
+                        <span className="text-xs font-semibold">Avg Level: {overallAvg}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateMapping}
+                      disabled={isGenerating}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                      Regenerate
+                    </Button>
+                  </div>
+                  {generateError && (
+                    <div className="mt-2 flex items-start gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                      <p className="text-[9px] text-red-600">{generateError}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Matrix Table */}
               <Card className="border-border/50 overflow-hidden">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold">CO-PO Matrix</CardTitle>
+                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
+                    <GitBranch className="h-3.5 w-3.5 text-indigo-600" />
+                    CO-PO Articulation Matrix
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-muted/30">
-                        <th className="text-left p-2 font-semibold sticky left-0 bg-muted/30 z-10 min-w-[80px]">CO ↓ / PO →</th>
+                        <th className="text-left p-2 font-semibold sticky left-0 bg-muted/30 z-10 min-w-[80px]">
+                          CO ↓ / PO →
+                        </th>
                         {activePOs.map((po) => (
                           <th key={po.id} className="p-2 text-center font-semibold min-w-[48px]" title={po.description}>
                             <div className="flex flex-col items-center">
@@ -207,9 +409,7 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
               <Dialog open={!!selectedCell} onOpenChange={(o) => { if (!o) { setSelectedCell(null); setJustificationInput(''); } }}>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="text-sm">
-                      Mapping Justification
-                    </DialogTitle>
+                    <DialogTitle className="text-sm">Mapping Justification</DialogTitle>
                   </DialogHeader>
                   {selectedCell && (
                     <div className="space-y-3">
@@ -240,33 +440,23 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
                         />
                       </div>
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-8"
-                          onClick={() => { setSelectedCell(null); setJustificationInput(''); }}
-                        >
+                        <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { setSelectedCell(null); setJustificationInput(''); }}>
                           Cancel
                         </Button>
-                        <Button
-                          size="sm"
-                          className="text-xs h-8"
-                          onClick={() => {
-                            if (justificationInput.trim() && selectedCell) {
-                              onUpdate(
-                                mappings.map((m) =>
-                                  m.coId === selectedCell.coId && m.poId === selectedCell.poId
-                                    ? { ...m, justification: justificationInput.trim() }
-                                    : m
-                                ),
-                                coverage
-                              );
-                            }
-                            setSelectedCell(null);
-                            setJustificationInput('');
-                          }}
-                          disabled={!justificationInput.trim()}
-                        >
+                        <Button size="sm" className="text-xs h-8" onClick={() => {
+                          if (justificationInput.trim() && selectedCell) {
+                            onUpdate(
+                              mappings.map((m) =>
+                                m.coId === selectedCell.coId && m.poId === selectedCell.poId
+                                  ? { ...m, justification: justificationInput.trim() }
+                                  : m
+                              ),
+                              coverage
+                            );
+                          }
+                          setSelectedCell(null);
+                          setJustificationInput('');
+                        }} disabled={!justificationInput.trim()}>
                           Save Justification
                         </Button>
                       </div>
@@ -275,7 +465,7 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
                 </DialogContent>
               </Dialog>
 
-              {/* Coverage Analysis */}
+              {/* PO Coverage Analysis */}
               <Card className="border-border/50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-semibold">PO Coverage Analysis</CardTitle>
@@ -290,13 +480,27 @@ export default function Step5_COPOMapping({ outcomes, mappings, coverage, onUpda
                           {po.coveragePercentage}%
                         </span>
                         <span className="text-[9px] text-muted-foreground w-16 text-right">
-                          Avg: {po.avgLevel}
+                          Avg: {po.avgLevel.toFixed(1)}
                         </span>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Regenerate button at bottom for convenience */}
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateMapping}
+                  disabled={isGenerating}
+                  className="gap-2 text-xs h-8 text-indigo-600 border-indigo-500/30 hover:bg-indigo-500/5"
+                >
+                  {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Regenerate from AI
+                </Button>
+              </div>
             </>
           )}
         </>

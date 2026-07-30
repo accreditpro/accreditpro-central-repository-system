@@ -12,12 +12,45 @@ export const BLOOMS_TAXONOMY_LEVELS: BloomsTaxonomyLevel[] = [
   'Create',
 ];
 
+export type QuestionType = 'Objective' | 'Descriptive' | 'Short Answer' | 'Long Answer' | 'Numerical' | 'Programming' | 'Case Study';
+
+export const QUESTION_TYPES: QuestionType[] = [
+  'Objective',
+  'Descriptive',
+  'Short Answer',
+  'Long Answer',
+  'Numerical',
+  'Programming',
+  'Case Study',
+];
+
+export type CourseType = 'Theory' | 'Lab' | 'Project';
+
+export const COURSE_TYPES: CourseType[] = ['Theory', 'Lab', 'Project'];
+
+export interface LabComponent {
+  id: string;
+  name: string;
+  marks: number;
+  /** Questions scoped to this component (used for Mid Exam / Assignment sub-sections) */
+  questions?: AssessmentQuestion[];
+}
+
 export interface CourseOutcome {
   id: string;
   code: string; // CO1, CO2, etc.
   description: string;
   bloomsLevel: BloomsTaxonomyLevel;
   unit?: string;
+  // AI-suggested metadata from the /generate-cos API
+  bloomsLevelCode?: string;       // L1-L6 Bloom's level code
+  mappedUnits?: number[];         // e.g., [1, 2] — unit numbers this CO maps to
+  mappedTopics?: string[];        // e.g., ["KCL/KVL", "node/mesh analysis"] — topics derived from mapped units
+  status?: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  aiGenerated?: boolean;
+  approved?: boolean;
+  facultyModified?: boolean;
+  confidenceScore?: number;       // 0-100 AI confidence score
 }
 
 export interface CourseDetails {
@@ -38,12 +71,14 @@ export interface CourseDetails {
   teamWorkHours: number;
   selfLearningHours: number;
   totalHours: number;
+  courseType?: CourseType;
 }
 
 export interface CourseFileData {
   fileName: string;
   fileSize: number;
   uploadedAt: string;
+  file?: File; // The actual file blob, needed for API upload
   courseObjectives: string[];
   units: CourseUnit[];
   topics: string[];
@@ -76,6 +111,8 @@ export interface AICourseAnalysis {
   extractedPrerequisites: string[];
   suggestedCOs: CourseOutcome[];
   analysisDate: string;
+  /** Raw course content text returned by the syllabus analyze API, needed for CO generation */
+  rawCourseContent?: string;
 }
 
 // PO (Program Outcome) definitions - NBA standard 11 POs (as per NBA 2024 Manual)
@@ -142,6 +179,7 @@ export interface POCoverage {
 }
 
 export interface GapAnalysis {
+  completionPercentage: number;
   weakPOs: POAnalysis[];
   missingPOs: POAnalysis[];
   lowBloomDistribution: string[];
@@ -155,21 +193,26 @@ export interface GapAnalysis {
 export interface POAnalysis {
   poCode: string;
   poDescription: string;
+  coveragePercentage?: number;
+  averageMapping?: number;
+  mappedCOs?: string[];
   reason: string;
   recommendation: string;
-  expectedImprovement: string;
+  expectedImprovement?: string;
 }
 
 export interface ActivityRecommendation {
   id: string;
-  activityType: 'Seminar' | 'Workshop' | 'Hands-on Session' | 'Assignment' | 'Mini Project' | 'Case Study' | 'Guest Lecture' | 'Industry Visit';
+  activityType: 'Seminar' | 'Workshop' | 'Hands-on Session' | 'Assignment' | 'Mini Project' | 'Case Study' | 'Guest Lecture' | 'Industry Visit' | 'Design Studio' | 'Lab' | 'Reflection' | 'Communication Task' | 'Mini Task' | 'Team Workshop' | 'Planning Assignment';
   title: string;
   description: string;
   duration: string;
   mappedPO: string;
   mappedCO: string;
   evidenceRequired: string;
+  expectedEvidence?: string[];
   expectedBloomLevel: BloomsTaxonomyLevel;
+  bloomsLevel?: string;
   status: 'pending' | 'accepted' | 'rejected' | 'modified';
 }
 
@@ -198,16 +241,55 @@ export interface AssessmentBlueprint {
 export interface Assessment {
   id: string;
   name: string;
+  assessmentType?: string;
+  defaultMarks: number;
   weightage: number;
   questions: AssessmentQuestion[];
+  components?: LabComponent[]; // For lab internal exams (Mid 1, Mid 2)
+  /**
+   * Groups related assessments together for composite score calculation.
+   * e.g., CIA1 and CIA2 grouped under 'cia' so they are averaged for the final CIA contribution.
+   */
+  compositeGroupId?: string;
+  /**
+   * How individual assessments within the same compositeGroupId are combined.
+   * 'average': scores are averaged (e.g., CIA1 + CIA2 averaged)
+   * 'sum': scores are summed
+   */
+  compositeCalculation?: 'average' | 'sum';
 }
+
+export const ASSESSMENT_TYPES = [
+  'Continuous Internal Assessment (CIA)',
+  'Semester End Examination (SEE)',
+  'Quiz',
+  'Assignment',
+  'Lab Practical',
+  'Project Review',
+  'Viva Voce',
+  'Presentation',
+  'Report',
+  'Seminar',
+  'Workshop',
+  'Case Study',
+] as const;
 
 export interface AssessmentQuestion {
   id: string;
   questionNumber: string;
+  question: string;
+  questionType: QuestionType;
   mappedCO: string;
   maxMarks: number;
-  bloomsLevel?: BloomsTaxonomyLevel;
+  bloomsLevel: BloomsTaxonomyLevel;
+  /** Section of the question paper (A, B, C) — used in mid-exam/assignment CSV template */
+  section?: string;
+  /** Parent question for grouped or choice-based questions (e.g., Q11) */
+  parentQuestion?: string;
+  /** Whether the question must be answered or is one of available choices */
+  attemptRule?: 'Mandatory' | 'Optional';
+  /** Display order in the question paper */
+  displayOrder?: number;
 }
 
 export interface MarksUpload {
@@ -234,6 +316,7 @@ export interface COAttainment {
   attainment: number;
   target: number;
   status: 'achieved' | 'not_achieved' | 'partially';
+  attainmentLevel?: number; // 0, 1, 2, 3 from OBE Attainment Levels config
 }
 
 export interface POAttainment {
@@ -242,6 +325,7 @@ export interface POAttainment {
   contribution: number;
   target: number;
   status: 'achieved' | 'not_achieved' | 'partially';
+  attainmentLevel?: number; // 0, 1, 2, 3 from OBE Attainment Levels config
 }
 
 export interface AttainmentResult {
@@ -256,8 +340,8 @@ export type WorkflowStepId =
   | 'ai-course-analysis'
   | 'course-outcomes'
   | 'co-po-mapping'
-  | 'gap-analysis'
-  | 'revised-co-po-mapping'
+  // | 'gap-analysis'          // Reserved — will be used in a separate section
+  // | 'revised-co-po-mapping' // Reserved — will be used in a separate section
   | 'co-pso-mapping'
   | 'assessment-blueprint'
   | 'marks-upload'
@@ -278,13 +362,13 @@ export const WORKFLOW_STEPS: WorkflowStepInfo[] = [
   { id: 'ai-course-analysis', label: 'AI Course Analysis', stepNumber: 3, icon: 'Brain', status: 'pending' },
   { id: 'course-outcomes', label: 'Course Outcomes', stepNumber: 4, icon: 'Target', status: 'pending' },
   { id: 'co-po-mapping', label: 'CO-PO Mapping', stepNumber: 5, icon: 'GitBranch', status: 'pending' },
-  { id: 'gap-analysis', label: 'Gap Analysis', stepNumber: 6, icon: 'Search', status: 'pending' },
-  { id: 'revised-co-po-mapping', label: 'Revised CO-PO', stepNumber: 7, icon: 'RefreshCw', status: 'pending' },
-  { id: 'co-pso-mapping', label: 'CO-PSO Mapping', stepNumber: 8, icon: 'GitFork', status: 'pending' },
-  { id: 'assessment-blueprint', label: 'Assessment Blueprint', stepNumber: 9, icon: 'ClipboardList', status: 'pending' },
-  { id: 'marks-upload', label: 'Marks Upload', stepNumber: 10, icon: 'FileSpreadsheet', status: 'pending' },
-  { id: 'attainment', label: 'Attainment', stepNumber: 11, icon: 'BarChart3', status: 'pending' },
-  { id: 'reports', label: 'Reports', stepNumber: 12, icon: 'FileText', status: 'pending' },
+  // { id: 'gap-analysis', label: 'Gap Analysis', stepNumber: 6, icon: 'Search', status: 'pending' },        // Reserved
+  // { id: 'revised-co-po-mapping', label: 'Revised CO-PO', stepNumber: 7, icon: 'RefreshCw', status: 'pending' }, // Reserved
+  { id: 'co-pso-mapping', label: 'CO-PSO Mapping', stepNumber: 6, icon: 'GitFork', status: 'pending' },
+  { id: 'assessment-blueprint', label: 'Assessment Blueprint', stepNumber: 7, icon: 'ClipboardList', status: 'pending' },
+  { id: 'marks-upload', label: 'Marks Upload', stepNumber: 8, icon: 'FileSpreadsheet', status: 'pending' },
+  { id: 'attainment', label: 'Attainment', stepNumber: 9, icon: 'BarChart3', status: 'pending' },
+  { id: 'reports', label: 'Reports', stepNumber: 10, icon: 'FileText', status: 'pending' },
 ];
 
 // Full Course state used across the workflow

@@ -127,6 +127,7 @@ export interface AcademicYear {
   year: string;
   startDate: string;
   endDate: string;
+  institutionType: string;
   status: 'active' | 'inactive';
 }
 
@@ -156,6 +157,7 @@ export interface AcademicRegulation {
     passingMarks: number;
     gradingSystem: string;
     cgpaScale: number;
+    maxPercentage: number;
   };
   internshipRequirements: {
     internshipMandatory: boolean;

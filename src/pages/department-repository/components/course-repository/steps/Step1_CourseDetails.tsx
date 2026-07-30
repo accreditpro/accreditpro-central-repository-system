@@ -18,6 +18,7 @@ import {
   FileText,
   Clock,
   Users,
+  Lock,
 } from 'lucide-react';
 
 interface Step1Props {
@@ -26,6 +27,7 @@ interface Step1Props {
   onSave: () => void;
   onNext: () => void;
   completionPercentage: number;
+  isExistingCourse?: boolean;
 }
 
 const DEPARTMENTS = ['Computer Science & Engineering', 'Electronics & Communication', 'Electrical & Electronics', 'Mechanical Engineering', 'Civil Engineering'];
@@ -35,7 +37,7 @@ const YEARS = ['I Year', 'II Year', 'III Year', 'IV Year'];
 const SEMESTERS = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
 const FACULTY = ['Dr. Anita Sharma', 'Dr. Rajesh Kumar', 'Dr. Priya Sharma', 'Dr. Sunita Patel', 'Dr. Amit Verma'];
 
-export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, completionPercentage }: Step1Props) {
+export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, completionPercentage, isExistingCourse }: Step1Props) {
   const [formData, setFormData] = useState(data);
   const [saved, setSaved] = useState(false);
 
@@ -130,84 +132,139 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Department *</Label>
-                  <Select
-                    value={formData.department}
-                    onValueChange={(v) => updateField('department', v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DEPARTMENTS.map((d) => (
-                        <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    Department *
+                    {isExistingCourse && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                  </Label>
+                  {isExistingCourse ? (
+                    <Input
+                      value={formData.department}
+                      disabled
+                      className="h-9 text-sm font-medium bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                    />
+                  ) : (
+                    <Select
+                      value={formData.department}
+                      onValueChange={(v) => updateField('department', v)}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DEPARTMENTS.map((d) => (
+                          <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Program *</Label>
-                  <Select
-                    value={formData.program}
-                    onValueChange={(v) => updateField('program', v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select program" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROGRAMS.map((p) => (
-                        <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    Program *
+                    {isExistingCourse && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                  </Label>
+                  {isExistingCourse ? (
+                    <Input
+                      value={formData.program}
+                      disabled
+                      className="h-9 text-sm font-medium bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                    />
+                  ) : (
+                    <Select
+                      value={formData.program}
+                      onValueChange={(v) => updateField('program', v)}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select program" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROGRAMS.map((p) => (
+                          <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Regulation *</Label>
-                  <Select
-                    value={formData.regulation}
-                    onValueChange={(v) => updateField('regulation', v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select regulation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REGULATIONS.map((r) => (
-                        <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    Regulation *
+                    {isExistingCourse && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                  </Label>
+                  {isExistingCourse ? (
+                    <Input
+                      value={formData.regulation}
+                      disabled
+                      className="h-9 text-sm font-medium bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                    />
+                  ) : (
+                    <Select
+                      value={formData.regulation}
+                      onValueChange={(v) => updateField('regulation', v)}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select regulation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REGULATIONS.map((r) => (
+                          <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Year *</Label>
-                  <Select
-                    value={formData.year}
-                    onValueChange={(v) => updateField('year', v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {YEARS.map((y) => (
-                        <SelectItem key={y} value={y} className="text-xs">{y}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    Year *
+                    {isExistingCourse && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                  </Label>
+                  {isExistingCourse ? (
+                    <Input
+                      value={formData.year}
+                      disabled
+                      className="h-9 text-sm font-medium bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                    />
+                  ) : (
+                    <Select
+                      value={formData.year}
+                      onValueChange={(v) => updateField('year', v)}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {YEARS.map((y) => (
+                          <SelectItem key={y} value={y} className="text-xs">{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Semester *</Label>
-                  <Select
-                    value={formData.semester}
-                    onValueChange={(v) => updateField('semester', v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SEMESTERS.map((s) => (
-                        <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    Semester *
+                    {isExistingCourse && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                  </Label>
+                  {isExistingCourse ? (
+                    <Input
+                      value={formData.semester}
+                      disabled
+                      className="h-9 text-sm font-medium bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                    />
+                  ) : (
+                    <Select
+                      value={formData.semester}
+                      onValueChange={(v) => updateField('semester', v)}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEMESTERS.map((s) => (
+                          <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </CardContent>

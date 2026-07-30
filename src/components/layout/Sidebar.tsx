@@ -26,6 +26,7 @@ import {
   Calendar,
   Activity,
   ClipboardList,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar,
   Activity,
   ClipboardList,
+  ClipboardCheck,
   Shield,
 };
 

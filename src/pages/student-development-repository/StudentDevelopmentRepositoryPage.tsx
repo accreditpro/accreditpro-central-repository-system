@@ -52,6 +52,21 @@ import {
 import { studentDevTabConfigs } from './student-development-configs';
 import { StudentDevelopmentDashboard } from './components/StudentDevelopmentDashboard';
 import { StudentDevelopmentDocumentsView } from './components/StudentDevelopmentDocumentsView';
+import { TPOSectionView } from '@/pages/tpo-repository/components/TPOSectionView';
+import { TPOEvidence } from '@/pages/tpo-repository/components/TPOEvidenceDialog';
+import {
+  NSS_EVIDENCE_SECTIONS,
+  NCC_EVIDENCE_SECTIONS,
+  SPORTS_EVIDENCE_SECTIONS,
+  CULTURAL_EVIDENCE_SECTIONS,
+  EVENTS_EVIDENCE_SECTIONS,
+  STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS,
+  EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS,
+  COMMUNITY_OUTREACH_EVIDENCE_SECTIONS,
+  CLUBS_EVIDENCE_SECTIONS,
+  STUDENT_CHAPTERS_EVIDENCE_SECTIONS,
+  STUDENT_AWARDS_EVIDENCE_SECTIONS,
+} from '@/pages/tpo-repository/components/TPOEvidenceDialog';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
@@ -150,11 +165,249 @@ export default function StudentDevelopmentRepositoryPage() {
     setEditingRow(null);
   };
 
+  const handleDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, [activeView]: data }));
+  };
+
+  // ============ Evidence State Management ============
+  const [evidenceData, setEvidenceData] = useState<
+    Record<string, Record<string, TPOEvidence | null>>
+  >({});
+
+  const handleRecordEvidenceChange = (sectionId: string) => (recordId: string, evidence: TPOEvidence | null) => {
+    setEvidenceData(prev => ({
+      ...prev,
+      [sectionId]: {
+        ...(prev[sectionId] || {}),
+        [recordId]: evidence,
+      },
+    }));
+  };
+
+  /**
+   * Maps section IDs to their evidence section configs for use in the
+   * consolidated Supporting Documents view.
+   */
+  const evidenceSectionConfigMap: Record<string, TPOEvidenceSectionConfig[]> = {
+    nss: NSS_EVIDENCE_SECTIONS,
+    ncc: NCC_EVIDENCE_SECTIONS,
+    'sports-activities': SPORTS_EVIDENCE_SECTIONS,
+    'cultural-activities': CULTURAL_EVIDENCE_SECTIONS,
+    events: EVENTS_EVIDENCE_SECTIONS,
+    'student-achievements': STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS,
+    'extension-activities': EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS,
+    'community-outreach': COMMUNITY_OUTREACH_EVIDENCE_SECTIONS,
+    clubs: CLUBS_EVIDENCE_SECTIONS,
+    'student-chapters': STUDENT_CHAPTERS_EVIDENCE_SECTIONS,
+    'student-awards': STUDENT_AWARDS_EVIDENCE_SECTIONS,
+  };
+
+  /**
+   * Maps section IDs to their human-readable labels.
+   */
+  const sectionLabelMap: Record<string, string> = Object.fromEntries(
+    studentDevTabConfigs.map(t => [t.id, t.label])
+  );
+
   const renderContent = () => {
     if (activeView === 'dashboard') return <StudentDevelopmentDashboard />;
-    if (activeView === 'documents') return <StudentDevelopmentDocumentsView />;
+    if (activeView === 'documents') {
+      return (
+        <StudentDevelopmentDocumentsView
+          evidenceData={evidenceData}
+          sectionEvidenceConfigs={evidenceSectionConfigMap}
+          sectionLabels={sectionLabelMap}
+          onRemoveEvidenceFile={(sectionId, recordId, sectionConfigId, fileId) => {
+            const sectionEvidence = evidenceData[sectionId];
+            if (!sectionEvidence || !sectionEvidence[recordId]) return;
+            const evidence = sectionEvidence[recordId];
+            const updatedSections = { ...evidence!.sections };
+            const files = updatedSections[sectionConfigId]?.filter(f => f.id !== fileId) || [];
+            updatedSections[sectionConfigId] = files;
+            const updatedEvidence: TPOEvidence = {
+              recordId,
+              sections: updatedSections,
+            };
+            setEvidenceData(prev => ({
+              ...prev,
+              [sectionId]: {
+                ...(prev[sectionId] || {}),
+                [recordId]: updatedEvidence,
+              },
+            }));
+          }}
+        />
+      );
+    }
 
     if (!activeTabConfig) return null;
+
+    if (activeView === 'nss' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['nss'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.nssUnitNumber || 'NSS Unit')}
+          getRecordId={(_, index) => `nss-${index}`}
+          evidenceSectionConfigs={NSS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['nss']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('nss')}
+        />
+      );
+    }
+
+    if (activeView === 'ncc' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['ncc'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.nccUnit || 'NCC Unit')}
+          getRecordId={(_, index) => `ncc-${index}`}
+          evidenceSectionConfigs={NCC_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['ncc']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('ncc')}
+        />
+      );
+    }
+
+    if (activeView === 'sports-activities' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['sports-activities'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.event || row.sport || 'Sports Event')}
+          getRecordId={(_, index) => `sports-${index}`}
+          evidenceSectionConfigs={SPORTS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['sports-activities']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('sports-activities')}
+        />
+      );
+    }
+
+    if (activeView === 'cultural-activities' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['cultural-activities'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.eventName || 'Cultural Event')}
+          getRecordId={(_, index) => `cultural-${index}`}
+          evidenceSectionConfigs={CULTURAL_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['cultural-activities']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('cultural-activities')}
+        />
+      );
+    }
+
+    if (activeView === 'events' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['events'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.eventName || 'Event')}
+          getRecordId={(_, index) => `events-${index}`}
+          evidenceSectionConfigs={EVENTS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['events']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('events')}
+        />
+      );
+    }
+
+    if (activeView === 'student-achievements' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['student-achievements'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.studentName || row.achievement || 'Achievement')}
+          getRecordId={(_, index) => `achievement-${index}`}
+          evidenceSectionConfigs={STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['student-achievements']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('student-achievements')}
+        />
+      );
+    }
+
+    if (activeView === 'extension-activities' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['extension-activities'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.activity || 'Extension Activity')}
+          getRecordId={(_, index) => `extension-${index}`}
+          evidenceSectionConfigs={EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['extension-activities']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('extension-activities')}
+        />
+      );
+    }
+
+    if (activeView === 'community-outreach' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['community-outreach'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.programName || 'Outreach Program')}
+          getRecordId={(_, index) => `outreach-${index}`}
+          evidenceSectionConfigs={COMMUNITY_OUTREACH_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['community-outreach']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('community-outreach')}
+        />
+      );
+    }
+
+    if (activeView === 'clubs' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['clubs'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.clubName || 'Club/Society')}
+          getRecordId={(_, index) => `club-${index}`}
+          evidenceSectionConfigs={CLUBS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['clubs']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('clubs')}
+        />
+      );
+    }
+
+    if (activeView === 'student-chapters' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['student-chapters'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.chapterName || 'Student Chapter')}
+          getRecordId={(_, index) => `chapter-${index}`}
+          evidenceSectionConfigs={STUDENT_CHAPTERS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['student-chapters']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('student-chapters')}
+        />
+      );
+    }
+
+    if (activeView === 'student-awards' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['student-awards'] || []}
+          onDataChange={handleDataChange}
+          getRecordTitle={(row) => String(row.awardName || row.recipientName || 'Award')}
+          getRecordId={(_, index) => `award-${index}`}
+          evidenceSectionConfigs={STUDENT_AWARDS_EVIDENCE_SECTIONS}
+          initialEvidenceMap={evidenceData['student-awards']}
+          onRecordEvidenceChange={handleRecordEvidenceChange('student-awards')}
+        />
+      );
+    }
+
+    // All other tabs use the generic table view (unchanged)
 
     const visibleFields = activeTabConfig.fields.slice(0, 7);
 

@@ -48,6 +48,16 @@ import {
 import { tpoTabConfigs } from './tpo-configs';
 import { TPODashboard } from './components/TPODashboard';
 import { TPODocumentsView } from './components/TPODocumentsView';
+import { RecruitersView } from './components/RecruitersView';
+import { TPOSectionView } from './components/TPOSectionView';
+import {
+  RECRUITER_EVIDENCE_SECTIONS,
+  PLACEMENT_OFFER_EVIDENCE_SECTIONS,
+  INTERNSHIP_EVIDENCE_SECTIONS,
+  HIGHER_EDUCATION_EVIDENCE_SECTIONS,
+  ENTREPRENEURSHIP_EVIDENCE_SECTIONS,
+  TRAINING_ACTIVITIES_EVIDENCE_SECTIONS,
+} from './components/TPOEvidenceDialog';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
@@ -142,9 +152,106 @@ export default function TPORepositoryPage() {
     setEditingRow(null);
   };
 
+  const handleRecruitersDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, recruiters: data }));
+  };
+
+  const handlePlacementOffersDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'placement-offers': data }));
+  };
+
+  const handleInternshipsDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, internships: data }));
+  };
+
+  const handleHigherEducationDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'higher-education': data }));
+  };
+
+  const handleEntrepreneurshipDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'entrepreneurship-startups': data }));
+  };
+
+  const handleTrainingActivitiesDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'training-activities': data }));
+  };
+
   const renderContent = () => {
     if (activeView === 'dashboard') return <TPODashboard />;
     if (activeView === 'documents') return <TPODocumentsView />;
+    if (activeView === 'recruiters') {
+      return (
+        <RecruitersView
+          initialData={tableData['recruiters'] || []}
+          onDataChange={handleRecruitersDataChange}
+        />
+      );
+    }
+
+    if (activeView === 'training-activities' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['training-activities'] || []}
+          onDataChange={handleTrainingActivitiesDataChange}
+          getRecordTitle={(row) => String(row.programName || 'Training')}
+          getRecordId={(_, index) => `training-${index}`}
+          evidenceSectionConfigs={TRAINING_ACTIVITIES_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'placement-offers' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['placement-offers'] || []}
+          onDataChange={handlePlacementOffersDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
+          getRecordId={(_, index) => `placement-offer-${index}`}
+          evidenceSectionConfigs={PLACEMENT_OFFER_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'internships' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['internships'] || []}
+          onDataChange={handleInternshipsDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
+          getRecordId={(_, index) => `internship-${index}`}
+          evidenceSectionConfigs={INTERNSHIP_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'higher-education' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['higher-education'] || []}
+          onDataChange={handleHigherEducationDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.university || ''}`}
+          getRecordId={(_, index) => `higher-ed-${index}`}
+          evidenceSectionConfigs={HIGHER_EDUCATION_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'entrepreneurship-startups' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['entrepreneurship-startups'] || []}
+          onDataChange={handleEntrepreneurshipDataChange}
+          getRecordTitle={(row) => `${row.startupName || 'Unknown'} - ${row.founderName || ''}`}
+          getRecordId={(_, index) => `startup-${index}`}
+          evidenceSectionConfigs={ENTREPRENEURSHIP_EVIDENCE_SECTIONS}
+        />
+      );
+    }
 
     if (!activeTabConfig) return null;
 

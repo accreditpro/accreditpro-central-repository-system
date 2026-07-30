@@ -40,7 +40,14 @@ import {
   AlertTriangle,
   Eye,
   RefreshCw,
+  Settings,
 } from 'lucide-react';
+
+export interface OBEAttainmentConfig {
+  thresholdPercentage: number;
+  attainmentTarget: number;
+  attainmentLevels: Array<{ id: string; level: number; minPercentage: number; maxPercentage: number; label: string }>;
+}
 
 interface Step11Props {
   outcomes: CourseOutcome[];
@@ -54,11 +61,33 @@ interface Step11Props {
   onNext: () => void;
   onPrev: () => void;
   completionPercentage: number;
+  obeConfig?: OBEAttainmentConfig;
 }
 
 // ============================================================
 // ATTAINMENT CALCULATION ENGINE
 // ============================================================
+
+/** Determine the attainment level (0, 1, 2, 3) from a percentage using OBE config levels */
+function getAttainmentLevel(
+  percentage: number,
+  levels: Array<{ level: number; minPercentage: number; maxPercentage: number }>
+): number {
+  if (levels.length === 0) {
+    // Fallback if no levels configured: derive from percentage
+    if (percentage >= 70) return 3;
+    if (percentage >= 60) return 2;
+    if (percentage >= 50) return 1;
+    return 0;
+  }
+  const sorted = [...levels].sort((a, b) => b.level - a.level);
+  for (const level of sorted) {
+    if (percentage >= level.minPercentage) {
+      return level.level;
+    }
+  }
+  return 0;
+}
 
 interface COAssessmentContribution {
   assessmentName: string;
@@ -85,11 +114,15 @@ interface CODetailResult {
 
 /**
  * Compute detailed CO attainment from actual marks data.
+ * Uses OBE Config values from the Department Coordinator instead of per-assessment settings.
  */
 function computeCOAttainmentDetail(
   outcomes: CourseOutcome[],
   marksList: MarksUploadType[],
-  blueprint: AssessmentBlueprint
+  blueprint: AssessmentBlueprint,
+  obeThreshold: number = 60,
+  obeTarget: number = 70,
+  obeLevels: Array<{ level: number; minPercentage: number; maxPercentage: number }> = []
 ): CODetailResult[] {
   const assessments = blueprint.assessments;
 
@@ -127,7 +160,7 @@ function computeCOAttainmentDetail(
         studentPercentages.reduce((s, p) => s + (p * maxMarksForCO) / 100, 0) /
         studentPercentages.length;
       const studentsAbove = studentPercentages.filter(
-        (p) => p >= upload.threshold
+        (p) => p >= obeThreshold
       ).length;
 
       contributions.push({
@@ -150,21 +183,11 @@ function computeCOAttainmentDetail(
         ? Math.round((weightedSum / totalWeightUsed) * 10) / 10
         : 0;
 
-    // Use the highest threshold from assessments that assess this CO
-    const thresholds = contributions.map((c) => {
-      const upload = marksList.find((m) => m.assessmentName === c.assessmentName);
-      return upload?.threshold ?? 60;
-    });
-    const effectiveThreshold = thresholds.length > 0 ? Math.max(...thresholds) : 60;
+    // Use OBE Config threshold and target (from Department Coordinator) instead of per-assessment
+    const effectiveThreshold = obeThreshold;
+    const effectiveTarget = obeTarget;
 
-    // Use the highest target from assessments
-    const targets = contributions.map((c) => {
-      const upload = marksList.find((m) => m.assessmentName === c.assessmentName);
-      return upload?.attainmentTarget ?? 70;
-    });
-    const effectiveTarget = targets.length > 0 ? Math.max(...targets) : 70;
-
-    // Determine status
+    // Determine status using OBE Config threshold and target
     let status: 'achieved' | 'not_achieved' | 'partially';
     if (overallAvgPct >= effectiveTarget) {
       status = 'achieved';
@@ -204,7 +227,8 @@ function computeCOAttainmentDetail(
 function computePOAttainmentFromCO(
   coDetails: CODetailResult[],
   coPoMappings: COPOMapping[],
-  outcomes: CourseOutcome[]
+  outcomes: CourseOutcome[],
+  obeLevels: Array<{ level: number; minPercentage: number; maxPercentage: number }> = []
 ): POAttainment[] {
   return NBA_POS.map((po) => {
     // Find all COs mapped to this PO with their mapping levels
@@ -238,6 +262,9 @@ function computePOAttainmentFromCO(
         ? Math.round((weightedSum / totalLevels) * 10) / 10
         : 0;
 
+    const clampedAttainment = Math.min(100, attainment);
+    const attainmentLevel = getAttainmentLevel(clampedAttainment, obeLevels);
+
     let status: 'achieved' | 'not_achieved' | 'partially';
     if (attainment >= 60) status = 'achieved';
     else if (attainment >= 40) status = 'partially';
@@ -245,10 +272,11 @@ function computePOAttainmentFromCO(
 
     return {
       poCode: po.code,
-      attainment: Math.min(100, attainment),
+      attainment: clampedAttainment,
       contribution: mappings.length,
       target: 60,
       status,
+      attainmentLevel,
     };
   });
 }
@@ -259,7 +287,8 @@ function computePOAttainmentFromCO(
 function computePSOAttainmentFromCO(
   coDetails: CODetailResult[],
   coPsoMappings: COPSOMapping[],
-  outcomes: CourseOutcome[]
+  outcomes: CourseOutcome[],
+  obeLevels: Array<{ level: number; minPercentage: number; maxPercentage: number }> = []
 ): POAttainment[] {
   return NBA_PSOS.map((pso) => {
     const mappings = coPsoMappings.filter(
@@ -293,6 +322,9 @@ function computePSOAttainmentFromCO(
         ? Math.round((weightedSum / totalLevels) * 10) / 10
         : 0;
 
+    const clampedAttainment = Math.min(100, attainment);
+    const attainmentLevel = getAttainmentLevel(clampedAttainment, obeLevels);
+
     let status: 'achieved' | 'not_achieved' | 'partially';
     if (attainment >= 60) status = 'achieved';
     else if (attainment >= 40) status = 'partially';
@@ -300,32 +332,37 @@ function computePSOAttainmentFromCO(
 
     return {
       poCode: pso.code,
-      attainment: Math.min(100, attainment),
+      attainment: clampedAttainment,
       contribution: mappings.length,
       target: 60,
       status,
+      attainmentLevel,
     };
   });
 }
 
 /**
  * Master function: compute all attainment results from actual data.
+ * Uses OBE Config values from the Department Coordinator.
  */
 function computeAllAttainment(
   outcomes: CourseOutcome[],
   marksList: MarksUploadType[],
   blueprint: AssessmentBlueprint | null,
   coPoMappings: COPOMapping[],
-  coPsoMappings: COPSOMapping[]
+  coPsoMappings: COPSOMapping[],
+  obeThreshold: number = 60,
+  obeTarget: number = 70,
+  obeLevels: Array<{ level: number; minPercentage: number; maxPercentage: number }> = []
 ): AttainmentResult {
   if (!blueprint || outcomes.length === 0 || marksList.length === 0) {
     return { coAttainments: [], poAttainments: [], psoAttainments: [] };
   }
 
-  // 1. Compute detailed CO attainment
-  const coDetails = computeCOAttainmentDetail(outcomes, marksList, blueprint);
+  // 1. Compute detailed CO attainment using OBE Config values
+  const coDetails = computeCOAttainmentDetail(outcomes, marksList, blueprint, obeThreshold, obeTarget, obeLevels);
 
-  // 2. Convert to COAttainment[] for the result
+  // 2. Convert to COAttainment[] for the result with attainment level
   const coAttainments: COAttainment[] = coDetails.map((d) => ({
     coCode: d.coCode,
     averageMarks: d.overallAveragePercentage,
@@ -333,13 +370,14 @@ function computeAllAttainment(
     attainment: d.attainment,
     target: d.target,
     status: d.status,
+    attainmentLevel: getAttainmentLevel(d.attainment, obeLevels),
   }));
 
   // 3. PO Attainment
-  const poAttainments = computePOAttainmentFromCO(coDetails, coPoMappings, outcomes);
+  const poAttainments = computePOAttainmentFromCO(coDetails, coPoMappings, outcomes, obeLevels);
 
   // 4. PSO Attainment
-  const psoAttainments = computePSOAttainmentFromCO(coDetails, coPsoMappings, outcomes);
+  const psoAttainments = computePSOAttainmentFromCO(coDetails, coPsoMappings, outcomes, obeLevels);
 
   return { coAttainments, poAttainments, psoAttainments };
 }
@@ -351,6 +389,7 @@ function computeAllAttainment(
 export default function Step11_AttainmentDashboard({
   outcomes, marks, blueprint, coPoMappings, coPsoMappings,
   data, onUpdate, onSave, onNext, onPrev, completionPercentage,
+  obeConfig,
 }: Step11Props) {
   const [isCalculating, setIsCalculating] = useState(false);
   const [activeTab, setActiveTab] = useState('co');
@@ -359,11 +398,16 @@ export default function Step11_AttainmentDashboard({
   const hasMarks = marks.length > 0;
   const hasBlueprint = !!blueprint;
 
-  // Compute detailed CO data for the expanded view
+  // OBE Config values (from Department Coordinator) with defaults
+  const obeThreshold = obeConfig?.thresholdPercentage ?? 60;
+  const obeTarget = obeConfig?.attainmentTarget ?? 70;
+  const obeLevels = obeConfig?.attainmentLevels ?? [];
+
+  // Compute detailed CO data for the expanded view using OBE Config values
   const coDetails = useMemo(() => {
     if (!blueprint || outcomes.length === 0 || marks.length === 0) return [];
-    return computeCOAttainmentDetail(outcomes, marks, blueprint);
-  }, [outcomes, marks, blueprint]);
+    return computeCOAttainmentDetail(outcomes, marks, blueprint, obeThreshold, obeTarget, obeLevels);
+  }, [outcomes, marks, blueprint, obeThreshold, obeTarget, obeLevels]);
 
   // Per-student CO attainment data
   const studentCOData = useMemo(() => {
@@ -416,12 +460,13 @@ export default function Step11_AttainmentDashboard({
     // Use setTimeout to allow UI to update before heavy computation
     setTimeout(() => {
       const result = computeAllAttainment(
-        outcomes, marks, blueprint, coPoMappings, coPsoMappings
+        outcomes, marks, blueprint, coPoMappings, coPsoMappings,
+        obeThreshold, obeTarget, obeLevels
       );
       onUpdate(result);
       setIsCalculating(false);
     }, 300);
-  }, [outcomes, marks, blueprint, coPoMappings, coPsoMappings, onUpdate]);
+  }, [outcomes, marks, blueprint, coPoMappings, coPsoMappings, onUpdate, obeThreshold, obeTarget, obeLevels]);
 
   // Summary stats
   const coAchieved = data?.coAttainments.filter((a) => a.status === 'achieved').length ?? 0;
@@ -648,6 +693,7 @@ export default function Step11_AttainmentDashboard({
                         <tr className="bg-muted/30 sticky top-0 z-10">
                           <th className="text-left p-2.5 font-semibold w-[60px]">CO</th>
                           <th className="text-left p-2.5 font-semibold">Description</th>
+                          <th className="text-center p-2.5 font-semibold w-[55px]">Level</th>
                           <th className="text-center p-2.5 font-semibold w-[70px]">Avg %</th>
                           <th className="text-center p-2.5 font-semibold w-[60px]">Target</th>
                           <th className="text-center p-2.5 font-semibold w-[60px]">Status</th>
@@ -659,6 +705,7 @@ export default function Step11_AttainmentDashboard({
                         {data.coAttainments.map((co) => {
                           const detail = coDetails.find((d) => d.coCode === co.coCode);
                           const isExpanded = expandedCO === co.coCode;
+                          const level = co.attainmentLevel ?? getAttainmentLevel(co.attainment, obeLevels);
                           return (
                             <Fragment key={co.coCode}>
                               <tr
@@ -673,6 +720,9 @@ export default function Step11_AttainmentDashboard({
                                 <td className="p-2.5 font-semibold font-mono">{co.coCode}</td>
                                 <td className="p-2.5 text-muted-foreground max-w-[200px] truncate">
                                   {outcomes.find((o) => o.code === co.coCode)?.description || ''}
+                                </td>
+                                <td className="p-2.5 text-center">
+                                  <LevelBadge level={level} />
                                 </td>
                                 <td className="p-2.5 text-center font-bold">{co.attainment}%</td>
                                 <td className="p-2.5 text-center">{co.target}%</td>
@@ -705,7 +755,7 @@ export default function Step11_AttainmentDashboard({
                               {/* Expanded detail row */}
                               {isExpanded && detail && (
                                 <tr key={`${co.coCode}-detail`}>
-                                  <td colSpan={7} className="p-0 bg-muted/10">
+                                  <td colSpan={8} className="p-0 bg-muted/10">
                                     <motion.div
                                       initial={{ opacity: 0, height: 0 }}
                                       animate={{ opacity: 1, height: 'auto' }}
@@ -795,6 +845,7 @@ export default function Step11_AttainmentDashboard({
                       <tr className="bg-muted/30">
                         <th className="text-left p-2.5 font-semibold w-[55px]">PO</th>
                         <th className="text-left p-2.5 font-semibold">Description</th>
+                        <th className="text-center p-2.5 font-semibold w-[50px]">Level</th>
                         <th className="text-center p-2.5 font-semibold w-[70px]">COs Mapped</th>
                         <th className="text-center p-2.5 font-semibold w-[70px]">Attainment</th>
                         <th className="text-center p-2.5 font-semibold w-[60px]">Target</th>
@@ -803,23 +854,29 @@ export default function Step11_AttainmentDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.poAttainments.map((po, idx) => (
-                        <tr key={po.poCode} className="border-t border-border/40 hover:bg-muted/10">
-                          <td className="p-2.5 font-semibold font-mono">{po.poCode}</td>
-                          <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
-                            {NBA_POS[idx]?.shortName || po.poCode}
-                          </td>
-                          <td className="p-2.5 text-center">{po.contribution} COs</td>
-                          <td className="p-2.5 text-center font-bold">{po.attainment}%</td>
-                          <td className="p-2.5 text-center">{po.target}%</td>
-                          <td className="p-2.5 text-center">
-                            <StatusBadge status={po.status} />
-                          </td>
-                          <td className="p-2.5">
-                            <Progress value={po.attainment} className="h-2" />
-                          </td>
-                        </tr>
-                      ))}
+                      {data.poAttainments.map((po, idx) => {
+                        const level = po.attainmentLevel ?? getAttainmentLevel(po.attainment, obeLevels);
+                        return (
+                          <tr key={po.poCode} className="border-t border-border/40 hover:bg-muted/10">
+                            <td className="p-2.5 font-semibold font-mono">{po.poCode}</td>
+                            <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
+                              {NBA_POS[idx]?.shortName || po.poCode}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <LevelBadge level={level} />
+                            </td>
+                            <td className="p-2.5 text-center">{po.contribution} COs</td>
+                            <td className="p-2.5 text-center font-bold">{po.attainment}%</td>
+                            <td className="p-2.5 text-center">{po.target}%</td>
+                            <td className="p-2.5 text-center">
+                              <StatusBadge status={po.status} />
+                            </td>
+                            <td className="p-2.5">
+                              <Progress value={po.attainment} className="h-2" />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </CardContent>
@@ -841,6 +898,7 @@ export default function Step11_AttainmentDashboard({
                       <tr className="bg-muted/30">
                         <th className="text-left p-2.5 font-semibold w-[60px]">PSO</th>
                         <th className="text-left p-2.5 font-semibold">Description</th>
+                        <th className="text-center p-2.5 font-semibold w-[50px]">Level</th>
                         <th className="text-center p-2.5 font-semibold w-[70px]">COs Mapped</th>
                         <th className="text-center p-2.5 font-semibold w-[70px]">Attainment</th>
                         <th className="text-center p-2.5 font-semibold w-[60px]">Target</th>
@@ -849,23 +907,29 @@ export default function Step11_AttainmentDashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.psoAttainments.map((pso, idx) => (
-                        <tr key={pso.poCode} className="border-t border-border/40 hover:bg-muted/10">
-                          <td className="p-2.5 font-semibold font-mono">{pso.poCode}</td>
-                          <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
-                            {NBA_PSOS[idx]?.description || pso.poCode}
-                          </td>
-                          <td className="p-2.5 text-center">{pso.contribution} COs</td>
-                          <td className="p-2.5 text-center font-bold">{pso.attainment}%</td>
-                          <td className="p-2.5 text-center">{pso.target}%</td>
-                          <td className="p-2.5 text-center">
-                            <StatusBadge status={pso.status} />
-                          </td>
-                          <td className="p-2.5">
-                            <Progress value={pso.attainment} className="h-2" />
-                          </td>
-                        </tr>
-                      ))}
+                      {data.psoAttainments.map((pso, idx) => {
+                        const level = pso.attainmentLevel ?? getAttainmentLevel(pso.attainment, obeLevels);
+                        return (
+                          <tr key={pso.poCode} className="border-t border-border/40 hover:bg-muted/10">
+                            <td className="p-2.5 font-semibold font-mono">{pso.poCode}</td>
+                            <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
+                              {NBA_PSOS[idx]?.description || pso.poCode}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <LevelBadge level={level} />
+                            </td>
+                            <td className="p-2.5 text-center">{pso.contribution} COs</td>
+                            <td className="p-2.5 text-center font-bold">{pso.attainment}%</td>
+                            <td className="p-2.5 text-center">{pso.target}%</td>
+                            <td className="p-2.5 text-center">
+                              <StatusBadge status={pso.status} />
+                            </td>
+                            <td className="p-2.5">
+                              <Progress value={pso.attainment} className="h-2" />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </CardContent>
@@ -948,6 +1012,29 @@ export default function Step11_AttainmentDashboard({
         </motion.div>
       )}
 
+      {/* ===== OBE Config Info Bar ===== */}
+      {obeConfig && (
+        <Card className="border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/30 text-[9px] gap-1.5">
+                  <Settings className="h-3 w-3" />
+                  Inherited from Department OBE Configuration
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 text-[9px] text-muted-foreground">
+                <span>Threshold: <strong className="text-indigo-600">{obeThreshold}%</strong></span>
+                <span>Target: <strong className="text-indigo-600">{obeTarget}%</strong></span>
+                {obeLevels.length > 0 && (
+                  <span>Levels: <strong className="text-indigo-600">{obeLevels.length}</strong></span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ===== Info Card ===== */}
       <Card className="border-border/50 bg-muted/20">
         <CardContent className="p-3">
@@ -962,7 +1049,7 @@ export default function Step11_AttainmentDashboard({
                   <strong>CO Attainment:</strong> For each Course Outcome, the system finds all
                   questions mapped to it across all assessments. Student marks are aggregated,
                   weighted by assessment weightage, and compared against the threshold & target
-                  configured during marks upload.
+                  configured in the Department OBE Attainment Policy.
                 </p>
                 <p>
                   <strong>PO/PSO Attainment:</strong> Derived from CO attainment using the CO-PO
@@ -970,8 +1057,8 @@ export default function Step11_AttainmentDashboard({
                   to the outcome attainment score.
                 </p>
                 <p className="text-[8px] text-muted-foreground/60 mt-1">
-                  Target: 70% = Achieved · 49-69% = Partially · Below 49% = Not Achieved
-                  (configurable per assessment)
+                  Threshold: {obeThreshold}% · Target: {obeTarget}%
+                  {obeConfig && ' · Values set by Department Coordinator in OBE Configuration'}
                 </p>
               </div>
             </div>
@@ -1013,6 +1100,19 @@ export default function Step11_AttainmentDashboard({
 }
 
 // ===== Helper Components =====
+
+function LevelBadge({ level }: { level: number }) {
+  const color =
+    level >= 3 ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30' :
+    level === 2 ? 'bg-blue-500/15 text-blue-600 border-blue-500/30' :
+    level === 1 ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' :
+    'bg-red-500/15 text-red-600 border-red-500/30';
+  return (
+    <Badge className={`${color} text-[9px] font-bold px-1.5`}>
+      {level}
+    </Badge>
+  );
+}
 
 function StatusBadge({ status }: { status: 'achieved' | 'not_achieved' | 'partially' }) {
   if (status === 'achieved') {

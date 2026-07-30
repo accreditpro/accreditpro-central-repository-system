@@ -14,14 +14,12 @@ import {
   CalendarDays,
   User,
   ShieldCheck,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
   FileUp,
   Maximize2,
   Minimize2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ImageZoomViewer } from '@/components/shared/ImageZoomViewer';
 
 export interface EvidencePreviewData {
   id: string;
@@ -47,12 +45,10 @@ interface EvidencePreviewDialogProps {
  * Extensible for DOCX / XLSX / ZIP (shows file info with download prompt)
  */
 export function EvidencePreviewDialog({ evidence, open, onOpenChange }: EvidencePreviewDialogProps) {
-  const [zoom, setZoom] = useState(100);
   const [activeTab, setActiveTab] = useState<'preview' | 'details'>('preview');
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  // Reset full-screen when dialog closes
-  // Don't reset zoom — let the user keep their zoom level
+  const toggleFullScreen = () => setIsFullScreen(prev => !prev);
 
   if (!evidence) return null;
 
@@ -84,55 +80,16 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
   const renderPreview = (fullScreen = false) => {
     if (isImage) {
       return (
-        <div className={cn(
-          'relative flex items-center justify-center bg-muted/30 rounded-xl overflow-hidden',
-          fullScreen ? 'min-h-0 flex-1' : 'min-h-[300px] max-h-[65vh]',
-        )}>
-          {/* Zoom controls */}
-          <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur-sm"
-              onClick={() => setZoom(z => Math.max(25, z - 25))}
-              disabled={zoom <= 25}
-              title="Zoom out"
-            >
-              <ZoomOut className="h-3.5 w-3.5" />
-            </Button>
-            <span className="text-[10px] font-medium bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
-              {zoom}%
-            </span>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur-sm"
-              onClick={() => setZoom(z => Math.min(200, z + 25))}
-              disabled={zoom >= 200}
-              title="Zoom in"
-            >
-              <ZoomIn className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur-sm"
-              onClick={() => setZoom(100)}
-              title="Reset zoom"
-            >
-              <RotateCw className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <img
-            src={evidence.dataUrl}
-            alt={evidence.fileName}
-            className={cn(
-              'max-w-full object-contain transition-all duration-200',
-              fullScreen ? 'max-h-full' : 'max-h-[65vh]',
-            )}
-            style={{ transform: `scale(${zoom / 100})` }}
-          />
-        </div>
+        <ImageZoomViewer
+          src={evidence.dataUrl}
+          alt={evidence.fileName}
+          className={cn(
+            fullScreen ? 'min-h-0 flex-1' : 'min-h-[300px] max-h-[65vh]',
+          )}
+          showControls
+          showFitButton
+          variant={fullScreen ? 'minimal' : 'default'}
+        />
       );
     }
 

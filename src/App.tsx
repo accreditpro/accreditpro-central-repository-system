@@ -39,6 +39,7 @@ import { ExaminationRepositoryPage } from '@/pages/examination-repository/Examin
 import HODDashboardPage from '@/pages/hod-dashboard/HODDashboardPage';
 import PrincipalDashboardPage from '@/pages/principal-dashboard/PrincipalDashboardPage';
 import SupportingDocumentsPage from '@/pages/institution-admin/supporting-documents/SupportingDocumentsPage';
+import { AssessmentAndOBEPage } from '@/pages/institution-admin/assessment-and-obe/AssessmentAndOBEPage';
 
 // Institution Admin Pages
 import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashboard';
@@ -276,6 +277,7 @@ const AppRoutes = () => {
         />
         <Route path="supporting-documents" element={<SupportingDocumentsPage />} />
         <Route path="supporting-documents/academic" element={<SupportingDocumentsPage />} />
+        <Route path="assessment-and-obe" element={<AssessmentAndOBEPage />} />
         <Route path="profile" element={<PlaceholderPage title="Profile" />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>

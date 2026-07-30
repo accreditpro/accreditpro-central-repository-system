@@ -1,25 +1,23 @@
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-import { CourseFileData, CourseUnit, Book } from '../types';
+import { CourseFileData } from '../types';
 import { cn } from '@/lib/utils';
 import {
   Upload,
   FileText,
-  CheckCircle2,
   X,
   Save,
   ArrowRight,
   ArrowLeft,
-  BookOpen,
-  BookMarked,
-  Link,
   Loader2,
   ImageIcon,
+  CheckCircle2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface Step2Props {
@@ -43,55 +41,27 @@ const ACCEPT_EXTENSIONS = '.pdf,.docx,.doc,.png,.jpg,.jpeg,.gif,.webp';
 export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step2Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Simulate parsing course file
-  const simulateParsing = () => {
+  const processFiles = (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
     setIsUploading(true);
     setTimeout(() => {
-      const mockData: CourseFileData = {
-        fileName: 'CS501_Machine_Learning_Syllabus.pdf',
-        fileSize: 245000,
+      onUpdate({
+        fileName: file.name,
+        fileSize: file.size,
+        file, // Store the actual file object for API upload in Step 3
         uploadedAt: new Date().toISOString(),
-        courseObjectives: [
-          'Understand fundamental concepts of machine learning',
-          'Apply supervised and unsupervised learning algorithms',
-          'Evaluate model performance using appropriate metrics',
-          'Design and implement machine learning solutions for real-world problems',
-          'Analyze and interpret results from ML models',
-        ],
-        units: [
-          { id: 'u1', title: 'Introduction to Machine Learning', topics: ['What is ML?', 'Types of ML', 'Applications', 'History & Trends'], hours: 8 },
-          { id: 'u2', title: 'Supervised Learning', topics: ['Linear Regression', 'Logistic Regression', 'Decision Trees', 'SVM'], hours: 12 },
-          { id: 'u3', title: 'Unsupervised Learning', topics: ['K-Means', 'Hierarchical Clustering', 'PCA', 'Anomaly Detection'], hours: 10 },
-          { id: 'u4', title: 'Neural Networks & Deep Learning', topics: ['Perceptron', 'Multi-layer NN', 'Backpropagation', 'CNN Basics'], hours: 12 },
-          { id: 'u5', title: 'Model Evaluation & Deployment', topics: ['Cross-validation', 'Metrics', 'Overfitting/Underfitting', 'MLOps Basics'], hours: 8 },
-        ],
-        topics: [
-          'Supervised Learning', 'Unsupervised Learning', 'Regression', 'Classification', 'Clustering',
-          'Neural Networks', 'Deep Learning', 'Model Evaluation', 'Feature Engineering', 'Ensemble Methods',
-        ],
-        textBooks: [
-          { id: 'b1', title: 'Pattern Recognition and Machine Learning', author: 'Christopher Bishop', edition: '1st', publisher: 'Springer' },
-          { id: 'b2', title: 'The Elements of Statistical Learning', author: 'Hastie, Tibshirani, Friedman', edition: '2nd', publisher: 'Springer' },
-        ],
-        referenceBooks: [
-          { id: 'r1', title: 'Machine Learning: A Probabilistic Perspective', author: 'Kevin Murphy', publisher: 'MIT Press' },
-          { id: 'r2', title: 'Hands-On Machine Learning with Scikit-Learn', author: 'Aurélien Géron', edition: '2nd', publisher: 'O\'Reilly' },
-        ],
-        preRequisites: ['Programming in Python', 'Basic Probability & Statistics', 'Linear Algebra'],
-      };
-      onUpdate(mockData);
+        courseObjectives: [],
+        units: [],
+        topics: [],
+        textBooks: [],
+        referenceBooks: [],
+        preRequisites: [],
+      });
       setIsUploading(false);
-      setShowEditor(true);
-    }, 2000);
-  };
-
-  const processFiles = (files: File[]) => {
-    if (files.length > 0) {
-      simulateParsing();
-    }
+    }, 1000);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -136,7 +106,6 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
       referenceBooks: [],
       preRequisites: [],
     });
-    setShowEditor(false);
   };
 
   return (
@@ -147,13 +116,13 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
             <Upload className="h-5 w-5 text-indigo-600" />
             Upload Course File
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Upload the course syllabus — AI will extract and populate the data</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Upload the course syllabus file (extraction happens in the next step)</p>
         </div>
         <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
       </div>
       <Separator />
 
-      {/* Upload Zone / Parsed Data */}
+      {/* Upload Zone / Uploaded File */}
       {!data?.fileName ? (
         <>
           {/* Hidden File Input */}
@@ -165,7 +134,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
             onChange={handleFileSelect}
           />
 
-          {/* Drag & Drop Zone — Polished */}
+          {/* Drag & Drop Zone */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -188,7 +157,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
               />
             )}
 
-            {/* Drag Over State — Full Overlay */}
+            {/* Drag Over State */}
             {isDragging && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -213,8 +182,8 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                   <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
                   <Loader2 className="h-10 w-10 text-indigo-600 animate-spin relative" />
                 </div>
-                <p className="text-sm font-semibold text-indigo-600">Analyzing Course File...</p>
-                <p className="text-xs text-muted-foreground">Extracting objectives, units, topics, and references</p>
+                <p className="text-sm font-semibold text-indigo-600">Uploading File...</p>
+                <p className="text-xs text-muted-foreground">Transferring and verifying the course file</p>
               </div>
             ) : (
               /* Default State */
@@ -266,126 +235,56 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                 <FileText className="h-4 w-4 text-indigo-600" />
               </div>
               <div>
-                <p className="text-xs font-semibold">AI-Powered Syllabus Parsing</p>
+                <p className="text-xs font-semibold">Course File Upload</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Upload your course syllabus (PDF, DOCX, or image) and our AI engine will automatically extract course
-                  objectives, unit structure, topics, textbooks, and prerequisites — ready for OBE workflow.
+                  Upload your course syllabus (PDF, DOCX, or image). The AI-powered course analysis and data extraction
+                  will be performed in the next step.
                 </p>
               </div>
             </CardContent>
           </Card>
         </>
       ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
-            {/* Uploaded File Info */}
-            <Card className="border-emerald-500/30 bg-emerald-500/5">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">{data.fileName}</p>
-                    <p className="text-[10px] text-muted-foreground">Uploaded successfully • AI extraction complete</p>
-                  </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Uploaded File Info - Simple Success State */}
+          <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-green-500/10">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="h-14 w-14 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={handleRemove}>
-                  <X className="h-4 w-4" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                    File uploaded successfully!
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The file is ready. Proceed to <strong>AI Course Analysis</strong> in the next step to extract course data.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 mt-1 px-4 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium">{data.fileName}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    ({(data.fileSize / 1024).toFixed(1)} KB)
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemove}
+                  className="gap-2 mt-1 text-muted-foreground"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Re-upload File
                 </Button>
-              </CardContent>
-            </Card>
-
-            {/* Parsed Data */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Course Objectives */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Course Objectives
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-1.5">
-                    {data.courseObjectives.map((obj, i) => (
-                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                        <span className="text-emerald-600 mt-0.5">•</span>
-                        {obj}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* Units */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
-                    <BookOpen className="h-3.5 w-3.5 text-indigo-600" />
-                    Units ({data.units.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {data.units.map((unit) => (
-                      <div key={unit.id} className="p-2 rounded-lg bg-muted/30">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-medium">{unit.title}</p>
-                          <Badge variant="outline" className="text-[9px]">{unit.hours} hrs</Badge>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{unit.topics.join(', ')}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Text Books */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
-                    <BookMarked className="h-3.5 w-3.5 text-blue-600" />
-                    Text Books
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {data.textBooks.map((book) => (
-                      <div key={book.id} className="text-xs text-muted-foreground">
-                        <span className="font-medium">{book.title}</span> — {book.author}
-                        {book.edition && <span> ({book.edition} ed.)</span>}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Reference Books */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
-                    <Link className="h-3.5 w-3.5 text-purple-600" />
-                    Reference Books
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {data.referenceBooks.map((book) => (
-                      <div key={book.id} className="text-xs text-muted-foreground">
-                        <span className="font-medium">{book.title}</span> — {book.author}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Actions */}

@@ -149,9 +149,9 @@ export const specializations: Specialization[] = [
 ];
 
 export const academicYears: AcademicYear[] = [
-  { id: '1', year: '2025-26', startDate: '2025-06-01', endDate: '2026-05-31', status: 'active' },
-  { id: '2', year: '2024-25', startDate: '2024-06-01', endDate: '2025-05-31', status: 'inactive' },
-  { id: '3', year: '2023-24', startDate: '2023-06-01', endDate: '2024-05-31', status: 'inactive' },
+  { id: '1', year: '2025-26', startDate: '2025-06-01', endDate: '2026-05-31', institutionType: 'Autonomous', status: 'active' },
+  { id: '2', year: '2024-25', startDate: '2024-06-01', endDate: '2025-05-31', institutionType: 'Autonomous', status: 'inactive' },
+  { id: '3', year: '2023-24', startDate: '2023-06-01', endDate: '2024-05-31', institutionType: 'Autonomous', status: 'inactive' },
 ];
 
 export const academicRegulations: AcademicRegulation[] = [
@@ -181,6 +181,7 @@ export const academicRegulations: AcademicRegulation[] = [
       passingMarks: 50,
       gradingSystem: 'CGPA Based',
       cgpaScale: 10,
+      maxPercentage: 100,
     },
     internshipRequirements: {
       internshipMandatory: true,
@@ -226,6 +227,7 @@ export const academicRegulations: AcademicRegulation[] = [
       passingMarks: 50,
       gradingSystem: 'CGPA Based',
       cgpaScale: 10,
+      maxPercentage: 100,
     },
     internshipRequirements: {
       internshipMandatory: true,
@@ -271,6 +273,7 @@ export const academicRegulations: AcademicRegulation[] = [
       passingMarks: 50,
       gradingSystem: 'CGPA Based',
       cgpaScale: 10,
+      maxPercentage: 100,
     },
     internshipRequirements: {
       internshipMandatory: false,
@@ -314,8 +317,9 @@ export const academicRegulations: AcademicRegulation[] = [
       internalMarks: 40,
       externalMarks: 60,
       passingMarks: 50,
-      gradingSystem: 'CGPA Based',
+      gradingSystem: 'Percentage Based',
       cgpaScale: 10,
+      maxPercentage: 100,
     },
     internshipRequirements: {
       internshipMandatory: true,
@@ -338,25 +342,25 @@ export const academicRegulations: AcademicRegulation[] = [
 ];
 
 export const programOfferings: ProgramOffering[] = [
-  { id: '1', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE AI R22' },
-  { id: '2', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Data Science', specializationId: '2', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE DS R22' },
-  { id: '3', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Cyber Security', specializationId: '3', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE CS R22' },
-  { id: '4', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'ECE', departmentId: '5', specialization: 'VLSI', specializationId: '6', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech ECE VLSI R22' },
-  { id: '5', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'ECE', departmentId: '5', specialization: 'Embedded Systems', specializationId: '7', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech ECE ES R22' },
-  { id: '6', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'MECH', departmentId: '7', specialization: 'Robotics', specializationId: '9', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech MECH Robotics R22' },
-  { id: '7', academicYear: '2024-25', academicYearId: '2', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R20', regulationId: '2', duration: 4, status: 'active', generatedName: 'B.Tech CSE AI R20' },
-  { id: '8', academicYear: '2025-26', academicYearId: '1', program: 'M.Tech', programId: '2', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R22', regulationId: '1', duration: 2, status: 'active', generatedName: 'M.Tech CSE AI R22' },
+  { id: '1', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE AI 2025-26 R22' },
+  { id: '2', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Data Science', specializationId: '2', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE DS 2025-26 R22' },
+  { id: '3', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Cyber Security', specializationId: '3', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech CSE CS 2025-26 R22' },
+  { id: '4', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'ECE', departmentId: '5', specialization: 'VLSI', specializationId: '6', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech ECE VLSI 2025-26 R22' },
+  { id: '5', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'ECE', departmentId: '5', specialization: 'Embedded Systems', specializationId: '7', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech ECE ES 2025-26 R22' },
+  { id: '6', academicYear: '2025-26', academicYearId: '1', program: 'B.Tech', programId: '1', department: 'MECH', departmentId: '7', specialization: 'Robotics', specializationId: '9', regulation: 'R22', regulationId: '1', duration: 4, status: 'active', generatedName: 'B.Tech MECH Robotics 2025-26 R22' },
+  { id: '7', academicYear: '2024-25', academicYearId: '2', program: 'B.Tech', programId: '1', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R20', regulationId: '2', duration: 4, status: 'active', generatedName: 'B.Tech CSE AI 2024-25 R20' },
+  { id: '8', academicYear: '2025-26', academicYearId: '1', program: 'M.Tech', programId: '2', department: 'CSE', departmentId: '1', specialization: 'Artificial Intelligence', specializationId: '1', regulation: 'R22', regulationId: '1', duration: 2, status: 'active', generatedName: 'M.Tech CSE AI 2025-26 R22' },
 ];
 
 export const programIntakes: ProgramIntake[] = [
-  { id: '1', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE AI R22', programOfferingId: '1', sanctionedIntake: 120, admittedIntake: 118, lateralEntryIntake: 12, vacantSeats: 2, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
-  { id: '2', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE DS R22', programOfferingId: '2', sanctionedIntake: 60, admittedIntake: 58, lateralEntryIntake: 6, vacantSeats: 2, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
-  { id: '3', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE CS R22', programOfferingId: '3', sanctionedIntake: 60, admittedIntake: 55, lateralEntryIntake: 6, vacantSeats: 5, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
-  { id: '4', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech ECE VLSI R22', programOfferingId: '4', sanctionedIntake: 120, admittedIntake: 110, lateralEntryIntake: 12, vacantSeats: 10, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval', 'Seat Matrix'] },
-  { id: '5', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech ECE ES R22', programOfferingId: '5', sanctionedIntake: 60, admittedIntake: 52, lateralEntryIntake: 6, vacantSeats: 8, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
-  { id: '6', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech MECH Robotics R22', programOfferingId: '6', sanctionedIntake: 120, admittedIntake: 95, lateralEntryIntake: 12, vacantSeats: 25, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
-  { id: '7', academicYear: '2025-26', academicYearId: '1', programOffering: 'M.Tech CSE AI R22', programOfferingId: '8', sanctionedIntake: 18, admittedIntake: 15, lateralEntryIntake: 0, vacantSeats: 3, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
-  { id: '8', academicYear: '2024-25', academicYearId: '2', programOffering: 'B.Tech CSE AI R20', programOfferingId: '7', sanctionedIntake: 120, admittedIntake: 120, lateralEntryIntake: 12, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval', 'Seat Matrix'] },
+  { id: '1', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE AI 2025-26 R22', programOfferingId: '1', sanctionedIntake: 120, admittedIntake: 118, lateralEntryIntake: 12, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
+  { id: '2', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE DS 2025-26 R22', programOfferingId: '2', sanctionedIntake: 60, admittedIntake: 58, lateralEntryIntake: 6, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
+  { id: '3', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech CSE CS 2025-26 R22', programOfferingId: '3', sanctionedIntake: 60, admittedIntake: 55, lateralEntryIntake: 6, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
+  { id: '4', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech ECE VLSI 2025-26 R22', programOfferingId: '4', sanctionedIntake: 120, admittedIntake: 110, lateralEntryIntake: 12, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval', 'Seat Matrix'] },
+  { id: '5', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech ECE ES 2025-26 R22', programOfferingId: '5', sanctionedIntake: 60, admittedIntake: 52, lateralEntryIntake: 6, vacantSeats: 2, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
+  { id: '6', academicYear: '2025-26', academicYearId: '1', programOffering: 'B.Tech MECH Robotics 2025-26 R22', programOfferingId: '6', sanctionedIntake: 120, admittedIntake: 95, lateralEntryIntake: 12, vacantSeats: 13, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval'] },
+  { id: '7', academicYear: '2025-26', academicYearId: '1', programOffering: 'M.Tech CSE AI 2025-26 R22', programOfferingId: '8', sanctionedIntake: 18, admittedIntake: 15, lateralEntryIntake: 0, vacantSeats: 3, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter'] },
+  { id: '8', academicYear: '2024-25', academicYearId: '2', programOffering: 'B.Tech CSE AI 2024-25 R20', programOfferingId: '7', sanctionedIntake: 120, admittedIntake: 120, lateralEntryIntake: 12, vacantSeats: 0, approvalAuthority: 'AICTE', status: 'active', documents: ['AICTE Approval Letter', 'University Approval', 'Seat Matrix'] },
 ];
 
 export const institutionUsers: InstitutionUser[] = [

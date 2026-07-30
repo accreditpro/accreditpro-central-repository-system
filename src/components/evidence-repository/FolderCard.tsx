@@ -57,20 +57,26 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="flex items-center gap-1.5 text-xs">
-            <FileCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Required:</span>
-            <span className="font-medium">{metrics.requiredDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <FileCheck className="h-3 w-3 shrink-0" />
+              <span>Required</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.requiredDocuments}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Uploaded:</span>
-            <span className="font-medium">{metrics.uploadedDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Upload className="h-3 w-3 shrink-0" />
+              <span>Uploaded</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.uploadedDocuments}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Approved:</span>
-            <span className="font-medium">{metrics.approvedDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <ShieldCheck className="h-3 w-3 shrink-0" />
+              <span>Approved</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.approvedDocuments}</span>
           </div>
         </div>
 

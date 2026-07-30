@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AssessmentBlueprint, MarksUpload as MarksUploadType, StudentMarks, CourseDetails } from '../types';
+import { AssessmentBlueprint, MarksUpload as MarksUploadType, StudentMarks, CourseDetails, AssessmentQuestion } from '../types';
 import { parseCSVLine } from '../utils/csv';
 import { cn } from '@/lib/utils';
 import {
@@ -30,7 +30,16 @@ import {
   Trash2,
   ListChecks,
   RefreshCw,
+  Lock,
+  GitBranch,
+  Info,
 } from 'lucide-react';
+
+interface OBEThresholdConfig {
+  thresholdPercentage: number;
+  attainmentTarget: number;
+  calculationMethod: string;
+}
 
 interface Step10Props {
   blueprint: AssessmentBlueprint | null;
@@ -42,6 +51,7 @@ interface Step10Props {
   onNext: () => void;
   onPrev: () => void;
   completionPercentage: number;
+  obeConfig?: OBEThresholdConfig;
 }
 
 interface ImportResult {
@@ -154,23 +164,50 @@ function parseMarksCSV(
 // Mid-semester assessment names that use the fixed CSV format
 const MID_SEM_NAMES = ['Mid Semester 1', 'Mid Semester 2'];
 
-export default function Step10_MarksUpload({ blueprint, data, courseDetails, academicYear, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step10Props) {
+export default function Step10_MarksUpload({ blueprint, data, courseDetails, academicYear, onUpdate, onSave, onNext, onPrev, completionPercentage, obeConfig }: Step10Props) {
   const [selectedAssessment, setSelectedAssessment] = useState('');
   const [previewData, setPreviewData] = useState<StudentMarks[]>([]);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
-  const [threshold, setThreshold] = useState(60);
-  const [attainmentTarget, setAttainmentTarget] = useState(70);
-  const [calcMethod, setCalcMethod] = useState<'average' | 'percentage_above_threshold'>('average');
+  // Initialize from OBE Configuration (set by Department Coordinator)
+  const [threshold, setThreshold] = useState(obeConfig?.thresholdPercentage ?? 60);
+  const [attainmentTarget, setAttainmentTarget] = useState(obeConfig?.attainmentTarget ?? 70);
+  const [calcMethod, setCalcMethod] = useState<'average' | 'percentage_above_threshold'>(
+    obeConfig?.calculationMethod === '% Students Above Threshold' ? 'percentage_above_threshold' : 'average'
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const assessments = blueprint?.assessments || [];
   const hasBlueprint = !!blueprint;
 
+  // Helper: get all questions for an assessment (top-level, or aggregated from components)
+  const getAssessmentQuestions = useCallback((a: Assessment): AssessmentQuestion[] => {
+    if (a.questions && a.questions.length > 0) return a.questions;
+    // For component-based assessments (like CIA), aggregate questions from all components
+    const all: AssessmentQuestion[] = [];
+    for (const comp of a.components || []) {
+      if (comp.questions) {
+        all.push(...comp.questions);
+      }
+    }
+    return all;
+  }, []);
+
+  const getAssessmentQuestionCount = useCallback((a: Assessment): number => {
+    return getAssessmentQuestions(a).length;
+  }, [getAssessmentQuestions]);
+
+  const getAssessmentTotalMarks = useCallback((a: Assessment): number => {
+    const qs = getAssessmentQuestions(a);
+    if (qs.length > 0) return qs.reduce((s, q) => s + q.maxMarks, 0);
+    // Fallback to component marks total
+    return (a.components || []).reduce((sum, c) => sum + c.marks, 0);
+  }, [getAssessmentQuestions]);
+
   // Get the selected assessment's questions
   const selectedAssessmentData = assessments.find((a) => a.id === selectedAssessment);
-  const assessmentQuestions = selectedAssessmentData?.questions || [];
+  const assessmentQuestions = selectedAssessmentData ? getAssessmentQuestions(selectedAssessmentData) : [];
   const maxMark = assessmentQuestions.reduce((s, q) => s + q.maxMarks, 0);
   const isMidSem = selectedAssessmentData ? MID_SEM_NAMES.includes(selectedAssessmentData.name) : false;
 
@@ -506,13 +543,14 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
     }[] = [];
 
     for (const { assessment } of uploadedAssessments) {
-      for (const q of assessment.questions) {
+      const assessmentQs = getAssessmentQuestions(assessment);
+      for (const q of assessmentQs) {
         headerParts.push(`${assessment.name} - ${q.questionNumber}`);
       }
       headerParts.push(`${assessment.name} - Total`);
       colGroups.push({
         name: assessment.name,
-        questions: assessment.questions.map((q) => ({
+        questions: assessmentQs.map((q) => ({
           questionNumber: q.questionNumber,
           questionId: q.id,
           maxMarks: q.maxMarks,
@@ -567,7 +605,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
     a.download = `all_assessment_marks_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [data, assessments]);
+  }, [data, assessments, getAssessmentQuestions]);
 
   return (
     <div className="space-y-6">
@@ -627,7 +665,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                               <div className="flex items-center justify-between w-full gap-3">
                                 <span>{a.name}</span>
                                 <span className="text-muted-foreground">
-                                  {a.questions.length} Qs · {a.questions.reduce((s, q) => s + q.maxMarks, 0)} marks
+                                  {getAssessmentQuestionCount(a)} Qs · {getAssessmentTotalMarks(a)} marks
                                   {existing ? ` · ${existing.studentMarks.length} students ✓` : ''}
                                 </span>
                               </div>
@@ -978,52 +1016,97 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
         )}
       </AnimatePresence>
 
-      {/* Threshold Configuration */}
-      <Card className="border-border/50">
+      {/* Threshold Configuration - Inherited from Department OBE Configuration */}
+      <Card className="border-border/50 bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
         <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-semibold flex items-center gap-2">
-            <Settings className="h-3.5 w-3.5 text-amber-600" />
-            Threshold & Attainment Configuration
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xs font-semibold flex items-center gap-2">
+              <Settings className="h-3.5 w-3.5 text-indigo-600" />
+              Threshold & Attainment Configuration
+            </CardTitle>
+            <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/30 text-[9px] gap-1.5">
+              <GitBranch className="h-3 w-3" />
+              Inherited from Department OBE Configuration
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Threshold Marks (%)</Label>
-              <Input
-                type="number"
-                value={threshold}
-                onChange={(e) => setThreshold(parseInt(e.target.value) || 0)}
-                className="h-9 text-sm"
-                min={0}
-                max={100}
-              />
-              <p className="text-[9px] text-muted-foreground">Min % required to consider CO attained</p>
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                Threshold Marks (%)
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={threshold}
+                  readOnly
+                  disabled
+                  className="h-9 text-sm font-semibold bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                />
+                <Lock className="h-3 w-3 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+              </div>
+              <p className="text-[9px] text-muted-foreground">
+                Min % required to consider CO attained
+                {obeConfig && <span className="block text-indigo-500/70">Set by Department Coordinator in OBE Configuration</span>}
+              </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Attainment Target (%)</Label>
-              <Input
-                type="number"
-                value={attainmentTarget}
-                onChange={(e) => setAttainmentTarget(parseInt(e.target.value) || 0)}
-                className="h-9 text-sm"
-                min={0}
-                max={100}
-              />
-              <p className="text-[9px] text-muted-foreground">Target % of students above threshold</p>
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                Attainment Target (%)
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={attainmentTarget}
+                  readOnly
+                  disabled
+                  className="h-9 text-sm font-semibold bg-muted/30 text-indigo-700 dark:text-indigo-400"
+                />
+                <Lock className="h-3 w-3 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+              </div>
+              <p className="text-[9px] text-muted-foreground">
+                Target % of students above threshold
+                {obeConfig && <span className="block text-indigo-500/70">Set by Department Coordinator in OBE Configuration</span>}
+              </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Calculation Method</Label>
-              <Select value={calcMethod} onValueChange={(v: typeof calcMethod) => setCalcMethod(v)}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="average" className="text-xs">Average Marks</SelectItem>
-                  <SelectItem value="percentage_above_threshold" className="text-xs">% Above Threshold</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[9px] text-muted-foreground">Method for CO attainment calculation</p>
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                Calculation Method
+              </Label>
+              <div className="relative">
+                <Select value={calcMethod} disabled>
+                  <SelectTrigger className="h-9 text-sm bg-muted/30 text-indigo-700 dark:text-indigo-400 opacity-70">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="average" className="text-xs">Average Marks</SelectItem>
+                    <SelectItem value="percentage_above_threshold" className="text-xs">% Above Threshold</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Lock className="h-3 w-3 absolute right-8 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none" />
+              </div>
+              <p className="text-[9px] text-muted-foreground">
+                Method for CO attainment calculation
+                {obeConfig && <span className="block text-indigo-500/70">Set by Department Coordinator in OBE Configuration</span>}
+              </p>
+            </div>
+          </div>
+
+          {/* Info card explaining inheritance */}
+          <div className="mt-3 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-400">
+                  Values are inherited from the Department OBE Attainment Policy
+                </p>
+                <p className="text-[9px] text-indigo-500/70 mt-0.5">
+                  The Department Coordinator configures threshold, target, and calculation method in
+                  OBE Configuration. These values are automatically applied to all courses in the
+                  department. If you need custom values, please contact the Department Coordinator.
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

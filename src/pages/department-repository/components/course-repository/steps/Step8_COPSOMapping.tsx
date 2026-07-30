@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseOutcome, COPSOMapping, POCoverage, MappingLevel, NBA_PSOS } from '../types';
 import { cn } from '@/lib/utils';
+import { AILoadingScreen } from '@/components/shared/AILoadingScreen';
 import {
   GitFork,
   Sparkles,
@@ -89,6 +90,21 @@ export default function Step8_COPSOMapping({ outcomes, mappings, coverage, onUpd
     if (level === 2) return 'bg-orange-500/10 text-orange-700 border-orange-500/20';
     return 'bg-green-500/10 text-green-700 border-green-500/20';
   };
+
+  // ============ AI Loading Screen ============
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AILoadingScreen
+          workflow="co-pso-mapping"
+          isProcessing={true}
+          title="CO-PSO Articulation Mapping"
+          subtitle="AI is mapping Course Outcomes to Program Specific Outcomes"
+          onCancel={() => setIsGenerating(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

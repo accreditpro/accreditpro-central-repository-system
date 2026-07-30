@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,6 +25,24 @@ import {
   FileText,
   TrendingUp,
   Eye,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  Briefcase,
+  ClipboardCheck,
+  Shield,
+  Upload,
+  UploadCloud,
+  Info,
+  Check,
+  X,
+  Image,
+  Download,
+  AlertCircle,
+  File,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -162,12 +181,101 @@ const DashboardTab = () => {
 const AcademicYearsTab = () => {
   const [years, setYears] = useState<AcademicYear[]>(academicYears);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingYear, setEditingYear] = useState<AcademicYear | null>(null);
+  const [deletingYear, setDeletingYear] = useState<AcademicYear | null>(null);
 
-  const setActive = (id: string) => {
+  // Add/Edit form state
+  const [formYear, setFormYear] = useState('');
+  const [formStartDate, setFormStartDate] = useState('');
+  const [formEndDate, setFormEndDate] = useState('');
+  const [formInstitutionType, setFormInstitutionType] = useState('');
+
+  // Check if an academic year has associated persisted data
+  const hasPersistedData = (yearId: string): boolean => {
+    const associatedOfferings = programOfferings.filter((o) => o.academicYearId === yearId);
+    const associatedIntakes = programIntakes.filter((i) => i.academicYearId === yearId);
+    const associatedRegulations = academicRegulations.filter((r) => r.academicYearIntroduced === years.find((y) => y.id === yearId)?.year);
+    return associatedOfferings.length > 0 || associatedIntakes.length > 0 || associatedRegulations.length > 0;
+  };
+
+  // Reset add form
+  const resetAddForm = () => {
+    setFormYear('');
+    setFormStartDate('');
+    setFormEndDate('');
+    setFormInstitutionType('');
+  };
+
+  // Handle add
+  const handleAdd = () => {
+    if (!formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const newYear: AcademicYear = {
+      id: String(Date.now()),
+      year: formYear.trim(),
+      startDate: formStartDate,
+      endDate: formEndDate,
+      institutionType: formInstitutionType,
+      status: 'inactive',
+    };
+    setYears((prev) => [...prev, newYear]);
+    setShowAddDialog(false);
+    resetAddForm();
+    toast.success('Academic year added');
+  };
+
+  // Open edit dialog
+  const openEdit = (year: AcademicYear) => {
+    setEditingYear(year);
+    setFormYear(year.year);
+    setFormStartDate(year.startDate);
+    setFormEndDate(year.endDate);
+    setFormInstitutionType(year.institutionType);
+    setShowEditDialog(true);
+  };
+
+  // Handle edit
+  const handleEdit = () => {
+    if (!editingYear || !formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
     setYears((prev) =>
-      prev.map((y) => ({ ...y, status: y.id === id ? 'active' : 'inactive' }))
+      prev.map((y) =>
+        y.id === editingYear.id
+          ? { ...y, year: formYear.trim(), startDate: formStartDate, endDate: formEndDate, institutionType: formInstitutionType }
+          : y
+      )
     );
-    toast.success('Active academic year updated');
+    setShowEditDialog(false);
+    setEditingYear(null);
+    resetAddForm();
+    toast.success('Academic year updated');
+  };
+
+  // Open delete confirmation
+  const openDelete = (year: AcademicYear) => {
+    setDeletingYear(year);
+    setShowDeleteDialog(true);
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    if (!deletingYear) return;
+    if (hasPersistedData(deletingYear.id)) {
+      toast.error('Cannot delete: this academic year has associated data (program offerings, intakes, or regulations)');
+      setShowDeleteDialog(false);
+      setDeletingYear(null);
+      return;
+    }
+    setYears((prev) => prev.filter((y) => y.id !== deletingYear.id));
+    setShowDeleteDialog(false);
+    setDeletingYear(null);
+    toast.success('Academic year deleted');
   };
 
   return (
@@ -175,9 +283,9 @@ const AcademicYearsTab = () => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Academic Years</h3>
-          <p className="text-xs text-muted-foreground">Only one academic year can be active at a time. Cannot delete if repository data exists.</p>
+          <p className="text-xs text-muted-foreground">Manage academic years. Cannot delete if associated data exists (offerings, intakes, regulations).</p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetAddForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -190,64 +298,193 @@ const AcademicYearsTab = () => {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Academic Year</Label>
-                <Input placeholder="e.g., 2026-27" />
+                <Label>Academic Year *</Label>
+                <Input
+                  placeholder="e.g., 2026-27"
+                  value={formYear}
+                  onChange={(e) => setFormYear(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Start Date *</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={formStartDate}
+                  onChange={(e) => setFormStartDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>End Date *</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={formEndDate}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select defaultValue="inactive">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label>Institution Type *</Label>
+                <Select value={formInstitutionType} onValueChange={setFormInstitutionType}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="Autonomous" className="text-xs">Autonomous</SelectItem>
+                    <SelectItem value="Affiliated" className="text-xs">Affiliated</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="Deemed to be University" className="text-xs">Deemed to be University</SelectItem>
+                    <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                    <SelectItem value="Private" className="text-xs">Private</SelectItem>
+                    <SelectItem value="Aided" className="text-xs">Aided</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Academic year added'); }}>Add</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetAddForm(); }}>Cancel</Button>
+              <Button onClick={handleAdd}>Add</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-3">
-        {years.map((year) => (
-          <Card key={year.id} className={year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${year.status === 'active' ? 'bg-primary/10' : 'bg-muted'}`}>
-                  <Calendar className={`h-4 w-4 ${year.status === 'active' ? 'text-primary' : 'text-muted-foreground'}`} />
+        {years.map((year) => {
+          const isCurrent = year.status === 'active';
+          const persisted = hasPersistedData(year.id);
+          return (
+            <Card key={year.id} className={isCurrent ? 'border-primary/50 bg-primary/5' : ''}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${isCurrent ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Calendar className={`h-4 w-4 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{year.year}</p>
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/5">
+                        {year.institutionType}
+                      </Badge>
+                      {isCurrent && (
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(year.startDate).toLocaleDateString()} - {new Date(year.endDate).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">{year.year}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(year.startDate).toLocaleDateString()} - {new Date(year.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {year.status === 'active' ? (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setActive(year.id)}>
-                    Set Active
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => openEdit(year)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-8 w-8 ${persisted ? 'text-muted-foreground/40 cursor-not-allowed' : 'text-destructive hover:text-destructive'}`}
+                    disabled={persisted}
+                    onClick={() => !persisted && openDelete(year)}
+                    title={persisted ? 'Cannot delete: has associated data' : 'Delete academic year'}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { setShowEditDialog(open); if (!open) { setEditingYear(null); resetAddForm(); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Academic Year</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Academic Year *</Label>
+              <Input
+                placeholder="e.g., 2026-27"
+                value={formYear}
+                onChange={(e) => setFormYear(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Start Date *</Label>
+              <Input
+                type="date"
+                value={formStartDate}
+                onChange={(e) => setFormStartDate(e.target.value)}
+              />
+            </div>              <div className="space-y-2">
+                <Label>End Date *</Label>
+                <Input
+                  type="date"
+                  value={formEndDate}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Institution Type *</Label>
+                <Select value={formInstitutionType} onValueChange={setFormInstitutionType}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Autonomous" className="text-xs">Autonomous</SelectItem>
+                    <SelectItem value="Affiliated" className="text-xs">Affiliated</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="Deemed to be University" className="text-xs">Deemed to be University</SelectItem>
+                    <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                    <SelectItem value="Private" className="text-xs">Private</SelectItem>
+                    <SelectItem value="Aided" className="text-xs">Aided</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowEditDialog(false); setEditingYear(null); resetAddForm(); }}>Cancel</Button>
+              <Button onClick={handleEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => { setShowDeleteDialog(open); if (!open) setDeletingYear(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Academic Year</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-4">
+            Are you sure you want to delete <strong>{deletingYear?.year}</strong>?
+            {deletingYear && hasPersistedData(deletingYear.id) && (
+              <span className="block mt-2 text-destructive">
+                This academic year has associated data (program offerings, intakes, or regulations) and cannot be deleted.
+              </span>
+            )}
+            {deletingYear && !hasPersistedData(deletingYear.id) && (
+              <span className="block mt-2">This action cannot be undone.</span>
+            )}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeletingYear(null); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingYear ? hasPersistedData(deletingYear.id) : true}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -581,116 +818,933 @@ const SpecializationsTab = () => {
   );
 };
 
-// Academic Regulations Tab
+// ============================================================
+// ACADEMIC REGULATIONS - MULTI-STEP FORM WIZARD
+// ============================================================
+
+const emptyRegulationForm = (): AcademicRegulation => ({
+  id: `REG-${String(Date.now()).slice(-3)}`,
+  regulationCode: '',
+  regulationName: '',
+  program: '',
+  programId: '',
+  academicYearIntroduced: '',
+  effectiveFromBatch: '',
+  effectiveToBatch: '',
+  duration: 4,
+  status: 'active',
+  creditStructure: {
+    totalCredits: 160,
+    coreCredits: 0,
+    professionalElectiveCredits: 0,
+    openElectiveCredits: 0,
+    laboratoryCredits: 0,
+    projectCredits: 0,
+    internshipCredits: 0,
+  },
+  evaluationScheme: {
+    internalMarks: 40,
+    externalMarks: 60,
+    passingMarks: 50,
+    gradingSystem: 'CGPA Based',
+    cgpaScale: 10,
+    maxPercentage: 100,
+  },
+  internshipRequirements: {
+    internshipMandatory: true,
+    internshipDuration: '8 weeks',
+    industryTrainingMandatory: false,
+  },
+  projectRequirements: {
+    miniProjectMandatory: true,
+    majorProjectMandatory: true,
+    capstoneProjectMandatory: false,
+  },
+  approvals: {
+    approvedBy: '',
+    approvalDate: '',
+    bosApproval: '',
+    academicCouncilApproval: '',
+  },
+  documents: [],
+});
+
+const REGULATION_STEPS = [
+  { id: 'basic-info', label: 'Basic Information', icon: BookOpen, description: 'Regulation code, name, program & duration' },
+  { id: 'credit-structure', label: 'Credit Structure', icon: Layers, description: 'Total, core, elective & lab credits' },
+  { id: 'evaluation', label: 'Evaluation Scheme', icon: ClipboardCheck, description: 'Marks distribution & grading system' },
+  { id: 'internship', label: 'Internship Requirements', icon: Briefcase, description: 'Internship mandatory, duration & training' },
+  { id: 'project', label: 'Project Requirements', icon: GraduationCap, description: 'Mini, major & capstone projects' },
+  { id: 'approvals', label: 'Approvals', icon: Shield, description: 'Approving bodies & reference numbers' },
+  { id: 'documents', label: 'Documents', icon: FileText, description: 'Upload evidence & supporting docs' },
+];
+
 const AcademicRegulationsTab = () => {
-  const [regs] = useState<AcademicRegulation[]>(academicRegulations);
+  const [regs, setRegs] = useState<AcademicRegulation[]>(academicRegulations);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [viewReg, setViewReg] = useState<AcademicRegulation | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [form, setForm] = useState<AcademicRegulation>(emptyRegulationForm());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; type: string; size: number }>>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
+
+  const ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
+  const ACCEPTED_MIME_TYPES = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'application/zip',
+  ];
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return Image;
+    if (type.includes('pdf')) return BookOpen;
+    if (type.includes('word') || type.includes('document')) return FileText;
+    if (type.includes('spreadsheet') || type.includes('excel')) return File;
+    if (type.includes('presentation') || type.includes('powerpoint')) return File;
+    return File;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const isValidFile = (file: File): boolean => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    const acceptedExts = ACCEPTED_FILE_TYPES.split(',');
+    return acceptedExts.includes(ext) || ACCEPTED_MIME_TYPES.includes(file.type);
+  };
+
+  const handleFileDrop = (files: FileList) => {
+    const newFiles: Array<{ name: string; type: string; size: number }> = [];
+    let hasInvalid = false;
+
+    Array.from(files).forEach((file) => {
+      if (isValidFile(file) && !form.documents.includes(file.name)) {
+        newFiles.push({ name: file.name, type: file.type, size: file.size });
+      } else if (!isValidFile(file)) {
+        hasInvalid = true;
+      }
+    });
+
+    if (hasInvalid) {
+      toast.error('Some files were skipped due to unsupported format');
+    }
+
+    if (newFiles.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setForm((prev) => ({
+        ...prev,
+        documents: [...prev.documents, ...newFiles.map((f) => f.name)],
+      }));
+    }
+  };
+
+  const handleRemoveFile = (fileName: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.name !== fileName));
+    setForm((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((d) => d !== fileName),
+    }));
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (dragCounterRef.current === 1) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setDragActive(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileDrop(e.dataTransfer.files);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileDrop(e.target.files);
+    }
+    e.target.value = '';
+  };
+
+  // Check if a regulation code or name already exists (excluding the current editing record)
+  const checkDuplicate = (): string | null => {
+    const code = form.regulationCode.trim().toLowerCase();
+    const name = form.regulationName.trim().toLowerCase();
+    if (!code && !name) return null;
+    const duplicate = regs.find((r) => {
+      if (editingId && r.id === editingId) return false; // skip current record when editing
+      const rCode = r.regulationCode.toLowerCase();
+      const rName = r.regulationName.toLowerCase();
+      return rCode === code || rName === name;
+    });
+    if (duplicate) {
+      if (duplicate.regulationCode.toLowerCase() === code) return 'regulationCode';
+      if (duplicate.regulationName.toLowerCase() === name) return 'regulationName';
+    }
+    return null;
+  };
+
+  // Step validation
+  const validateStep = (step: number): boolean => {
+    const e: Record<string, string> = {};
+    switch (step) {
+      case 0: // Basic Info
+        if (!form.regulationCode.trim()) e.regulationCode = 'Required';
+        else {
+          const dupField = checkDuplicate();
+          if (dupField === 'regulationCode') e.regulationCode = `Regulation code "${form.regulationCode}" already exists`;
+          if (dupField === 'regulationName') e.regulationName = `Regulation name "${form.regulationName}" already exists`;
+        }
+        if (!form.regulationName.trim()) e.regulationName = 'Required';
+        else {
+          const dupField = checkDuplicate();
+          if (dupField === 'regulationName') e.regulationName = `Regulation name "${form.regulationName}" already exists`;
+        }
+        if (!form.programId) e.programId = 'Required';
+        if (!form.academicYearIntroduced) e.academicYearIntroduced = 'Required';
+        if (!form.effectiveFromBatch.trim()) e.effectiveFromBatch = 'Required';
+        if (!form.duration) e.duration = 'Required';
+        break;
+      case 1: // Credit Structure
+        if (!form.creditStructure.totalCredits) e.totalCredits = 'Required';
+        break;
+      case 2: // Evaluation Scheme
+        if (!form.evaluationScheme.internalMarks) e.internalMarks = 'Required';
+        if (!form.evaluationScheme.externalMarks) e.externalMarks = 'Required';
+        if (!form.evaluationScheme.passingMarks) e.passingMarks = 'Required';
+        if (!form.evaluationScheme.gradingSystem.trim()) e.gradingSystem = 'Required';
+        break;
+      case 3: // Internship (no required fields - defaults exist)
+        break;
+      case 4: // Project (no required fields - defaults exist)
+        break;
+      case 5: // Approvals
+        if (!form.approvals.approvedBy.trim()) e.approvedBy = 'Required';
+        if (!form.approvals.approvalDate) e.approvalDate = 'Required';
+        if (!form.approvals.bosApproval.trim()) e.bosApproval = 'Required';
+        if (!form.approvals.academicCouncilApproval.trim()) e.academicCouncilApproval = 'Required';
+        break;
+      case 6: // Documents (no required fields)
+        break;
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // Update nested field helper
+  const updateField = (section: string, field: string, value: any) => {
+    setForm((prev) => {
+      if (section === 'root') {
+        return { ...prev, [field]: value };
+      }
+      return {
+        ...prev,
+        [section]: { ...(prev as any)[section], [field]: value },
+      };
+    });
+    // Clear error for the field
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, REGULATION_STEPS.length - 1));
+    }
+  };
+
+  const handlePrev = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const openAddDialog = () => {
+    setForm(emptyRegulationForm());
+    setEditingId(null);
+    setCurrentStep(0);
+    setErrors({});
+    setUploadedFiles([]);
+    setShowAddDialog(true);
+  };
+
+  const openEditDialog = (reg: AcademicRegulation) => {
+    setForm(JSON.parse(JSON.stringify(reg)));
+    setEditingId(reg.id);
+    setCurrentStep(0);
+    setErrors({});
+    // Restore uploaded files from existing documents
+    setUploadedFiles(reg.documents.map((d) => ({ name: d, type: 'application/octet-stream', size: 0 })));
+    setShowAddDialog(true);
+  };
+
+  const handleSave = () => {
+    // Validate all steps before saving
+    for (let i = 0; i < REGULATION_STEPS.length; i++) {
+      if (!validateStep(i)) {
+        setCurrentStep(i);
+        toast.error(`Please fix errors in ${REGULATION_STEPS[i].label}`);
+        return;
+      }
+    }
+
+    // Resolve program name from id
+    const program = masterPrograms.find((p) => p.id === form.programId);
+    const finalReg = {
+      ...form,
+      id: editingId || `REG-${String(Date.now()).slice(-3)}`,
+      program: program?.name || form.program,
+    };
+
+    setRegs((prev) => {
+      const idx = prev.findIndex((r) => r.id === finalReg.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = finalReg;
+        return updated;
+      }
+      return [finalReg, ...prev];
+    });
+
+    setShowAddDialog(false);
+    setEditingId(null);
+    toast.success(editingId ? 'Regulation updated' : 'Regulation added');
+  };
+
+  const handleDelete = (id: string) => {
+    setRegs((prev) => prev.filter((r) => r.id !== id));
+    setDeleteConfirm(null);
+    toast.success('Regulation deleted');
+  };
+
+
+  // Render current step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Basic Information
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation Code <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.regulationCode}
+                  onChange={(e) => updateField('root', 'regulationCode', e.target.value)}
+                  className={`h-9 text-sm ${errors.regulationCode ? 'border-red-500' : ''}`}
+                  placeholder="e.g., R24"
+                />
+                {errors.regulationCode && <p className="text-[10px] text-red-500">{errors.regulationCode}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation Name <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.regulationName}
+                  onChange={(e) => updateField('root', 'regulationName', e.target.value)}
+                  className={`h-9 text-sm ${errors.regulationName ? 'border-red-500' : ''}`}
+                  placeholder="e.g., Regulation 2024"
+                />
+                {errors.regulationName && <p className="text-[10px] text-red-500">{errors.regulationName}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Program <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.programId}
+                  onValueChange={(v) => updateField('root', 'programId', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.programId ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.programId && <p className="text-[10px] text-red-500">{errors.programId}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Year Introduced <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.academicYearIntroduced}
+                  onValueChange={(v) => updateField('root', 'academicYearIntroduced', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.academicYearIntroduced ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((y) => (
+                      <SelectItem key={y.id} value={y.year} className="text-xs">{y.year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.academicYearIntroduced && <p className="text-[10px] text-red-500">{errors.academicYearIntroduced}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Effective From Batch <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.effectiveFromBatch}
+                  onChange={(e) => updateField('root', 'effectiveFromBatch', e.target.value)}
+                  className={`h-9 text-sm ${errors.effectiveFromBatch ? 'border-red-500' : ''}`}
+                  placeholder="e.g., 2024"
+                />
+                {errors.effectiveFromBatch && <p className="text-[10px] text-red-500">{errors.effectiveFromBatch}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Effective To Batch</Label>
+                <Input
+                  value={form.effectiveToBatch}
+                  onChange={(e) => updateField('root', 'effectiveToBatch', e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g., 2027"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Duration (Years) <span className="text-red-500">*</span></Label>
+                <Input
+                  type="number"
+                  value={form.duration}
+                  onChange={(e) => updateField('root', 'duration', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.duration ? 'border-red-500' : ''}`}
+                  min={1}
+                  max={8}
+                />
+                {errors.duration && <p className="text-[10px] text-red-500">{errors.duration}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(v: 'active' | 'inactive') => updateField('root', 'status', v)}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 1: // Credit Structure
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Total Credits <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.creditStructure.totalCredits}
+                  onChange={(e) => updateField('creditStructure', 'totalCredits', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.totalCredits ? 'border-red-500' : ''}`} />
+                {errors.totalCredits && <p className="text-[10px] text-red-500">{errors.totalCredits}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Core Credits</Label>
+                <Input type="number" value={form.creditStructure.coreCredits}
+                  onChange={(e) => updateField('creditStructure', 'coreCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Professional Elective Credits</Label>
+                <Input type="number" value={form.creditStructure.professionalElectiveCredits}
+                  onChange={(e) => updateField('creditStructure', 'professionalElectiveCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Open Elective Credits</Label>
+                <Input type="number" value={form.creditStructure.openElectiveCredits}
+                  onChange={(e) => updateField('creditStructure', 'openElectiveCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Laboratory Credits</Label>
+                <Input type="number" value={form.creditStructure.laboratoryCredits}
+                  onChange={(e) => updateField('creditStructure', 'laboratoryCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Project Credits</Label>
+                <Input type="number" value={form.creditStructure.projectCredits}
+                  onChange={(e) => updateField('creditStructure', 'projectCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Internship Credits</Label>
+                <Input type="number" value={form.creditStructure.internshipCredits}
+                  onChange={(e) => updateField('creditStructure', 'internshipCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+            </div>
+            {/* Credit breakdown summary */}
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Sum of sub-credits:</span>
+                <span className="font-semibold text-indigo-600">
+                  {form.creditStructure.coreCredits +
+                    form.creditStructure.professionalElectiveCredits +
+                    form.creditStructure.openElectiveCredits +
+                    form.creditStructure.laboratoryCredits +
+                    form.creditStructure.projectCredits +
+                    form.creditStructure.internshipCredits}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2: // Evaluation Scheme
+        const isCGPA = form.evaluationScheme.gradingSystem === 'CGPA Based';
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Internal Marks <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.internalMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'internalMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.internalMarks ? 'border-red-500' : ''}`} />
+                {errors.internalMarks && <p className="text-[10px] text-red-500">{errors.internalMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">External Marks <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.externalMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'externalMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.externalMarks ? 'border-red-500' : ''}`} />
+                {errors.externalMarks && <p className="text-[10px] text-red-500">{errors.externalMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Passing Marks (%) <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.passingMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'passingMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.passingMarks ? 'border-red-500' : ''}`} />
+                {errors.passingMarks && <p className="text-[10px] text-red-500">{errors.passingMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Grading System <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.evaluationScheme.gradingSystem}
+                  onValueChange={(v) => updateField('evaluationScheme', 'gradingSystem', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.gradingSystem ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select grading system" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CGPA Based" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-3.5 w-3.5" />
+                        CGPA Based
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Percentage Based" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        Percentage Based
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.gradingSystem && <p className="text-[10px] text-red-500">{errors.gradingSystem}</p>}
+              </div>
+              {isCGPA ? (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">CGPA Scale</Label>
+                  <div className="relative">
+                    <Input type="number" value={form.evaluationScheme.cgpaScale}
+                      onChange={(e) => updateField('evaluationScheme', 'cgpaScale', parseInt(e.target.value) || 0)}
+                      className="h-9 text-sm pr-8" min={0} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                      CGPA
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">Maximum CGPA value for the grading scale</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Max Percentage</Label>
+                  <div className="relative">
+                    <Input type="number" value={form.evaluationScheme.maxPercentage}
+                      onChange={(e) => updateField('evaluationScheme', 'maxPercentage', parseInt(e.target.value) || 0)}
+                      className="h-9 text-sm pr-8" min={0} max={100} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">Maximum percentage (typically 100)</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 3: // Internship Requirements
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <Label className="text-xs font-medium">Internship Mandatory</Label>
+                    <p className="text-[10px] text-muted-foreground">Is internship required for graduation?</p>
+                  </div>
+                  <Switch
+                    checked={form.internshipRequirements.internshipMandatory}
+                    onCheckedChange={(v) => updateField('internshipRequirements', 'internshipMandatory', v)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Internship Duration</Label>
+                  <Select
+                    value={form.internshipRequirements.internshipDuration}
+                    onValueChange={(v) => updateField('internshipRequirements', 'internshipDuration', v)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="4 weeks" className="text-xs">4 Weeks</SelectItem>
+                      <SelectItem value="6 weeks" className="text-xs">6 Weeks</SelectItem>
+                      <SelectItem value="8 weeks" className="text-xs">8 Weeks</SelectItem>
+                      <SelectItem value="12 weeks" className="text-xs">12 Weeks</SelectItem>
+                      <SelectItem value="6 months" className="text-xs">6 Months</SelectItem>
+                      <SelectItem value="1 year" className="text-xs">1 Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <Label className="text-xs font-medium">Industry Training Mandatory</Label>
+                    <p className="text-[10px] text-muted-foreground">Is industry training required?</p>
+                  </div>
+                  <Switch
+                    checked={form.internshipRequirements.industryTrainingMandatory}
+                    onCheckedChange={(v) => updateField('internshipRequirements', 'industryTrainingMandatory', v)}
+                  />
+                </div>
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">Internship Credits</p>
+                      <p className="text-[9px] text-amber-600/70 dark:text-amber-500/70">
+                        Internship credits ({form.creditStructure.internshipCredits}) are set in the Credit Structure step.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4: // Project Requirements
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Mini Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a mini project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.miniProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'miniProjectMandatory', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Major Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a major/final year project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.majorProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'majorProjectMandatory', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Capstone Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a capstone project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.capstoneProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'capstoneProjectMandatory', v)}
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400">Project Credits</p>
+                  <p className="text-[9px] text-indigo-600/70 dark:text-indigo-500/70">
+                    Project credits ({form.creditStructure.projectCredits}) are configured in the Credit Structure step.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 5: // Approvals
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Approved By <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.approvals.approvedBy}
+                  onValueChange={(v) => updateField('approvals', 'approvedBy', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.approvedBy ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select approving body" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academic Council" className="text-xs">Academic Council</SelectItem>
+                    <SelectItem value="Board of Studies" className="text-xs">Board of Studies</SelectItem>
+                    <SelectItem value="Governing Body" className="text-xs">Governing Body</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="IQAC" className="text-xs">IQAC</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.approvedBy && <p className="text-[10px] text-red-500">{errors.approvedBy}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Approval Date <span className="text-red-500">*</span></Label>
+                <DatePicker
+                  value={form.approvals.approvalDate}
+                  onChange={(date) => updateField('approvals', 'approvalDate', date)}
+                  placeholder="Select approval date"
+                  className={`h-9 text-sm w-full ${errors.approvalDate ? 'border-red-500' : ''}`}
+                />
+                {errors.approvalDate && <p className="text-[10px] text-red-500">{errors.approvalDate}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">BoS Approval Reference <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.approvals.bosApproval}
+                  onChange={(e) => updateField('approvals', 'bosApproval', e.target.value)}
+                  className={`h-9 text-sm ${errors.bosApproval ? 'border-red-500' : ''}`}
+                  placeholder="e.g., BoS/2024/02"
+                />
+                {errors.bosApproval && <p className="text-[10px] text-red-500">{errors.bosApproval}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Council Reference <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.approvals.academicCouncilApproval}
+                  onChange={(e) => updateField('approvals', 'academicCouncilApproval', e.target.value)}
+                  className={`h-9 text-sm ${errors.academicCouncilApproval ? 'border-red-500' : ''}`}
+                  placeholder="e.g., AC/2024/03"
+                />
+                {errors.academicCouncilApproval && <p className="text-[10px] text-red-500">{errors.academicCouncilApproval}</p>}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 6: // Documents / Evidence - Drag & Drop Upload
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Supporting Documents & Evidence</Label>
+              <p className="text-[10px] text-muted-foreground">
+                Upload regulation documents, BoS Minutes, Academic Council approvals, and other supporting evidence.
+              </p>
+            </div>
+
+            {/* Drag & Drop Zone */}
+            <div
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={handleKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-label="Upload supporting documents. Click or drag and drop files here."
+              className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer outline-none
+                ${dragActive
+                  ? 'border-primary bg-primary/5 scale-[1.01] shadow-lg ring-2 ring-primary/20'
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary/40'
+                }
+                ${form.documents.length > 0 ? 'py-6' : 'py-12'}
+                px-6`}
+            >
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPTED_FILE_TYPES}
+                onChange={handleFileBrowse}
+                className="hidden"
+              />
+
+              {/* Upload icon & text */}
+              <div className={`flex flex-col items-center gap-2 transition-all ${form.documents.length > 0 ? 'scale-90' : ''}`}>
+                <div className={`p-3 rounded-full transition-all duration-200
+                  ${dragActive
+                    ? 'bg-primary/20 text-primary scale-110'
+                    : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {dragActive ? (
+                    <UploadCloud className="h-8 w-8" />
+                  ) : (
+                    <Upload className="h-8 w-8" />
+                  )}
+                </div>
+                <div className="text-center">
+                  {dragActive ? (
+                    <p className="text-sm font-semibold text-primary">Drop files here</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium">
+                        <span className="text-primary">Click to browse</span> or drag & drop
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        DOC, DOCX, PDF, PNG, JPG, JPEG, GIF, SVG, XLSX, PPT, TXT, ZIP
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">
+                    Uploaded Documents ({uploadedFiles.length})
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatFileSize(uploadedFiles.reduce((sum, f) => sum + f.size, 0))} total
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {uploadedFiles.map((file) => {
+                    const FileIcon = getFileIcon(file.type);
+                    const ext = file.name.split('.').pop()?.toUpperCase() || '';
+                    return (
+                      <div
+                        key={file.name}
+                        className="group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:shadow-sm transition-all"
+                      >
+                        {/* File type icon with extension badge */}
+                        <div className="relative">
+                          <div className="w-9 h-9 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                            <FileIcon className="h-4 w-4" />
+                          </div>
+                          <span className="absolute -bottom-1.5 -right-1.5 text-[7px] font-bold bg-primary/10 text-primary px-1 py-0 rounded">
+                            {ext}
+                          </span>
+                        </div>
+
+                        {/* File details */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{file.name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {file.size > 0 ? formatFileSize(file.size) : 'Document'}
+                          </p>
+                        </div>
+
+                        {/* Remove button */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemoveFile(file.name); }}
+                          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                          title="Remove file"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state hint */}
+            {uploadedFiles.length === 0 && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">Supported Formats</p>
+                  <p className="text-[9px] text-amber-600/70 dark:text-amber-500/70 mt-0.5">
+                    Upload documents such as Regulation Book (PDF/DOCX), Academic Council Approval, 
+                    Board of Studies Minutes, Credit Structure Document, and other supporting evidence.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Academic Regulations</h3>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Regulation
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add Academic Regulation</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Basic Information</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Regulation Code *</Label>
-                    <Input placeholder="e.g., R24" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regulation Name *</Label>
-                    <Input placeholder="e.g., Regulation 2024" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Program *</Label>
-                    <Select>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {masterPrograms.filter((p) => p.status === 'active').map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Academic Year Introduced *</Label>
-                    <Select>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {academicYears.map((y) => (
-                          <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Effective From Batch *</Label>
-                    <Input placeholder="e.g., 2024" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Effective To Batch</Label>
-                    <Input placeholder="e.g., 2027" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Duration *</Label>
-                    <Input type="number" placeholder="e.g., 4" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select defaultValue="active">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Total Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Core Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Professional Elective Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Open Elective Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Laboratory Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Project Credits</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Internship Credits</Label><Input type="number" /></div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Internal Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>External Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Passing Marks</Label><Input type="number" /></div>
-                  <div className="space-y-2"><Label>Grading System</Label><Input placeholder="e.g., CGPA Based" /></div>
-                  <div className="space-y-2"><Label>CGPA Scale</Label><Input type="number" /></div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Regulation added'); }}>Add Regulation</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Regulation
+        </Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -718,15 +1772,134 @@ const AcademicRegulationsTab = () => {
                   <Badge variant={reg.status === 'active' ? 'default' : 'secondary'}>{reg.status}</Badge>
                 </td>
                 <td className="py-3 px-4 text-center">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)}>
-                    <Eye className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)} title="View details">
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditDialog(reg)} title="Edit regulation">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirm(reg.id)} title="Delete regulation">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Regulation</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete this regulation? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Multi-Step Add/Edit Wizard Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingId(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh]">
+          <DialogHeader className="pb-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">
+                {editingId ? `Edit Regulation: ${form.regulationCode || form.regulationName || 'New'}` : 'Add Academic Regulation'}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-1 px-1 py-3 overflow-x-auto">
+            {REGULATION_STEPS.map((step, idx) => {
+              const StepIcon = step.icon;
+              const isActive = currentStep === idx;
+              const isCompleted = idx < currentStep;
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => { if (idx < currentStep || validateStep(currentStep)) setCurrentStep(idx); }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all
+                    ${isActive
+                      ? 'bg-primary/10 text-primary font-semibold shadow-sm'
+                      : isCompleted
+                        ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30'
+                        : 'text-muted-foreground/50'
+                    }`}
+                >
+                  <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold
+                    ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground/50'}`}
+                  >
+                    {isCompleted ? <Check className="h-3 w-3" /> : idx + 1}
+                  </span>
+                  <span className="hidden sm:inline">{step.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Current Step Title & Description */}
+          <div className="px-1">
+            <div className="flex items-center gap-2">
+              {(() => {
+                const Icon = REGULATION_STEPS[currentStep].icon;
+                return <Icon className="h-4 w-4 text-primary" />;
+              })()}
+              <div>
+                <h4 className="text-sm font-semibold">{REGULATION_STEPS[currentStep].label}</h4>
+                <p className="text-[10px] text-muted-foreground">{REGULATION_STEPS[currentStep].description}</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Scrollable form content */}
+          <div className="overflow-y-auto px-1" style={{ maxHeight: '50vh' }}>
+            {renderStepContent()}
+          </div>
+
+          <Separator />
+
+          {/* Navigation Footer */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs gap-1"
+              onClick={handlePrev}
+              disabled={currentStep === 0}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingId(null); }}>
+                Cancel
+              </Button>
+              {currentStep === REGULATION_STEPS.length - 1 ? (
+                <Button size="sm" className="h-8 text-xs gap-1" onClick={handleSave}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {editingId ? 'Update Regulation' : 'Create Regulation'}
+                </Button>
+              ) : (
+                <Button size="sm" className="h-8 text-xs gap-1" onClick={handleNext}>
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* View Regulation Dialog */}
       <Dialog open={!!viewReg} onOpenChange={() => setViewReg(null)}>
@@ -763,7 +1936,11 @@ const AcademicRegulationsTab = () => {
                   <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">External</p><p className="text-lg font-bold">{viewReg.evaluationScheme.externalMarks}</p></div>
                   <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Passing</p><p className="text-lg font-bold">{viewReg.evaluationScheme.passingMarks}%</p></div>
                   <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Grading</p><p className="text-sm font-bold">{viewReg.evaluationScheme.gradingSystem}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.evaluationScheme.cgpaScale}</p></div>
+                  {viewReg.evaluationScheme.gradingSystem === 'CGPA Based' ? (
+                    <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.evaluationScheme.cgpaScale}</p></div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Max Percentage</p><p className="text-lg font-bold">{viewReg.evaluationScheme.maxPercentage}%</p></div>
+                  )}
                 </div>
               </div>
               <Separator />
@@ -815,15 +1992,161 @@ const AcademicRegulationsTab = () => {
   );
 };
 
-// Program Offerings Tab
+// ============================================================
+// PROGRAM OFFERINGS TAB
+// ============================================================
+
+/** Generate the offering name: Program + Department + Specialization + Academic Year + Regulation */
+const generateOfferingName = (
+  programName: string,
+  deptCode: string,
+  specName: string,
+  acYear: string,
+  regCode: string
+): string => {
+  const parts = [programName, deptCode];
+  if (specName && specName !== 'None') parts.push(getShortSpecName(specName));
+  parts.push(acYear, regCode);
+  return parts.join(' ');
+};
+
+/** Shorten specialization names for display */
+function getShortSpecName(name: string): string {
+  const map: Record<string, string> = {
+    'Artificial Intelligence': 'AI',
+    'Data Science': 'DS',
+    'Cyber Security': 'CS',
+    'Internet of Things': 'IoT',
+    'Cloud Computing': 'CC',
+    'Machine Learning': 'ML',
+    'VLSI': 'VLSI',
+    'Embedded Systems': 'ES',
+    'Communication Systems': 'CS',
+    'Robotics': 'Robotics',
+    'Thermal Engineering': 'Thermal',
+  };
+  return map[name] || name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 4);
+}
+
 const ProgramOfferingsTab = () => {
-  const [offerings] = useState<ProgramOffering[]>(programOfferings);
+  const [offerings, setOfferings] = useState<ProgramOffering[]>(programOfferings);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterYear, setFilterYear] = useState<string>('all');
+
+  // Form state for add/edit
+  const [offeringForm, setOfferingForm] = useState({
+    academicYearId: '',
+    programId: '',
+    departmentId: '',
+    specializationId: '',
+    regulationId: '',
+    duration: 4,
+  });
+  const [editingOfferingId, setEditingOfferingId] = useState<string | null>(null);
+  const [deleteConfirmOffering, setDeleteConfirmOffering] = useState<string | null>(null);
+  const [viewOffering, setViewOffering] = useState<ProgramOffering | null>(null);
 
   const filtered = filterYear === 'all'
     ? offerings
     : offerings.filter((o) => o.academicYear === filterYear);
+
+  // Resolve IDs to display names for the generated name preview
+  const selectedYear = academicYears.find((y) => y.id === offeringForm.academicYearId);
+  const selectedProgram = masterPrograms.find((p) => p.id === offeringForm.programId);
+  const selectedDept = departments.find((d) => d.id === offeringForm.departmentId);
+  const selectedSpec = specializations.find((s) => s.id === offeringForm.specializationId);
+  const selectedReg = academicRegulations.find((r) => r.id === offeringForm.regulationId);
+
+  const previewName = generateOfferingName(
+    selectedProgram?.name || '',
+    selectedDept?.code || '',
+    selectedSpec?.name || '',
+    selectedYear?.year || '',
+    selectedReg?.regulationCode || ''
+  );
+
+  const openAddDialog = () => {
+    setOfferingForm({ academicYearId: '', programId: '', departmentId: '', specializationId: '', regulationId: '', duration: 4 });
+    setEditingOfferingId(null);
+    setShowAddDialog(true);
+  };
+
+  const openEditDialog = (offering: ProgramOffering) => {
+    setOfferingForm({
+      academicYearId: offering.academicYearId,
+      programId: offering.programId,
+      departmentId: offering.departmentId,
+      specializationId: offering.specializationId,
+      regulationId: offering.regulationId,
+      duration: offering.duration,
+    });
+    setEditingOfferingId(offering.id);
+    setShowAddDialog(true);
+  };
+
+  const handleSaveOffering = () => {
+    const { academicYearId, programId, departmentId, specializationId, regulationId, duration } = offeringForm;
+    if (!academicYearId || !programId || !departmentId || !regulationId) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const year = academicYears.find((y) => y.id === academicYearId);
+    const prog = masterPrograms.find((p) => p.id === programId);
+    const dept = departments.find((d) => d.id === departmentId);
+    const spec = specializations.find((s) => s.id === specializationId);
+    const reg = academicRegulations.find((r) => r.id === regulationId);
+
+    if (!year || !prog || !dept || !reg) return;
+
+    const newName = generateOfferingName(prog.name, dept.code, spec?.name || '', year.year, reg.regulationCode);
+
+    // Check duplicate
+    const exists = offerings.find((o) =>
+      o.generatedName === newName && (editingOfferingId ? o.id !== editingOfferingId : true)
+    );
+    if (exists) {
+      toast.error('A program offering with this combination already exists');
+      return;
+    }
+
+    const offering: ProgramOffering = {
+      id: editingOfferingId || `OFF-${String(Date.now()).slice(-3)}`,
+      academicYear: year.year,
+      academicYearId,
+      program: prog.name,
+      programId,
+      department: dept.code,
+      departmentId,
+      specialization: spec?.name || '',
+      specializationId,
+      regulation: reg.regulationCode,
+      regulationId,
+      duration,
+      status: 'active' as const,
+      generatedName: newName,
+    };
+
+    setOfferings((prev) => {
+      const idx = prev.findIndex((o) => o.id === offering.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = offering;
+        return updated;
+      }
+      return [offering, ...prev];
+    });
+
+    setShowAddDialog(false);
+    setEditingOfferingId(null);
+    toast.success(editingOfferingId ? 'Offering updated' : 'Offering created');
+  };
+
+  const handleDeleteOffering = (id: string) => {
+    setOfferings((prev) => prev.filter((o) => o.id !== id));
+    setDeleteConfirmOffering(null);
+    toast.success('Offering deleted');
+  };
 
   return (
     <div className="space-y-4">
@@ -842,91 +2165,14 @@ const ProgramOfferingsTab = () => {
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Offering
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Program Offering</DialogTitle>
-            </DialogHeader>
-            <p className="text-xs text-muted-foreground mb-4">
-              A Program Offering combines: Program + Department + Specialization + Regulation
-            </p>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Academic Year *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {academicYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Program *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Department *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.filter((d) => d.status === 'active').map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.code} - {d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Specialization</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select (optional)" /></SelectTrigger>
-                  <SelectContent>
-                    {specializations.filter((s) => s.status === 'active').map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Regulation *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {academicRegulations.filter((r) => r.status === 'active').map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{r.regulationCode} - {r.regulationName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (Years) *</Label>
-                <Input type="number" placeholder="e.g., 4" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Program offering created'); }}>Create</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Offering
+        </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        No duplicate program offerings allowed. Only active masters can be selected.
+        Generated name format: Program + Department + Specialization + Academic Year + Regulation
       </p>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -941,35 +2187,359 @@ const ProgramOfferingsTab = () => {
               <th className="text-left py-3 px-4 font-medium">Regulation</th>
               <th className="text-center py-3 px-4 font-medium">Duration</th>
               <th className="text-center py-3 px-4 font-medium">Status</th>
+              <th className="text-center py-3 px-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((offering) => (
-              <tr key={offering.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
-                <td className="py-3 px-4">{offering.academicYear}</td>
-                <td className="py-3 px-4">{offering.program}</td>
-                <td className="py-3 px-4">{offering.department}</td>
-                <td className="py-3 px-4">{offering.specialization}</td>
-                <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
-                <td className="py-3 px-4 text-center">{offering.duration}Y</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={offering.status === 'active' ? 'default' : 'secondary'}>{offering.status}</Badge>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
+                  No program offerings found
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((offering) => (
+                <tr key={offering.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
+                  <td className="py-3 px-4">{offering.academicYear}</td>
+                  <td className="py-3 px-4">{offering.program}</td>
+                  <td className="py-3 px-4">{offering.department}</td>
+                  <td className="py-3 px-4">{offering.specialization || '-'}</td>
+                  <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
+                  <td className="py-3 px-4 text-center">{offering.duration}Y</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={offering.status === 'active' ? 'default' : 'secondary'}>{offering.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewOffering(offering)} title="View details">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditDialog(offering)} title="Edit offering">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirmOffering(offering.id)} title="Delete offering">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Add/Edit Offering Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingOfferingId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{editingOfferingId ? 'Edit Program Offering' : 'Create Program Offering'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Year *</Label>
+                <Select
+                  value={offeringForm.academicYearId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, academicYearId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((y) => (
+                      <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Program *</Label>
+                <Select
+                  value={offeringForm.programId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, programId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Department *</Label>
+                <Select
+                  value={offeringForm.departmentId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, departmentId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.filter((d) => d.status === 'active').map((d) => (
+                      <SelectItem key={d.id} value={d.id} className="text-xs">{d.code} - {d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Specialization</Label>
+                <Select
+                  value={offeringForm.specializationId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, specializationId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specializations.filter((s) => s.status === 'active').map((s) => (
+                      <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation *</Label>
+                <Select
+                  value={offeringForm.regulationId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, regulationId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicRegulations.filter((r) => r.status === 'active').map((r) => (
+                      <SelectItem key={r.id} value={r.id} className="text-xs">{r.regulationCode} - {r.regulationName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Duration (Years) *</Label>
+                <Input type="number" value={offeringForm.duration}
+                  onChange={(e) => setOfferingForm((f) => ({ ...f, duration: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" min={1} max={8} />
+              </div>
+            </div>
+
+            {/* Generated Name Preview */}
+            {previewName && (
+              <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                <div className="flex items-center gap-2">
+                  <Combine className="h-4 w-4 text-indigo-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400">Generated Name Preview</p>
+                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-300">{previewName}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingOfferingId(null); }}>Cancel</Button>
+            <Button size="sm" className="h-8 text-xs" onClick={handleSaveOffering}>
+              {editingOfferingId ? 'Update Offering' : 'Create Offering'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Offering Dialog */}
+      <Dialog open={!!viewOffering} onOpenChange={() => setViewOffering(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{viewOffering?.generatedName}</DialogTitle>
+          </DialogHeader>
+          {viewOffering && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Program</p>
+                  <p className="text-sm font-semibold">{viewOffering.program}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Academic Year</p>
+                  <p className="text-sm font-semibold">{viewOffering.academicYear}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Department</p>
+                  <p className="text-sm font-semibold">{viewOffering.department}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Specialization</p>
+                  <p className="text-sm font-semibold">{viewOffering.specialization || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Regulation</p>
+                  <p className="text-sm font-semibold">{viewOffering.regulation}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Duration</p>
+                  <p className="text-sm font-semibold">{viewOffering.duration} Years</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Status</p>
+                  <Badge variant={viewOffering.status === 'active' ? 'default' : 'secondary'}>{viewOffering.status}</Badge>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirmOffering} onOpenChange={() => setDeleteConfirmOffering(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Program Offering</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete this program offering? Associated intake records may be affected.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOffering(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirmOffering && handleDeleteOffering(deleteConfirmOffering)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-// Program Intake Tab
+// ============================================================
+// PROGRAM INTAKE TAB
+// ============================================================
+
 const ProgramIntakeTab = () => {
-  const [intakes] = useState<ProgramIntake[]>(programIntakes);
+  const [intakes, setIntakes] = useState<ProgramIntake[]>(programIntakes);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterYear, setFilterYear] = useState<string>('all');
+  const [editingIntakeId, setEditingIntakeId] = useState<string | null>(null);
+  const [deleteConfirmIntake, setDeleteConfirmIntake] = useState<string | null>(null);
+
+  // Form state for add/edit intake
+  const [intakeForm, setIntakeForm] = useState({
+    academicYearId: '',
+    programOfferingId: '',
+    sanctionedIntake: 0,
+    admittedIntake: 0,
+    lateralEntryIntake: 0,
+    approvalAuthority: '',
+    status: 'active' as 'active' | 'inactive',
+  });
+  const [uploadedIntakeFiles, setUploadedIntakeFiles] = useState<Array<{ name: string; type: string; size: number }>>([]);
+  const [dragActiveIntake, setDragActiveIntake] = useState(false);
+  const intakeFileInputRef = useRef<HTMLInputElement>(null);
+  const intakeDragCounterRef = useRef(0);
+
+  const INTAKE_ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
+  const INTAKE_ACCEPTED_MIME_TYPES = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'application/zip',
+  ];
+
+  const getIntakeFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return Image;
+    if (type.includes('pdf')) return BookOpen;
+    if (type.includes('word') || type.includes('document')) return FileText;
+    if (type.includes('spreadsheet') || type.includes('excel')) return File;
+    if (type.includes('presentation') || type.includes('powerpoint')) return File;
+    return File;
+  };
+
+  const formatIntakeFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const isValidIntakeFile = (file: File): boolean => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    const acceptedExts = INTAKE_ACCEPTED_FILE_TYPES.split(',');
+    return acceptedExts.includes(ext) || INTAKE_ACCEPTED_MIME_TYPES.includes(file.type);
+  };
+
+  const handleIntakeFileDrop = (files: FileList) => {
+    const newFiles: Array<{ name: string; type: string; size: number }> = [];
+    let hasInvalid = false;
+    setUploadedIntakeFiles((prev) => {
+      const existingNames = new Set(prev.map((f) => f.name));
+      Array.from(files).forEach((file) => {
+        if (isValidIntakeFile(file) && !existingNames.has(file.name)) {
+          existingNames.add(file.name);
+          newFiles.push({ name: file.name, type: file.type, size: file.size });
+        } else if (!isValidIntakeFile(file)) {
+          hasInvalid = true;
+        }
+      });
+      return [...prev, ...newFiles];
+    });
+    if (hasInvalid) {
+      toast.error('Some files were skipped due to unsupported format');
+    }
+  };
+
+  const handleRemoveIntakeFile = (fileName: string) => {
+    setUploadedIntakeFiles((prev) => prev.filter((f) => f.name !== fileName));
+  };
+
+  const handleIntakeDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current++;
+    if (intakeDragCounterRef.current === 1) setDragActiveIntake(true);
+  };
+
+  const handleIntakeDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current--;
+    if (intakeDragCounterRef.current === 0) setDragActiveIntake(false);
+  };
+
+  const handleIntakeDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleIntakeDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current = 0;
+    setDragActiveIntake(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleIntakeFileDrop(e.dataTransfer.files);
+    }
+  };
+
+  const handleIntakeKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      intakeFileInputRef.current?.click();
+    }
+  };
+
+  const handleIntakeFileBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleIntakeFileDrop(e.target.files);
+    }
+    e.target.value = '';
+  };
 
   const filtered = filterYear === 'all'
     ? intakes
@@ -978,6 +2548,80 @@ const ProgramIntakeTab = () => {
   const totalSanctioned = filtered.reduce((s, i) => s + i.sanctionedIntake, 0);
   const totalAdmitted = filtered.reduce((s, i) => s + i.admittedIntake, 0);
   const totalVacant = filtered.reduce((s, i) => s + i.vacantSeats, 0);
+
+
+  const vacantSeats = Math.max(0, (intakeForm.sanctionedIntake || 0) - (intakeForm.admittedIntake || 0) - (intakeForm.lateralEntryIntake || 0));
+
+  const openAddIntakeDialog = () => {
+    setIntakeForm({ academicYearId: '', programOfferingId: '', sanctionedIntake: 0, admittedIntake: 0, lateralEntryIntake: 0, approvalAuthority: '', status: 'active' });
+    setEditingIntakeId(null);
+    setUploadedIntakeFiles([]);
+    setShowAddDialog(true);
+  };
+
+  const openEditIntakeDialog = (intake: ProgramIntake) => {
+    setIntakeForm({
+      academicYearId: intake.academicYearId,
+      programOfferingId: intake.programOfferingId,
+      sanctionedIntake: intake.sanctionedIntake,
+      admittedIntake: intake.admittedIntake,
+      lateralEntryIntake: intake.lateralEntryIntake,
+      approvalAuthority: intake.approvalAuthority,
+      status: intake.status,
+    });
+    setEditingIntakeId(intake.id);
+    setUploadedIntakeFiles(intake.documents.map((d) => ({ name: d, type: 'application/octet-stream', size: 0 })));
+    setShowAddDialog(true);
+  };
+
+  const handleSaveIntake = () => {
+    const { academicYearId, programOfferingId, sanctionedIntake, admittedIntake, lateralEntryIntake, approvalAuthority, status } = intakeForm;
+    if (!academicYearId || !programOfferingId || !sanctionedIntake) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const year = academicYears.find((y) => y.id === academicYearId);
+    const offering = programOfferings.find((o) => o.id === programOfferingId);
+    if (!year || !offering) return;
+
+    const vacant = Math.max(0, sanctionedIntake - admittedIntake - lateralEntryIntake);
+
+    const intake: ProgramIntake = {
+      id: editingIntakeId || `INT-${String(Date.now()).slice(-3)}`,
+      academicYear: year.year,
+      academicYearId,
+      programOffering: offering.generatedName,
+      programOfferingId,
+      sanctionedIntake,
+      admittedIntake,
+      lateralEntryIntake,
+      vacantSeats: vacant,
+      approvalAuthority,
+      status,
+      documents: uploadedIntakeFiles.map((f) => f.name),
+    };
+
+    setIntakes((prev) => {
+      const idx = prev.findIndex((i) => i.id === intake.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = intake;
+        return updated;
+      }
+      return [intake, ...prev];
+    });
+
+    setShowAddDialog(false);
+    setEditingIntakeId(null);
+    toast.success(editingIntakeId ? 'Intake updated' : 'Intake record added');
+  };
+
+  const handleDeleteIntake = (id: string) => {
+    setIntakes((prev) => prev.filter((i) => i.id !== id));
+    setDeleteConfirmIntake(null);
+    toast.success('Intake record deleted');
+  };
 
   return (
     <div className="space-y-4">
@@ -996,82 +2640,10 @@ const ProgramIntakeTab = () => {
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Intake
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Program Intake</DialogTitle>
-            </DialogHeader>
-            <p className="text-xs text-muted-foreground mb-2">
-              Vacant Seats = Sanctioned Intake - Admitted Intake
-            </p>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Academic Year *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {academicYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Program Offering *</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {programOfferings.filter((o) => o.status === 'active').map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.generatedName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Sanctioned Intake *</Label>
-                  <Input type="number" placeholder="e.g., 120" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Admitted Intake *</Label>
-                  <Input type="number" placeholder="e.g., 118" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Lateral Entry Intake</Label>
-                  <Input type="number" placeholder="e.g., 12" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vacant Seats (Auto)</Label>
-                  <Input disabled placeholder="Auto calculated" className="bg-muted" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Approval Authority</Label>
-                <Input placeholder="e.g., AICTE" />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select defaultValue="active">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Intake record added'); }}>Add Intake</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddIntakeDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Intake
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -1108,30 +2680,265 @@ const ProgramIntakeTab = () => {
               <th className="text-center py-3 px-4 font-medium">Vacant</th>
               <th className="text-left py-3 px-4 font-medium">Authority</th>
               <th className="text-center py-3 px-4 font-medium">Status</th>
+              <th className="text-center py-3 px-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((intake) => (
-              <tr key={intake.id} className="border-t hover:bg-muted/30">
-                <td className="py-3 px-4 font-semibold">{intake.programOffering}</td>
-                <td className="py-3 px-4">{intake.academicYear}</td>
-                <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
-                <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
-                <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
-                    {intake.vacantSeats}
-                  </Badge>
-                </td>
-                <td className="py-3 px-4">{intake.approvalAuthority}</td>
-                <td className="py-3 px-4 text-center">
-                  <Badge variant={intake.status === 'active' ? 'default' : 'secondary'}>{intake.status}</Badge>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
+                  No intake records found
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((intake) => (
+                <tr key={intake.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-semibold text-primary">{intake.programOffering}</td>
+                  <td className="py-3 px-4">{intake.academicYear}</td>
+                  <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
+                  <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
+                  <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
+                      {intake.vacantSeats}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4">{intake.approvalAuthority}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={intake.status === 'active' ? 'default' : 'secondary'}>{intake.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditIntakeDialog(intake)} title="Edit intake">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirmIntake(intake.id)} title="Delete intake">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirmIntake} onOpenChange={() => setDeleteConfirmIntake(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Intake Record</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">Are you sure you want to delete this intake record?</p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmIntake(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirmIntake && handleDeleteIntake(deleteConfirmIntake)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Intake Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingIntakeId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{editingIntakeId ? 'Edit Program Intake' : 'Add Program Intake'}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground mb-2">
+            Vacant Seats = Sanctioned Intake - Admitted Intake - Lateral Entry
+          </p>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Academic Year *</Label>
+              <Select
+                value={intakeForm.academicYearId}
+                onValueChange={(v) => setIntakeForm((f) => ({ ...f, academicYearId: v }))}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((y) => (
+                    <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Program Offering *</Label>
+              <Select
+                value={intakeForm.programOfferingId}
+                onValueChange={(v) => setIntakeForm((f) => ({ ...f, programOfferingId: v }))}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {programOfferings.filter((o) => o.status === 'active').map((o) => (
+                    <SelectItem key={o.id} value={o.id} className="text-xs">{o.generatedName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Sanctioned Intake *</Label>
+                <Input type="number" value={intakeForm.sanctionedIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, sanctionedIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 120" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Admitted Intake</Label>
+                <Input type="number" value={intakeForm.admittedIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, admittedIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 118" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Lateral Entry Intake</Label>
+                <Input type="number" value={intakeForm.lateralEntryIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, lateralEntryIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Vacant Seats (Auto calc)</Label>
+                <Input disabled value={vacantSeats} className="h-9 text-sm bg-muted" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Approval Authority</Label>
+              <Select value={intakeForm.approvalAuthority} onValueChange={(v) => setIntakeForm((f) => ({ ...f, approvalAuthority: v }))}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select authority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AICTE" className="text-xs">AICTE</SelectItem>
+                  <SelectItem value="UGC" className="text-xs">UGC</SelectItem>
+                  <SelectItem value="NBA" className="text-xs">NBA</SelectItem>
+                  <SelectItem value="NAAC" className="text-xs">NAAC</SelectItem>
+                  <SelectItem value="University" className="text-xs">University</SelectItem>
+                  <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                  <SelectItem value="Affiliating University" className="text-xs">Affiliating University</SelectItem>
+                  <SelectItem value="NCTE" className="text-xs">NCTE</SelectItem>
+                  <SelectItem value="BCI" className="text-xs">BCI</SelectItem>
+                  <SelectItem value="PCI" className="text-xs">PCI</SelectItem>
+                  <SelectItem value="Other" className="text-xs">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Status</Label>
+              <Select value={intakeForm.status} onValueChange={(v: 'active' | 'inactive') => setIntakeForm((f) => ({ ...f, status: v }))}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active" className="text-xs">Active</SelectItem>
+                  <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Documents Upload */}
+            <Separator className="my-2" />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                Supporting Documents
+                {uploadedIntakeFiles.length > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-[9px] px-1.5 py-0">
+                    {uploadedIntakeFiles.length} file{uploadedIntakeFiles.length !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </Label>
+              {/* Drop Zone */}
+              <div
+                role="button"
+                tabIndex={0}
+                onDragEnter={handleIntakeDragEnter}
+                onDragLeave={handleIntakeDragLeave}
+                onDragOver={handleIntakeDragOver}
+                onDrop={handleIntakeDrop}
+                onClick={() => intakeFileInputRef.current?.click()}
+                onKeyDown={handleIntakeKeyDown}
+                aria-label="Upload supporting documents"
+                className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-200 ${
+                  dragActiveIntake
+                    ? 'border-indigo-500 bg-indigo-500/5 scale-[1.01] shadow-lg shadow-indigo-500/10'
+                    : 'border-border/60 hover:border-indigo-400/50 hover:bg-muted/30'
+                }`}
+              >
+                <input
+                  ref={intakeFileInputRef}
+                  type="file"
+                  multiple
+                  accept={INTAKE_ACCEPTED_FILE_TYPES}
+                  onChange={handleIntakeFileBrowse}
+                  className="hidden"
+                />
+                <UploadCloud className={`h-7 w-7 mx-auto mb-1.5 transition-colors duration-200 ${
+                  dragActiveIntake ? 'text-indigo-500' : 'text-muted-foreground/60'
+                }`} />
+                <p className={`text-xs font-medium transition-colors duration-200 ${
+                  dragActiveIntake ? 'text-indigo-600' : 'text-muted-foreground'
+                }`}>
+                  {dragActiveIntake ? 'Drop files here' : 'Drag & drop files here, or click to browse'}
+                </p>
+                <p className="text-[9px] text-muted-foreground/60 mt-0.5">
+                  Supported: PDF, DOCX, Images, Excel, PPT, TXT, ZIP
+                </p>
+              </div>
+              {/* Uploaded Files List */}
+              {uploadedIntakeFiles.length > 0 && (
+                <div className="space-y-1.5 mt-1.5">
+                  <p className="text-[9px] font-medium text-muted-foreground">UPLOADED FILES</p>
+                  {uploadedIntakeFiles.map((file, idx) => {
+                    const FileIcon = getIntakeFileIcon(file.type);
+                    return (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="group flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-medium truncate">{file.name}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[8px] px-1 py-0 leading-none">
+                              {file.type.split('/').pop()?.toUpperCase() || file.name.split('.').pop()?.toUpperCase()}
+                            </Badge>
+                            <span className="text-[9px] text-muted-foreground">{formatIntakeFileSize(file.size)}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveIntakeFile(file.name); }}
+                        >
+                          <X className="h-3 w-3 text-red-500" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Vacant seats info card */}
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Calculated Vacant Seats:</span>
+                <span className="font-semibold text-indigo-600">{vacantSeats}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingIntakeId(null); }}>Cancel</Button>
+            <Button size="sm" className="h-8 text-xs" onClick={handleSaveIntake}>
+              {editingIntakeId ? 'Update Intake' : 'Add Intake'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="text-xs text-muted-foreground">
         <strong>Documents:</strong> AICTE Approval Letter, University Approval, Seat Matrix
