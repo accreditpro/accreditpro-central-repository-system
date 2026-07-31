@@ -17,23 +17,21 @@ interface FolderCardProps {
 }
 
 export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
-  const completionColor =
-    metrics.completionPercentage >= 100
-      ? 'text-emerald-600 dark:text-emerald-400'
-      : metrics.completionPercentage >= 75
-        ? 'text-amber-600 dark:text-amber-400'
-        : metrics.completionPercentage >= 50
-          ? 'text-orange-600 dark:text-orange-400'
-          : 'text-red-600 dark:text-red-400';
+  const completionColor = metrics.completionPercentage >= 100
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : metrics.completionPercentage >= 75
+      ? 'text-amber-600 dark:text-amber-400'
+      : metrics.completionPercentage >= 50
+        ? 'text-orange-600 dark:text-orange-400'
+        : 'text-red-600 dark:text-red-400';
 
-  const progressColor =
-    metrics.completionPercentage >= 100
-      ? '[&>div]:bg-emerald-500'
-      : metrics.completionPercentage >= 75
-        ? '[&>div]:bg-amber-500'
-        : metrics.completionPercentage >= 50
-          ? '[&>div]:bg-orange-500'
-          : '[&>div]:bg-red-500';
+  const progressColor = metrics.completionPercentage >= 100
+    ? '[&>div]:bg-emerald-500'
+    : metrics.completionPercentage >= 75
+      ? '[&>div]:bg-amber-500'
+      : metrics.completionPercentage >= 50
+        ? '[&>div]:bg-orange-500'
+        : '[&>div]:bg-red-500';
 
   return (
     <Card
@@ -50,42 +48,41 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold truncate">{folder.name}</h3>
               {folder.description && (
-                <p className="text-[11px] text-muted-foreground line-clamp-1">
-                  {folder.description}
-                </p>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">{folder.description}</p>
               )}
             </div>
           </div>
-          <span className="text-sm shrink-0 ml-1">
-            {getCompletionEmoji(metrics.completionPercentage)}
-          </span>
+          <span className="text-sm shrink-0 ml-1">{getCompletionEmoji(metrics.completionPercentage)}</span>
         </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="flex items-center gap-1.5 text-xs">
-            <FileCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Required:</span>
-            <span className="font-medium">{metrics.requiredDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <FileCheck className="h-3 w-3 shrink-0" />
+              <span>Required</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.requiredDocuments}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Uploaded:</span>
-            <span className="font-medium">{metrics.uploadedDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Upload className="h-3 w-3 shrink-0" />
+              <span>Uploaded</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.uploadedDocuments}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Approved:</span>
-            <span className="font-medium">{metrics.approvedDocuments}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <ShieldCheck className="h-3 w-3 shrink-0" />
+              <span>Approved</span>
+            </div>
+            <span className="text-sm font-bold">{metrics.approvedDocuments}</span>
           </div>
         </div>
 
         {/* Progress Bar with percentage */}
         <div className="flex items-center gap-2">
-          <Progress
-            value={metrics.completionPercentage}
-            className={`h-1.5 flex-1 ${progressColor}`}
-          />
+          <Progress value={metrics.completionPercentage} className={`h-1.5 flex-1 ${progressColor}`} />
           <span className={`text-xs font-semibold shrink-0 ${completionColor}`}>
             {metrics.completionPercentage}%
           </span>
@@ -99,7 +96,9 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
           >
             {getCompletionStatusText(metrics.completionPercentage)}
           </Badge>
-          <span className="text-[10px] text-muted-foreground">{metrics.totalDocuments} docs</span>
+          <span className="text-[10px] text-muted-foreground">
+            {metrics.totalDocuments} docs
+          </span>
         </div>
       </CardContent>
     </Card>

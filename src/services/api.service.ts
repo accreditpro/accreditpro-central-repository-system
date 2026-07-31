@@ -33,7 +33,7 @@ class ApiService {
   constructor() {
     this.instance = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 30000,
+      timeout: 300000, // 5 minutes - AI analysis endpoints can take a long time to respond
       headers: {
         'Content-Type': 'application/json',
         Accept: '*/*',

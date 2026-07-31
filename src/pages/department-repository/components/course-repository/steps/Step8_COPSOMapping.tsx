@@ -5,15 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseOutcome, COPSOMapping, POCoverage, MappingLevel, NBA_PSOS } from '../types';
 import { cn } from '@/lib/utils';
+import { AILoadingScreen } from '@/components/shared/AILoadingScreen';
 import {
   GitFork,
   Sparkles,
@@ -35,31 +30,25 @@ interface Step8Props {
   completionPercentage: number;
 }
 
-export default function Step8_COPSOMapping({
-  outcomes,
-  mappings,
-  coverage,
-  onUpdate,
-  onSave,
-  onNext,
-  onPrev,
-  completionPercentage,
-}: Step8Props) {
+export default function Step8_COPSOMapping({ outcomes, mappings, coverage, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step8Props) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const getMapping = (coId: string, psoId: string): MappingLevel => {
-    return mappings.find(m => m.coId === coId && m.psoId === psoId)?.level || 0;
+    return mappings.find((m) => m.coId === coId && m.psoId === psoId)?.level || 0;
   };
 
   const setMapping = (coId: string, psoId: string, level: MappingLevel) => {
-    const existing = mappings.find(m => m.coId === coId && m.psoId === psoId);
+    const existing = mappings.find((m) => m.coId === coId && m.psoId === psoId);
     if (existing) {
       onUpdate(
-        mappings.map(m => (m.coId === coId && m.psoId === psoId ? { ...m, level } : m)),
+        mappings.map((m) => (m.coId === coId && m.psoId === psoId ? { ...m, level } : m)),
         coverage
       );
     } else {
-      onUpdate([...mappings, { coId, psoId, level, justification: '' }], coverage);
+      onUpdate(
+        [...mappings, { coId, psoId, level, justification: '' }],
+        coverage
+      );
     }
   };
 
@@ -67,8 +56,8 @@ export default function Step8_COPSOMapping({
     setIsGenerating(true);
     setTimeout(() => {
       const mockMappings: COPSOMapping[] = [];
-      NBA_PSOS.forEach(pso => {
-        outcomes.forEach(co => {
+      NBA_PSOS.forEach((pso) => {
+        outcomes.forEach((co) => {
           const level = (Math.floor(Math.random() * 3) + 1) as MappingLevel;
           mockMappings.push({
             coId: co.id,
@@ -79,14 +68,14 @@ export default function Step8_COPSOMapping({
         });
       });
 
-      const calculatedCoverage: POCoverage[] = NBA_PSOS.map(pso => {
-        const mapped = mockMappings.filter(m => m.psoId === pso.id && m.level > 0);
+      const calculatedCoverage: POCoverage[] = NBA_PSOS.map((pso) => {
+        const mapped = mockMappings.filter((m) => m.psoId === pso.id && m.level > 0);
         return {
           poId: pso.id,
           poCode: pso.code,
           coveragePercentage: Math.round((mapped.length / outcomes.length) * 100),
-          mappedCOs: mapped.map(m => outcomes.find(o => o.id === m.coId)?.code || ''),
-          avgLevel: Math.round((mapped.reduce((s, m) => s + m.level, 0) / mapped.length) * 10) / 10,
+          mappedCOs: mapped.map((m) => outcomes.find((o) => o.id === m.coId)?.code || ''),
+          avgLevel: Math.round(mapped.reduce((s, m) => s + m.level, 0) / mapped.length * 10) / 10,
         };
       });
 
@@ -102,6 +91,21 @@ export default function Step8_COPSOMapping({
     return 'bg-green-500/10 text-green-700 border-green-500/20';
   };
 
+  // ============ AI Loading Screen ============
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AILoadingScreen
+          workflow="co-pso-mapping"
+          isProcessing={true}
+          title="CO-PSO Articulation Mapping"
+          subtitle="AI is mapping Course Outcomes to Program Specific Outcomes"
+          onCancel={() => setIsGenerating(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -110,13 +114,9 @@ export default function Step8_COPSOMapping({
             <GitFork className="h-5 w-5 text-purple-600" />
             CO-PSO Articulation Matrix
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Map Course Outcomes to Program Specific Outcomes
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">Map Course Outcomes to Program Specific Outcomes</p>
         </div>
-        <Badge variant="outline" className="text-xs">
-          {completionPercentage}% Complete
-        </Badge>
+        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
       </div>
       <Separator />
 
@@ -131,16 +131,8 @@ export default function Step8_COPSOMapping({
         <>
           {mappings.length === 0 && (
             <div className="flex justify-center py-8">
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="gap-2 bg-gradient-to-r from-purple-600 to-violet-600"
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
+              <Button onClick={handleGenerate} disabled={isGenerating} className="gap-2 bg-gradient-to-r from-purple-600 to-violet-600">
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 Generate CO-PSO Mapping
               </Button>
             </div>
@@ -156,58 +148,39 @@ export default function Step8_COPSOMapping({
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-muted/30">
-                        <th className="text-left p-2 font-semibold sticky left-0 bg-muted/30 z-10">
-                          CO ↓ / PSO →
-                        </th>
-                        {NBA_PSOS.map(pso => (
+                        <th className="text-left p-2 font-semibold sticky left-0 bg-muted/30 z-10">CO ↓ / PSO →</th>
+                        {NBA_PSOS.map((pso) => (
                           <th key={pso.id} className="p-2 text-center font-semibold min-w-[60px]">
                             <div className="flex flex-col items-center">
                               <span>{pso.code}</span>
-                              <span className="text-[8px] font-normal text-muted-foreground">
-                                {pso.description.slice(0, 30)}
-                              </span>
+                              <span className="text-[8px] font-normal text-muted-foreground">{pso.description.slice(0, 30)}</span>
                             </div>
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {outcomes.map(co => (
+                      {outcomes.map((co) => (
                         <tr key={co.id} className="border-t border-border/50 hover:bg-muted/10">
                           <td className="p-2 font-medium sticky left-0 bg-card z-10">
                             <span className="text-[10px]">{co.code}</span>
                           </td>
-                          {NBA_PSOS.map(pso => {
+                          {NBA_PSOS.map((pso) => {
                             const level = getMapping(co.id, pso.id);
                             return (
                               <td key={pso.id} className="p-1 text-center">
                                 <Select
                                   value={level.toString()}
-                                  onValueChange={v =>
-                                    setMapping(co.id, pso.id, parseInt(v) as MappingLevel)
-                                  }
+                                  onValueChange={(v) => setMapping(co.id, pso.id, parseInt(v) as MappingLevel)}
                                 >
-                                  <SelectTrigger
-                                    className={cn(
-                                      'h-7 w-12 border text-[10px] font-bold mx-auto',
-                                      getCellColor(level)
-                                    )}
-                                  >
+                                  <SelectTrigger className={cn('h-7 w-12 border text-[10px] font-bold mx-auto', getCellColor(level))}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="0" className="text-xs">
-                                      0
-                                    </SelectItem>
-                                    <SelectItem value="1" className="text-xs">
-                                      1 (Slight)
-                                    </SelectItem>
-                                    <SelectItem value="2" className="text-xs">
-                                      2 (Moderate)
-                                    </SelectItem>
-                                    <SelectItem value="3" className="text-xs">
-                                      3 (Strong)
-                                    </SelectItem>
+                                    <SelectItem value="0" className="text-xs">0</SelectItem>
+                                    <SelectItem value="1" className="text-xs">1 (Slight)</SelectItem>
+                                    <SelectItem value="2" className="text-xs">2 (Moderate)</SelectItem>
+                                    <SelectItem value="3" className="text-xs">3 (Strong)</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </td>
@@ -227,13 +200,11 @@ export default function Step8_COPSOMapping({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {coverage.map(pso => (
+                    {coverage.map((pso) => (
                       <div key={pso.poId} className="flex items-center gap-3">
                         <span className="text-[10px] font-semibold w-10">{pso.poCode}</span>
                         <Progress value={pso.coveragePercentage} className="flex-1 h-2" />
-                        <span className="text-[10px] font-bold w-12 text-right">
-                          {pso.coveragePercentage}%
-                        </span>
+                        <span className="text-[10px] font-bold w-12 text-right">{pso.coveragePercentage}%</span>
                       </div>
                     ))}
                   </div>
@@ -251,22 +222,11 @@ export default function Step8_COPSOMapping({
           Previous: Revised CO-PO
         </Button>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSave}
-            className="gap-2"
-            disabled={mappings.length === 0}
-          >
+          <Button variant="outline" size="sm" onClick={onSave} className="gap-2" disabled={mappings.length === 0}>
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button
-            size="sm"
-            onClick={onNext}
-            disabled={mappings.length === 0}
-            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
-          >
+          <Button size="sm" onClick={onNext} disabled={mappings.length === 0} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
             Next: Assessment Blueprint
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
