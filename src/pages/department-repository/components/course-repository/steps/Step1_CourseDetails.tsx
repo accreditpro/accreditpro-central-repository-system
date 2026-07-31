@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { CourseDetails as CourseDetailsType, WorkflowStepId } from '../types';
@@ -28,25 +34,67 @@ interface Step1Props {
   completionPercentage: number;
 }
 
-const DEPARTMENTS = ['Computer Science & Engineering', 'Electronics & Communication', 'Electrical & Electronics', 'Mechanical Engineering', 'Civil Engineering'];
+const DEPARTMENTS = [
+  'Computer Science & Engineering',
+  'Electronics & Communication',
+  'Electrical & Electronics',
+  'Mechanical Engineering',
+  'Civil Engineering',
+];
 const PROGRAMS = ['B.Tech', 'M.Tech', 'Ph.D'];
 const REGULATIONS = ['R22', 'R20', 'R18'];
 const YEARS = ['I Year', 'II Year', 'III Year', 'IV Year'];
-const SEMESTERS = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
-const FACULTY = ['Dr. Anita Sharma', 'Dr. Rajesh Kumar', 'Dr. Priya Sharma', 'Dr. Sunita Patel', 'Dr. Amit Verma'];
+const SEMESTERS = [
+  'Semester 1',
+  'Semester 2',
+  'Semester 3',
+  'Semester 4',
+  'Semester 5',
+  'Semester 6',
+  'Semester 7',
+  'Semester 8',
+];
+const FACULTY = [
+  'Dr. Anita Sharma',
+  'Dr. Rajesh Kumar',
+  'Dr. Priya Sharma',
+  'Dr. Sunita Patel',
+  'Dr. Amit Verma',
+];
 
-export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, completionPercentage }: Step1Props) {
+export default function Step1_CourseDetails({
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  completionPercentage,
+}: Step1Props) {
   const [formData, setFormData] = useState(data);
   const [saved, setSaved] = useState(false);
 
   const updateField = (field: keyof CourseDetailsType, value: string | number) => {
     const updated = { ...formData, [field]: value };
     // Auto-calculate CI, PI, Total Hours, Credits
-    const lec = typeof updated.lectureHours === 'string' ? parseFloat(updated.lectureHours) || 0 : updated.lectureHours;
-    const tut = typeof updated.tutorialHours === 'string' ? parseFloat(updated.tutorialHours) || 0 : updated.tutorialHours;
-    const prac = typeof updated.practicalHours === 'string' ? parseFloat(updated.practicalHours) || 0 : updated.practicalHours;
-    const tw = typeof updated.teamWorkHours === 'string' ? parseFloat(updated.teamWorkHours) || 0 : updated.teamWorkHours;
-    const sl = typeof updated.selfLearningHours === 'string' ? parseFloat(updated.selfLearningHours) || 0 : updated.selfLearningHours;
+    const lec =
+      typeof updated.lectureHours === 'string'
+        ? parseFloat(updated.lectureHours) || 0
+        : updated.lectureHours;
+    const tut =
+      typeof updated.tutorialHours === 'string'
+        ? parseFloat(updated.tutorialHours) || 0
+        : updated.tutorialHours;
+    const prac =
+      typeof updated.practicalHours === 'string'
+        ? parseFloat(updated.practicalHours) || 0
+        : updated.practicalHours;
+    const tw =
+      typeof updated.teamWorkHours === 'string'
+        ? parseFloat(updated.teamWorkHours) || 0
+        : updated.teamWorkHours;
+    const sl =
+      typeof updated.selfLearningHours === 'string'
+        ? parseFloat(updated.selfLearningHours) || 0
+        : updated.selfLearningHours;
 
     updated.ciHours = lec + tut;
     updated.piHours = prac;
@@ -64,7 +112,12 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const isValid = formData.courseCode && formData.courseName && formData.facultyName && formData.semester && formData.credits > 0;
+  const isValid =
+    formData.courseCode &&
+    formData.courseName &&
+    formData.facultyName &&
+    formData.semester &&
+    formData.credits > 0;
 
   return (
     <div className="space-y-6">
@@ -75,7 +128,9 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
             <BookOpen className="h-5 w-5 text-indigo-600" />
             Course Details
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Enter the basic course information and credit hours</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Enter the basic course information and credit hours
+          </p>
         </div>
         <Badge variant="outline" className="text-xs">
           {completionPercentage}% Complete
@@ -99,7 +154,7 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Label className="text-xs font-medium">Course Code *</Label>
                   <Input
                     value={formData.courseCode}
-                    onChange={(e) => updateField('courseCode', e.target.value)}
+                    onChange={e => updateField('courseCode', e.target.value)}
                     placeholder="e.g., CS501"
                     className="h-9 text-sm"
                   />
@@ -108,7 +163,7 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Label className="text-xs font-medium">Course Name *</Label>
                   <Input
                     value={formData.courseName}
-                    onChange={(e) => updateField('courseName', e.target.value)}
+                    onChange={e => updateField('courseName', e.target.value)}
                     placeholder="e.g., Machine Learning"
                     className="h-9 text-sm"
                   />
@@ -117,14 +172,16 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Label className="text-xs font-medium">Faculty *</Label>
                   <Select
                     value={formData.facultyName}
-                    onValueChange={(v) => updateField('facultyName', v)}
+                    onValueChange={v => updateField('facultyName', v)}
                   >
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select faculty" />
                     </SelectTrigger>
                     <SelectContent>
-                      {FACULTY.map((f) => (
-                        <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>
+                      {FACULTY.map(f => (
+                        <SelectItem key={f} value={f} className="text-xs">
+                          {f}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -133,30 +190,31 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Label className="text-xs font-medium">Department *</Label>
                   <Select
                     value={formData.department}
-                    onValueChange={(v) => updateField('department', v)}
+                    onValueChange={v => updateField('department', v)}
                   >
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEPARTMENTS.map((d) => (
-                        <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                      {DEPARTMENTS.map(d => (
+                        <SelectItem key={d} value={d} className="text-xs">
+                          {d}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-medium">Program *</Label>
-                  <Select
-                    value={formData.program}
-                    onValueChange={(v) => updateField('program', v)}
-                  >
+                  <Select value={formData.program} onValueChange={v => updateField('program', v)}>
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select program" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PROGRAMS.map((p) => (
-                        <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
+                      {PROGRAMS.map(p => (
+                        <SelectItem key={p} value={p} className="text-xs">
+                          {p}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -165,46 +223,46 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Label className="text-xs font-medium">Regulation *</Label>
                   <Select
                     value={formData.regulation}
-                    onValueChange={(v) => updateField('regulation', v)}
+                    onValueChange={v => updateField('regulation', v)}
                   >
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select regulation" />
                     </SelectTrigger>
                     <SelectContent>
-                      {REGULATIONS.map((r) => (
-                        <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>
+                      {REGULATIONS.map(r => (
+                        <SelectItem key={r} value={r} className="text-xs">
+                          {r}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-medium">Year *</Label>
-                  <Select
-                    value={formData.year}
-                    onValueChange={(v) => updateField('year', v)}
-                  >
+                  <Select value={formData.year} onValueChange={v => updateField('year', v)}>
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent>
-                      {YEARS.map((y) => (
-                        <SelectItem key={y} value={y} className="text-xs">{y}</SelectItem>
+                      {YEARS.map(y => (
+                        <SelectItem key={y} value={y} className="text-xs">
+                          {y}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-medium">Semester *</Label>
-                  <Select
-                    value={formData.semester}
-                    onValueChange={(v) => updateField('semester', v)}
-                  >
+                  <Select value={formData.semester} onValueChange={v => updateField('semester', v)}>
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select semester" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SEMESTERS.map((s) => (
-                        <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+                      {SEMESTERS.map(s => (
+                        <SelectItem key={s} value={s} className="text-xs">
+                          {s}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -228,7 +286,9 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Input
                     type="number"
                     value={formData.lectureHours || ''}
-                    onChange={(e) => updateField('lectureHours', e.target.value ? parseFloat(e.target.value) : 0)}
+                    onChange={e =>
+                      updateField('lectureHours', e.target.value ? parseFloat(e.target.value) : 0)
+                    }
                     className="h-9 text-sm"
                     min={0}
                   />
@@ -238,7 +298,9 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Input
                     type="number"
                     value={formData.tutorialHours || ''}
-                    onChange={(e) => updateField('tutorialHours', e.target.value ? parseFloat(e.target.value) : 0)}
+                    onChange={e =>
+                      updateField('tutorialHours', e.target.value ? parseFloat(e.target.value) : 0)
+                    }
                     className="h-9 text-sm"
                     min={0}
                   />
@@ -248,7 +310,9 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Input
                     type="number"
                     value={formData.practicalHours || ''}
-                    onChange={(e) => updateField('practicalHours', e.target.value ? parseFloat(e.target.value) : 0)}
+                    onChange={e =>
+                      updateField('practicalHours', e.target.value ? parseFloat(e.target.value) : 0)
+                    }
                     className="h-9 text-sm"
                     min={0}
                   />
@@ -258,7 +322,9 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Input
                     type="number"
                     value={formData.teamWorkHours || ''}
-                    onChange={(e) => updateField('teamWorkHours', e.target.value ? parseFloat(e.target.value) : 0)}
+                    onChange={e =>
+                      updateField('teamWorkHours', e.target.value ? parseFloat(e.target.value) : 0)
+                    }
                     className="h-9 text-sm"
                     min={0}
                   />
@@ -268,7 +334,12 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
                   <Input
                     type="number"
                     value={formData.selfLearningHours || ''}
-                    onChange={(e) => updateField('selfLearningHours', e.target.value ? parseFloat(e.target.value) : 0)}
+                    onChange={e =>
+                      updateField(
+                        'selfLearningHours',
+                        e.target.value ? parseFloat(e.target.value) : 0
+                      )
+                    }
                     className="h-9 text-sm"
                     min={0}
                   />
@@ -289,11 +360,31 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { label: 'CI Hours (L + T)', value: formData.ciHours, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-                { label: 'PI Hours (P)', value: formData.piHours, color: 'text-purple-600', bg: 'bg-purple-500/10' },
-                { label: 'Team Work (TW)', value: formData.teamWorkHours, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
-                { label: 'Self Learning (SL)', value: formData.selfLearningHours, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-              ].map((item) => (
+                {
+                  label: 'CI Hours (L + T)',
+                  value: formData.ciHours,
+                  color: 'text-blue-600',
+                  bg: 'bg-blue-500/10',
+                },
+                {
+                  label: 'PI Hours (P)',
+                  value: formData.piHours,
+                  color: 'text-purple-600',
+                  bg: 'bg-purple-500/10',
+                },
+                {
+                  label: 'Team Work (TW)',
+                  value: formData.teamWorkHours,
+                  color: 'text-emerald-600',
+                  bg: 'bg-emerald-500/10',
+                },
+                {
+                  label: 'Self Learning (SL)',
+                  value: formData.selfLearningHours,
+                  color: 'text-amber-600',
+                  bg: 'bg-amber-500/10',
+                },
+              ].map(item => (
                 <div key={item.label} className={`p-3 rounded-lg ${item.bg}`}>
                   <p className="text-[10px] font-medium text-muted-foreground">{item.label}</p>
                   <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
@@ -306,8 +397,12 @@ export default function Step1_CourseDetails({ data, onUpdate, onSave, onNext, co
               </div>
               <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-600/10">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-medium text-muted-foreground">Calculated Credits</p>
-                  <Badge className="bg-indigo-600 text-white text-xs font-bold">{formData.credits}</Badge>
+                  <p className="text-[10px] font-medium text-muted-foreground">
+                    Calculated Credits
+                  </p>
+                  <Badge className="bg-indigo-600 text-white text-xs font-bold">
+                    {formData.credits}
+                  </Badge>
                 </div>
                 <p className="text-[9px] text-muted-foreground mt-1">Total Hours / 30 (rounded)</p>
               </div>

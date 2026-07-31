@@ -2,11 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { facultyService } from '@/services/faculty.service';
-import {
-  FacultyProfileResponse,
-  FdpResponse,
-  CreateFdpRequest,
-} from '@/types/faculty.types';
+import { FacultyProfileResponse, FdpResponse, CreateFdpRequest } from '@/types/faculty.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -120,21 +116,24 @@ export const FacultyFdpsTab = () => {
 
   // ── Fetch FDPs when faculty changes ──
 
-  const fetchFdps = useCallback(async (facultyId: number) => {
-    if (!departmentId || !facultyId) return;
-    setFdpsLoading(true);
-    setFdpsError(null);
-    try {
-      const result = await facultyService.listFdps(departmentId, facultyId);
-      setFdps(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load FDPs';
-      setFdpsError(msg);
-      toast.error(msg);
-    } finally {
-      setFdpsLoading(false);
-    }
-  }, [departmentId]);
+  const fetchFdps = useCallback(
+    async (facultyId: number) => {
+      if (!departmentId || !facultyId) return;
+      setFdpsLoading(true);
+      setFdpsError(null);
+      try {
+        const result = await facultyService.listFdps(departmentId, facultyId);
+        setFdps(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load FDPs';
+        setFdpsError(msg);
+        toast.error(msg);
+      } finally {
+        setFdpsLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   const handleFacultyChange = (facultyIdStr: string) => {
     const fid = parseInt(facultyIdStr, 10);
@@ -331,10 +330,12 @@ export const FacultyFdpsTab = () => {
                 onValueChange={handleFacultyChange}
               >
                 <SelectTrigger className="h-9 text-xs pl-8">
-                  <SelectValue placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'} />
+                  <SelectValue
+                    placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'}
+                  />
                 </SelectTrigger>
                 <SelectContent className="max-h-[240px]">
-                  {facultyList.map((f) => (
+                  {facultyList.map(f => (
                     <SelectItem key={f.id} value={String(f.id)} className="text-xs">
                       {f.employeeId} — {f.facultyName}
                     </SelectItem>
@@ -384,10 +385,21 @@ export const FacultyFdpsTab = () => {
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Add FDP
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -412,7 +424,7 @@ export const FacultyFdpsTab = () => {
                     className="h-8 text-xs pl-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
@@ -430,26 +442,45 @@ export const FacultyFdpsTab = () => {
                       <TableHead className="text-[10px] font-semibold">Duration Days</TableHead>
                       <TableHead className="text-[10px] font-semibold">Mode</TableHead>
                       <TableHead className="text-[10px] font-semibold">Certification</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {fdpsLoading && (
+                    {fdpsLoading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-32" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-24" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!fdpsLoading && fdpsError && (
@@ -493,7 +524,12 @@ export const FacultyFdpsTab = () => {
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Search className="h-8 w-8 opacity-40" />
                             <p className="text-xs">No FDPs match your search.</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => setSearchQuery('')}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => setSearchQuery('')}
+                            >
                               Clear Search
                             </Button>
                           </div>
@@ -502,56 +538,64 @@ export const FacultyFdpsTab = () => {
                     )}
 
                     {/* Data rows */}
-                    {!fdpsLoading && !fdpsError && filteredFdps.map((fdp, index) => (
-                      <TableRow key={fdp.id} className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className="text-xs p-1.5 font-medium">{fdp.fdpName}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{fdp.organizingBody || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{fdp.startDate}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{fdp.endDate}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{fdp.durationDays ?? '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className="text-[9px] font-normal">{fdp.mode}</Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'text-[9px]',
-                              fdp.certificationAvailable
-                                ? 'bg-emerald-500/10 text-emerald-600'
-                                : 'bg-gray-500/10 text-gray-600'
-                            )}
-                          >
-                            {formatBoolean(fdp.certificationAvailable)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center p-1.5">
-                          <div className="flex items-center justify-center gap-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
-                              onClick={() => openEditDialog(fdp)}
-                              title="Edit"
+                    {!fdpsLoading &&
+                      !fdpsError &&
+                      filteredFdps.map((fdp, index) => (
+                        <TableRow key={fdp.id} className="hover:bg-muted/20">
+                          <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-xs p-1.5 font-medium">{fdp.fdpName}</TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {fdp.organizingBody || '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">{fdp.startDate}</TableCell>
+                          <TableCell className="text-[10px] p-1.5">{fdp.endDate}</TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {fdp.durationDays ?? '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge variant="outline" className="text-[9px] font-normal">
+                              {fdp.mode}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'text-[9px]',
+                                fdp.certificationAvailable
+                                  ? 'bg-emerald-500/10 text-emerald-600'
+                                  : 'bg-gray-500/10 text-gray-600'
+                              )}
                             >
-                              <Pencil className="h-3 w-3 text-blue-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
-                              onClick={() => openDeleteDialog(fdp)}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3 w-3 text-red-600" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              {formatBoolean(fdp.certificationAvailable)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center p-1.5">
+                            <div className="flex items-center justify-center gap-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => openEditDialog(fdp)}
+                                title="Edit"
+                              >
+                                <Pencil className="h-3 w-3 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => openDeleteDialog(fdp)}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -580,8 +624,8 @@ export const FacultyFdpsTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add FDP Record</DialogTitle>
             <DialogDescription className="text-xs">
-              Add a new Faculty Development Program record for <strong>{selectedFacultyName}</strong>.
-              Required fields are marked with *.
+              Add a new Faculty Development Program record for{' '}
+              <strong>{selectedFacultyName}</strong>. Required fields are marked with *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
@@ -591,7 +635,7 @@ export const FacultyFdpsTab = () => {
                 className="h-9 text-xs"
                 placeholder="e.g. AI/ML in Education"
                 value={formData.fdpName}
-                onChange={(e) => setFormData(prev => ({ ...prev, fdpName: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, fdpName: e.target.value }))}
               />
             </div>
             <div className="grid gap-1.5">
@@ -600,7 +644,7 @@ export const FacultyFdpsTab = () => {
                 className="h-9 text-xs"
                 placeholder="e.g. AICTE"
                 value={formData.organizingBody || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -610,7 +654,7 @@ export const FacultyFdpsTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -619,7 +663,7 @@ export const FacultyFdpsTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.endDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
                 />
               </div>
             </div>
@@ -631,24 +675,28 @@ export const FacultyFdpsTab = () => {
                   type="number"
                   placeholder="e.g. 5"
                   value={formData.durationDays ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    durationDays: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      durationDays: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Mode *</Label>
                 <Select
                   value={formData.mode}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, mode: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, mode: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
                     {MODE_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -658,27 +706,44 @@ export const FacultyFdpsTab = () => {
               <Label className="text-xs font-medium">Certification Available</Label>
               <Select
                 value={formData.certificationAvailable ? 'true' : 'false'}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, certificationAvailable: v === 'true' }))}
+                onValueChange={v =>
+                  setFormData(prev => ({ ...prev, certificationAvailable: v === 'true' }))
+                }
               >
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true" className="text-xs">Yes</SelectItem>
-                  <SelectItem value="false" className="text-xs">No</SelectItem>
+                  <SelectItem value="true" className="text-xs">
+                    Yes
+                  </SelectItem>
+                  <SelectItem value="false" className="text-xs">
+                    No
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
               size="sm"
               className="text-xs"
               onClick={handleCreate}
-              disabled={saving || !formData.fdpName || !formData.startDate || !formData.endDate || !formData.mode}
+              disabled={
+                saving ||
+                !formData.fdpName ||
+                !formData.startDate ||
+                !formData.endDate ||
+                !formData.mode
+              }
             >
               {saving ? 'Adding...' : 'Add FDP'}
             </Button>
@@ -703,7 +768,7 @@ export const FacultyFdpsTab = () => {
               <Input
                 className="h-9 text-xs"
                 value={formData.fdpName}
-                onChange={(e) => setFormData(prev => ({ ...prev, fdpName: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, fdpName: e.target.value }))}
               />
             </div>
             <div className="grid gap-1.5">
@@ -711,7 +776,7 @@ export const FacultyFdpsTab = () => {
               <Input
                 className="h-9 text-xs"
                 value={formData.organizingBody || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -721,7 +786,7 @@ export const FacultyFdpsTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -730,7 +795,7 @@ export const FacultyFdpsTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.endDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
                 />
               </div>
             </div>
@@ -741,24 +806,28 @@ export const FacultyFdpsTab = () => {
                   className="h-9 text-xs"
                   type="number"
                   value={formData.durationDays ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    durationDays: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      durationDays: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Mode</Label>
                 <Select
                   value={formData.mode}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, mode: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, mode: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
                     {MODE_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -768,20 +837,31 @@ export const FacultyFdpsTab = () => {
               <Label className="text-xs font-medium">Certification Available</Label>
               <Select
                 value={formData.certificationAvailable ? 'true' : 'false'}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, certificationAvailable: v === 'true' }))}
+                onValueChange={v =>
+                  setFormData(prev => ({ ...prev, certificationAvailable: v === 'true' }))
+                }
               >
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true" className="text-xs">Yes</SelectItem>
-                  <SelectItem value="false" className="text-xs">No</SelectItem>
+                  <SelectItem value="true" className="text-xs">
+                    Yes
+                  </SelectItem>
+                  <SelectItem value="false" className="text-xs">
+                    No
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
@@ -799,12 +879,17 @@ export const FacultyFdpsTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete FDP Record</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>{selectedFdp?.fdpName}</strong>?
-              This action cannot be undone.
+              Are you sure you want to delete <strong>{selectedFdp?.fdpName}</strong>? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button

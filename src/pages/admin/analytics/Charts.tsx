@@ -59,7 +59,11 @@ export function InstitutionGrowthChart({ data }: InstitutionGrowthChartProps) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis
+                  dataKey="month"
+                  className="text-xs"
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                />
                 <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip
                   contentStyle={{
@@ -140,7 +144,9 @@ export function InstitutionDistributionChart({ data }: InstitutionDistributionCh
                 <Legend
                   verticalAlign="bottom"
                   height={36}
-                  formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+                  formatter={value => (
+                    <span className="text-xs text-muted-foreground">{value}</span>
+                  )}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -157,11 +163,14 @@ interface RepositoryCompletionChartProps {
 
 export function RepositoryCompletionChart({ data }: RepositoryCompletionChartProps) {
   const radarData = [
-    { subject: 'Academic', ...Object.fromEntries(data.map((d) => [d.institution, d.academic])) },
-    { subject: 'Faculty', ...Object.fromEntries(data.map((d) => [d.institution, d.faculty])) },
-    { subject: 'Student', ...Object.fromEntries(data.map((d) => [d.institution, d.student])) },
-    { subject: 'Research', ...Object.fromEntries(data.map((d) => [d.institution, d.research])) },
-    { subject: 'Infrastructure', ...Object.fromEntries(data.map((d) => [d.institution, d.infrastructure])) },
+    { subject: 'Academic', ...Object.fromEntries(data.map(d => [d.institution, d.academic])) },
+    { subject: 'Faculty', ...Object.fromEntries(data.map(d => [d.institution, d.faculty])) },
+    { subject: 'Student', ...Object.fromEntries(data.map(d => [d.institution, d.student])) },
+    { subject: 'Research', ...Object.fromEntries(data.map(d => [d.institution, d.research])) },
+    {
+      subject: 'Infrastructure',
+      ...Object.fromEntries(data.map(d => [d.institution, d.infrastructure])),
+    },
   ];
 
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
@@ -174,16 +183,27 @@ export function RepositoryCompletionChart({ data }: RepositoryCompletionChartPro
     >
       <Card className="border-border/50 hover:shadow-lg transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">Repository Completion by Institution</CardTitle>
-          <CardDescription>Category-wise completion percentage across top institutions</CardDescription>
+          <CardTitle className="text-base font-semibold">
+            Repository Completion by Institution
+          </CardTitle>
+          <CardDescription>
+            Category-wise completion percentage across top institutions
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid className="stroke-border/50" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                <PolarAngleAxis
+                  dataKey="subject"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                />
+                <PolarRadiusAxis
+                  angle={30}
+                  domain={[0, 100]}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
                 {data.slice(0, 4).map((inst, i) => (
                   <Radar
                     key={inst.institution}
@@ -198,7 +218,9 @@ export function RepositoryCompletionChart({ data }: RepositoryCompletionChartPro
                 <Legend
                   verticalAlign="bottom"
                   height={36}
-                  formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+                  formatter={value => (
+                    <span className="text-xs text-muted-foreground">{value}</span>
+                  )}
                 />
                 <Tooltip
                   contentStyle={{
@@ -249,23 +271,25 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
             <div className="min-w-[600px]">
               {/* Hour labels */}
               <div className="flex items-center mb-1 pl-10">
-                {hours.filter((h) => h % 3 === 0).map((hour) => (
-                  <span
-                    key={hour}
-                    className="text-[10px] text-muted-foreground"
-                    style={{ width: `${100 / 8}%` }}
-                  >
-                    {hour}:00
-                  </span>
-                ))}
+                {hours
+                  .filter(h => h % 3 === 0)
+                  .map(hour => (
+                    <span
+                      key={hour}
+                      className="text-[10px] text-muted-foreground"
+                      style={{ width: `${100 / 8}%` }}
+                    >
+                      {hour}:00
+                    </span>
+                  ))}
               </div>
               {/* Heatmap grid */}
-              {days.map((day) => (
+              {days.map(day => (
                 <div key={day} className="flex items-center gap-1 mb-1">
                   <span className="text-xs text-muted-foreground w-8 shrink-0">{day}</span>
                   <div className="flex gap-[2px] flex-1">
-                    {hours.map((hour) => {
-                      const item = data.find((d) => d.day === day && d.hour === hour);
+                    {hours.map(hour => {
+                      const item = data.find(d => d.day === day && d.hour === hour);
                       const value = item?.value || 0;
                       return (
                         <div

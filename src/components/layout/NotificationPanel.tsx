@@ -18,8 +18,8 @@ const typeConfig = {
 
 export const NotificationPanel = () => {
   const dispatch = useAppDispatch();
-  const { notificationPanelOpen, notifications } = useAppSelector((state) => state.ui);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notificationPanelOpen, notifications } = useAppSelector(state => state.ui);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <AnimatePresence>
@@ -109,10 +109,12 @@ export const NotificationPanel = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={cn(
-                              'text-sm',
-                              notification.read ? 'font-normal' : 'font-medium'
-                            )}>
+                            <p
+                              className={cn(
+                                'text-sm',
+                                notification.read ? 'font-normal' : 'font-medium'
+                              )}
+                            >
                               {notification.title}
                             </p>
                             {!notification.read && (

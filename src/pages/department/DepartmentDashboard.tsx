@@ -26,12 +26,54 @@ interface DepartmentDashboardProps {
 }
 
 const statCards = [
-  { key: 'facultyRecords', title: 'Faculty Records', icon: Users, gradient: 'from-indigo-500 to-indigo-600', change: 3, changeLabel: 'new this semester' },
-  { key: 'studentRecords', title: 'Student Records', icon: BookOpen, gradient: 'from-violet-500 to-violet-600', change: 12.4, changeLabel: 'vs last year' },
-  { key: 'researchRecords', title: 'Research Records', icon: FlaskConical, gradient: 'from-emerald-500 to-emerald-600', change: 18, changeLabel: 'new publications' },
-  { key: 'documentsUploaded', title: 'Documents Uploaded', icon: FileText, gradient: 'from-pink-500 to-pink-600', change: 24, changeLabel: 'this month' },
-  { key: 'pendingReviews', title: 'Pending Reviews', icon: Eye, gradient: 'from-amber-500 to-amber-600', change: -2, changeLabel: 'vs last week' },
-  { key: 'repositoryCompletion', title: 'Repository Completion', icon: Database, gradient: 'from-cyan-500 to-cyan-600', change: 5.3, changeLabel: 'improvement' },
+  {
+    key: 'facultyRecords',
+    title: 'Faculty Records',
+    icon: Users,
+    gradient: 'from-indigo-500 to-indigo-600',
+    change: 3,
+    changeLabel: 'new this semester',
+  },
+  {
+    key: 'studentRecords',
+    title: 'Student Records',
+    icon: BookOpen,
+    gradient: 'from-violet-500 to-violet-600',
+    change: 12.4,
+    changeLabel: 'vs last year',
+  },
+  {
+    key: 'researchRecords',
+    title: 'Research Records',
+    icon: FlaskConical,
+    gradient: 'from-emerald-500 to-emerald-600',
+    change: 18,
+    changeLabel: 'new publications',
+  },
+  {
+    key: 'documentsUploaded',
+    title: 'Documents Uploaded',
+    icon: FileText,
+    gradient: 'from-pink-500 to-pink-600',
+    change: 24,
+    changeLabel: 'this month',
+  },
+  {
+    key: 'pendingReviews',
+    title: 'Pending Reviews',
+    icon: Eye,
+    gradient: 'from-amber-500 to-amber-600',
+    change: -2,
+    changeLabel: 'vs last week',
+  },
+  {
+    key: 'repositoryCompletion',
+    title: 'Repository Completion',
+    icon: Database,
+    gradient: 'from-cyan-500 to-cyan-600',
+    change: 5.3,
+    changeLabel: 'improvement',
+  },
 ];
 
 export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) => {
@@ -66,18 +108,36 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                         ) : (
                           <TrendingDown className="h-3 w-3 text-red-500" />
                         )}
-                        <span className={cn('text-[10px] font-medium', isPositive ? 'text-emerald-500' : 'text-red-500')}>
-                          {isPositive ? '+' : ''}{card.change}
+                        <span
+                          className={cn(
+                            'text-[10px] font-medium',
+                            isPositive ? 'text-emerald-500' : 'text-red-500'
+                          )}
+                        >
+                          {isPositive ? '+' : ''}
+                          {card.change}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">{card.changeLabel}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {card.changeLabel}
+                        </span>
                       </div>
                     </div>
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform', card.gradient)}>
+                    <div
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform',
+                        card.gradient
+                      )}
+                    >
                       <Icon className="h-4 w-4 text-white" />
                     </div>
                   </div>
                 </CardContent>
-                <div className={cn('absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r opacity-60', card.gradient)} />
+                <div
+                  className={cn(
+                    'absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r opacity-60',
+                    card.gradient
+                  )}
+                />
               </Card>
             </motion.div>
           );
@@ -95,13 +155,19 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-semibold">Overall Repository Completion</h3>
-                <p className="text-xs text-muted-foreground">Data repository filling status for NAAC accreditation</p>
+                <p className="text-xs text-muted-foreground">
+                  Data repository filling status for NAAC accreditation
+                </p>
               </div>
-              <span className="text-2xl font-bold text-primary">{departmentStats.repositoryCompletion}%</span>
+              <span className="text-2xl font-bold text-primary">
+                {departmentStats.repositoryCompletion}%
+              </span>
             </div>
             <Progress value={departmentStats.repositoryCompletion} className="h-3 rounded-full" />
             <div className="flex items-center justify-between mt-2">
-              <span className="text-[11px] text-muted-foreground">Target: 100% by Jan 31, 2025</span>
+              <span className="text-[11px] text-muted-foreground">
+                Target: 100% by Jan 31, 2025
+              </span>
               <span className="text-[11px] text-emerald-500 font-medium">On Track</span>
             </div>
           </CardContent>
@@ -123,11 +189,31 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: 'Upload Faculty Data', icon: Upload, tab: 'upload', color: 'text-indigo-500 bg-indigo-500/10' },
-                { label: 'View Academic Records', icon: BookOpen, tab: 'academic', color: 'text-violet-500 bg-violet-500/10' },
-                { label: 'Add Research Publication', icon: FlaskConical, tab: 'research', color: 'text-emerald-500 bg-emerald-500/10' },
-                { label: 'Check Analytics', icon: TrendingUp, tab: 'analytics', color: 'text-pink-500 bg-pink-500/10' },
-              ].map((action) => {
+                {
+                  label: 'Upload Faculty Data',
+                  icon: Upload,
+                  tab: 'upload',
+                  color: 'text-indigo-500 bg-indigo-500/10',
+                },
+                {
+                  label: 'View Academic Records',
+                  icon: BookOpen,
+                  tab: 'academic',
+                  color: 'text-violet-500 bg-violet-500/10',
+                },
+                {
+                  label: 'Add Research Publication',
+                  icon: FlaskConical,
+                  tab: 'research',
+                  color: 'text-emerald-500 bg-emerald-500/10',
+                },
+                {
+                  label: 'Check Analytics',
+                  icon: TrendingUp,
+                  tab: 'analytics',
+                  color: 'text-pink-500 bg-pink-500/10',
+                },
+              ].map(action => {
                 const Icon = action.icon;
                 return (
                   <Button
@@ -137,7 +223,12 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                     onClick={() => onNavigate(action.tab)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', action.color)}>
+                      <div
+                        className={cn(
+                          'flex h-8 w-8 items-center justify-center rounded-lg',
+                          action.color
+                        )}
+                      >
                         <Icon className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-medium">{action.label}</span>
@@ -175,10 +266,16 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                     key={index}
                     className="flex items-start gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors"
                   >
-                    <AlertTriangle className={cn(
-                      'h-4 w-4 mt-0.5 shrink-0',
-                      record.priority === 'high' ? 'text-red-500' : record.priority === 'medium' ? 'text-amber-500' : 'text-blue-500'
-                    )} />
+                    <AlertTriangle
+                      className={cn(
+                        'h-4 w-4 mt-0.5 shrink-0',
+                        record.priority === 'high'
+                          ? 'text-red-500'
+                          : record.priority === 'medium'
+                            ? 'text-amber-500'
+                            : 'text-blue-500'
+                      )}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{record.item}</p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -211,14 +308,19 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                 <CardTitle className="text-base font-semibold">Recent Uploads</CardTitle>
                 <CardDescription>Latest CSV uploads and their approval status</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs" onClick={() => onNavigate('upload')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => onNavigate('upload')}
+              >
                 View All <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {uploadHistory.slice(0, 4).map((upload) => (
+              {uploadHistory.slice(0, 4).map(upload => (
                 <div
                   key={upload.id}
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50"
@@ -229,7 +331,9 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{upload.fileName}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground">{upload.recordsCount} records</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {upload.recordsCount} records
+                      </span>
                       <span className="text-[11px] text-muted-foreground">•</span>
                       <span className="text-[11px] text-muted-foreground">{upload.uploadedAt}</span>
                     </div>
@@ -240,7 +344,7 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                       'text-[10px] shrink-0',
                       upload.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
                       upload.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                      upload.status === 'rejected' && 'bg-red-500/10 text-red-600',
+                      upload.status === 'rejected' && 'bg-red-500/10 text-red-600'
                     )}
                   >
                     {upload.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}

@@ -6,11 +6,7 @@ type BlogArticleLayoutProps = {
   children: React.ReactNode;
 };
 
-const BlogArticleLayout = ({
-  title,
-  description,
-  children,
-}: BlogArticleLayoutProps) => (
+const BlogArticleLayout = ({ title, description, children }: BlogArticleLayoutProps) => (
   <main className="min-h-screen bg-slate-50 text-slate-900">
     <div className="mx-auto max-w-4xl px-6 pt-8">
       <Link
@@ -29,9 +25,7 @@ const BlogArticleLayout = ({
           {title}
         </h1>
         {description ? (
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-            {description}
-          </p>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">{description}</p>
         ) : null}
       </header>
 

@@ -46,7 +46,11 @@ interface EvidencePreviewDialogProps {
  * Supports: PNG, JPG, JPEG (image preview) + PDF (embedded viewer)
  * Extensible for DOCX / XLSX / ZIP (shows file info with download prompt)
  */
-export function EvidencePreviewDialog({ evidence, open, onOpenChange }: EvidencePreviewDialogProps) {
+export function EvidencePreviewDialog({
+  evidence,
+  open,
+  onOpenChange,
+}: EvidencePreviewDialogProps) {
   const [zoom, setZoom] = useState(100);
   const [activeTab, setActiveTab] = useState<'preview' | 'details'>('preview');
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -74,20 +78,26 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
 
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'approved': return 'bg-emerald-500/10 text-emerald-600';
-      case 'under-review': return 'bg-amber-500/10 text-amber-600';
-      case 'uploaded': return 'bg-blue-500/10 text-blue-600';
-      default: return 'bg-muted text-muted-foreground';
+      case 'approved':
+        return 'bg-emerald-500/10 text-emerald-600';
+      case 'under-review':
+        return 'bg-amber-500/10 text-amber-600';
+      case 'uploaded':
+        return 'bg-blue-500/10 text-blue-600';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const renderPreview = (fullScreen = false) => {
     if (isImage) {
       return (
-        <div className={cn(
-          'relative flex items-center justify-center bg-muted/30 rounded-xl overflow-hidden',
-          fullScreen ? 'min-h-0 flex-1' : 'min-h-[300px] max-h-[65vh]',
-        )}>
+        <div
+          className={cn(
+            'relative flex items-center justify-center bg-muted/30 rounded-xl overflow-hidden',
+            fullScreen ? 'min-h-0 flex-1' : 'min-h-[300px] max-h-[65vh]'
+          )}
+        >
           {/* Zoom controls */}
           <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
             <Button
@@ -128,7 +138,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
             alt={evidence.fileName}
             className={cn(
               'max-w-full object-contain transition-all duration-200',
-              fullScreen ? 'max-h-full' : 'max-h-[65vh]',
+              fullScreen ? 'max-h-full' : 'max-h-[65vh]'
             )}
             style={{ transform: `scale(${zoom / 100})` }}
           />
@@ -138,10 +148,12 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
 
     if (isPdf) {
       return (
-        <div className={cn(
-          'rounded-xl overflow-hidden border bg-muted/10',
-          fullScreen ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[70vh]',
-        )}>
+        <div
+          className={cn(
+            'rounded-xl overflow-hidden border bg-muted/10',
+            fullScreen ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[70vh]'
+          )}
+        >
           <iframe
             src={evidence.dataUrl}
             title={evidence.fileName}
@@ -170,7 +182,9 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
             <FileText className="h-10 w-10 text-muted-foreground/40" />
           </div>
           <div className="absolute -top-2 -right-2">
-            <Badge variant="secondary" className="text-[9px] uppercase">{ext}</Badge>
+            <Badge variant="secondary" className="text-[9px] uppercase">
+              {ext}
+            </Badge>
           </div>
         </div>
         <p className="text-sm font-medium text-muted-foreground">
@@ -179,12 +193,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
         <p className="text-xs text-muted-foreground/70 mt-1 mb-4">
           Download the file to view its contents
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => download()}
-        >
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => download()}>
           <DownloadCloud className="h-4 w-4" />
           Download {evidence.fileName}
         </Button>
@@ -200,24 +209,27 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => {
-      if (!o && isFullScreen) {
-        // Dialog trying to close (Escape / click outside) while in full-screen
-        // — just exit full-screen instead of closing
-        setIsFullScreen(false);
-        return;
-      }
-      if (!o) {
-        setIsFullScreen(false);
-      }
-      onOpenChange(o);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={o => {
+        if (!o && isFullScreen) {
+          // Dialog trying to close (Escape / click outside) while in full-screen
+          // — just exit full-screen instead of closing
+          setIsFullScreen(false);
+          return;
+        }
+        if (!o) {
+          setIsFullScreen(false);
+        }
+        onOpenChange(o);
+      }}
+    >
       <DialogContent
         className={cn(
           'overflow-hidden flex flex-col p-0 gap-0 transition-all duration-300',
           isFullScreen
             ? 'max-w-[98vw] max-h-[98vh] sm:max-w-[98vw] sm:max-h-[98vh] rounded-2xl'
-            : 'sm:max-w-4xl max-h-[90vh]',
+            : 'sm:max-w-4xl max-h-[90vh]'
         )}
       >
         {/* Header */}
@@ -229,7 +241,10 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
                   {getFileIcon()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <DialogTitle className="text-sm font-semibold truncate max-w-[300px] sm:max-w-[500px]" title={evidence.fileName}>
+                  <DialogTitle
+                    className="text-sm font-semibold truncate max-w-[300px] sm:max-w-[500px]"
+                    title={evidence.fileName}
+                  >
                     {evidence.fileName}
                   </DialogTitle>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -297,7 +312,11 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
           <div className="px-5 py-1.5 bg-indigo-500/5 border-b border-indigo-500/10 flex items-center justify-between shrink-0">
             <p className="text-[10px] text-indigo-600/70 flex items-center gap-1.5">
               <Maximize2 className="h-3 w-3" />
-              Full-screen mode — press <kbd className="px-1 py-0.5 rounded bg-indigo-500/10 text-[9px] font-mono">Esc</kbd> to exit
+              Full-screen mode — press{' '}
+              <kbd className="px-1 py-0.5 rounded bg-indigo-500/10 text-[9px] font-mono">
+                Esc
+              </kbd>{' '}
+              to exit
             </p>
             <Button
               variant="ghost"
@@ -314,7 +333,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
         {/* Tabs: Preview / Details */}
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as 'preview' | 'details')}
+          onValueChange={v => setActiveTab(v as 'preview' | 'details')}
           className="flex-1 flex flex-col min-h-0"
         >
           <div className={cn('px-5 shrink-0', isFullScreen ? 'pt-3 pb-2' : 'pt-3')}>
@@ -335,7 +354,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
             value="preview"
             className={cn(
               'm-0 overflow-auto',
-              isFullScreen ? 'flex-1 px-5 pb-5 pt-2 min-h-0' : 'flex-1 px-5 pb-5 pt-3',
+              isFullScreen ? 'flex-1 px-5 pb-5 pt-2 min-h-0' : 'flex-1 px-5 pb-5 pt-3'
             )}
           >
             <div className={cn(isFullScreen ? 'h-full flex flex-col' : '')}>

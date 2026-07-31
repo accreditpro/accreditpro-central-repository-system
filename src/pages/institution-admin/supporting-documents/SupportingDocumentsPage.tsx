@@ -2,9 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { EvidenceRepositoryEngine } from '@/components/evidence-repository';
 import { calculateSectionMetrics } from '@/components/evidence-repository/types';
-import {
-  supportingDocumentsConfig,
-} from './evidence-metadata';
+import { supportingDocumentsConfig } from './evidence-metadata';
 
 type ActiveSection = 'institution-information' | 'academic-structure';
 
@@ -36,7 +34,7 @@ export default function SupportingDocumentsPage() {
           institutionConfig={institutionConfig}
           notifications={[]}
           activeSection={activeSection}
-          onSectionChange={(section) => setActiveSection(section as ActiveSection)}
+          onSectionChange={section => setActiveSection(section as ActiveSection)}
           sections={config.sections}
         />
       </div>

@@ -14,7 +14,13 @@ interface DatePickerProps {
   disabled?: boolean;
 }
 
-export function DatePicker({ value, onChange, placeholder = 'Pick a date', className, disabled }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = 'Pick a date',
+  className,
+  disabled,
+}: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
   const selectedDate = React.useMemo(() => {
@@ -50,12 +56,7 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', class
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleSelect}
-          initialFocus
-        />
+        <Calendar mode="single" selected={selectedDate} onSelect={handleSelect} initialFocus />
       </PopoverContent>
     </Popover>
   );

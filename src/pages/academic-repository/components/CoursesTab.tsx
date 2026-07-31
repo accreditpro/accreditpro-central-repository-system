@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { academicService } from '@/services/academic.service';
-import {
-  CourseResponse,
-  CreateCourseRequest,
-} from '@/types/academic.types';
+import { CourseResponse, CreateCourseRequest } from '@/types/academic.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,7 +132,9 @@ export const CoursesTab = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await academicService.listCourses(departmentId, { search: searchQuery || undefined });
+      const result = await academicService.listCourses(departmentId, {
+        search: searchQuery || undefined,
+      });
       setRecords(result.content || []);
     } catch (err: any) {
       setError(err?.message || 'Failed to load course records');
@@ -152,8 +151,20 @@ export const CoursesTab = () => {
   // ── Create course ──
   const handleCreate = async () => {
     if (!departmentId) return;
-    if (!formData.programOfferingId || !formData.courseCode || !formData.courseName || !formData.semester || !formData.courseType || !formData.credits) {
-      toast({ title: 'Validation Error', description: 'Program Offering, Course Code, Course Name, Semester, Course Type, and Credits are required.', variant: 'destructive' });
+    if (
+      !formData.programOfferingId ||
+      !formData.courseCode ||
+      !formData.courseName ||
+      !formData.semester ||
+      !formData.courseType ||
+      !formData.credits
+    ) {
+      toast({
+        title: 'Validation Error',
+        description:
+          'Program Offering, Course Code, Course Name, Semester, Course Type, and Credits are required.',
+        variant: 'destructive',
+      });
       return;
     }
     setSaving(true);
@@ -164,7 +175,11 @@ export const CoursesTab = () => {
       resetForm();
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to create course.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to create course.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -179,7 +194,11 @@ export const CoursesTab = () => {
       toast({ title: 'Success', description: 'Course deleted successfully.' });
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to delete course.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to delete course.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -187,19 +206,33 @@ export const CoursesTab = () => {
   const filteredRecords = useMemo(() => {
     if (!searchQuery.trim()) return records;
     const q = searchQuery.toLowerCase();
-    return records.filter((r) => {
+    return records.filter(r => {
       const searchable = [
         r.courseCode,
         r.courseName,
         r.courseType ?? '',
         r.status ?? '',
         String(r.semester ?? ''),
-      ].join(' ').toLowerCase();
+      ]
+        .join(' ')
+        .toLowerCase();
       return searchable.includes(q);
     });
   }, [records, searchQuery]);
 
-  const columns = ['#', 'Course Code', 'Course Name', 'Semester', 'Course Type', 'Credits', 'Theory Hours', 'Lab Hours', 'Status', 'Workflow', 'Actions'];
+  const columns = [
+    '#',
+    'Course Code',
+    'Course Name',
+    'Semester',
+    'Course Type',
+    'Credits',
+    'Theory Hours',
+    'Lab Hours',
+    'Status',
+    'Workflow',
+    'Actions',
+  ];
   const colSpan = columns.length;
 
   return (
@@ -208,10 +241,18 @@ export const CoursesTab = () => {
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-semibold">Course Records</CardTitle>
-            <CardDescription className="text-xs">Manage courses offered in the curriculum</CardDescription>
+            <CardDescription className="text-xs">
+              Manage courses offered in the curriculum
+            </CardDescription>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchRecords} disabled={loading}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={fetchRecords}
+              disabled={loading}
+            >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             </Button>
           </div>
@@ -225,18 +266,29 @@ export const CoursesTab = () => {
               <Input
                 placeholder="Search by code, name, type..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
             <div className="flex items-center gap-1.5 order-1 sm:order-2">
-              <Button variant="outline" size="sm" className="text-xs h-8" onClick={downloadTemplate}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8"
+                onClick={downloadTemplate}
+              >
                 <Download className="h-3.5 w-3.5 mr-1" /> Download Template
               </Button>
               <Button variant="outline" size="sm" className="text-xs h-8" disabled>
                 <Upload className="h-3.5 w-3.5 mr-1" /> Upload CSV
               </Button>
-              <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetForm(); }}>
+              <Dialog
+                open={showCreate}
+                onOpenChange={open => {
+                  setShowCreate(open);
+                  if (!open) resetForm();
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm" className="text-xs h-8">
                     <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
@@ -257,7 +309,7 @@ export const CoursesTab = () => {
                       <Input
                         placeholder="e.g. CS401"
                         value={formData.courseCode}
-                        onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
+                        onChange={e => setFormData({ ...formData, courseCode: e.target.value })}
                         className="h-8 text-xs"
                       />
                     </div>
@@ -268,7 +320,7 @@ export const CoursesTab = () => {
                       <Input
                         placeholder="e.g. Machine Learning"
                         value={formData.courseName}
-                        onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
+                        onChange={e => setFormData({ ...formData, courseName: e.target.value })}
                         className="h-8 text-xs"
                       />
                     </div>
@@ -280,7 +332,12 @@ export const CoursesTab = () => {
                         type="number"
                         placeholder="e.g. 5"
                         value={formData.programOfferingId || ''}
-                        onChange={(e) => setFormData({ ...formData, programOfferingId: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            programOfferingId: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -294,7 +351,12 @@ export const CoursesTab = () => {
                         max={8}
                         placeholder="e.g. 7"
                         value={formData.semester || ''}
-                        onChange={(e) => setFormData({ ...formData, semester: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            semester: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -305,11 +367,13 @@ export const CoursesTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.courseType}
-                        onChange={(e) => setFormData({ ...formData, courseType: e.target.value })}
+                        onChange={e => setFormData({ ...formData, courseType: e.target.value })}
                       >
                         <option value="">Select type...</option>
-                        {COURSE_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                        {COURSE_TYPE_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -322,7 +386,12 @@ export const CoursesTab = () => {
                         min={1}
                         placeholder="e.g. 4"
                         value={formData.credits || ''}
-                        onChange={(e) => setFormData({ ...formData, credits: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            credits: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -335,7 +404,12 @@ export const CoursesTab = () => {
                         min={0}
                         placeholder="e.g. 3"
                         value={formData.theoryHours ?? ''}
-                        onChange={(e) => setFormData({ ...formData, theoryHours: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            theoryHours: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -348,7 +422,12 @@ export const CoursesTab = () => {
                         min={0}
                         placeholder="e.g. 2"
                         value={formData.labHours ?? ''}
-                        onChange={(e) => setFormData({ ...formData, labHours: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            labHours: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -359,20 +438,43 @@ export const CoursesTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.status || 'Active'}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        onChange={e => setFormData({ ...formData, status: e.target.value })}
                       >
-                        {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                        {STATUS_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     </div>
                   </div>
 
                   <DialogFooter className="gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => { setShowCreate(false); resetForm(); }} className="text-xs h-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowCreate(false);
+                        resetForm();
+                      }}
+                      className="text-xs h-8"
+                    >
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleCreate} disabled={saving || !formData.programOfferingId || !formData.courseCode || !formData.courseName || !formData.semester || !formData.courseType || !formData.credits} className="text-xs h-8">
+                    <Button
+                      size="sm"
+                      onClick={handleCreate}
+                      disabled={
+                        saving ||
+                        !formData.programOfferingId ||
+                        !formData.courseCode ||
+                        !formData.courseName ||
+                        !formData.semester ||
+                        !formData.courseType ||
+                        !formData.credits
+                      }
+                      className="text-xs h-8"
+                    >
                       {saving ? 'Saving...' : 'Create'}
                     </Button>
                   </DialogFooter>
@@ -387,8 +489,10 @@ export const CoursesTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -396,7 +500,9 @@ export const CoursesTab = () => {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: colSpan }).map((_, j) => (
-                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -427,8 +533,10 @@ export const CoursesTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -436,35 +544,61 @@ export const CoursesTab = () => {
                   {filteredRecords.map((record, index) => (
                     <TableRow key={record.id} className="hover:bg-muted/20">
                       <TableCell className="text-xs text-muted-foreground">{index + 1}</TableCell>
-                      <TableCell className="text-xs font-mono font-medium">{record.courseCode}</TableCell>
+                      <TableCell className="text-xs font-mono font-medium">
+                        {record.courseCode}
+                      </TableCell>
                       <TableCell className="text-xs font-medium">{record.courseName}</TableCell>
                       <TableCell className="text-xs">{record.semester ?? '—'}</TableCell>
                       <TableCell className="text-xs">
-                        <Badge variant="outline" className="text-[9px]">{record.courseType || '—'}</Badge>
+                        <Badge variant="outline" className="text-[9px]">
+                          {record.courseType || '—'}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-xs font-medium">{record.credits ?? '—'}</TableCell>
                       <TableCell className="text-xs">{record.theoryHours ?? '—'}</TableCell>
                       <TableCell className="text-xs">{record.labHours ?? '—'}</TableCell>
                       <TableCell className="text-xs">
-                        <Badge variant="secondary" className={cn('text-[9px]',
-                          record.status === 'Active' && 'bg-emerald-500/10 text-emerald-600',
-                          record.status === 'Inactive' && 'bg-gray-500/10 text-gray-600',
-                          record.status === 'Proposed' && 'bg-blue-500/10 text-blue-600',
-                        )}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            record.status === 'Active' && 'bg-emerald-500/10 text-emerald-600',
+                            record.status === 'Inactive' && 'bg-gray-500/10 text-gray-600',
+                            record.status === 'Proposed' && 'bg-blue-500/10 text-blue-600'
+                          )}
+                        >
                           {record.status || '—'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={cn('text-[9px]', workflowStatusColors[record.workflowStatus || ''] || '')}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            workflowStatusColors[record.workflowStatus || ''] || ''
+                          )}
+                        >
                           {record.workflowStatus || '—'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Edit (coming soon)" disabled>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            title="Edit (coming soon)"
+                            disabled
+                          >
                             <Pencil className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(record.id)} title="Delete">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(record.id)}
+                            title="Delete"
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>

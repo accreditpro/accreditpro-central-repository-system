@@ -52,7 +52,19 @@ const institutionInfoFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA', 'NIRF'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'registration_certificate.pdf', 2048, 'pdf', 'Admin', '10-Jan-2026', 'approved', { verifiedBy: 'IQAC Coordinator', verifiedAt: '12-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'registration_certificate.pdf',
+          2048,
+          'pdf',
+          'Admin',
+          '10-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC Coordinator', verifiedAt: '12-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'inst-trust-deed',
@@ -63,7 +75,12 @@ const institutionInfoFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'UGC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'trust_deed.pdf', 3500, 'pdf', 'Admin', '10-Jan-2026', 'approved', { verifiedBy: 'IQAC Coordinator', verifiedAt: '12-Jan-2026' })],
+      versions: [
+        createVersion('v1', 1, 'trust_deed.pdf', 3500, 'pdf', 'Admin', '10-Jan-2026', 'approved', {
+          verifiedBy: 'IQAC Coordinator',
+          verifiedAt: '12-Jan-2026',
+        }),
+      ],
     },
     {
       id: 'inst-pan-card',
@@ -74,7 +91,9 @@ const institutionInfoFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'UGC'],
       uploadedOn: '11-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'pan_card.pdf', 512, 'pdf', 'Admin', '11-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'pan_card.pdf', 512, 'pdf', 'Admin', '11-Jan-2026', 'uploaded'),
+      ],
     },
     {
       id: 'inst-12b-cert',
@@ -111,8 +130,28 @@ const visionMissionFolder: EvidenceFolder = {
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Principal',
       versions: [
-        createVersion('v1', 1, 'vision_statement_v1.pdf', 1024, 'pdf', 'Principal', '01-Dec-2025', 'approved', { verifiedBy: 'IQAC', verifiedAt: '03-Dec-2025', versionNotes: 'Initial upload' }),
-        createVersion('v2', 2, 'vision_statement_v2.pdf', 1200, 'pdf', 'Principal', '08-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026', versionNotes: 'Updated for 2026' }),
+        createVersion(
+          'v1',
+          1,
+          'vision_statement_v1.pdf',
+          1024,
+          'pdf',
+          'Principal',
+          '01-Dec-2025',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '03-Dec-2025', versionNotes: 'Initial upload' }
+        ),
+        createVersion(
+          'v2',
+          2,
+          'vision_statement_v2.pdf',
+          1200,
+          'pdf',
+          'Principal',
+          '08-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026', versionNotes: 'Updated for 2026' }
+        ),
       ],
     },
     {
@@ -124,7 +163,19 @@ const visionMissionFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Principal',
-      versions: [createVersion('v1', 1, 'mission_statement.pdf', 980, 'pdf', 'Principal', '08-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'mission_statement.pdf',
+          980,
+          'pdf',
+          'Principal',
+          '08-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'vm-peo-pso',
@@ -135,7 +186,18 @@ const visionMissionFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '15-Jan-2026',
       uploadedBy: 'HOD CSE',
-      versions: [createVersion('v1', 1, 'peo_pso_mapping.pdf', 2500, 'pdf', 'HOD CSE', '15-Jan-2026', 'under_review')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'peo_pso_mapping.pdf',
+          2500,
+          'pdf',
+          'HOD CSE',
+          '15-Jan-2026',
+          'under_review'
+        ),
+      ],
     },
     {
       id: 'vm-core-values',
@@ -146,7 +208,9 @@ const visionMissionFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'core_values.pdf', 750, 'pdf', 'Admin', '08-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'core_values.pdf', 750, 'pdf', 'Admin', '08-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -166,7 +230,19 @@ const addressCampusFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NAAC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'land_ownership.pdf', 5000, 'pdf', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'land_ownership.pdf',
+          5000,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'ac-building-plan',
@@ -177,7 +253,19 @@ const addressCampusFolder: EvidenceFolder = {
       frameworks: ['AICTE'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Infra Coordinator',
-      versions: [createVersion('v1', 1, 'building_plan.pdf', 8000, 'pdf', 'Infra Coordinator', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'building_plan.pdf',
+          8000,
+          'pdf',
+          'Infra Coordinator',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'ac-campus-map',
@@ -188,7 +276,9 @@ const addressCampusFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '06-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'campus_map.png', 4500, 'png', 'Admin', '06-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'campus_map.png', 4500, 'png', 'Admin', '06-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -210,8 +300,28 @@ const aicteFolder: EvidenceFolder = {
       uploadedOn: '12-Jan-2026',
       uploadedBy: 'Admin',
       versions: [
-        createVersion('v1', 1, 'aicte_approval_2024.pdf', 1800, 'pdf', 'Admin', '15-Jun-2025', 'approved', { verifiedBy: 'IQAC', verifiedAt: '17-Jun-2025', versionNotes: '2024-25 approval' }),
-        createVersion('v2', 2, 'aicte_approval_2025.pdf', 1900, 'pdf', 'Admin', '12-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '14-Jan-2026', versionNotes: '2025-26 approval' }),
+        createVersion(
+          'v1',
+          1,
+          'aicte_approval_2024.pdf',
+          1800,
+          'pdf',
+          'Admin',
+          '15-Jun-2025',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '17-Jun-2025', versionNotes: '2024-25 approval' }
+        ),
+        createVersion(
+          'v2',
+          2,
+          'aicte_approval_2025.pdf',
+          1900,
+          'pdf',
+          'Admin',
+          '12-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '14-Jan-2026', versionNotes: '2025-26 approval' }
+        ),
       ],
     },
     {
@@ -223,7 +333,9 @@ const aicteFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '12-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'eoa_2025_26.pdf', 2200, 'pdf', 'Admin', '12-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'eoa_2025_26.pdf', 2200, 'pdf', 'Admin', '12-Jan-2026', 'uploaded'),
+      ],
     },
     {
       id: 'aicte-intake',
@@ -234,7 +346,19 @@ const aicteFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '12-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'intake_letter.pdf', 1500, 'pdf', 'Admin', '12-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '14-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'intake_letter.pdf',
+          1500,
+          'pdf',
+          'Admin',
+          '12-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '14-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'aicte-prev',
@@ -245,7 +369,18 @@ const aicteFolder: EvidenceFolder = {
       frameworks: ['Historical'],
       uploadedOn: '05-Jan-2025',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'prev_approval.pdf', 1700, 'pdf', 'Admin', '05-Jan-2025', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'prev_approval.pdf',
+          1700,
+          'pdf',
+          'Admin',
+          '05-Jan-2025',
+          'uploaded'
+        ),
+      ],
     },
   ],
 };
@@ -265,7 +400,19 @@ const ugcFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NIRF'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'ugc_recognition.pdf', 1400, 'pdf', 'Admin', '10-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'ugc_recognition.pdf',
+          1400,
+          'pdf',
+          'Admin',
+          '10-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'ugc-12b',
@@ -284,7 +431,9 @@ const ugcFolder: EvidenceFolder = {
       frameworks: ['UGC', 'NAAC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'ugc_2f.pdf', 1100, 'pdf', 'Admin', '10-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'ugc_2f.pdf', 1100, 'pdf', 'Admin', '10-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -304,7 +453,19 @@ const universityAffiliationFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'affiliation_order.pdf', 2000, 'pdf', 'Admin', '08-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'affiliation_order.pdf',
+          2000,
+          'pdf',
+          'Admin',
+          '08-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'ua-continuation',
@@ -315,7 +476,18 @@ const universityAffiliationFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'continuation_affiliation.pdf', 1800, 'pdf', 'Admin', '08-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'continuation_affiliation.pdf',
+          1800,
+          'pdf',
+          'Admin',
+          '08-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'ua-mou',
@@ -344,7 +516,19 @@ const autonomousFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA', 'NIRF'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'autonomous_order.pdf', 2500, 'pdf', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'autonomous_order.pdf',
+          2500,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'auto-extension',
@@ -355,7 +539,18 @@ const autonomousFolder: EvidenceFolder = {
       frameworks: ['UGC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'autonomous_extension.pdf', 1800, 'pdf', 'Admin', '05-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'autonomous_extension.pdf',
+          1800,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
   ],
 };
@@ -376,7 +571,19 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NIRF'],
       uploadedOn: '03-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'naac_certificate.pdf', 3000, 'pdf', 'IQAC Coordinator', '03-Jan-2026', 'approved', { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'naac_certificate.pdf',
+          3000,
+          'pdf',
+          'IQAC Coordinator',
+          '03-Jan-2026',
+          'approved',
+          { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'naac-ssr',
@@ -387,7 +594,19 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '03-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'naac_ssr.pdf', 15000, 'pdf', 'IQAC Coordinator', '03-Jan-2026', 'approved', { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'naac_ssr.pdf',
+          15000,
+          'pdf',
+          'IQAC Coordinator',
+          '03-Jan-2026',
+          'approved',
+          { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'naac-peer-report',
@@ -398,7 +617,18 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '03-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'peer_team_report.pdf', 8000, 'pdf', 'IQAC Coordinator', '03-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'peer_team_report.pdf',
+          8000,
+          'pdf',
+          'IQAC Coordinator',
+          '03-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'naac-aqar',
@@ -409,7 +639,18 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '15-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'aqar_2025_26.pdf', 12000, 'pdf', 'IQAC Coordinator', '15-Jan-2026', 'submitted')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'aqar_2025_26.pdf',
+          12000,
+          'pdf',
+          'IQAC Coordinator',
+          '15-Jan-2026',
+          'submitted'
+        ),
+      ],
     },
     {
       id: 'naac-iiqa',
@@ -428,7 +669,18 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'dvv_clarification.pdf', 5000, 'pdf', 'IQAC Coordinator', '10-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'dvv_clarification.pdf',
+          5000,
+          'pdf',
+          'IQAC Coordinator',
+          '10-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'naac-prev-cert',
@@ -439,7 +691,19 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'Historical'],
       uploadedOn: '03-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'naac_prev_cert.pdf', 2800, 'pdf', 'IQAC Coordinator', '03-Jan-2026', 'approved', { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'naac_prev_cert.pdf',
+          2800,
+          'pdf',
+          'IQAC Coordinator',
+          '03-Jan-2026',
+          'approved',
+          { verifiedBy: 'Principal', verifiedAt: '05-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'naac-action-plan',
@@ -450,7 +714,18 @@ const naacFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '18-Jan-2026',
       uploadedBy: 'IQAC Coordinator',
-      versions: [createVersion('v1', 1, 'action_plan.pdf', 3500, 'pdf', 'IQAC Coordinator', '18-Jan-2026', 'under_review')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'action_plan.pdf',
+          3500,
+          'pdf',
+          'IQAC Coordinator',
+          '18-Jan-2026',
+          'under_review'
+        ),
+      ],
     },
   ],
 };
@@ -471,7 +746,19 @@ const nbaFolder: EvidenceFolder = {
       frameworks: ['NBA', 'NIRF'],
       uploadedOn: '04-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'nba_certificate.pdf', 2500, 'pdf', 'Admin', '04-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '06-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'nba_certificate.pdf',
+          2500,
+          'pdf',
+          'Admin',
+          '04-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '06-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'nba-sar',
@@ -482,7 +769,9 @@ const nbaFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '04-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'nba_sar.pdf', 20000, 'pdf', 'Admin', '04-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'nba_sar.pdf', 20000, 'pdf', 'Admin', '04-Jan-2026', 'uploaded'),
+      ],
     },
     {
       id: 'nba-visit-report',
@@ -519,7 +808,19 @@ const nirfFolder: EvidenceFolder = {
       frameworks: ['NIRF'],
       uploadedOn: '20-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'nirf_submission.pdf', 5000, 'pdf', 'Admin', '20-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '22-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'nirf_submission.pdf',
+          5000,
+          'pdf',
+          'Admin',
+          '20-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '22-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'nirf-ranking-cert',
@@ -530,7 +831,9 @@ const nirfFolder: EvidenceFolder = {
       frameworks: ['NIRF'],
       uploadedOn: '20-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'nirf_ranking.pdf', 1200, 'pdf', 'Admin', '20-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'nirf_ranking.pdf', 1200, 'pdf', 'Admin', '20-Jan-2026', 'uploaded'),
+      ],
     },
     {
       id: 'nirf-prev-data',
@@ -541,7 +844,18 @@ const nirfFolder: EvidenceFolder = {
       frameworks: ['NIRF', 'Historical'],
       uploadedOn: '20-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'nirf_prev_data.xlsx', 3500, 'xlsx', 'Admin', '20-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'nirf_prev_data.xlsx',
+          3500,
+          'xlsx',
+          'Admin',
+          '20-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
   ],
 };
@@ -561,7 +875,19 @@ const regulatoryBodiesFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NAAC'],
       uploadedOn: '06-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'state_approval.pdf', 2200, 'pdf', 'Admin', '06-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '08-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'state_approval.pdf',
+          2200,
+          'pdf',
+          'Admin',
+          '06-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '08-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'rb-dte-approval',
@@ -572,7 +898,9 @@ const regulatoryBodiesFolder: EvidenceFolder = {
       frameworks: ['AICTE'],
       uploadedOn: '06-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'dte_approval.pdf', 1800, 'pdf', 'Admin', '06-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'dte_approval.pdf', 1800, 'pdf', 'Admin', '06-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -592,7 +920,19 @@ const governanceFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '07-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'governance_structure.pdf', 3000, 'pdf', 'Admin', '07-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '09-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'governance_structure.pdf',
+          3000,
+          'pdf',
+          'Admin',
+          '07-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '09-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'gov-gb-minutes',
@@ -603,7 +943,9 @@ const governanceFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'AICTE'],
       uploadedOn: '07-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'gb_minutes.pdf', 4500, 'pdf', 'Admin', '07-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'gb_minutes.pdf', 4500, 'pdf', 'Admin', '07-Jan-2026', 'uploaded'),
+      ],
     },
     {
       id: 'gov-academic-council',
@@ -639,7 +981,19 @@ const policiesFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'UGC', 'NAAC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'anti_ragging_policy.pdf', 1500, 'pdf', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'anti_ragging_policy.pdf',
+          1500,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'pol-grievance',
@@ -650,7 +1004,19 @@ const policiesFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'UGC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'grievance_policy.pdf', 1200, 'pdf', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'grievance_policy.pdf',
+          1200,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'pol-gender',
@@ -661,7 +1027,18 @@ const policiesFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'UGC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'gender_policy.pdf', 1100, 'pdf', 'Admin', '05-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'gender_policy.pdf',
+          1100,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'pol-code-conduct',
@@ -672,7 +1049,18 @@ const policiesFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'code_of_conduct.pdf', 900, 'pdf', 'Admin', '05-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'code_of_conduct.pdf',
+          900,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'pol-ethics',
@@ -701,7 +1089,19 @@ const isoQualityFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'iso_certificate.pdf', 2000, 'pdf', 'Admin', '10-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'iso_certificate.pdf',
+          2000,
+          'pdf',
+          'Admin',
+          '10-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'iso-audit-report',
@@ -712,7 +1112,9 @@ const isoQualityFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'iso_audit.pdf', 4000, 'pdf', 'Admin', '10-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'iso_audit.pdf', 4000, 'pdf', 'Admin', '10-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -732,7 +1134,18 @@ const rankingsAwardsFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NIRF'],
       uploadedOn: '15-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'rankings_summary.pdf', 1500, 'pdf', 'Admin', '15-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'rankings_summary.pdf',
+          1500,
+          'pdf',
+          'Admin',
+          '15-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'ra-awards',
@@ -743,7 +1156,9 @@ const rankingsAwardsFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '15-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'awards.pdf', 2500, 'pdf', 'Admin', '15-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'awards.pdf', 2500, 'pdf', 'Admin', '15-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -768,8 +1183,28 @@ const academicYearsFolder: EvidenceFolder = {
       uploadedOn: '01-Jan-2026',
       uploadedBy: 'Admin',
       versions: [
-        createVersion('v1', 1, 'academic_calendar_2024.pdf', 1500, 'pdf', 'Admin', '01-Jul-2025', 'approved', { verifiedBy: 'IQAC', verifiedAt: '03-Jul-2025' }),
-        createVersion('v2', 2, 'academic_calendar_2025.pdf', 1600, 'pdf', 'Admin', '01-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '03-Jan-2026', versionNotes: 'Updated for 2025-26' }),
+        createVersion(
+          'v1',
+          1,
+          'academic_calendar_2024.pdf',
+          1500,
+          'pdf',
+          'Admin',
+          '01-Jul-2025',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '03-Jul-2025' }
+        ),
+        createVersion(
+          'v2',
+          2,
+          'academic_calendar_2025.pdf',
+          1600,
+          'pdf',
+          'Admin',
+          '01-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '03-Jan-2026', versionNotes: 'Updated for 2025-26' }
+        ),
       ],
     },
     {
@@ -781,7 +1216,18 @@ const academicYearsFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '02-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'teaching_schedule.pdf', 2000, 'pdf', 'Admin', '02-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'teaching_schedule.pdf',
+          2000,
+          'pdf',
+          'Admin',
+          '02-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'ay-holidays',
@@ -792,7 +1238,9 @@ const academicYearsFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '02-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'holiday_list.pdf', 500, 'pdf', 'Admin', '02-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'holiday_list.pdf', 500, 'pdf', 'Admin', '02-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -812,7 +1260,19 @@ const programsFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NBA'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'program_approvals.pdf', 5000, 'pdf', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'program_approvals.pdf',
+          5000,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'prog-curriculum',
@@ -823,7 +1283,18 @@ const programsFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'curriculum_framework.pdf', 8000, 'pdf', 'Admin', '05-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'curriculum_framework.pdf',
+          8000,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'prog-syllabus',
@@ -834,7 +1305,18 @@ const programsFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'HOD',
-      versions: [createVersion('v1', 1, 'syllabus_all.pdf', 25000, 'pdf', 'HOD', '10-Jan-2026', 'under_review')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'syllabus_all.pdf',
+          25000,
+          'pdf',
+          'HOD',
+          '10-Jan-2026',
+          'under_review'
+        ),
+      ],
     },
   ],
 };
@@ -854,7 +1336,19 @@ const departmentsFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NAAC'],
       uploadedOn: '04-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'dept_establishment.pdf', 3000, 'pdf', 'Admin', '04-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '06-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'dept_establishment.pdf',
+          3000,
+          'pdf',
+          'Admin',
+          '04-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '06-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'dept-faculty-list',
@@ -865,7 +1359,18 @@ const departmentsFolder: EvidenceFolder = {
       frameworks: ['NAAC', 'NBA'],
       uploadedOn: '04-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'faculty_list.xlsx', 1500, 'xlsx', 'Admin', '04-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'faculty_list.xlsx',
+          1500,
+          'xlsx',
+          'Admin',
+          '04-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'dept-org-chart',
@@ -876,7 +1381,9 @@ const departmentsFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '04-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'org_chart.pdf', 800, 'pdf', 'Admin', '04-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion('v1', 1, 'org_chart.pdf', 800, 'pdf', 'Admin', '04-Jan-2026', 'uploaded'),
+      ],
     },
   ],
 };
@@ -896,7 +1403,18 @@ const specializationsFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NBA'],
       uploadedOn: '06-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'spec_approvals.pdf', 2000, 'pdf', 'Admin', '06-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'spec_approvals.pdf',
+          2000,
+          'pdf',
+          'Admin',
+          '06-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'spec-details',
@@ -925,8 +1443,28 @@ const regulationsFolder: EvidenceFolder = {
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Admin',
       versions: [
-        createVersion('v1', 1, 'regulations_r20.pdf', 5000, 'pdf', 'Admin', '01-Jul-2024', 'approved', { verifiedBy: 'IQAC', verifiedAt: '03-Jul-2024' }),
-        createVersion('v2', 2, 'regulations_r23.pdf', 5500, 'pdf', 'Admin', '08-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026', versionNotes: 'R23 regulations' }),
+        createVersion(
+          'v1',
+          1,
+          'regulations_r20.pdf',
+          5000,
+          'pdf',
+          'Admin',
+          '01-Jul-2024',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '03-Jul-2024' }
+        ),
+        createVersion(
+          'v2',
+          2,
+          'regulations_r23.pdf',
+          5500,
+          'pdf',
+          'Admin',
+          '08-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '10-Jan-2026', versionNotes: 'R23 regulations' }
+        ),
       ],
     },
     {
@@ -938,7 +1476,18 @@ const regulationsFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Exam Officer',
-      versions: [createVersion('v1', 1, 'exam_rules.pdf', 3000, 'pdf', 'Exam Officer', '08-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'exam_rules.pdf',
+          3000,
+          'pdf',
+          'Exam Officer',
+          '08-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'reg-credit-system',
@@ -949,7 +1498,18 @@ const regulationsFolder: EvidenceFolder = {
       frameworks: ['NBA'],
       uploadedOn: '08-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'credit_system.pdf', 1500, 'pdf', 'Admin', '08-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'credit_system.pdf',
+          1500,
+          'pdf',
+          'Admin',
+          '08-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
   ],
 };
@@ -969,7 +1529,19 @@ const programOfferingsFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NAAC', 'NBA'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'program_offerings.xlsx', 2000, 'xlsx', 'Admin', '05-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'program_offerings.xlsx',
+          2000,
+          'xlsx',
+          'Admin',
+          '05-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '07-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'po-intake-approval',
@@ -980,7 +1552,18 @@ const programOfferingsFolder: EvidenceFolder = {
       frameworks: ['AICTE'],
       uploadedOn: '05-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'intake_approvals.pdf', 3500, 'pdf', 'Admin', '05-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'intake_approvals.pdf',
+          3500,
+          'pdf',
+          'Admin',
+          '05-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
   ],
 };
@@ -1000,7 +1583,18 @@ const programIntakeFolder: EvidenceFolder = {
       frameworks: ['AICTE', 'NAAC', 'NIRF'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'intake_data.xlsx', 1800, 'xlsx', 'Admin', '10-Jan-2026', 'uploaded')],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'intake_data.xlsx',
+          1800,
+          'xlsx',
+          'Admin',
+          '10-Jan-2026',
+          'uploaded'
+        ),
+      ],
     },
     {
       id: 'pi-admission-process',
@@ -1011,7 +1605,19 @@ const programIntakeFolder: EvidenceFolder = {
       frameworks: ['NAAC'],
       uploadedOn: '10-Jan-2026',
       uploadedBy: 'Admin',
-      versions: [createVersion('v1', 1, 'admission_process.pdf', 2500, 'pdf', 'Admin', '10-Jan-2026', 'approved', { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' })],
+      versions: [
+        createVersion(
+          'v1',
+          1,
+          'admission_process.pdf',
+          2500,
+          'pdf',
+          'Admin',
+          '10-Jan-2026',
+          'approved',
+          { verifiedBy: 'IQAC', verifiedAt: '12-Jan-2026' }
+        ),
+      ],
     },
     {
       id: 'pi-lateral-entry',
@@ -1087,7 +1693,10 @@ export const supportingDocumentsConfig: RepositoryConfig = {
 // NOTIFICATIONS
 // ============================================================
 
-export function generateNotifications(sections: RepositorySection[], config?: InstitutionConfig): NotificationItem[] {
+export function generateNotifications(
+  sections: RepositorySection[],
+  config?: InstitutionConfig
+): NotificationItem[] {
   const notifications: NotificationItem[] = [];
 
   sections.forEach(section => {

@@ -93,18 +93,18 @@ function computeCOAttainmentDetail(
 ): CODetailResult[] {
   const assessments = blueprint.assessments;
 
-  return outcomes.map((co) => {
+  return outcomes.map(co => {
     const coCode = co.code;
     const contributions: COAssessmentContribution[] = [];
     let weightedSum = 0;
     let totalWeightUsed = 0;
 
     for (const assessment of assessments) {
-      const upload = marksList.find((m) => m.assessmentId === assessment.id);
+      const upload = marksList.find(m => m.assessmentId === assessment.id);
       if (!upload || upload.studentMarks.length === 0) continue;
 
       // Find questions in this assessment mapped to this CO
-      const coQuestions = assessment.questions.filter((q) => q.mappedCO === coCode);
+      const coQuestions = assessment.questions.filter(q => q.mappedCO === coCode);
       if (coQuestions.length === 0) continue;
 
       const maxMarksForCO = coQuestions.reduce((s, q) => s + q.maxMarks, 0);
@@ -121,14 +121,11 @@ function computeCOAttainmentDetail(
         studentPercentages.push(pct);
       }
 
-      const avgPct =
-        studentPercentages.reduce((s, p) => s + p, 0) / studentPercentages.length;
+      const avgPct = studentPercentages.reduce((s, p) => s + p, 0) / studentPercentages.length;
       const avgMarks =
         studentPercentages.reduce((s, p) => s + (p * maxMarksForCO) / 100, 0) /
         studentPercentages.length;
-      const studentsAbove = studentPercentages.filter(
-        (p) => p >= upload.threshold
-      ).length;
+      const studentsAbove = studentPercentages.filter(p => p >= upload.threshold).length;
 
       contributions.push({
         assessmentName: assessment.name,
@@ -146,20 +143,18 @@ function computeCOAttainmentDetail(
 
     // Overall attainment
     const overallAvgPct =
-      totalWeightUsed > 0
-        ? Math.round((weightedSum / totalWeightUsed) * 10) / 10
-        : 0;
+      totalWeightUsed > 0 ? Math.round((weightedSum / totalWeightUsed) * 10) / 10 : 0;
 
     // Use the highest threshold from assessments that assess this CO
-    const thresholds = contributions.map((c) => {
-      const upload = marksList.find((m) => m.assessmentName === c.assessmentName);
+    const thresholds = contributions.map(c => {
+      const upload = marksList.find(m => m.assessmentName === c.assessmentName);
       return upload?.threshold ?? 60;
     });
     const effectiveThreshold = thresholds.length > 0 ? Math.max(...thresholds) : 60;
 
     // Use the highest target from assessments
-    const targets = contributions.map((c) => {
-      const upload = marksList.find((m) => m.assessmentName === c.assessmentName);
+    const targets = contributions.map(c => {
+      const upload = marksList.find(m => m.assessmentName === c.assessmentName);
       return upload?.attainmentTarget ?? 70;
     });
     const effectiveTarget = targets.length > 0 ? Math.max(...targets) : 70;
@@ -174,14 +169,8 @@ function computeCOAttainmentDetail(
       status = 'not_achieved';
     }
 
-    const totalStudents = Math.max(
-      ...contributions.map((c) => c.totalStudents),
-      0
-    );
-    const studentsAboveThreshold = contributions.reduce(
-      (s, c) => s + c.studentsAboveThreshold,
-      0
-    );
+    const totalStudents = Math.max(...contributions.map(c => c.totalStudents), 0);
+    const studentsAboveThreshold = contributions.reduce((s, c) => s + c.studentsAboveThreshold, 0);
 
     return {
       coCode,
@@ -206,9 +195,9 @@ function computePOAttainmentFromCO(
   coPoMappings: COPOMapping[],
   outcomes: CourseOutcome[]
 ): POAttainment[] {
-  return NBA_POS.map((po) => {
+  return NBA_POS.map(po => {
     // Find all COs mapped to this PO with their mapping levels
-    const mappings = coPoMappings.filter((m) => m.poId === po.id && m.level > 0);
+    const mappings = coPoMappings.filter(m => m.poId === po.id && m.level > 0);
     if (mappings.length === 0) {
       return {
         poCode: po.code,
@@ -225,7 +214,7 @@ function computePOAttainmentFromCO(
 
     for (const mapping of mappings) {
       const coDetail = coDetails.find(
-        (c) => c.coCode === outcomes.find((o) => o.id === mapping.coId)?.code
+        c => c.coCode === outcomes.find(o => o.id === mapping.coId)?.code
       );
       if (coDetail) {
         weightedSum += coDetail.attainment * mapping.level;
@@ -233,10 +222,7 @@ function computePOAttainmentFromCO(
       }
     }
 
-    const attainment =
-      totalLevels > 0
-        ? Math.round((weightedSum / totalLevels) * 10) / 10
-        : 0;
+    const attainment = totalLevels > 0 ? Math.round((weightedSum / totalLevels) * 10) / 10 : 0;
 
     let status: 'achieved' | 'not_achieved' | 'partially';
     if (attainment >= 60) status = 'achieved';
@@ -261,10 +247,8 @@ function computePSOAttainmentFromCO(
   coPsoMappings: COPSOMapping[],
   outcomes: CourseOutcome[]
 ): POAttainment[] {
-  return NBA_PSOS.map((pso) => {
-    const mappings = coPsoMappings.filter(
-      (m) => m.psoId === pso.id && m.level > 0
-    );
+  return NBA_PSOS.map(pso => {
+    const mappings = coPsoMappings.filter(m => m.psoId === pso.id && m.level > 0);
     if (mappings.length === 0) {
       return {
         poCode: pso.code,
@@ -280,7 +264,7 @@ function computePSOAttainmentFromCO(
 
     for (const mapping of mappings) {
       const coDetail = coDetails.find(
-        (c) => c.coCode === outcomes.find((o) => o.id === mapping.coId)?.code
+        c => c.coCode === outcomes.find(o => o.id === mapping.coId)?.code
       );
       if (coDetail) {
         weightedSum += coDetail.attainment * mapping.level;
@@ -288,10 +272,7 @@ function computePSOAttainmentFromCO(
       }
     }
 
-    const attainment =
-      totalLevels > 0
-        ? Math.round((weightedSum / totalLevels) * 10) / 10
-        : 0;
+    const attainment = totalLevels > 0 ? Math.round((weightedSum / totalLevels) * 10) / 10 : 0;
 
     let status: 'achieved' | 'not_achieved' | 'partially';
     if (attainment >= 60) status = 'achieved';
@@ -326,7 +307,7 @@ function computeAllAttainment(
   const coDetails = computeCOAttainmentDetail(outcomes, marksList, blueprint);
 
   // 2. Convert to COAttainment[] for the result
-  const coAttainments: COAttainment[] = coDetails.map((d) => ({
+  const coAttainments: COAttainment[] = coDetails.map(d => ({
     coCode: d.coCode,
     averageMarks: d.overallAveragePercentage,
     threshold: d.threshold,
@@ -349,8 +330,17 @@ function computeAllAttainment(
 // ============================================================
 
 export default function Step11_AttainmentDashboard({
-  outcomes, marks, blueprint, coPoMappings, coPsoMappings,
-  data, onUpdate, onSave, onNext, onPrev, completionPercentage,
+  outcomes,
+  marks,
+  blueprint,
+  coPoMappings,
+  coPsoMappings,
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
 }: Step11Props) {
   const [isCalculating, setIsCalculating] = useState(false);
   const [activeTab, setActiveTab] = useState('co');
@@ -372,7 +362,7 @@ export default function Step11_AttainmentDashboard({
     const studentMap = new Map<string, Record<string, { obtained: number; max: number }>>();
 
     for (const assessment of assessments) {
-      const upload = marks.find((m) => m.assessmentId === assessment.id);
+      const upload = marks.find(m => m.assessmentId === assessment.id);
       if (!upload) continue;
 
       for (const student of upload.studentMarks) {
@@ -382,7 +372,7 @@ export default function Step11_AttainmentDashboard({
         const coData = studentMap.get(student.rollNumber)!;
 
         for (const co of outcomes) {
-          const coQuestions = assessment.questions.filter((q) => q.mappedCO === co.code);
+          const coQuestions = assessment.questions.filter(q => q.mappedCO === co.code);
           if (coQuestions.length === 0) continue;
 
           let obtained = 0;
@@ -403,7 +393,7 @@ export default function Step11_AttainmentDashboard({
 
     return Array.from(studentMap.entries()).map(([rollNumber, coMarks]) => ({
       rollNumber,
-      coPercentages: outcomes.map((co) => {
+      coPercentages: outcomes.map(co => {
         const d = coMarks[co.code];
         const pct = d && d.max > 0 ? Math.round((d.obtained / d.max) * 100) : 0;
         return { coCode: co.code, percentage: pct, obtained: d?.obtained ?? 0, max: d?.max ?? 0 };
@@ -415,20 +405,18 @@ export default function Step11_AttainmentDashboard({
     setIsCalculating(true);
     // Use setTimeout to allow UI to update before heavy computation
     setTimeout(() => {
-      const result = computeAllAttainment(
-        outcomes, marks, blueprint, coPoMappings, coPsoMappings
-      );
+      const result = computeAllAttainment(outcomes, marks, blueprint, coPoMappings, coPsoMappings);
       onUpdate(result);
       setIsCalculating(false);
     }, 300);
   }, [outcomes, marks, blueprint, coPoMappings, coPsoMappings, onUpdate]);
 
   // Summary stats
-  const coAchieved = data?.coAttainments.filter((a) => a.status === 'achieved').length ?? 0;
-  const coPartial = data?.coAttainments.filter((a) => a.status === 'partially').length ?? 0;
-  const coNotAchieved = data?.coAttainments.filter((a) => a.status === 'not_achieved').length ?? 0;
-  const poAchieved = data?.poAttainments.filter((a) => a.status === 'achieved').length ?? 0;
-  const psoAchieved = data?.psoAttainments.filter((a) => a.status === 'achieved').length ?? 0;
+  const coAchieved = data?.coAttainments.filter(a => a.status === 'achieved').length ?? 0;
+  const coPartial = data?.coAttainments.filter(a => a.status === 'partially').length ?? 0;
+  const coNotAchieved = data?.coAttainments.filter(a => a.status === 'not_achieved').length ?? 0;
+  const poAchieved = data?.poAttainments.filter(a => a.status === 'achieved').length ?? 0;
+  const psoAchieved = data?.psoAttainments.filter(a => a.status === 'achieved').length ?? 0;
 
   // Ready state
   const readyToCalculate = hasMarks && hasBlueprint && outcomes.length > 0;
@@ -483,7 +471,7 @@ export default function Step11_AttainmentDashboard({
                 {marks.length} assessment(s) with marks uploaded · {outcomes.length} COs defined
               </p>
               <div className="flex flex-wrap justify-center gap-2 mb-6">
-                {marks.map((m) => (
+                {marks.map(m => (
                   <Badge key={m.assessmentId} variant="outline" className="text-[9px]">
                     {m.assessmentName} ({m.studentMarks.length} students)
                   </Badge>
@@ -576,7 +564,9 @@ export default function Step11_AttainmentDashboard({
                 </div>
                 <p className="text-2xl font-bold text-amber-600">
                   {coAchieved + poAchieved + psoAchieved}/
-                  {data.coAttainments.length + data.poAttainments.length + data.psoAttainments.length}
+                  {data.coAttainments.length +
+                    data.poAttainments.length +
+                    data.psoAttainments.length}
                 </p>
                 <Progress
                   value={
@@ -656,8 +646,8 @@ export default function Step11_AttainmentDashboard({
                         </tr>
                       </thead>
                       <tbody>
-                        {data.coAttainments.map((co) => {
-                          const detail = coDetails.find((d) => d.coCode === co.coCode);
+                        {data.coAttainments.map(co => {
+                          const detail = coDetails.find(d => d.coCode === co.coCode);
                           const isExpanded = expandedCO === co.coCode;
                           return (
                             <Fragment key={co.coCode}>
@@ -666,13 +656,11 @@ export default function Step11_AttainmentDashboard({
                                   'border-t border-border/40 hover:bg-muted/10 cursor-pointer transition-colors',
                                   isExpanded && 'bg-muted/20'
                                 )}
-                                onClick={() =>
-                                  setExpandedCO(isExpanded ? null : co.coCode)
-                                }
+                                onClick={() => setExpandedCO(isExpanded ? null : co.coCode)}
                               >
                                 <td className="p-2.5 font-semibold font-mono">{co.coCode}</td>
                                 <td className="p-2.5 text-muted-foreground max-w-[200px] truncate">
-                                  {outcomes.find((o) => o.code === co.coCode)?.description || ''}
+                                  {outcomes.find(o => o.code === co.coCode)?.description || ''}
                                 </td>
                                 <td className="p-2.5 text-center font-bold">{co.attainment}%</td>
                                 <td className="p-2.5 text-center">{co.target}%</td>
@@ -720,7 +708,7 @@ export default function Step11_AttainmentDashboard({
                                         </p>
                                       ) : (
                                         <div className="space-y-2">
-                                          {detail.assessmentContributions.map((ac) => (
+                                          {detail.assessmentContributions.map(ac => (
                                             <div
                                               key={ac.assessmentName}
                                               className="flex items-center gap-3 p-2 rounded-lg bg-card border border-border/30"
@@ -730,7 +718,8 @@ export default function Step11_AttainmentDashboard({
                                                   {ac.assessmentName}
                                                 </p>
                                                 <p className="text-[8px] text-muted-foreground">
-                                                  Weightage: {ac.weightage}% · Max marks: {ac.maxMarks}
+                                                  Weightage: {ac.weightage}% · Max marks:{' '}
+                                                  {ac.maxMarks}
                                                 </p>
                                               </div>
                                               <div className="text-center">
@@ -762,8 +751,8 @@ export default function Step11_AttainmentDashboard({
                                         <span>Threshold: {detail.threshold}%</span>
                                         <span>Target: {detail.target}%</span>
                                         <span>
-                                          Students above threshold:{' '}
-                                          {detail.studentsAboveThreshold}/{detail.totalStudents}
+                                          Students above threshold: {detail.studentsAboveThreshold}/
+                                          {detail.totalStudents}
                                         </span>
                                       </div>
                                     </motion.div>
@@ -850,7 +839,10 @@ export default function Step11_AttainmentDashboard({
                     </thead>
                     <tbody>
                       {data.psoAttainments.map((pso, idx) => (
-                        <tr key={pso.poCode} className="border-t border-border/40 hover:bg-muted/10">
+                        <tr
+                          key={pso.poCode}
+                          className="border-t border-border/40 hover:bg-muted/10"
+                        >
                           <td className="p-2.5 font-semibold font-mono">{pso.poCode}</td>
                           <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
                             {NBA_PSOS[idx]?.description || pso.poCode}
@@ -888,45 +880,37 @@ export default function Step11_AttainmentDashboard({
                         <tr className="bg-muted/30 sticky top-0 z-10">
                           <th className="text-left p-2 font-semibold">#</th>
                           <th className="text-left p-2 font-semibold">Roll Number</th>
-                          {outcomes.map((co) => (
-                            <th
-                              key={co.id}
-                              className="text-center p-2 font-semibold min-w-[55px]"
-                            >
+                          {outcomes.map(co => (
+                            <th key={co.id} className="text-center p-2 font-semibold min-w-[55px]">
                               {co.code}
                             </th>
                           ))}
-                          <th className="text-center p-2 font-semibold min-w-[55px]">
-                            Overall
-                          </th>
+                          <th className="text-center p-2 font-semibold min-w-[55px]">Overall</th>
                         </tr>
                       </thead>
                       <tbody>
                         {studentCOData.map((student, idx) => {
-                          const overallPct = outcomes.length > 0
-                            ? Math.round(
-                                student.coPercentages.reduce((s, c) => s + c.percentage, 0) /
-                                  outcomes.length
-                              )
-                            : 0;
+                          const overallPct =
+                            outcomes.length > 0
+                              ? Math.round(
+                                  student.coPercentages.reduce((s, c) => s + c.percentage, 0) /
+                                    outcomes.length
+                                )
+                              : 0;
                           return (
                             <tr
                               key={student.rollNumber}
                               className="border-t border-border/30 hover:bg-muted/10"
                             >
                               <td className="p-2 text-muted-foreground">{idx + 1}</td>
-                              <td className="p-2 font-mono font-medium">
-                                {student.rollNumber}
-                              </td>
-                              {student.coPercentages.map((cp) => (
+                              <td className="p-2 font-mono font-medium">{student.rollNumber}</td>
+                              {student.coPercentages.map(cp => (
                                 <td key={cp.coCode} className="p-2 text-center">
                                   <span
                                     className={cn(
                                       'font-semibold',
                                       cp.percentage >= 60 && 'text-emerald-600',
-                                      cp.percentage >= 40 &&
-                                        cp.percentage < 60 &&
-                                        'text-amber-600',
+                                      cp.percentage >= 40 && cp.percentage < 60 && 'text-amber-600',
                                       cp.percentage < 40 && 'text-red-600'
                                     )}
                                   >
@@ -965,9 +949,9 @@ export default function Step11_AttainmentDashboard({
                   configured during marks upload.
                 </p>
                 <p>
-                  <strong>PO/PSO Attainment:</strong> Derived from CO attainment using the CO-PO
-                  and CO-PSO mapping levels as weights. Higher mapping levels contribute more
-                  to the outcome attainment score.
+                  <strong>PO/PSO Attainment:</strong> Derived from CO attainment using the CO-PO and
+                  CO-PSO mapping levels as weights. Higher mapping levels contribute more to the
+                  outcome attainment score.
                 </p>
                 <p className="text-[8px] text-muted-foreground/60 mt-1">
                   Target: 70% = Achieved · 49-69% = Partially · Below 49% = Not Achieved
@@ -1002,7 +986,11 @@ export default function Step11_AttainmentDashboard({
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button size="sm" onClick={onNext} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
+          <Button
+            size="sm"
+            onClick={onNext}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
+          >
             Next: Reports
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
@@ -1038,5 +1026,3 @@ function StatusBadge({ status }: { status: 'achieved' | 'not_achieved' | 'partia
     </Badge>
   );
 }
-
-

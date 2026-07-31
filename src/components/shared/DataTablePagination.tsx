@@ -39,15 +39,12 @@ export const DataTablePagination = ({
         {/* Page size selector */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Rows:</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(val) => onPageSizeChange(Number(val))}
-          >
+          <Select value={String(pageSize)} onValueChange={val => onPageSizeChange(Number(val))}>
             <SelectTrigger className="h-8 w-16 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {pageSizeOptions.map((size) => (
+              {pageSizeOptions.map(size => (
                 <SelectItem key={size} value={String(size)} className="text-xs">
                   {size}
                 </SelectItem>

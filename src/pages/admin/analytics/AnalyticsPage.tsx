@@ -20,7 +20,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StatCards } from './StatCards';
 import {
@@ -48,7 +54,7 @@ export function AnalyticsPage() {
   } = useQuery({
     queryKey: ['admin', 'analytics', 'summary', timeRange],
     queryFn: () => adminService.getAnalyticsSummary(timeRange),
-    select: (data) => data.filter((card) => card.title !== 'Active Institutions'),
+    select: data => data.filter(card => card.title !== 'Active Institutions'),
   });
 
   // ── Fetch institution growth data from API ──
@@ -257,7 +263,7 @@ export function AnalyticsPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Failed to load analytics</AlertTitle>
           <AlertDescription>
-            Could not fetch summary data.{" "}
+            Could not fetch summary data.{' '}
             <Button
               variant="link"
               className="h-auto p-0 text-destructive-foreground underline"
@@ -313,9 +319,7 @@ export function AnalyticsPage() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Failed to load distribution</AlertTitle>
-              <AlertDescription>
-                Could not fetch distribution data.
-              </AlertDescription>
+              <AlertDescription>Could not fetch distribution data.</AlertDescription>
             </Alert>
           ) : (
             <InstitutionDistributionChart data={distribution || []} />
@@ -337,9 +341,7 @@ export function AnalyticsPage() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Failed to load top institutions</AlertTitle>
-            <AlertDescription>
-              Could not fetch top institutions data.
-            </AlertDescription>
+            <AlertDescription>Could not fetch top institutions data.</AlertDescription>
           </Alert>
         ) : (
           <TopInstitutionsChart data={topInstitutions || []} />
@@ -357,9 +359,7 @@ export function AnalyticsPage() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Failed to load repository completion</AlertTitle>
-            <AlertDescription>
-              Could not fetch repository completion data.
-            </AlertDescription>
+            <AlertDescription>Could not fetch repository completion data.</AlertDescription>
           </Alert>
         ) : (
           <RepositoryCompletionChart data={repoCompletion || []} />
@@ -386,9 +386,7 @@ export function AnalyticsPage() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Failed to load activity heatmap</AlertTitle>
-            <AlertDescription>
-              Could not fetch heatmap data.
-            </AlertDescription>
+            <AlertDescription>Could not fetch heatmap data.</AlertDescription>
           </Alert>
         ) : (
           <ActivityHeatmap data={heatmapData || []} />
@@ -422,9 +420,7 @@ export function AnalyticsPage() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Failed to load recent activity</AlertTitle>
-            <AlertDescription>
-              Could not fetch recent activity data.
-            </AlertDescription>
+            <AlertDescription>Could not fetch recent activity data.</AlertDescription>
           </Alert>
         ) : (
           <RecentActivity data={recentActivity || []} />

@@ -101,7 +101,9 @@ class StudentService {
    * Returns 404 (handled) if no admission record exists yet.
    */
   async getAdmission(departmentId: number, studentId: number): Promise<AdmissionResponse> {
-    return apiService.get<AdmissionResponse>(`${this.baseUrl(departmentId)}/${studentId}/admission`);
+    return apiService.get<AdmissionResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/admission`
+    );
   }
 
   // ── Section 4.7: UPDATE Student Admission ──
@@ -115,7 +117,10 @@ class StudentService {
     studentId: number,
     data: UpdateAdmissionRequest
   ): Promise<AdmissionResponse> {
-    return apiService.put<AdmissionResponse>(`${this.baseUrl(departmentId)}/${studentId}/admission`, data);
+    return apiService.put<AdmissionResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/admission`,
+      data
+    );
   }
 
   // ── Section 4.8: GET Student Diversity ──
@@ -124,7 +129,9 @@ class StudentService {
    * Fetch a single student's diversity record.
    */
   async getDiversity(departmentId: number, studentId: number): Promise<DiversityResponse> {
-    return apiService.get<DiversityResponse>(`${this.baseUrl(departmentId)}/${studentId}/diversity`);
+    return apiService.get<DiversityResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/diversity`
+    );
   }
 
   // ── Section 4.9: UPDATE Student Diversity ──
@@ -137,7 +144,10 @@ class StudentService {
     studentId: number,
     data: UpdateDiversityRequest
   ): Promise<DiversityResponse> {
-    return apiService.put<DiversityResponse>(`${this.baseUrl(departmentId)}/${studentId}/diversity`, data);
+    return apiService.put<DiversityResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/diversity`,
+      data
+    );
   }
 
   // ── Section 4.10: LIST Student Performances ──
@@ -146,7 +156,9 @@ class StudentService {
    * Fetch all performance records for a student.
    */
   async listPerformances(departmentId: number, studentId: number): Promise<PerformanceResponse[]> {
-    return apiService.get<PerformanceResponse[]>(`${this.baseUrl(departmentId)}/${studentId}/performance`);
+    return apiService.get<PerformanceResponse[]>(
+      `${this.baseUrl(departmentId)}/${studentId}/performance`
+    );
   }
 
   // ── Section 4.11: ADD Student Performance ──
@@ -159,7 +171,10 @@ class StudentService {
     studentId: number,
     data: CreatePerformanceRequest
   ): Promise<PerformanceResponse> {
-    return apiService.post<PerformanceResponse>(`${this.baseUrl(departmentId)}/${studentId}/performance`, data);
+    return apiService.post<PerformanceResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/performance`,
+      data
+    );
   }
 
   // ── Section 4.12: UPDATE Student Performance ──
@@ -173,7 +188,10 @@ class StudentService {
     performanceId: number,
     data: UpdatePerformanceRequest
   ): Promise<PerformanceResponse> {
-    return apiService.put<PerformanceResponse>(`${this.baseUrl(departmentId)}/${studentId}/performance/${performanceId}`, data);
+    return apiService.put<PerformanceResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/performance/${performanceId}`,
+      data
+    );
   }
 
   // ── Section 4.13: GET Student Progression ──
@@ -182,7 +200,9 @@ class StudentService {
    * Fetch a single student's progression record.
    */
   async getProgression(departmentId: number, studentId: number): Promise<ProgressionResponse> {
-    return apiService.get<ProgressionResponse>(`${this.baseUrl(departmentId)}/${studentId}/progression`);
+    return apiService.get<ProgressionResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/progression`
+    );
   }
 
   // ── Section 4.14: UPDATE Student Progression ──
@@ -195,7 +215,10 @@ class StudentService {
     studentId: number,
     data: UpdateProgressionRequest
   ): Promise<ProgressionResponse> {
-    return apiService.put<ProgressionResponse>(`${this.baseUrl(departmentId)}/${studentId}/progression`, data);
+    return apiService.put<ProgressionResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/progression`,
+      data
+    );
   }
 
   // ── Section 4.15: LIST Student Scholarships ──
@@ -204,7 +227,9 @@ class StudentService {
    * Fetch all scholarship records for a student.
    */
   async listScholarships(departmentId: number, studentId: number): Promise<ScholarshipResponse[]> {
-    return apiService.get<ScholarshipResponse[]>(`${this.baseUrl(departmentId)}/${studentId}/scholarships`);
+    return apiService.get<ScholarshipResponse[]>(
+      `${this.baseUrl(departmentId)}/${studentId}/scholarships`
+    );
   }
 
   // ── Section 4.16: ADD Student Scholarship ──
@@ -217,7 +242,10 @@ class StudentService {
     studentId: number,
     data: CreateScholarshipRequest
   ): Promise<ScholarshipResponse> {
-    return apiService.post<ScholarshipResponse>(`${this.baseUrl(departmentId)}/${studentId}/scholarships`, data);
+    return apiService.post<ScholarshipResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/scholarships`,
+      data
+    );
   }
 
   // ── Section 4.17: LIST Student Achievements ──
@@ -225,8 +253,13 @@ class StudentService {
   /**
    * Fetch all achievement records for a student.
    */
-  async listAchievements(departmentId: number, studentId: number): Promise<StudentAchievementResponse[]> {
-    return apiService.get<StudentAchievementResponse[]>(`${this.baseUrl(departmentId)}/${studentId}/achievements`);
+  async listAchievements(
+    departmentId: number,
+    studentId: number
+  ): Promise<StudentAchievementResponse[]> {
+    return apiService.get<StudentAchievementResponse[]>(
+      `${this.baseUrl(departmentId)}/${studentId}/achievements`
+    );
   }
 
   // ── Section 4.18: ADD Student Achievement ──
@@ -239,7 +272,10 @@ class StudentService {
     studentId: number,
     data: CreateAchievementRequest
   ): Promise<StudentAchievementResponse> {
-    return apiService.post<StudentAchievementResponse>(`${this.baseUrl(departmentId)}/${studentId}/achievements`, data);
+    return apiService.post<StudentAchievementResponse>(
+      `${this.baseUrl(departmentId)}/${studentId}/achievements`,
+      data
+    );
   }
 }
 

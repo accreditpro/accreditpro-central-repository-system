@@ -91,7 +91,9 @@ export const FacultyQualificationsTab = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedQualification, setSelectedQualification] = useState<QualificationResponse | null>(null);
+  const [selectedQualification, setSelectedQualification] = useState<QualificationResponse | null>(
+    null
+  );
 
   // ── Form state ──
   const [formData, setFormData] = useState<QualificationForm>(emptyQualificationForm());
@@ -120,21 +122,24 @@ export const FacultyQualificationsTab = () => {
 
   // ── Fetch qualifications when faculty changes ──
 
-  const fetchQualifications = useCallback(async (facultyId: number) => {
-    if (!departmentId || !facultyId) return;
-    setQualLoading(true);
-    setQualError(null);
-    try {
-      const result = await facultyService.listQualifications(departmentId, facultyId);
-      setQualifications(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load qualifications';
-      setQualError(msg);
-      toast.error(msg);
-    } finally {
-      setQualLoading(false);
-    }
-  }, [departmentId]);
+  const fetchQualifications = useCallback(
+    async (facultyId: number) => {
+      if (!departmentId || !facultyId) return;
+      setQualLoading(true);
+      setQualError(null);
+      try {
+        const result = await facultyService.listQualifications(departmentId, facultyId);
+        setQualifications(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load qualifications';
+        setQualError(msg);
+        toast.error(msg);
+      } finally {
+        setQualLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   const handleFacultyChange = (facultyIdStr: string) => {
     const fid = parseInt(facultyIdStr, 10);
@@ -253,7 +258,11 @@ export const FacultyQualificationsTab = () => {
     if (!departmentId || !selectedFacultyId || !selectedQualification) return;
     setDeleting(true);
     try {
-      await facultyService.deleteQualification(departmentId, selectedFacultyId, selectedQualification.id);
+      await facultyService.deleteQualification(
+        departmentId,
+        selectedFacultyId,
+        selectedQualification.id
+      );
       toast.success('Qualification deleted successfully');
       setDeleteDialogOpen(false);
       setSelectedQualification(null);
@@ -305,9 +314,12 @@ export const FacultyQualificationsTab = () => {
 
   const getPhdStatusBadgeStyle = (status: string) => {
     switch (status) {
-      case 'Completed': return 'bg-emerald-500/10 text-emerald-600';
-      case 'Pursuing': return 'bg-blue-500/10 text-blue-600';
-      default: return 'bg-gray-500/10 text-gray-600';
+      case 'Completed':
+        return 'bg-emerald-500/10 text-emerald-600';
+      case 'Pursuing':
+        return 'bg-blue-500/10 text-blue-600';
+      default:
+        return 'bg-gray-500/10 text-gray-600';
     }
   };
 
@@ -351,10 +363,12 @@ export const FacultyQualificationsTab = () => {
                 onValueChange={handleFacultyChange}
               >
                 <SelectTrigger className="h-9 text-xs pl-8">
-                  <SelectValue placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'} />
+                  <SelectValue
+                    placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'}
+                  />
                 </SelectTrigger>
                 <SelectContent className="max-h-[240px]">
-                  {facultyList.map((f) => (
+                  {facultyList.map(f => (
                     <SelectItem key={f.id} value={String(f.id)} className="text-xs">
                       {f.employeeId} — {f.facultyName}
                     </SelectItem>
@@ -376,13 +390,18 @@ export const FacultyQualificationsTab = () => {
                     className="h-9 text-xs pl-8"
                     placeholder="Search qualifications..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1" /> Add Qualification
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1" /> Download Template
                 </Button>
                 <Button
@@ -432,26 +451,45 @@ export const FacultyQualificationsTab = () => {
                     <TableHead className="text-[10px] font-semibold">Year of Passing</TableHead>
                     <TableHead className="text-[10px] font-semibold">PhD Status</TableHead>
                     <TableHead className="text-[10px] font-semibold">PhD Awarded Date</TableHead>
-                    <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                    <TableHead className="text-[10px] font-semibold text-center w-16">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {/* Loading skeleton */}
-                  {qualLoading && (
+                  {qualLoading &&
                     Array.from({ length: 3 }).map((_, i) => (
                       <TableRow key={`skel-${i}`}>
-                        <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                        <TableCell className="text-center">
+                          <Skeleton className="h-4 w-4 mx-auto" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-28" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-14" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-12 mx-auto" />
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
 
                   {/* Error state */}
                   {!qualLoading && qualError && (
@@ -464,7 +502,9 @@ export const FacultyQualificationsTab = () => {
                             variant="outline"
                             size="sm"
                             className="text-xs"
-                            onClick={() => selectedFacultyId && fetchQualifications(selectedFacultyId)}
+                            onClick={() =>
+                              selectedFacultyId && fetchQualifications(selectedFacultyId)
+                            }
                           >
                             <RefreshCw className="h-3 w-3 mr-1" /> Retry
                           </Button>
@@ -479,7 +519,9 @@ export const FacultyQualificationsTab = () => {
                       <TableCell colSpan={10} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <GraduationCap className="h-8 w-8 opacity-40" />
-                          <p className="text-xs">No qualifications found for this faculty member.</p>
+                          <p className="text-xs">
+                            No qualifications found for this faculty member.
+                          </p>
                           <Button size="sm" className="text-xs" onClick={openCreateDialog}>
                             <Plus className="h-3.5 w-3.5 mr-1" /> Add First Qualification
                           </Button>
@@ -489,73 +531,84 @@ export const FacultyQualificationsTab = () => {
                   )}
 
                   {/* No search results */}
-                  {!qualLoading && !qualError && qualifications.length > 0 && filteredQualifications.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <Search className="h-8 w-8 opacity-40" />
-                          <p className="text-xs">No qualifications match your search.</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            Clear Search
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
+                  {!qualLoading &&
+                    !qualError &&
+                    qualifications.length > 0 &&
+                    filteredQualifications.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Search className="h-8 w-8 opacity-40" />
+                            <p className="text-xs">No qualifications match your search.</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => setSearchQuery('')}
+                            >
+                              Clear Search
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
 
                   {/* Data rows */}
-                  {!qualLoading && !qualError && filteredQualifications.map((q, index) => (
-                    <TableRow key={q.id} className="hover:bg-muted/20">
-                      <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="text-[10px] p-1.5">
-                        <Badge variant="outline" className="text-[9px] font-normal">
-                          {q.qualificationLevel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs p-1.5 font-medium">{q.degree}</TableCell>
-                      <TableCell className="text-[10px] p-1.5">{q.specialization || '-'}</TableCell>
-                      <TableCell className="text-[10px] p-1.5">{q.university || '-'}</TableCell>
-                      <TableCell className="text-[10px] p-1.5">{q.yearOfPassing ?? '-'}</TableCell>
-                      <TableCell className="text-[10px] p-1.5">
-                        <Badge
-                          variant="secondary"
-                          className={cn('text-[9px]', getPhdStatusBadgeStyle(q.phdStatus))}
-                        >
-                          {q.phdStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[10px] p-1.5">{q.phdAwardedDate || '-'}</TableCell>
-                      <TableCell className="text-center p-1.5">
-                        <div className="flex items-center justify-center gap-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5"
-                            onClick={() => openEditDialog(q)}
-                            title="Edit"
+                  {!qualLoading &&
+                    !qualError &&
+                    filteredQualifications.map((q, index) => (
+                      <TableRow key={q.id} className="hover:bg-muted/20">
+                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          <Badge variant="outline" className="text-[9px] font-normal">
+                            {q.qualificationLevel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs p-1.5 font-medium">{q.degree}</TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {q.specialization || '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">{q.university || '-'}</TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {q.yearOfPassing ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          <Badge
+                            variant="secondary"
+                            className={cn('text-[9px]', getPhdStatusBadgeStyle(q.phdStatus))}
                           >
-                            <Pencil className="h-3 w-3 text-blue-600" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5"
-                            onClick={() => openDeleteDialog(q)}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3 w-3 text-red-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            {q.phdStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {q.phdAwardedDate || '-'}
+                        </TableCell>
+                        <TableCell className="text-center p-1.5">
+                          <div className="flex items-center justify-center gap-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={() => openEditDialog(q)}
+                              title="Edit"
+                            >
+                              <Pencil className="h-3 w-3 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={() => openDeleteDialog(q)}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>
@@ -583,8 +636,8 @@ export const FacultyQualificationsTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Qualification</DialogTitle>
             <DialogDescription className="text-xs">
-              Add a new qualification record for <strong>{selectedFacultyName}</strong>.
-              Required fields are marked with *.
+              Add a new qualification record for <strong>{selectedFacultyName}</strong>. Required
+              fields are marked with *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
@@ -593,14 +646,16 @@ export const FacultyQualificationsTab = () => {
                 <Label className="text-xs font-medium">Qualification Level *</Label>
                 <Select
                   value={formData.qualificationLevel}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, qualificationLevel: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, qualificationLevel: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
                     {QUALIFICATION_LEVEL_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -611,7 +666,7 @@ export const FacultyQualificationsTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. Ph.D. in Computer Science"
                   value={formData.degree}
-                  onChange={(e) => setFormData(prev => ({ ...prev, degree: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, degree: e.target.value }))}
                 />
               </div>
             </div>
@@ -622,7 +677,7 @@ export const FacultyQualificationsTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. Artificial Intelligence"
                   value={formData.specialization || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -631,7 +686,7 @@ export const FacultyQualificationsTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. IIT Madras"
                   value={formData.university || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, university: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, university: e.target.value }))}
                 />
               </div>
             </div>
@@ -643,24 +698,28 @@ export const FacultyQualificationsTab = () => {
                   type="number"
                   placeholder="e.g. 2010"
                   value={formData.yearOfPassing ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    yearOfPassing: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      yearOfPassing: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">PhD Status</Label>
                 <Select
                   value={formData.phdStatus || 'Not Applicable'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, phdStatus: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, phdStatus: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     {PHD_STATUS_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -672,12 +731,17 @@ export const FacultyQualificationsTab = () => {
                 className="h-9 text-xs"
                 type="date"
                 value={formData.phdAwardedDate || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, phdAwardedDate: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, phdAwardedDate: e.target.value }))}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -709,14 +773,16 @@ export const FacultyQualificationsTab = () => {
                 <Label className="text-xs font-medium">Qualification Level</Label>
                 <Select
                   value={formData.qualificationLevel}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, qualificationLevel: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, qualificationLevel: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
                     {QUALIFICATION_LEVEL_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -726,7 +792,7 @@ export const FacultyQualificationsTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.degree}
-                  onChange={(e) => setFormData(prev => ({ ...prev, degree: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, degree: e.target.value }))}
                 />
               </div>
             </div>
@@ -736,7 +802,7 @@ export const FacultyQualificationsTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.specialization || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -744,7 +810,7 @@ export const FacultyQualificationsTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.university || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, university: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, university: e.target.value }))}
                 />
               </div>
             </div>
@@ -755,24 +821,28 @@ export const FacultyQualificationsTab = () => {
                   className="h-9 text-xs"
                   type="number"
                   value={formData.yearOfPassing ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    yearOfPassing: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      yearOfPassing: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">PhD Status</Label>
                 <Select
                   value={formData.phdStatus || 'Not Applicable'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, phdStatus: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, phdStatus: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     {PHD_STATUS_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -784,12 +854,17 @@ export const FacultyQualificationsTab = () => {
                 className="h-9 text-xs"
                 type="date"
                 value={formData.phdAwardedDate || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, phdAwardedDate: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, phdAwardedDate: e.target.value }))}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
@@ -807,12 +882,17 @@ export const FacultyQualificationsTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Qualification</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>{selectedQualification?.degree}</strong>
-              {' '}({selectedQualification?.qualificationLevel})? This action cannot be undone.
+              Are you sure you want to delete <strong>{selectedQualification?.degree}</strong> (
+              {selectedQualification?.qualificationLevel})? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button

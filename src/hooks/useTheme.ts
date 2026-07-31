@@ -4,7 +4,7 @@ import { useCallback, useEffect } from 'react';
 
 export const useTheme = () => {
   const dispatch = useAppDispatch();
-  const { mode } = useAppSelector((state) => state.theme);
+  const { mode } = useAppSelector(state => state.theme);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', mode === 'dark');

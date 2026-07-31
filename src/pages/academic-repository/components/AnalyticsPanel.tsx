@@ -6,9 +6,21 @@ import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 export const AnalyticsPanel = () => {
   const metrics = [
-    { label: 'Data Completeness', value: repositoryMetrics.dataCompleteness, color: 'text-indigo-600' },
-    { label: 'Evidence Completeness', value: repositoryMetrics.evidenceCompleteness, color: 'text-violet-600' },
-    { label: 'Verification', value: repositoryMetrics.verificationPercent, color: 'text-emerald-600' },
+    {
+      label: 'Data Completeness',
+      value: repositoryMetrics.dataCompleteness,
+      color: 'text-indigo-600',
+    },
+    {
+      label: 'Evidence Completeness',
+      value: repositoryMetrics.evidenceCompleteness,
+      color: 'text-violet-600',
+    },
+    {
+      label: 'Verification',
+      value: repositoryMetrics.verificationPercent,
+      color: 'text-emerald-600',
+    },
   ];
 
   const getHealthColor = (value: number) => {
@@ -37,9 +49,19 @@ export const AnalyticsPanel = () => {
           <div className="flex items-center justify-center mb-3">
             <div className="relative">
               <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
                 <circle
-                  cx="50" cy="50" r="42" fill="none"
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
                   stroke="hsl(var(--primary))"
                   strokeWidth="8"
                   strokeDasharray={`${repositoryMetrics.readinessScore * 2.64} 264`}
@@ -67,7 +89,7 @@ export const AnalyticsPanel = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pb-4">
-          {metrics.map((metric) => (
+          {metrics.map(metric => (
             <div key={metric.label} className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium">{metric.label}</span>
@@ -87,7 +109,7 @@ export const AnalyticsPanel = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 pb-4">
-          {repositoryKPIs.slice(0, 6).map((kpi) => (
+          {repositoryKPIs.slice(0, 6).map(kpi => (
             <div key={kpi.id} className="flex items-center justify-between py-1">
               <div className="flex items-center gap-1.5">
                 {kpi.verificationStatus === 'verified' ? (
@@ -99,7 +121,9 @@ export const AnalyticsPanel = () => {
                 )}
                 <span className="text-[11px]">{kpi.label}</span>
               </div>
-              <span className={cn('text-[11px] font-medium', getHealthColor(kpi.completionPercent))}>
+              <span
+                className={cn('text-[11px] font-medium', getHealthColor(kpi.completionPercent))}
+              >
                 {getHealthLabel(kpi.completionPercent)}
               </span>
             </div>

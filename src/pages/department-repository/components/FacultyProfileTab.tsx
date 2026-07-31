@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { facultyService } from '@/services/faculty.service';
-import { FacultyProfileResponse, CreateFacultyRequest, UpdateFacultyRequest, PaginatedData } from '@/types/faculty.types';
+import {
+  FacultyProfileResponse,
+  CreateFacultyRequest,
+  UpdateFacultyRequest,
+  PaginatedData,
+} from '@/types/faculty.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -130,26 +135,29 @@ export const FacultyProfileTab = () => {
 
   // ── Fetch faculty profiles from API ──
 
-  const fetchProfiles = useCallback(async (currentPage: number, search?: string) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await facultyService.listProfiles(departmentId, {
-        page: currentPage,
-        size: PAGE_SIZE,
-        search: search || undefined,
-      });
-      setData(result);
-      setTotalPages(result.totalPages);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load faculty profiles';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchProfiles = useCallback(
+    async (currentPage: number, search?: string) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await facultyService.listProfiles(departmentId, {
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: search || undefined,
+        });
+        setData(result);
+        setTotalPages(result.totalPages);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load faculty profiles';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   // Fetch profiles when page or submitted search changes
   useEffect(() => {
@@ -215,7 +223,9 @@ export const FacultyProfileTab = () => {
       officialEmail: faculty.officialEmail ?? undefined,
       personalEmail: faculty.personalEmail ?? undefined,
       mobileNumber: faculty.mobileNumber ?? undefined,
-      designation: faculty.designation ? DESIGNATION_MAP[faculty.designation] || faculty.designation : undefined,
+      designation: faculty.designation
+        ? DESIGNATION_MAP[faculty.designation] || faculty.designation
+        : undefined,
       status: faculty.status ? STATUS_MAP[faculty.status] || faculty.status : 'ACTIVE',
     });
     setEditDialogOpen(true);
@@ -320,23 +330,28 @@ export const FacultyProfileTab = () => {
   // ── Helpers ──
 
   const formatDesignation = (val: string | null | undefined): string =>
-    val ? (DESIGNATION_MAP[val] || val) : '-';
+    val ? DESIGNATION_MAP[val] || val : '-';
 
   const formatStatus = (val: string | null | undefined): string =>
-    val ? (STATUS_MAP[val] || val) : '-';
+    val ? STATUS_MAP[val] || val : '-';
 
   const formatGender = (val: string | null | undefined): string =>
-    val ? (GENDER_MAP[val] || val) : '-';
+    val ? GENDER_MAP[val] || val : '-';
 
   const getWorkflowBadgeVariant = (status: string | null | undefined) => {
     switch (status) {
-      case 'APPROVED': return 'bg-emerald-500/10 text-emerald-600';
-      case 'REJECTED': return 'bg-red-500/10 text-red-600';
+      case 'APPROVED':
+        return 'bg-emerald-500/10 text-emerald-600';
+      case 'REJECTED':
+        return 'bg-red-500/10 text-red-600';
       case 'HOD_REVIEW':
-      case 'IQAC_VERIFICATION': return 'bg-blue-500/10 text-blue-600';
+      case 'IQAC_VERIFICATION':
+        return 'bg-blue-500/10 text-blue-600';
       case 'SUBMITTED':
-      case 'VALIDATED': return 'bg-indigo-500/10 text-indigo-600';
-      default: return 'bg-amber-500/10 text-amber-600';
+      case 'VALIDATED':
+        return 'bg-indigo-500/10 text-indigo-600';
+      default:
+        return 'bg-amber-500/10 text-amber-600';
     }
   };
 
@@ -387,7 +402,7 @@ export const FacultyProfileTab = () => {
                 className="h-8 text-xs pl-8 pr-8"
                 placeholder="Search by name or employee ID..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
               {searchQuery && (
@@ -405,7 +420,12 @@ export const FacultyProfileTab = () => {
             <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Faculty
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleDownloadTemplate}
+            >
               <Download className="h-3.5 w-3.5 mr-1" /> Download Template
             </Button>
             <Button variant="outline" size="sm" className="text-xs h-8">
@@ -444,30 +464,57 @@ export const FacultyProfileTab = () => {
                   <TableHead className="text-[10px] font-semibold">Academic Unit</TableHead>
                   <TableHead className="text-[10px] font-semibold">Designation</TableHead>
                   <TableHead className="text-[10px] font-semibold">Status</TableHead>
-                  <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                  <TableHead className="text-[10px] font-semibold text-center w-16">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {/* Loading skeleton */}
-                {loading && (
+                {loading &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center">
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-14" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-14" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12 mx-auto" />
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
 
                 {/* Error state */}
                 {!loading && error && (
@@ -506,62 +553,80 @@ export const FacultyProfileTab = () => {
                 )}
 
                 {/* Data rows */}
-                {!loading && !error && data?.content.map((faculty, index) => (
-                  <TableRow key={faculty.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                      {data.page * data.size + index + 1}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{faculty.employeeId}</TableCell>
-                    <TableCell className="text-xs p-1.5 font-medium">{faculty.facultyName}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">{formatGender(faculty.gender)}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">{faculty.dateOfBirth || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">{faculty.panNumber || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[140px]">{faculty.officialEmail || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[140px]">{faculty.personalEmail || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">{faculty.mobileNumber || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">{user?.department || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge variant="outline" className="text-[9px] font-normal">
-                        {formatDesignation(faculty.designation)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          'text-[9px]',
-                          faculty.status === 'ACTIVE'
-                            ? 'bg-emerald-500/10 text-emerald-600'
-                            : 'bg-gray-500/10 text-gray-600'
-                        )}
-                      >
-                        {formatStatus(faculty.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center p-1.5">
-                      <div className="flex items-center justify-center gap-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={() => openEditDialog(faculty)}
-                          title="Edit"
+                {!loading &&
+                  !error &&
+                  data?.content.map((faculty, index) => (
+                    <TableRow key={faculty.id} className="hover:bg-muted/20">
+                      <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                        {data.page * data.size + index + 1}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {faculty.employeeId}
+                      </TableCell>
+                      <TableCell className="text-xs p-1.5 font-medium">
+                        {faculty.facultyName}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        {formatGender(faculty.gender)}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        {faculty.dateOfBirth || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        {faculty.panNumber || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 truncate max-w-[140px]">
+                        {faculty.officialEmail || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 truncate max-w-[140px]">
+                        {faculty.personalEmail || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        {faculty.mobileNumber || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">{user?.department || '-'}</TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge variant="outline" className="text-[9px] font-normal">
+                          {formatDesignation(faculty.designation)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            faculty.status === 'ACTIVE'
+                              ? 'bg-emerald-500/10 text-emerald-600'
+                              : 'bg-gray-500/10 text-gray-600'
+                          )}
                         >
-                          <Pencil className="h-3 w-3 text-blue-600" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={() => openDeleteDialog(faculty)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {formatStatus(faculty.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center p-1.5">
+                        <div className="flex items-center justify-center gap-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openEditDialog(faculty)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openDeleteDialog(faculty)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -574,7 +639,10 @@ export const FacultyProfileTab = () => {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => handlePageChange(Math.max(0, page - 1))}
-                      className={cn(page === 0 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page === 0 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
 
@@ -605,7 +673,10 @@ export const FacultyProfileTab = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
-                      className={cn(page >= totalPages - 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page >= totalPages - 1 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                 </PaginationContent>
@@ -654,7 +725,8 @@ export const FacultyProfileTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Faculty Profile</DialogTitle>
             <DialogDescription className="text-xs">
-              Fill in the details to create a new faculty profile. Required fields are marked with *.
+              Fill in the details to create a new faculty profile. Required fields are marked with
+              *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
@@ -665,7 +737,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. EMP010"
                   value={formData.employeeId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -674,7 +746,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   placeholder="Full name"
                   value={formData.facultyName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, facultyName: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, facultyName: e.target.value }))}
                 />
               </div>
             </div>
@@ -683,15 +755,21 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Gender</Label>
                 <Select
                   value={formData.gender || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, gender: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, gender: v || undefined }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Male" className="text-xs">Male</SelectItem>
-                    <SelectItem value="Female" className="text-xs">Female</SelectItem>
-                    <SelectItem value="Other" className="text-xs">Other</SelectItem>
+                    <SelectItem value="Male" className="text-xs">
+                      Male
+                    </SelectItem>
+                    <SelectItem value="Female" className="text-xs">
+                      Female
+                    </SelectItem>
+                    <SelectItem value="Other" className="text-xs">
+                      Other
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -701,7 +779,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.dateOfBirth || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                 />
               </div>
             </div>
@@ -712,7 +790,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. ABCPK1234A"
                   value={formData.panNumber || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, panNumber: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, panNumber: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -721,7 +799,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   placeholder="e.g. 9876543210"
                   value={formData.mobileNumber || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, mobileNumber: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, mobileNumber: e.target.value }))}
                 />
               </div>
             </div>
@@ -733,7 +811,7 @@ export const FacultyProfileTab = () => {
                   placeholder="email@institution.edu"
                   type="email"
                   value={formData.officialEmail || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, officialEmail: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, officialEmail: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -743,7 +821,7 @@ export const FacultyProfileTab = () => {
                   placeholder="personal@email.com"
                   type="email"
                   value={formData.personalEmail || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, personalEmail: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, personalEmail: e.target.value }))}
                 />
               </div>
             </div>
@@ -752,15 +830,23 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Designation</Label>
                 <Select
                   value={formData.designation || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, designation: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, designation: v || undefined }))
+                  }
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select designation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Professor" className="text-xs">Professor</SelectItem>
-                    <SelectItem value="Associate Professor" className="text-xs">Associate Professor</SelectItem>
-                    <SelectItem value="Assistant Professor" className="text-xs">Assistant Professor</SelectItem>
+                    <SelectItem value="Professor" className="text-xs">
+                      Professor
+                    </SelectItem>
+                    <SelectItem value="Associate Professor" className="text-xs">
+                      Associate Professor
+                    </SelectItem>
+                    <SelectItem value="Assistant Professor" className="text-xs">
+                      Assistant Professor
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -768,21 +854,30 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || 'ACTIVE'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE" className="text-xs">Active</SelectItem>
-                    <SelectItem value="RELIEVED" className="text-xs">Relieved</SelectItem>
+                    <SelectItem value="ACTIVE" className="text-xs">
+                      Active
+                    </SelectItem>
+                    <SelectItem value="RELIEVED" className="text-xs">
+                      Relieved
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -815,7 +910,7 @@ export const FacultyProfileTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.employeeId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -823,7 +918,7 @@ export const FacultyProfileTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.facultyName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, facultyName: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, facultyName: e.target.value }))}
                 />
               </div>
             </div>
@@ -832,15 +927,21 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Gender</Label>
                 <Select
                   value={formData.gender || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, gender: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, gender: v || undefined }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Male" className="text-xs">Male</SelectItem>
-                    <SelectItem value="Female" className="text-xs">Female</SelectItem>
-                    <SelectItem value="Other" className="text-xs">Other</SelectItem>
+                    <SelectItem value="Male" className="text-xs">
+                      Male
+                    </SelectItem>
+                    <SelectItem value="Female" className="text-xs">
+                      Female
+                    </SelectItem>
+                    <SelectItem value="Other" className="text-xs">
+                      Other
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -850,7 +951,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.dateOfBirth || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                 />
               </div>
             </div>
@@ -860,7 +961,7 @@ export const FacultyProfileTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.panNumber || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, panNumber: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, panNumber: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -868,7 +969,7 @@ export const FacultyProfileTab = () => {
                 <Input
                   className="h-9 text-xs"
                   value={formData.mobileNumber || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, mobileNumber: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, mobileNumber: e.target.value }))}
                 />
               </div>
             </div>
@@ -879,7 +980,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   type="email"
                   value={formData.officialEmail || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, officialEmail: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, officialEmail: e.target.value }))}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -888,7 +989,7 @@ export const FacultyProfileTab = () => {
                   className="h-9 text-xs"
                   type="email"
                   value={formData.personalEmail || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, personalEmail: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, personalEmail: e.target.value }))}
                 />
               </div>
             </div>
@@ -897,15 +998,23 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Designation</Label>
                 <Select
                   value={formData.designation || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, designation: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, designation: v || undefined }))
+                  }
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select designation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Professor" className="text-xs">Professor</SelectItem>
-                    <SelectItem value="Associate Professor" className="text-xs">Associate Professor</SelectItem>
-                    <SelectItem value="Assistant Professor" className="text-xs">Assistant Professor</SelectItem>
+                    <SelectItem value="Professor" className="text-xs">
+                      Professor
+                    </SelectItem>
+                    <SelectItem value="Associate Professor" className="text-xs">
+                      Associate Professor
+                    </SelectItem>
+                    <SelectItem value="Assistant Professor" className="text-xs">
+                      Assistant Professor
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -913,21 +1022,30 @@ export const FacultyProfileTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || 'ACTIVE'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v }))}
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE" className="text-xs">Active</SelectItem>
-                    <SelectItem value="RELIEVED" className="text-xs">Relieved</SelectItem>
+                    <SelectItem value="ACTIVE" className="text-xs">
+                      Active
+                    </SelectItem>
+                    <SelectItem value="RELIEVED" className="text-xs">
+                      Relieved
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -950,11 +1068,17 @@ export const FacultyProfileTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Faculty Profile</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>{selectedFaculty?.facultyName}</strong> (ID: {selectedFaculty?.employeeId})? This action cannot be undone.
+              Are you sure you want to delete <strong>{selectedFaculty?.facultyName}</strong> (ID:{' '}
+              {selectedFaculty?.employeeId})? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button

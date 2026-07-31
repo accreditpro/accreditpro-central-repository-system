@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GapAnalysis as GapAnalysisType, ActivityRecommendation, POCoverage, CourseOutcome } from '../types';
+import {
+  GapAnalysis as GapAnalysisType,
+  ActivityRecommendation,
+  POCoverage,
+  CourseOutcome,
+} from '../types';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -36,7 +41,16 @@ interface Step6Props {
   completionPercentage: number;
 }
 
-export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step6Props) {
+export default function Step6_GapAnalysis({
+  outcomes,
+  coverage,
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
+}: Step6Props) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleRunGapAnalysis = () => {
@@ -47,22 +61,27 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
           {
             poCode: 'PO5',
             poDescription: 'Engineering Tool Usage',
-            reason: 'No CO mapped to engineering tool usage. Current curriculum lacks hands-on exposure to modern engineering and IT tools.',
-            recommendation: 'Introduce assignments requiring use of Python/R/MATLAB for data analysis tasks',
+            reason:
+              'No CO mapped to engineering tool usage. Current curriculum lacks hands-on exposure to modern engineering and IT tools.',
+            recommendation:
+              'Introduce assignments requiring use of Python/R/MATLAB for data analysis tasks',
             expectedImprovement: '60% improvement in PO5 coverage',
           },
           {
             poCode: 'PO7',
             poDescription: 'Ethics',
-            reason: 'Only 1 CO weakly mapped to ethics. Need stronger emphasis on inclusivity, diversity, equity, and ethical considerations in engineering.',
+            reason:
+              'Only 1 CO weakly mapped to ethics. Need stronger emphasis on inclusivity, diversity, equity, and ethical considerations in engineering.',
             recommendation: 'Include case studies on ethical implications of AI/ML decisions',
             expectedImprovement: '50% improvement in PO7 coverage',
           },
           {
             poCode: 'PO6',
             poDescription: 'The Engineer and the World',
-            reason: 'Limited mapping to societal and environmental impact. Need to connect course content to sustainable development and real-world responsibilities.',
-            recommendation: 'Add mini-project on socially relevant ML applications addressing sustainable development',
+            reason:
+              'Limited mapping to societal and environmental impact. Need to connect course content to sustainable development and real-world responsibilities.',
+            recommendation:
+              'Add mini-project on socially relevant ML applications addressing sustainable development',
             expectedImprovement: '45% improvement in PO6 coverage',
           },
         ],
@@ -85,7 +104,8 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             id: 'rec1',
             activityType: 'Assignment',
             title: 'Python/ML Tool-based Assignment',
-            description: 'Design an assignment requiring students to use modern ML libraries (scikit-learn, TensorFlow) to solve a practical problem',
+            description:
+              'Design an assignment requiring students to use modern ML libraries (scikit-learn, TensorFlow) to solve a practical problem',
             duration: '2 weeks',
             mappedPO: 'PO5',
             mappedCO: 'CO2',
@@ -97,7 +117,8 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             id: 'rec2',
             activityType: 'Case Study',
             title: 'AI Ethics Case Study',
-            description: 'Analyze case studies on AI bias, fairness, and ethical decision-making in ML systems',
+            description:
+              'Analyze case studies on AI bias, fairness, and ethical decision-making in ML systems',
             duration: '1 week',
             mappedPO: 'PO7',
             mappedCO: 'CO1',
@@ -109,7 +130,8 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             id: 'rec3',
             activityType: 'Mini Project',
             title: 'Social Impact ML Mini Project',
-            description: 'Build an ML model that addresses a societal challenge (healthcare, agriculture, etc.) with consideration of sustainable development',
+            description:
+              'Build an ML model that addresses a societal challenge (healthcare, agriculture, etc.) with consideration of sustainable development',
             duration: '4 weeks',
             mappedPO: 'PO6',
             mappedCO: 'CO3',
@@ -121,7 +143,8 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             id: 'rec4',
             activityType: 'Hands-on Session',
             title: 'Team-based Model Implementation',
-            description: 'Group activity where teams collaboratively implement and compare ML models',
+            description:
+              'Group activity where teams collaboratively implement and compare ML models',
             duration: '2 weeks',
             mappedPO: 'PO8',
             mappedCO: 'CO2',
@@ -140,32 +163,43 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
     if (!data) return;
     onUpdate({
       ...data,
-      recommendations: data.recommendations.map((r) =>
-        r.id === id ? { ...r, status } : r
-      ),
+      recommendations: data.recommendations.map(r => (r.id === id ? { ...r, status } : r)),
     });
   };
 
   const getStatusColor = (status: ActivityRecommendation['status']) => {
     switch (status) {
-      case 'accepted': return 'border-emerald-500/30 bg-emerald-500/5';
-      case 'rejected': return 'border-red-500/30 bg-red-500/5';
-      case 'modified': return 'border-amber-500/30 bg-amber-500/5';
-      default: return 'border-border/50 bg-card';
+      case 'accepted':
+        return 'border-emerald-500/30 bg-emerald-500/5';
+      case 'rejected':
+        return 'border-red-500/30 bg-red-500/5';
+      case 'modified':
+        return 'border-amber-500/30 bg-amber-500/5';
+      default:
+        return 'border-border/50 bg-card';
     }
   };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'Assignment': return BookOpen;
-      case 'Case Study': return Search;
-      case 'Mini Project': return Target;
-      case 'Hands-on Session': return Wrench;
-      case 'Seminar': return Users;
-      case 'Workshop': return Wrench;
-      case 'Guest Lecture': return Users;
-      case 'Industry Visit': return Lightbulb;
-      default: return Lightbulb;
+      case 'Assignment':
+        return BookOpen;
+      case 'Case Study':
+        return Search;
+      case 'Mini Project':
+        return Target;
+      case 'Hands-on Session':
+        return Wrench;
+      case 'Seminar':
+        return Users;
+      case 'Workshop':
+        return Wrench;
+      case 'Guest Lecture':
+        return Users;
+      case 'Industry Visit':
+        return Lightbulb;
+      default:
+        return Lightbulb;
     }
   };
 
@@ -177,9 +211,13 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             <Search className="h-5 w-5 text-amber-600" />
             Gap Analysis
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">AI analyzes mapping gaps and suggests activities to improve weak POs</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            AI analyzes mapping gaps and suggests activities to improve weak POs
+          </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <Badge variant="outline" className="text-xs">
+          {completionPercentage}% Complete
+        </Badge>
       </div>
       <Separator />
 
@@ -190,9 +228,14 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
           </div>
           <p className="text-lg font-semibold mb-1">Gap Analysis Ready</p>
           <p className="text-xs text-muted-foreground mb-6 text-center max-w-md">
-            AI will analyze the CO-PO matrix to detect weak POs, missing POs, and low Bloom distribution, then suggest activities
+            AI will analyze the CO-PO matrix to detect weak POs, missing POs, and low Bloom
+            distribution, then suggest activities
           </p>
-          <Button onClick={handleRunGapAnalysis} disabled={isAnalyzing} className="gap-2 bg-gradient-to-r from-amber-600 to-orange-600">
+          <Button
+            onClick={handleRunGapAnalysis}
+            disabled={isAnalyzing}
+            className="gap-2 bg-gradient-to-r from-amber-600 to-orange-600"
+          >
             <Sparkles className="h-4 w-4" />
             {isAnalyzing ? 'Analyzing...' : 'Run Gap Analysis'}
           </Button>
@@ -209,7 +252,7 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {data.weakPOs.map((po) => (
+                {data.weakPOs.map(po => (
                   <div key={po.poCode} className="p-3 rounded-lg border border-red-500/20 bg-card">
                     <div className="flex items-start justify-between">
                       <div>
@@ -219,8 +262,12 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">{po.reason}</p>
                     <div className="mt-2 p-2 rounded bg-emerald-500/5 border border-emerald-500/20">
-                      <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Recommendation: {po.recommendation}</p>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Expected: {po.expectedImprovement}</p>
+                      <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                        Recommendation: {po.recommendation}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">
+                        Expected: {po.expectedImprovement}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -238,9 +285,14 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.missingPOs.map((po) => (
-                  <div key={po.poCode} className="p-3 rounded-lg border border-orange-500/20 bg-card">
-                    <Badge className="bg-orange-500/10 text-orange-600 text-[9px]">{po.poCode}</Badge>
+                {data.missingPOs.map(po => (
+                  <div
+                    key={po.poCode}
+                    className="p-3 rounded-lg border border-orange-500/20 bg-card"
+                  >
+                    <Badge className="bg-orange-500/10 text-orange-600 text-[9px]">
+                      {po.poCode}
+                    </Badge>
                     <p className="text-xs mt-1">{po.poDescription}</p>
                     <p className="text-[10px] text-muted-foreground mt-1">{po.reason}</p>
                   </div>
@@ -259,25 +311,42 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {data.recommendations.map((rec) => {
+                {data.recommendations.map(rec => {
                   const Icon = getActivityIcon(rec.activityType);
                   return (
-                    <div key={rec.id} className={cn('p-3 rounded-lg border transition-all', getStatusColor(rec.status))}>
+                    <div
+                      key={rec.id}
+                      className={cn(
+                        'p-3 rounded-lg border transition-all',
+                        getStatusColor(rec.status)
+                      )}
+                    >
                       <div className="flex items-start gap-3">
                         <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 flex items-center justify-center shrink-0">
                           <Icon className="h-4 w-4 text-amber-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[9px]">{rec.activityType}</Badge>
-                            <Badge className="text-[9px] bg-indigo-500/10 text-indigo-600">{rec.mappedPO}</Badge>
-                            <Badge className="text-[9px] bg-purple-500/10 text-purple-600">{rec.mappedCO}</Badge>
-                            <Badge variant="secondary" className="text-[9px]">{rec.duration}</Badge>
+                            <Badge variant="outline" className="text-[9px]">
+                              {rec.activityType}
+                            </Badge>
+                            <Badge className="text-[9px] bg-indigo-500/10 text-indigo-600">
+                              {rec.mappedPO}
+                            </Badge>
+                            <Badge className="text-[9px] bg-purple-500/10 text-purple-600">
+                              {rec.mappedCO}
+                            </Badge>
+                            <Badge variant="secondary" className="text-[9px]">
+                              {rec.duration}
+                            </Badge>
                           </div>
                           <p className="text-xs font-semibold mt-1">{rec.title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{rec.description}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {rec.description}
+                          </p>
                           <p className="text-[9px] text-muted-foreground mt-1">
-                            Evidence: {rec.evidenceRequired} • Expected Level: {rec.expectedBloomLevel}
+                            Evidence: {rec.evidenceRequired} • Expected Level:{' '}
+                            {rec.expectedBloomLevel}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -299,7 +368,12 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
                           >
                             <XCircle className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-amber-600" title="Modify">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-amber-600"
+                            title="Modify"
+                          >
                             <Edit2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -324,7 +398,12 @@ export default function Step6_GapAnalysis({ outcomes, coverage, data, onUpdate, 
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button size="sm" onClick={onNext} disabled={!data} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
+          <Button
+            size="sm"
+            onClick={onNext}
+            disabled={!data}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
+          >
             Next: Revised CO-PO Mapping
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

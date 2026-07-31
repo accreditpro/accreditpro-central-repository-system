@@ -24,7 +24,10 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { adminService } from '@/services/admin.service';
-import type { CreateInstitutionRequest, CreateInstitutionResponse } from '@/types/institution.types';
+import type {
+  CreateInstitutionRequest,
+  CreateInstitutionResponse,
+} from '@/types/institution.types';
 import {
   CreateInstitutionFormData,
   createInstitutionSchema,
@@ -83,7 +86,7 @@ const mapResponseToFormData = (res: CreateInstitutionResponse): CreateInstitutio
     departments: DEFAULT_DEPARTMENTS,
   },
   academicYears: {
-    academicYears: res.academicEntities.academicYears?.map((y) => y.year) || DEFAULT_ACADEMIC_YEARS,
+    academicYears: res.academicEntities.academicYears?.map(y => y.year) || DEFAULT_ACADEMIC_YEARS,
   },
   admin: {
     name: res.adminUser.name,
@@ -136,7 +139,7 @@ export const EditInstitutionPage = () => {
     setLoadState('loading');
     adminService
       .getInstitutionById(Number(id))
-      .then((data) => {
+      .then(data => {
         const formData = mapResponseToFormData(data);
         form.reset(formData);
         setLoadState('ready');
@@ -180,7 +183,7 @@ export const EditInstitutionPage = () => {
 
     if (!result.success) {
       const fields = Object.keys(result.error.formErrors.fieldErrors);
-      fields.forEach((field) => {
+      fields.forEach(field => {
         form.trigger(`${prefix}.${field}` as keyof CreateInstitutionFormData);
       });
       return false;
@@ -191,12 +194,12 @@ export const EditInstitutionPage = () => {
   const handleNext = async () => {
     const isValid = await validateCurrentStep();
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 8));
+      setCurrentStep(prev => Math.min(prev + 1, 8));
     }
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async () => {
@@ -215,7 +218,8 @@ export const EditInstitutionPage = () => {
       toast.success('Institution updated successfully!');
       navigate(`/admin/institutions/${id}`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to update institution. Please try again.';
+      const message =
+        error instanceof Error ? error.message : 'Failed to update institution. Please try again.';
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -303,7 +307,8 @@ export const EditInstitutionPage = () => {
         </div>
         <h2 className="text-lg font-semibold">Could not load institution</h2>
         <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-md">
-          The institution you're trying to edit doesn't exist or you don't have access. Please go back and try again.
+          The institution you're trying to edit doesn't exist or you don't have access. Please go
+          back and try again.
         </p>
         <Button variant="outline" onClick={() => navigate('/admin/institutions')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -365,18 +370,16 @@ export const EditInstitutionPage = () => {
                     'relative z-10 flex items-center justify-center h-8 w-8 rounded-full border-2 transition-all',
                     isCompleted && 'bg-primary border-primary text-primary-foreground',
                     isCurrent && 'border-primary bg-primary/10 text-primary',
-                    !isCompleted && !isCurrent && 'border-muted-foreground/30 text-muted-foreground/50'
+                    !isCompleted &&
+                      !isCurrent &&
+                      'border-muted-foreground/30 text-muted-foreground/50'
                   )}
                   onClick={() => {
                     if (isCompleted) setCurrentStep(step.id);
                   }}
                   disabled={!isCompleted && !isCurrent}
                 >
-                  {isCompleted ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    stepIcons[index]
-                  )}
+                  {isCompleted ? <Check className="h-3.5 w-3.5" /> : stepIcons[index]}
                 </button>
 
                 {/* Label */}
@@ -396,7 +399,7 @@ export const EditInstitutionPage = () => {
 
       {/* Form Content */}
       <Form {...form}>
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="rounded-xl border bg-card p-6 min-h-[380px]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -426,11 +429,7 @@ export const EditInstitutionPage = () => {
 
             <div className="flex items-center gap-2">
               {currentStep < 8 ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="gap-2 h-9 text-sm"
-                >
+                <Button type="button" onClick={handleNext} className="gap-2 h-9 text-sm">
                   Next
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -501,9 +500,19 @@ const ReviewStepReadOnly = () => {
       </div>
 
       <div className="rounded-lg border p-5 space-y-5 bg-card">
-        <ReviewSection icon={<Building2 className="h-4 w-4 text-blue-500" />} title="Basic Information">
+        <ReviewSection
+          icon={<Building2 className="h-4 w-4 text-blue-500" />}
+          title="Basic Information"
+        >
           <ReviewField label="Name" value={data.basicInfo.name} />
-          <ReviewField label="Code" value={<code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{data.basicInfo.code}</code>} />
+          <ReviewField
+            label="Code"
+            value={
+              <code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">
+                {data.basicInfo.code}
+              </code>
+            }
+          />
           <ReviewField label="Category" value={data.basicInfo.category} />
           <ReviewField label="Email" value={data.basicInfo.email} />
           <ReviewField label="Phone" value={data.basicInfo.phone} />
@@ -513,7 +522,10 @@ const ReviewStepReadOnly = () => {
         <Separator />
 
         <ReviewSection icon={<MapPin className="h-4 w-4 text-emerald-500" />} title="Address">
-          <ReviewField label="Address" value={`${data.address.addressLine1}${data.address.addressLine2 ? ', ' + data.address.addressLine2 : ''}`} />
+          <ReviewField
+            label="Address"
+            value={`${data.address.addressLine1}${data.address.addressLine2 ? ', ' + data.address.addressLine2 : ''}`}
+          />
           <ReviewField label="State" value={data.address.state} />
           <ReviewField label="District" value={data.address.district} />
           <ReviewField label="Pincode" value={data.address.pincode} />
@@ -521,20 +533,27 @@ const ReviewStepReadOnly = () => {
 
         <Separator />
 
-        <ReviewSection icon={<GraduationCap className="h-4 w-4 text-purple-500" />} title="Academic Configuration">
+        <ReviewSection
+          icon={<GraduationCap className="h-4 w-4 text-purple-500" />}
+          title="Academic Configuration"
+        >
           <div className="flex items-start gap-2">
             <span className="text-xs text-muted-foreground min-w-[100px]">Programs:</span>
             <div className="flex flex-wrap gap-1">
-              {data.academicConfig.programs.map((p) => (
-                <Badge key={p} variant="secondary" className="text-[10px]">{p}</Badge>
+              {data.academicConfig.programs.map(p => (
+                <Badge key={p} variant="secondary" className="text-[10px]">
+                  {p}
+                </Badge>
               ))}
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-xs text-muted-foreground min-w-[100px]">Departments:</span>
             <div className="flex flex-wrap gap-1">
-              {data.academicConfig.departments.map((d) => (
-                <Badge key={d} variant="outline" className="text-[10px]">{d}</Badge>
+              {data.academicConfig.departments.map(d => (
+                <Badge key={d} variant="outline" className="text-[10px]">
+                  {d}
+                </Badge>
               ))}
             </div>
           </div>
@@ -542,21 +561,32 @@ const ReviewStepReadOnly = () => {
 
         <Separator />
 
-        <ReviewSection icon={<Calendar className="h-4 w-4 text-amber-500" />} title="Academic Years">
+        <ReviewSection
+          icon={<Calendar className="h-4 w-4 text-amber-500" />}
+          title="Academic Years"
+        >
           <div className="flex flex-wrap gap-1">
-            {data.academicYears.academicYears.map((y) => (
-              <Badge key={y} variant="secondary" className="text-[10px]">{y}</Badge>
+            {data.academicYears.academicYears.map(y => (
+              <Badge key={y} variant="secondary" className="text-[10px]">
+                {y}
+              </Badge>
             ))}
           </div>
         </ReviewSection>
 
         <Separator />
 
-        <ReviewSection icon={<UserCog className="h-4 w-4 text-red-500" />} title="Institution Admin">
+        <ReviewSection
+          icon={<UserCog className="h-4 w-4 text-red-500" />}
+          title="Institution Admin"
+        >
           <ReviewField label="Name" value={data.admin.name || '(unchanged)'} />
           <ReviewField label="Email" value={data.admin.email || '(unchanged)'} />
           <ReviewField label="Mobile" value={data.admin.mobile || '(unchanged)'} />
-          <ReviewField label="Password" value={data.admin.autoGeneratePassword ? 'Auto-generated' : 'Manual'} />
+          <ReviewField
+            label="Password"
+            value={data.admin.autoGeneratePassword ? 'Auto-generated' : 'Manual'}
+          />
         </ReviewSection>
 
         <Separator />
@@ -565,7 +595,10 @@ const ReviewStepReadOnly = () => {
           <ReviewField label="Name" value={data.iqacCoordinator.name || '(unchanged)'} />
           <ReviewField label="Email" value={data.iqacCoordinator.email || '(unchanged)'} />
           <ReviewField label="Mobile" value={data.iqacCoordinator.mobile || '(unchanged)'} />
-          <ReviewField label="Password" value={data.iqacCoordinator.autoGeneratePassword ? 'Auto-generated' : 'Manual'} />
+          <ReviewField
+            label="Password"
+            value={data.iqacCoordinator.autoGeneratePassword ? 'Auto-generated' : 'Manual'}
+          />
         </ReviewSection>
 
         <Separator />
@@ -574,7 +607,10 @@ const ReviewStepReadOnly = () => {
           <ReviewField label="Name" value={data.principal.name || '(unchanged)'} />
           <ReviewField label="Email" value={data.principal.email || '(unchanged)'} />
           <ReviewField label="Mobile" value={data.principal.mobile || '(unchanged)'} />
-          <ReviewField label="Password" value={data.principal.autoGeneratePassword ? 'Auto-generated' : 'Manual'} />
+          <ReviewField
+            label="Password"
+            value={data.principal.autoGeneratePassword ? 'Auto-generated' : 'Manual'}
+          />
         </ReviewSection>
       </div>
     </div>

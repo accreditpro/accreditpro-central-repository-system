@@ -7,7 +7,14 @@ export interface RepositoryFieldConfig {
   type: 'text' | 'number' | 'date' | 'select' | 'boolean';
   required: boolean;
   csvColumn: string;
-  masterDataSource?: 'programs' | 'departments' | 'specializations' | 'academicYears' | 'regulations' | 'programOfferings' | 'platforms';
+  masterDataSource?:
+    | 'programs'
+    | 'departments'
+    | 'specializations'
+    | 'academicYears'
+    | 'regulations'
+    | 'programOfferings'
+    | 'platforms';
   autoPopulate?: boolean;
   selectOptions?: string[];
   validationRules?: string[];
@@ -136,8 +143,17 @@ export interface ColumnMapping {
   status: 'auto' | 'manual' | 'unmapped';
 }
 
-export type RepositoryModule = 'academic' | 'faculty' | 'student' | 'research' | 'alumni' | 'student-dev-outcomes';
-export type WorkflowStatus = 'draft' | 'submitted' | 'validated' | 'evidence_pending' | 'hod_review' | 'iqac_verification' | 'approved' | 'rejected';
+export type RepositoryModule =
+  'academic' | 'faculty' | 'student' | 'research' | 'alumni' | 'student-dev-outcomes';
+export type WorkflowStatus =
+  | 'draft'
+  | 'submitted'
+  | 'validated'
+  | 'evidence_pending'
+  | 'hod_review'
+  | 'iqac_verification'
+  | 'approved'
+  | 'rejected';
 
 export type SidebarView =
   | 'dashboard'

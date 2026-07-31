@@ -82,7 +82,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
     setUser: (state, action: PayloadAction<User>) => {
@@ -90,10 +90,10 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // ── Login ──
-      .addCase(loginAsync.pending, (state) => {
+      .addCase(loginAsync.pending, state => {
         state.isLoading = true;
         state.error = null;
       })
@@ -108,14 +108,14 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       })
       // ── Logout ──
-      .addCase(logoutAsync.fulfilled, (state) => {
+      .addCase(logoutAsync.fulfilled, state => {
         state.user = null;
         state.tokens = null;
         state.isAuthenticated = false;
         state.error = null;
       })
       // ── Initialize ──
-      .addCase(initializeAuth.pending, (state) => {
+      .addCase(initializeAuth.pending, state => {
         state.isLoading = true;
         state.error = null;
       })
@@ -125,7 +125,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.isLoading = false;
       })
-      .addCase(initializeAuth.rejected, (state) => {
+      .addCase(initializeAuth.rejected, state => {
         state.user = null;
         state.tokens = null;
         state.isAuthenticated = false;

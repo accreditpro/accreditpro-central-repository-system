@@ -4,10 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users,
@@ -110,7 +129,7 @@ const CreateUserWizard = ({
       departmentId?: number;
       autoGeneratePassword: boolean;
     }) => institutionAdminService.createUser(data),
-    onSuccess: (response) => {
+    onSuccess: response => {
       setCreatedUser(response);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       // Reset wizard state but keep dialog open to show UserCreatedDialog
@@ -136,10 +155,14 @@ const CreateUserWizard = ({
 
   const canProceed = () => {
     switch (step) {
-      case 1: return !!(formData.name && formData.email && formData.mobile);
-      case 2: return !!formData.role;
-      case 3: return formData.role !== 'DEPARTMENT_COORDINATOR' || formData.departmentId !== undefined;
-      default: return true;
+      case 1:
+        return !!(formData.name && formData.email && formData.mobile);
+      case 2:
+        return !!formData.role;
+      case 3:
+        return formData.role !== 'DEPARTMENT_COORDINATOR' || formData.departmentId !== undefined;
+      default:
+        return true;
     }
   };
 
@@ -160,16 +183,12 @@ const CreateUserWizard = ({
     });
   };
 
-  const selectedRoleLabel = roleOptions.find((r) => r.value === formData.role)?.label || formData.role;
+  const selectedRoleLabel =
+    roleOptions.find(r => r.value === formData.role)?.label || formData.role;
 
   // ── If user was created successfully, show the credentials dialog ──
   if (createdUser) {
-    return (
-      <UserCreatedDialog
-        user={createdUser}
-        onClose={handleCloseCreatedUserDialog}
-      />
-    );
+    return <UserCreatedDialog user={createdUser} onClose={handleCloseCreatedUserDialog} />;
   }
 
   return (
@@ -210,7 +229,7 @@ const CreateUserWizard = ({
                 <Label>Full Name</Label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Dr. John Doe"
                 />
               </div>
@@ -219,7 +238,7 @@ const CreateUserWizard = ({
                 <Input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="john.doe@svce.ac.in"
                 />
               </div>
@@ -227,7 +246,7 @@ const CreateUserWizard = ({
                 <Label>Mobile</Label>
                 <Input
                   value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  onChange={e => setFormData({ ...formData, mobile: e.target.value })}
                   placeholder="+91-9876543210"
                 />
               </div>
@@ -236,12 +255,14 @@ const CreateUserWizard = ({
 
           {step === 2 && (
             <div className="space-y-3">
-              {roleOptions.map((role) => (
+              {roleOptions.map(role => (
                 <div
                   key={role.value}
                   onClick={() => setFormData({ ...formData, role: role.value })}
                   className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                    formData.role === role.value ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    formData.role === role.value
+                      ? 'border-primary bg-primary/5'
+                      : 'hover:bg-muted/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -257,18 +278,20 @@ const CreateUserWizard = ({
             <div className="space-y-4">
               {formData.role === 'DEPARTMENT_COORDINATOR' ? (
                 <>
-                  <p className="text-sm text-muted-foreground">Assign a department for this coordinator</p>
+                  <p className="text-sm text-muted-foreground">
+                    Assign a department for this coordinator
+                  </p>
                   <div className="space-y-2">
                     <Label>Department</Label>
                     <Select
                       value={formData.departmentId ? String(formData.departmentId) : ''}
-                      onValueChange={(v) => setFormData({ ...formData, departmentId: Number(v) })}
+                      onValueChange={v => setFormData({ ...formData, departmentId: Number(v) })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {departments.map((d) => (
+                        {departments.map(d => (
                           <SelectItem key={d.id} value={String(d.id)}>
                             {d.name}
                           </SelectItem>
@@ -291,7 +314,9 @@ const CreateUserWizard = ({
 
           {step === 4 && (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-4">Review user details before creating</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Review user details before creating
+              </p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between py-1.5 border-b">
                   <span className="text-muted-foreground">Name</span>
@@ -313,7 +338,7 @@ const CreateUserWizard = ({
                   <div className="flex justify-between py-1.5 border-b">
                     <span className="text-muted-foreground">Department</span>
                     <span className="font-medium">
-                      {departments.find((d) => d.id === formData.departmentId)?.name || 'N/A'}
+                      {departments.find(d => d.id === formData.departmentId)?.name || 'N/A'}
                     </span>
                   </div>
                 )}
@@ -395,8 +420,8 @@ const UserCreatedDialog = ({
             </div>
             <DialogTitle className="text-xl text-center">User Created Successfully</DialogTitle>
             <DialogDescription className="text-center">
-              User <span className="font-semibold text-foreground">{user.name}</span> has been created.
-              Share the credentials below for their first-time login.
+              User <span className="font-semibold text-foreground">{user.name}</span> has been
+              created. Share the credentials below for their first-time login.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -482,7 +507,11 @@ const ViewUserDialog = ({
   open: boolean;
   onClose: () => void;
 }) => {
-  const { data: user, isLoading, error } = useQuery({
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['user', userId],
     queryFn: () => institutionAdminService.getUserById(userId!),
     enabled: open && userId !== null,
@@ -498,7 +527,7 @@ const ViewUserDialog = ({
 
         {isLoading ? (
           <div className="space-y-4 py-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map(i => (
               <Skeleton key={i} className="h-5 w-full" />
             ))}
           </div>
@@ -535,9 +564,7 @@ const ViewUserDialog = ({
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-sm text-muted-foreground">Status</span>
-              <Badge className={`text-xs ${statusColors[user.status] || ''}`}>
-                {user.status}
-              </Badge>
+              <Badge className={`text-xs ${statusColors[user.status] || ''}`}>{user.status}</Badge>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-sm text-muted-foreground">Last Login</span>
@@ -585,9 +612,7 @@ const EditUserDialog = ({
     if (user) {
       // Infer departmentId from the user's department name if possible
       const matchedDept = user.department
-        ? departments.find(
-            (d) => d.name.toLowerCase() === user.department!.toLowerCase()
-          )
+        ? departments.find(d => d.name.toLowerCase() === user.department!.toLowerCase())
         : undefined;
 
       setFormData({
@@ -648,14 +673,14 @@ const EditUserDialog = ({
               <Label>First Name</Label>
               <Input
                 value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                onChange={e => setFormData({ ...formData, firstName: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>Last Name</Label>
               <Input
                 value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                onChange={e => setFormData({ ...formData, lastName: e.target.value })}
               />
             </div>
           </div>
@@ -664,14 +689,14 @@ const EditUserDialog = ({
             <Input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
           <div className="space-y-2">
             <Label>Mobile</Label>
             <Input
               value={formData.mobile}
-              onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+              onChange={e => setFormData({ ...formData, mobile: e.target.value })}
             />
           </div>
 
@@ -682,7 +707,7 @@ const EditUserDialog = ({
             <Label>Role</Label>
             <Select
               value={formData.role}
-              onValueChange={(v) =>
+              onValueChange={v =>
                 setFormData({ ...formData, role: v as UserRoleEnum, departmentId: undefined })
               }
             >
@@ -690,7 +715,7 @@ const EditUserDialog = ({
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((r) => (
+                {roleOptions.map(r => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>
@@ -705,13 +730,13 @@ const EditUserDialog = ({
               <Label>Department</Label>
               <Select
                 value={formData.departmentId ? String(formData.departmentId) : ''}
-                onValueChange={(v) => setFormData({ ...formData, departmentId: Number(v) })}
+                onValueChange={v => setFormData({ ...formData, departmentId: Number(v) })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.map((d) => (
+                  {departments.map(d => (
                     <SelectItem key={d.id} value={String(d.id)}>
                       {d.name}
                     </SelectItem>
@@ -845,14 +870,14 @@ export const UserManagementPage = () => {
     (userId: number) => {
       resetPasswordMutation.mutate(userId);
     },
-    [resetPasswordMutation],
+    [resetPasswordMutation]
   );
 
   const handleStatusChange = useCallback(
     (userId: number, newStatus: UserStatusEnum) => {
       statusMutation.mutate({ userId, status: newStatus });
     },
-    [statusMutation],
+    [statusMutation]
   );
 
   // ── Loading State ───────────────────────────────────────────────────
@@ -879,7 +904,7 @@ export const UserManagementPage = () => {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                       <th key={i} className="py-3 px-4">
                         <Skeleton className="h-4 w-20" />
                       </th>
@@ -956,13 +981,13 @@ export const UserManagementPage = () => {
               <Input
                 placeholder="Search by name or email..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select
               value={statusFilter}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setStatusFilter(v);
                 setPage(1);
               }}
@@ -972,7 +997,7 @@ export const UserManagementPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {statusFilterOptions.map((opt) => (
+                {statusFilterOptions.map(opt => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -981,7 +1006,7 @@ export const UserManagementPage = () => {
             </Select>
             <Select
               value={roleFilter}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setRoleFilter(v);
                 setPage(1);
               }}
@@ -991,7 +1016,7 @@ export const UserManagementPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                {roleFilterOptions.map((opt) => (
+                {roleFilterOptions.map(opt => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -1013,9 +1038,13 @@ export const UserManagementPage = () => {
                   <th className="text-left py-3 px-4 font-medium">Email</th>
                   <th className="text-left py-3 px-4 font-medium hidden md:table-cell">Mobile</th>
                   <th className="text-left py-3 px-4 font-medium">Role</th>
-                  <th className="text-left py-3 px-4 font-medium hidden lg:table-cell">Department</th>
+                  <th className="text-left py-3 px-4 font-medium hidden lg:table-cell">
+                    Department
+                  </th>
                   <th className="text-center py-3 px-4 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 font-medium hidden lg:table-cell">Last Login</th>
+                  <th className="text-left py-3 px-4 font-medium hidden lg:table-cell">
+                    Last Login
+                  </th>
                   <th className="text-center py-3 px-4 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -1140,7 +1169,7 @@ export const UserManagementPage = () => {
         <DataTablePagination
           pagination={pagination}
           onPageChange={setPage}
-          onPageSizeChange={(size) => {
+          onPageSizeChange={size => {
             setPageSize(size);
             setPage(1);
           }}

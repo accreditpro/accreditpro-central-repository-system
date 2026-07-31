@@ -17,8 +17,8 @@ interface HeaderProps {
 export const Header = ({ onMobileMenuOpen, hideMobileMenuButton }: HeaderProps) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const { notifications } = useAppSelector((state) => state.ui);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notifications } = useAppSelector(state => state.ui);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 gap-4">

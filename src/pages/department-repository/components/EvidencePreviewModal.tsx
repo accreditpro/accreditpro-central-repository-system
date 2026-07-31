@@ -52,14 +52,22 @@ export const EvidencePreviewModal = ({
               <FileText className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate leading-tight" title={docTitle}>
+              <h3
+                className="text-sm font-semibold text-foreground truncate leading-tight"
+                title={docTitle}
+              >
                 {docTitle}
               </h3>
               <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="outline" className="text-[10px] text-blue-600 border-blue-200 py-0 px-1.5 font-normal">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] text-blue-600 border-blue-200 py-0 px-1.5 font-normal"
+                >
                   {docType}
                 </Badge>
-                <span className="text-[11px] text-muted-foreground truncate">• Section: {doc.sectionName || sectionName || 'General'}</span>
+                <span className="text-[11px] text-muted-foreground truncate">
+                  • Section: {doc.sectionName || sectionName || 'General'}
+                </span>
               </div>
             </div>
           </div>
@@ -95,11 +103,21 @@ export const EvidencePreviewModal = ({
                 <span>Page 1 of 1</span>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(z => Math.max(75, z - 10))}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setZoom(z => Math.max(75, z - 10))}
+                >
                   <ZoomOut className="h-3 w-3" />
                 </Button>
                 <span className="text-[10px] font-mono w-10 text-center">{zoom}%</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(z => Math.min(150, z + 10))}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setZoom(z => Math.min(150, z + 10))}
+                >
                   <ZoomIn className="h-3 w-3" />
                 </Button>
               </div>
@@ -116,11 +134,18 @@ export const EvidencePreviewModal = ({
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-6 w-6 text-indigo-600 shrink-0" />
                     <div className="min-w-0">
-                      <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">AccreditPro Evidence Repository</h4>
-                      <p className="text-[10px] text-muted-foreground truncate">Central Academic & Department Verification Asset</p>
+                      <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                        AccreditPro Evidence Repository
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        Central Academic & Department Verification Asset
+                      </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-[9px] font-mono bg-indigo-500/5 text-indigo-600 border-indigo-200 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-mono bg-indigo-500/5 text-indigo-600 border-indigo-200 shrink-0"
+                  >
                     AUTHENTICATED
                   </Badge>
                 </div>
@@ -143,12 +168,18 @@ export const EvidencePreviewModal = ({
 
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div className="p-2 rounded bg-muted/20 border border-border/40">
-                      <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Document Type</span>
+                      <span className="text-muted-foreground block text-[9px] uppercase font-semibold">
+                        Document Type
+                      </span>
                       <span className="font-medium text-foreground truncate block">{docType}</span>
                     </div>
                     <div className="p-2 rounded bg-muted/20 border border-border/40">
-                      <span className="text-muted-foreground block text-[9px] uppercase font-semibold">Associated Record</span>
-                      <span className="font-mono text-foreground truncate block">Record #{doc.recordId || '-'}</span>
+                      <span className="text-muted-foreground block text-[9px] uppercase font-semibold">
+                        Associated Record
+                      </span>
+                      <span className="font-mono text-foreground truncate block">
+                        Record #{doc.recordId || '-'}
+                      </span>
                     </div>
                   </div>
 
@@ -157,7 +188,8 @@ export const EvidencePreviewModal = ({
                       Official Supporting Evidence Document
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      Verified for {doc.sectionName || sectionName || 'Department'} Repository Audit Requirements.
+                      Verified for {doc.sectionName || sectionName || 'Department'} Repository Audit
+                      Requirements.
                     </p>
                   </div>
                 </div>
@@ -201,18 +233,14 @@ export const EvidencePreviewModal = ({
                 <span className="text-[10px] font-medium text-muted-foreground block flex items-center gap-1">
                   <Calendar className="h-3 w-3" /> Upload Date & Time
                 </span>
-                <span className="font-medium text-foreground block mt-1">
-                  {uploadDateStr}
-                </span>
+                <span className="font-medium text-foreground block mt-1">{uploadDateStr}</span>
               </div>
 
               <div className="p-2.5 rounded-lg border bg-muted/20 min-w-0">
                 <span className="text-[10px] font-medium text-muted-foreground block flex items-center gap-1">
                   <HardDrive className="h-3 w-3" /> File Size
                 </span>
-                <span className="font-medium text-foreground block mt-1">
-                  {fileSizeStr}
-                </span>
+                <span className="font-medium text-foreground block mt-1">{fileSizeStr}</span>
               </div>
             </div>
           </div>

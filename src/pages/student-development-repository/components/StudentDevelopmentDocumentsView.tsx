@@ -9,7 +9,7 @@ import { studentDevDocumentCategories } from '../student-development-configs';
 export function StudentDevelopmentDocumentsView() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredCategories = studentDevDocumentCategories.filter((cat) =>
+  const filteredCategories = studentDevDocumentCategories.filter(cat =>
     cat.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -49,15 +49,18 @@ export function StudentDevelopmentDocumentsView() {
         <Input
           placeholder="Search document categories..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           className="pl-9"
         />
       </div>
 
       {/* Document Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCategories.map((category) => (
-          <Card key={category.id} className="hover:shadow-md transition-all hover:border-primary/30 cursor-pointer group">
+        {filteredCategories.map(category => (
+          <Card
+            key={category.id}
+            className="hover:shadow-md transition-all hover:border-primary/30 cursor-pointer group"
+          >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">

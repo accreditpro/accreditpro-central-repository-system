@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { academicService } from '@/services/academic.service';
-import {
-  CurriculumResponse,
-  CreateCurriculumRequest,
-} from '@/types/academic.types';
+import { CurriculumResponse, CreateCurriculumRequest } from '@/types/academic.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -164,7 +161,11 @@ export const CurriculumTab = () => {
   const handleCreate = async () => {
     if (!departmentId) return;
     if (!formData.academicYearId || !formData.programOfferingId || !formData.totalCredits) {
-      toast({ title: 'Validation Error', description: 'Academic Year, Program Offering, and Total Credits are required.', variant: 'destructive' });
+      toast({
+        title: 'Validation Error',
+        description: 'Academic Year, Program Offering, and Total Credits are required.',
+        variant: 'destructive',
+      });
       return;
     }
     setSaving(true);
@@ -175,7 +176,11 @@ export const CurriculumTab = () => {
       resetForm();
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to create curriculum record.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to create curriculum record.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -190,7 +195,11 @@ export const CurriculumTab = () => {
       toast({ title: 'Success', description: 'Curriculum record deleted successfully.' });
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to delete curriculum record.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to delete curriculum record.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -198,7 +207,7 @@ export const CurriculumTab = () => {
   const filteredRecords = useMemo(() => {
     if (!searchQuery.trim()) return records;
     const q = searchQuery.toLowerCase();
-    return records.filter((r) => {
+    return records.filter(r => {
       const searchable = [
         String(r.academicYearId ?? ''),
         String(r.programOfferingId ?? ''),
@@ -211,7 +220,21 @@ export const CurriculumTab = () => {
   }, [records, searchQuery]);
 
   // ── Table columns ──
-  const columns = ['#', 'Academic Year', 'Program Offering', 'Total Credits', 'Open Electives', 'Professional Electives', 'Value Added Courses', 'Internship', 'Project', 'Industry Courses', 'Revision Date', 'Status', 'Actions'];
+  const columns = [
+    '#',
+    'Academic Year',
+    'Program Offering',
+    'Total Credits',
+    'Open Electives',
+    'Professional Electives',
+    'Value Added Courses',
+    'Internship',
+    'Project',
+    'Industry Courses',
+    'Revision Date',
+    'Status',
+    'Actions',
+  ];
   const colSpan = columns.length;
 
   return (
@@ -220,10 +243,18 @@ export const CurriculumTab = () => {
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-semibold">Curriculum Records</CardTitle>
-            <CardDescription className="text-xs">Manage curriculum structure and credits</CardDescription>
+            <CardDescription className="text-xs">
+              Manage curriculum structure and credits
+            </CardDescription>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchRecords} disabled={loading}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={fetchRecords}
+              disabled={loading}
+            >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             </Button>
           </div>
@@ -237,18 +268,29 @@ export const CurriculumTab = () => {
               <Input
                 placeholder="Search records..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
             <div className="flex items-center gap-1.5 order-1 sm:order-2">
-              <Button variant="outline" size="sm" className="text-xs h-8" onClick={downloadTemplate}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8"
+                onClick={downloadTemplate}
+              >
                 <Download className="h-3.5 w-3.5 mr-1" /> Download Template
               </Button>
               <Button variant="outline" size="sm" className="text-xs h-8" disabled>
                 <Upload className="h-3.5 w-3.5 mr-1" /> Upload CSV
               </Button>
-              <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetForm(); }}>
+              <Dialog
+                open={showCreate}
+                onOpenChange={open => {
+                  setShowCreate(open);
+                  if (!open) resetForm();
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm" className="text-xs h-8">
                     <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
@@ -270,7 +312,12 @@ export const CurriculumTab = () => {
                         type="number"
                         placeholder="e.g. 1"
                         value={formData.academicYearId || ''}
-                        onChange={(e) => setFormData({ ...formData, academicYearId: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            academicYearId: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -282,7 +329,12 @@ export const CurriculumTab = () => {
                         type="number"
                         placeholder="e.g. 5"
                         value={formData.programOfferingId || ''}
-                        onChange={(e) => setFormData({ ...formData, programOfferingId: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            programOfferingId: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -295,7 +347,12 @@ export const CurriculumTab = () => {
                         min={1}
                         placeholder="e.g. 160"
                         value={formData.totalCredits || ''}
-                        onChange={(e) => setFormData({ ...formData, totalCredits: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            totalCredits: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -308,7 +365,12 @@ export const CurriculumTab = () => {
                         min={0}
                         placeholder="e.g. 4"
                         value={formData.openElectives ?? ''}
-                        onChange={(e) => setFormData({ ...formData, openElectives: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            openElectives: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -321,7 +383,12 @@ export const CurriculumTab = () => {
                         min={0}
                         placeholder="e.g. 6"
                         value={formData.professionalElectives ?? ''}
-                        onChange={(e) => setFormData({ ...formData, professionalElectives: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            professionalElectives: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -334,7 +401,12 @@ export const CurriculumTab = () => {
                         min={0}
                         placeholder="e.g. 2"
                         value={formData.valueAddedCourses ?? ''}
-                        onChange={(e) => setFormData({ ...formData, valueAddedCourses: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            valueAddedCourses: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -345,7 +417,12 @@ export const CurriculumTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.internshipIncluded ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, internshipIncluded: e.target.value === 'true' })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            internshipIncluded: e.target.value === 'true',
+                          })
+                        }
                       >
                         <option value="false">No</option>
                         <option value="true">Yes</option>
@@ -358,7 +435,9 @@ export const CurriculumTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.projectIncluded ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, projectIncluded: e.target.value === 'true' })}
+                        onChange={e =>
+                          setFormData({ ...formData, projectIncluded: e.target.value === 'true' })
+                        }
                       >
                         <option value="false">No</option>
                         <option value="true">Yes</option>
@@ -371,7 +450,12 @@ export const CurriculumTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.industryCoursesIncluded ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, industryCoursesIncluded: e.target.value === 'true' })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            industryCoursesIncluded: e.target.value === 'true',
+                          })
+                        }
                       >
                         <option value="false">No</option>
                         <option value="true">Yes</option>
@@ -384,17 +468,35 @@ export const CurriculumTab = () => {
                       <Input
                         type="date"
                         value={formData.revisionDate || ''}
-                        onChange={(e) => setFormData({ ...formData, revisionDate: e.target.value })}
+                        onChange={e => setFormData({ ...formData, revisionDate: e.target.value })}
                         className="h-8 text-xs"
                       />
                     </div>
                   </div>
 
                   <DialogFooter className="gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => { setShowCreate(false); resetForm(); }} className="text-xs h-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowCreate(false);
+                        resetForm();
+                      }}
+                      className="text-xs h-8"
+                    >
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleCreate} disabled={saving || !formData.academicYearId || !formData.programOfferingId || !formData.totalCredits} className="text-xs h-8">
+                    <Button
+                      size="sm"
+                      onClick={handleCreate}
+                      disabled={
+                        saving ||
+                        !formData.academicYearId ||
+                        !formData.programOfferingId ||
+                        !formData.totalCredits
+                      }
+                      className="text-xs h-8"
+                    >
                       {saving ? 'Saving...' : 'Create'}
                     </Button>
                   </DialogFooter>
@@ -409,8 +511,10 @@ export const CurriculumTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -418,7 +522,9 @@ export const CurriculumTab = () => {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: colSpan }).map((_, j) => (
-                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -449,8 +555,10 @@ export const CurriculumTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -460,25 +568,53 @@ export const CurriculumTab = () => {
                       <TableCell className="text-xs text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="text-xs">{record.academicYearId ?? '—'}</TableCell>
                       <TableCell className="text-xs">{record.programOfferingId ?? '—'}</TableCell>
-                      <TableCell className="text-xs font-medium">{record.totalCredits ?? '—'}</TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {record.totalCredits ?? '—'}
+                      </TableCell>
                       <TableCell className="text-xs">{record.openElectives ?? '—'}</TableCell>
-                      <TableCell className="text-xs">{record.professionalElectives ?? '—'}</TableCell>
+                      <TableCell className="text-xs">
+                        {record.professionalElectives ?? '—'}
+                      </TableCell>
                       <TableCell className="text-xs">{record.valueAddedCourses ?? '—'}</TableCell>
-                      <TableCell className="text-xs">{formatBool(record.internshipIncluded)}</TableCell>
-                      <TableCell className="text-xs">{formatBool(record.projectIncluded)}</TableCell>
-                      <TableCell className="text-xs">{formatBool(record.industryCoursesIncluded)}</TableCell>
+                      <TableCell className="text-xs">
+                        {formatBool(record.internshipIncluded)}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {formatBool(record.projectIncluded)}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {formatBool(record.industryCoursesIncluded)}
+                      </TableCell>
                       <TableCell className="text-xs">{formatDate(record.revisionDate)}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={cn('text-[9px]', workflowStatusColors[record.workflowStatus || ''] || '')}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            workflowStatusColors[record.workflowStatus || ''] || ''
+                          )}
+                        >
                           {record.workflowStatus || '—'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Edit (coming soon)" disabled>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            title="Edit (coming soon)"
+                            disabled
+                          >
                             <Pencil className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(record.id)} title="Delete">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(record.id)}
+                            title="Delete"
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>

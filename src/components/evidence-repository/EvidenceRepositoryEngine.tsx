@@ -122,17 +122,23 @@ export function EvidenceRepositoryEngine({
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="text-center">
-                  <p className="text-lg font-bold">{calculateFolderMetrics(selectedFolder).requiredDocuments}</p>
+                  <p className="text-lg font-bold">
+                    {calculateFolderMetrics(selectedFolder).requiredDocuments}
+                  </p>
                   <p className="text-xs text-muted-foreground">Required</p>
                 </div>
                 <Separator orientation="vertical" className="h-8" />
                 <div className="text-center">
-                  <p className="text-lg font-bold">{calculateFolderMetrics(selectedFolder).uploadedDocuments}</p>
+                  <p className="text-lg font-bold">
+                    {calculateFolderMetrics(selectedFolder).uploadedDocuments}
+                  </p>
                   <p className="text-xs text-muted-foreground">Uploaded</p>
                 </div>
                 <Separator orientation="vertical" className="h-8" />
                 <div className="text-center">
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{calculateFolderMetrics(selectedFolder).completionPercentage}%</p>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                    {calculateFolderMetrics(selectedFolder).completionPercentage}%
+                  </p>
                   <p className="text-xs text-muted-foreground">Completion</p>
                 </div>
               </div>
@@ -218,7 +224,15 @@ export function EvidenceRepositoryEngine({
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <p className="text-2xl font-bold">
-                  <span className={sectionMetrics.overallCompletion >= 100 ? 'text-emerald-600 dark:text-emerald-400' : sectionMetrics.overallCompletion >= 75 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}>
+                  <span
+                    className={
+                      sectionMetrics.overallCompletion >= 100
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : sectionMetrics.overallCompletion >= 75
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-red-600 dark:text-red-400'
+                    }
+                  >
                     {sectionMetrics.overallCompletion}%
                   </span>
                 </p>
@@ -236,7 +250,9 @@ export function EvidenceRepositoryEngine({
                 <div className="text-center">
                   <div className="flex items-center gap-1.5">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{sectionMetrics.totalMandatoryDocuments}</span>
+                    <span className="text-lg font-bold">
+                      {sectionMetrics.totalMandatoryDocuments}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">Mandatory</p>
                 </div>
@@ -299,7 +315,9 @@ export function EvidenceRepositoryEngine({
           <FolderOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
           <h3 className="text-lg font-medium text-muted-foreground">No folders found</h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            {searchQuery ? 'Try a different search term' : 'No folders are configured for this section'}
+            {searchQuery
+              ? 'Try a different search term'
+              : 'No folders are configured for this section'}
           </p>
         </div>
       )}
@@ -307,8 +325,12 @@ export function EvidenceRepositoryEngine({
       {/* Completion Legend */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
         <span className="flex items-center gap-1">{getCompletionEmoji(100)} Complete (100%)</span>
-        <span className="flex items-center gap-1">{getCompletionEmoji(80)} In Progress (75-99%)</span>
-        <span className="flex items-center gap-1">{getCompletionEmoji(60)} Needs Attention (50-74%)</span>
+        <span className="flex items-center gap-1">
+          {getCompletionEmoji(80)} In Progress (75-99%)
+        </span>
+        <span className="flex items-center gap-1">
+          {getCompletionEmoji(60)} Needs Attention (50-74%)
+        </span>
         <span className="flex items-center gap-1">{getCompletionEmoji(30)} Critical (&lt;50%)</span>
       </div>
     </div>

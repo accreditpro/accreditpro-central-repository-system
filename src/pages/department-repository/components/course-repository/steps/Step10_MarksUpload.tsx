@@ -6,10 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AssessmentBlueprint, MarksUpload as MarksUploadType, StudentMarks, CourseDetails } from '../types';
+import {
+  AssessmentBlueprint,
+  MarksUpload as MarksUploadType,
+  StudentMarks,
+  CourseDetails,
+} from '../types';
 import { parseCSVLine } from '../utils/csv';
 import { cn } from '@/lib/utils';
 import {
@@ -63,34 +81,48 @@ function parseMarksCSV(
   const warnings: string[] = [];
   const students: StudentMarks[] = [];
 
-  const lines = text.split('\n').filter((l) => l.trim());
+  const lines = text.split('\n').filter(l => l.trim());
   if (lines.length < 2) {
     return { students: [], errors: ['CSV file is empty or has no data rows'], warnings: [] };
   }
 
   const headers = parseCSVLine(lines[0]);
-  const rollIdx = headers.findIndex((h) => h.toLowerCase().includes('roll number') || h.toLowerCase().includes('rollno'));
-  const nameIdx = headers.findIndex((h) => h.toLowerCase().includes('student name') || h.toLowerCase().includes('name'));
+  const rollIdx = headers.findIndex(
+    h => h.toLowerCase().includes('roll number') || h.toLowerCase().includes('rollno')
+  );
+  const nameIdx = headers.findIndex(
+    h => h.toLowerCase().includes('student name') || h.toLowerCase().includes('name')
+  );
 
   if (rollIdx === -1) errors.push('Missing "Roll Number" column');
   if (nameIdx === -1) errors.push('Missing "Student Name" column');
   if (errors.length > 0) return { students: [], errors, warnings };
 
   // Map headers to question IDs from the blueprint
-  const questionColMap: { colIdx: number; questionId: string; questionNumber: string; maxMarks: number }[] = [];
+  const questionColMap: {
+    colIdx: number;
+    questionId: string;
+    questionNumber: string;
+    maxMarks: number;
+  }[] = [];
   for (const q of assessmentQuestions) {
     // Look for the question number in headers (e.g., "Q1", "O1", "A1")
     const colIdx = headers.findIndex(
-      (h) => h.trim().toLowerCase() === q.questionNumber.toLowerCase()
+      h => h.trim().toLowerCase() === q.questionNumber.toLowerCase()
     );
     if (colIdx >= 0) {
-      questionColMap.push({ colIdx, questionId: q.id, questionNumber: q.questionNumber, maxMarks: q.maxMarks });
+      questionColMap.push({
+        colIdx,
+        questionId: q.id,
+        questionNumber: q.questionNumber,
+        maxMarks: q.maxMarks,
+      });
     }
   }
 
   if (questionColMap.length === 0) {
     errors.push(
-      `No question columns found in CSV. Expected columns: ${assessmentQuestions.map((q) => q.questionNumber).join(', ')}`
+      `No question columns found in CSV. Expected columns: ${assessmentQuestions.map(q => q.questionNumber).join(', ')}`
     );
     return { students: [], errors, warnings };
   }
@@ -117,10 +149,14 @@ function parseMarksCSV(
       const mark = parseFloat(rawValue);
 
       if (isNaN(mark) || rawValue === '') {
-        warnings.push(`Row ${i + 1} (${rollNumber}): Missing/invalid mark for ${qMap.questionNumber} — treated as 0`);
+        warnings.push(
+          `Row ${i + 1} (${rollNumber}): Missing/invalid mark for ${qMap.questionNumber} — treated as 0`
+        );
         marks[qMap.questionId] = 0;
       } else if (mark < 0) {
-        warnings.push(`Row ${i + 1} (${rollNumber}): Negative mark for ${qMap.questionNumber} — treated as 0`);
+        warnings.push(
+          `Row ${i + 1} (${rollNumber}): Negative mark for ${qMap.questionNumber} — treated as 0`
+        );
         marks[qMap.questionId] = 0;
       } else if (mark > qMap.maxMarks) {
         warnings.push(
@@ -154,7 +190,17 @@ function parseMarksCSV(
 // Mid-semester assessment names that use the fixed CSV format
 const MID_SEM_NAMES = ['Mid Semester 1', 'Mid Semester 2'];
 
-export default function Step10_MarksUpload({ blueprint, data, courseDetails, academicYear, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step10Props) {
+export default function Step10_MarksUpload({
+  blueprint,
+  data,
+  courseDetails,
+  academicYear,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
+}: Step10Props) {
   const [selectedAssessment, setSelectedAssessment] = useState('');
   const [previewData, setPreviewData] = useState<StudentMarks[]>([]);
   const [importErrors, setImportErrors] = useState<string[]>([]);
@@ -169,16 +215,18 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
   const hasBlueprint = !!blueprint;
 
   // Get the selected assessment's questions
-  const selectedAssessmentData = assessments.find((a) => a.id === selectedAssessment);
+  const selectedAssessmentData = assessments.find(a => a.id === selectedAssessment);
   const assessmentQuestions = selectedAssessmentData?.questions || [];
   const maxMark = assessmentQuestions.reduce((s, q) => s + q.maxMarks, 0);
-  const isMidSem = selectedAssessmentData ? MID_SEM_NAMES.includes(selectedAssessmentData.name) : false;
+  const isMidSem = selectedAssessmentData
+    ? MID_SEM_NAMES.includes(selectedAssessmentData.name)
+    : false;
 
   // ---- Download CSV Template (Standard / Non-Mid-Sem) ----
   const handleDownloadTemplate = useCallback(() => {
     if (!selectedAssessmentData || assessmentQuestions.length === 0) return;
 
-    const questionCols = assessmentQuestions.map((q) => q.questionNumber);
+    const questionCols = assessmentQuestions.map(q => q.questionNumber);
     const header = `Roll Number,Student Name,${questionCols.join(',')}`;
 
     const sampleMarks = assessmentQuestions.map(() => '0');
@@ -231,7 +279,10 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       courseDetails.year || 'Year',
       courseDetails.semester || 'Semester',
       '2201CS01',
-      '0', '0', '0', '0',
+      '0',
+      '0',
+      '0',
+      '0',
       '0',
       '0',
     ].join(',');
@@ -254,23 +305,23 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       const warnings: string[] = [];
       const students: StudentMarks[] = [];
 
-      const lines = text.split('\n').filter((l) => l.trim());
+      const lines = text.split('\n').filter(l => l.trim());
       if (lines.length < 2) {
         return { students: [], errors: ['CSV file is empty or has no data rows'], warnings: [] };
       }
 
-      const headers = parseCSVLine(lines[0]).map((h) => h.trim().toLowerCase());
+      const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
 
       // Required column indices
       const hallTicketIdx = headers.findIndex(
-        (h) => h.includes('hall ticket') || h.includes('hallticket') || h.includes('roll number')
+        h => h.includes('hall ticket') || h.includes('hallticket') || h.includes('roll number')
       );
-      const q1Idx = headers.findIndex((h) => h === 'q1');
-      const q2Idx = headers.findIndex((h) => h === 'q2');
-      const q3Idx = headers.findIndex((h) => h === 'q3');
-      const q4Idx = headers.findIndex((h) => h === 'q4');
-      const objIdx = headers.findIndex((h) => h.includes('objective'));
-      const assignIdx = headers.findIndex((h) => h.includes('assignment'));
+      const q1Idx = headers.findIndex(h => h === 'q1');
+      const q2Idx = headers.findIndex(h => h === 'q2');
+      const q3Idx = headers.findIndex(h => h === 'q3');
+      const q4Idx = headers.findIndex(h => h === 'q4');
+      const objIdx = headers.findIndex(h => h.includes('objective'));
+      const assignIdx = headers.findIndex(h => h.includes('assignment'));
 
       if (hallTicketIdx === -1) errors.push('Missing "Hall Ticket Number" column');
       if (q1Idx === -1) errors.push('Missing "Q1" column');
@@ -280,12 +331,12 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       if (errors.length > 0) return { students: [], errors, warnings };
 
       // Map blueprint questions by their questionNumber
-      const q1 = assessmentQuestions.find((q) => q.questionNumber === 'Q1');
-      const q2 = assessmentQuestions.find((q) => q.questionNumber === 'Q2');
-      const q3 = assessmentQuestions.find((q) => q.questionNumber === 'Q3');
-      const q4 = assessmentQuestions.find((q) => q.questionNumber === 'Q4');
-      const objectiveQs = assessmentQuestions.filter((q) => q.questionNumber.startsWith('O'));
-      const assignmentQ = assessmentQuestions.find((q) => q.questionNumber === 'A1');
+      const q1 = assessmentQuestions.find(q => q.questionNumber === 'Q1');
+      const q2 = assessmentQuestions.find(q => q.questionNumber === 'Q2');
+      const q3 = assessmentQuestions.find(q => q.questionNumber === 'Q3');
+      const q4 = assessmentQuestions.find(q => q.questionNumber === 'Q4');
+      const objectiveQs = assessmentQuestions.filter(q => q.questionNumber.startsWith('O'));
+      const assignmentQ = assessmentQuestions.find(q => q.questionNumber === 'A1');
 
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i]);
@@ -314,7 +365,9 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
             return 0;
           }
           if (val > max) {
-            warnings.push(`Row ${i + 1} (${hallTicket}): ${label} ${val} exceeds max ${max} — capped`);
+            warnings.push(
+              `Row ${i + 1} (${hallTicket}): ${label} ${val} exceeds max ${max} — capped`
+            );
             return max;
           }
           return Math.round(val * 100) / 100;
@@ -335,7 +388,8 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
 
         // Extract Objective Marks and distribute across O1-O10 (each max 0.5)
         const objTotal = objIdx >= 0 ? extractMark(objIdx, 'Objective Marks', 5) : 0;
-        const perObjective = objectiveQs.length > 0 ? Math.round((objTotal / objectiveQs.length) * 100) / 100 : 0;
+        const perObjective =
+          objectiveQs.length > 0 ? Math.round((objTotal / objectiveQs.length) * 100) / 100 : 0;
         for (const oq of objectiveQs) {
           marks[oq.id] = perObjective;
           totalMarks += perObjective;
@@ -379,7 +433,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       setPreviewData([]);
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const text = event.target?.result as string;
         const { students, errors, warnings } = parseMidSemMarksCSV(text);
 
@@ -413,7 +467,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       setImportSuccess(null);
       setPreviewData([]);
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const text = event.target?.result as string;
         const { students, errors, warnings } = parseMarksCSV(text, assessmentQuestions);
 
@@ -457,19 +511,28 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       calculationMethod: calcMethod,
     };
 
-    const existing = data.filter((d) => d.assessmentId !== selectedAssessment);
+    const existing = data.filter(d => d.assessmentId !== selectedAssessment);
     onUpdate([...existing, upload]);
 
     setImportSuccess(
       `✅ ${upload.assessmentName} — ${previewData.length} student marks saved successfully!`
     );
     setPreviewData([]);
-  }, [selectedAssessment, selectedAssessmentData, previewData, data, onUpdate, threshold, attainmentTarget, calcMethod]);
+  }, [
+    selectedAssessment,
+    selectedAssessmentData,
+    previewData,
+    data,
+    onUpdate,
+    threshold,
+    attainmentTarget,
+    calcMethod,
+  ]);
 
   // ---- Clear uploaded data for an assessment ----
   const handleClearUpload = useCallback(
     (assessmentId: string) => {
-      onUpdate(data.filter((d) => d.assessmentId !== assessmentId));
+      onUpdate(data.filter(d => d.assessmentId !== assessmentId));
     },
     [data, onUpdate]
   );
@@ -493,8 +556,8 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
 
     // Build column groups from assessments that have upload data
     const uploadedAssessments = assessments
-      .map((a) => ({ assessment: a, upload: data.find((d) => d.assessmentId === a.id) }))
-      .filter((au) => au.upload && au.upload.studentMarks.length > 0);
+      .map(a => ({ assessment: a, upload: data.find(d => d.assessmentId === a.id) }))
+      .filter(au => au.upload && au.upload.studentMarks.length > 0);
 
     if (uploadedAssessments.length === 0) return;
 
@@ -512,7 +575,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       headerParts.push(`${assessment.name} - Total`);
       colGroups.push({
         name: assessment.name,
-        questions: assessment.questions.map((q) => ({
+        questions: assessment.questions.map(q => ({
           questionNumber: q.questionNumber,
           questionId: q.id,
           maxMarks: q.maxMarks,
@@ -538,8 +601,8 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       const rowParts: string[] = [csvVal(rollNumber), csvVal(name)];
 
       for (const group of colGroups) {
-        const upload = data.find((d) => d.assessmentName === group.name);
-        const student = upload?.studentMarks.find((s) => s.rollNumber === rollNumber);
+        const upload = data.find(d => d.assessmentName === group.name);
+        const student = upload?.studentMarks.find(s => s.rollNumber === rollNumber);
 
         if (student) {
           for (const q of group.questions) {
@@ -578,10 +641,13 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
             Marks Upload
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Upload student marks via CSV for each assessment. The CSV columns must match the question numbers from the blueprint.
+            Upload student marks via CSV for each assessment. The CSV columns must match the
+            question numbers from the blueprint.
           </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <Badge variant="outline" className="text-xs">
+          {completionPercentage}% Complete
+        </Badge>
       </div>
       <Separator />
 
@@ -589,10 +655,13 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Assessment Blueprint Required</p>
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              Assessment Blueprint Required
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
               Please complete the Assessment Blueprint in Step 9 before uploading marks.
-              <br />The blueprint defines the questions and CO mappings that marks will be attributed to.
+              <br />
+              The blueprint defines the questions and CO mappings that marks will be attributed to.
             </p>
           </CardContent>
         </Card>
@@ -610,7 +679,16 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <Label className="text-xs font-medium">Assessment</Label>
-                  <Select value={selectedAssessment} onValueChange={(v) => { setSelectedAssessment(v); setPreviewData([]); setImportErrors([]); setImportWarnings([]); setImportSuccess(null); }}>
+                  <Select
+                    value={selectedAssessment}
+                    onValueChange={v => {
+                      setSelectedAssessment(v);
+                      setPreviewData([]);
+                      setImportErrors([]);
+                      setImportWarnings([]);
+                      setImportSuccess(null);
+                    }}
+                  >
                     <SelectTrigger className="mt-1 h-9 text-sm">
                       <SelectValue placeholder="Choose assessment to upload marks for" />
                     </SelectTrigger>
@@ -620,14 +698,15 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                           No assessments defined yet. Go to Step 9 first.
                         </div>
                       ) : (
-                        assessments.map((a) => {
-                          const existing = data.find((d) => d.assessmentId === a.id);
+                        assessments.map(a => {
+                          const existing = data.find(d => d.assessmentId === a.id);
                           return (
                             <SelectItem key={a.id} value={a.id} className="text-xs">
                               <div className="flex items-center justify-between w-full gap-3">
                                 <span>{a.name}</span>
                                 <span className="text-muted-foreground">
-                                  {a.questions.length} Qs · {a.questions.reduce((s, q) => s + q.maxMarks, 0)} marks
+                                  {a.questions.length} Qs ·{' '}
+                                  {a.questions.reduce((s, q) => s + q.maxMarks, 0)} marks
                                   {existing ? ` · ${existing.studentMarks.length} students ✓` : ''}
                                 </span>
                               </div>
@@ -671,20 +750,26 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                         </tr>
                       </thead>
                       <tbody>
-                        {assessmentQuestions.map((q) => (
+                        {assessmentQuestions.map(q => (
                           <tr key={q.id} className="border-t border-border/30">
                             <td className="p-1.5 font-mono">{q.questionNumber}</td>
                             <td className="p-1.5">
-                              <Badge className="bg-indigo-500/10 text-indigo-600 text-[8px]">{q.mappedCO}</Badge>
+                              <Badge className="bg-indigo-500/10 text-indigo-600 text-[8px]">
+                                {q.mappedCO}
+                              </Badge>
                             </td>
                             <td className="p-1.5 text-center font-semibold">{q.maxMarks}</td>
                             <td className="p-1.5 text-center">
-                              <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded">{q.questionNumber}</code>
+                              <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded">
+                                {q.questionNumber}
+                              </code>
                             </td>
                           </tr>
                         ))}
                         <tr className="border-t border-border/50 bg-muted/20">
-                          <td colSpan={3} className="p-1.5 text-right font-semibold text-[10px]">Total</td>
+                          <td colSpan={3} className="p-1.5 text-right font-semibold text-[10px]">
+                            Total
+                          </td>
                           <td className="p-1.5 text-center font-bold text-[10px]">{maxMark}</td>
                         </tr>
                       </tbody>
@@ -758,7 +843,11 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       {/* Upload Status Messages */}
       <AnimatePresence>
         {importSuccess && (
-          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+          >
             <Card className="border-emerald-500/30 bg-emerald-500/5">
               <CardContent className="p-3 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -769,7 +858,11 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
         )}
 
         {importErrors.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+          >
             <Card className="border-red-500/30 bg-red-500/5">
               <CardContent className="p-3 space-y-1">
                 <div className="flex items-center gap-2">
@@ -777,7 +870,9 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                   <p className="text-xs font-semibold text-red-700 dark:text-red-400">Errors</p>
                 </div>
                 {importErrors.map((err, idx) => (
-                  <p key={idx} className="text-[10px] text-red-600/80 ml-6">• {err}</p>
+                  <p key={idx} className="text-[10px] text-red-600/80 ml-6">
+                    • {err}
+                  </p>
                 ))}
               </CardContent>
             </Card>
@@ -785,15 +880,23 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
         )}
 
         {importWarnings.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+          >
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardContent className="p-3 space-y-1">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Warnings</p>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    Warnings
+                  </p>
                 </div>
                 {importWarnings.map((w, idx) => (
-                  <p key={idx} className="text-[10px] text-amber-600/80 ml-6">• {w}</p>
+                  <p key={idx} className="text-[10px] text-amber-600/80 ml-6">
+                    • {w}
+                  </p>
                 ))}
               </CardContent>
             </Card>
@@ -824,7 +927,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {data.map((upload) => (
+              {data.map(upload => (
                 <div
                   key={upload.assessmentId}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 group"
@@ -857,7 +960,11 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
       {/* Preview Table */}
       <AnimatePresence>
         {previewData.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
             <Card className="border-indigo-500/20 border-2">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -871,11 +978,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      onClick={handleConfirmUpload}
-                    >
+                    <Button size="sm" className="h-7 text-xs gap-1.5" onClick={handleConfirmUpload}>
                       <Upload className="h-3 w-3" />
                       Confirm & Save
                     </Button>
@@ -883,7 +986,10 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                       variant="ghost"
                       size="sm"
                       className="h-7 text-xs"
-                      onClick={() => { setPreviewData([]); setImportSuccess(null); }}
+                      onClick={() => {
+                        setPreviewData([]);
+                        setImportSuccess(null);
+                      }}
                     >
                       <RefreshCw className="h-3 w-3" />
                       Discard
@@ -896,37 +1002,61 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
-                        <TableHead className="text-[10px] font-semibold sticky left-0 bg-muted/30 z-10">#</TableHead>
-                        <TableHead className="text-[10px] font-semibold sticky left-[30px] bg-muted/30 z-10">Roll Number</TableHead>
+                        <TableHead className="text-[10px] font-semibold sticky left-0 bg-muted/30 z-10">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold sticky left-[30px] bg-muted/30 z-10">
+                          Roll Number
+                        </TableHead>
                         <TableHead className="text-[10px] font-semibold">Name</TableHead>
-                        {assessmentQuestions.map((q) => (
-                          <TableHead key={q.id} className="text-[10px] font-semibold text-center min-w-[60px]">
+                        {assessmentQuestions.map(q => (
+                          <TableHead
+                            key={q.id}
+                            className="text-[10px] font-semibold text-center min-w-[60px]"
+                          >
                             <div className="flex flex-col items-center">
                               <span>{q.questionNumber}</span>
-                              <span className="text-[8px] text-muted-foreground font-normal">({q.mappedCO})</span>
+                              <span className="text-[8px] text-muted-foreground font-normal">
+                                ({q.mappedCO})
+                              </span>
                             </div>
                           </TableHead>
                         ))}
-                        <TableHead className="text-[10px] font-semibold text-center min-w-[70px]">Total</TableHead>
-                        <TableHead className="text-[10px] font-semibold text-center min-w-[60px]">%</TableHead>
-                        <TableHead className="text-[10px] font-semibold text-center min-w-[60px]">Status</TableHead>
+                        <TableHead className="text-[10px] font-semibold text-center min-w-[70px]">
+                          Total
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-center min-w-[60px]">
+                          %
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-center min-w-[60px]">
+                          Status
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {previewData.map((student, idx) => {
-                        const pct = maxMark > 0 ? Math.round((student.totalMarks / maxMark) * 100) : 0;
+                        const pct =
+                          maxMark > 0 ? Math.round((student.totalMarks / maxMark) * 100) : 0;
                         return (
                           <TableRow key={student.rollNumber} className="hover:bg-muted/10">
-                            <TableCell className="text-[10px] text-muted-foreground sticky left-0 bg-card z-10">{idx + 1}</TableCell>
+                            <TableCell className="text-[10px] text-muted-foreground sticky left-0 bg-card z-10">
+                              {idx + 1}
+                            </TableCell>
                             <TableCell className="text-[10px] font-mono font-medium sticky left-[30px] bg-card z-10">
                               {student.rollNumber}
                             </TableCell>
                             <TableCell className="text-[10px]">{student.studentName}</TableCell>
-                            {assessmentQuestions.map((q) => {
+                            {assessmentQuestions.map(q => {
                               const mark = student.marks[q.id] ?? '-';
                               const isOver = typeof mark === 'number' && mark > q.maxMarks;
                               return (
-                                <TableCell key={q.id} className={cn('text-[10px] text-center', isOver && 'text-red-500 font-bold')}>
+                                <TableCell
+                                  key={q.id}
+                                  className={cn(
+                                    'text-[10px] text-center',
+                                    isOver && 'text-red-500 font-bold'
+                                  )}
+                                >
                                   {typeof mark === 'number' ? mark.toFixed(1) : '-'}
                                 </TableCell>
                               );
@@ -934,9 +1064,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                             <TableCell className="text-[10px] text-center font-bold">
                               {student.totalMarks}/{maxMark}
                             </TableCell>
-                            <TableCell className="text-[10px] text-center">
-                              {pct}%
-                            </TableCell>
+                            <TableCell className="text-[10px] text-center">{pct}%</TableCell>
                             <TableCell className="text-center">
                               {pct >= threshold ? (
                                 <Badge className="bg-emerald-500/10 text-emerald-600 text-[8px]">
@@ -956,16 +1084,24 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                         <TableCell colSpan={3} className="text-[10px] font-semibold">
                           Summary
                         </TableCell>
-                        {assessmentQuestions.map((q) => {
-                          const avg = previewData.reduce((s, st) => s + (st.marks[q.id] || 0), 0) / previewData.length;
+                        {assessmentQuestions.map(q => {
+                          const avg =
+                            previewData.reduce((s, st) => s + (st.marks[q.id] || 0), 0) /
+                            previewData.length;
                           return (
-                            <TableCell key={q.id} className="text-[10px] text-center text-muted-foreground">
+                            <TableCell
+                              key={q.id}
+                              className="text-[10px] text-center text-muted-foreground"
+                            >
                               Avg: {avg.toFixed(1)}
                             </TableCell>
                           );
                         })}
                         <TableCell className="text-[10px] text-center text-muted-foreground">
-                          Avg: {(previewData.reduce((s, st) => s + st.totalMarks, 0) / previewData.length).toFixed(1)}
+                          Avg:{' '}
+                          {(
+                            previewData.reduce((s, st) => s + st.totalMarks, 0) / previewData.length
+                          ).toFixed(1)}
                         </TableCell>
                         <TableCell colSpan={2} />
                       </TableRow>
@@ -993,24 +1129,28 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
               <Input
                 type="number"
                 value={threshold}
-                onChange={(e) => setThreshold(parseInt(e.target.value) || 0)}
+                onChange={e => setThreshold(parseInt(e.target.value) || 0)}
                 className="h-9 text-sm"
                 min={0}
                 max={100}
               />
-              <p className="text-[9px] text-muted-foreground">Min % required to consider CO attained</p>
+              <p className="text-[9px] text-muted-foreground">
+                Min % required to consider CO attained
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-medium">Attainment Target (%)</Label>
               <Input
                 type="number"
                 value={attainmentTarget}
-                onChange={(e) => setAttainmentTarget(parseInt(e.target.value) || 0)}
+                onChange={e => setAttainmentTarget(parseInt(e.target.value) || 0)}
                 className="h-9 text-sm"
                 min={0}
                 max={100}
               />
-              <p className="text-[9px] text-muted-foreground">Target % of students above threshold</p>
+              <p className="text-[9px] text-muted-foreground">
+                Target % of students above threshold
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-medium">Calculation Method</Label>
@@ -1019,11 +1159,17 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="average" className="text-xs">Average Marks</SelectItem>
-                  <SelectItem value="percentage_above_threshold" className="text-xs">% Above Threshold</SelectItem>
+                  <SelectItem value="average" className="text-xs">
+                    Average Marks
+                  </SelectItem>
+                  <SelectItem value="percentage_above_threshold" className="text-xs">
+                    % Above Threshold
+                  </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[9px] text-muted-foreground">Method for CO attainment calculation</p>
+              <p className="text-[9px] text-muted-foreground">
+                Method for CO attainment calculation
+              </p>
             </div>
           </div>
         </CardContent>
@@ -1037,24 +1183,57 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
             <div>
               {isMidSem ? (
                 <>
-                  <p className="text-[10px] font-semibold text-muted-foreground">📋 Mid-Semester Marks Template Format</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground">
+                    📋 Mid-Semester Marks Template Format
+                  </p>
                   <div className="text-[9px] text-muted-foreground mt-1 space-y-0.5">
-                    <p><strong>Columns:</strong> Department, Faculty Name, Academic Year, Branch, Section, Course Name, Exam, Year, Semester, Hall Ticket Number, Q1, Q2, Q3, Q4, Objective Marks, Assignment Marks</p>
-                    <p className="mt-1">The metadata columns (Department, Faculty, etc.) are pre-filled from the course details when you download the template.</p>
-                    <p><strong>Q1-Q4:</strong> Essay questions (max 5 marks each) • <strong>Objective Marks:</strong> Total of 10 objective questions (max 5) • <strong>Assignment Marks:</strong> Assignment question (max 5)</p>
-                    <p>On upload, <strong>Objective Marks</strong> are automatically distributed across the 10 individual objective questions for CO attainment calculation.</p>
+                    <p>
+                      <strong>Columns:</strong> Department, Faculty Name, Academic Year, Branch,
+                      Section, Course Name, Exam, Year, Semester, Hall Ticket Number, Q1, Q2, Q3,
+                      Q4, Objective Marks, Assignment Marks
+                    </p>
+                    <p className="mt-1">
+                      The metadata columns (Department, Faculty, etc.) are pre-filled from the
+                      course details when you download the template.
+                    </p>
+                    <p>
+                      <strong>Q1-Q4:</strong> Essay questions (max 5 marks each) •{' '}
+                      <strong>Objective Marks:</strong> Total of 10 objective questions (max 5) •{' '}
+                      <strong>Assignment Marks:</strong> Assignment question (max 5)
+                    </p>
+                    <p>
+                      On upload, <strong>Objective Marks</strong> are automatically distributed
+                      across the 10 individual objective questions for CO attainment calculation.
+                    </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="text-[10px] font-semibold text-muted-foreground">📋 How to upload marks</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground">
+                    📋 How to upload marks
+                  </p>
                   <ol className="text-[9px] text-muted-foreground mt-1 list-decimal list-inside space-y-0.5">
-                    <li>Select an assessment above and click <strong>Download CSV Template</strong></li>
-                    <li>Open the CSV in Excel/Google Sheets — columns: Roll Number, Student Name, one per question</li>
-                    <li>Fill in the marks. Column headers match question numbers from your blueprint (e.g., Q1, Q2, O1, A1)</li>
-                    <li>Save as CSV and click <strong>Upload Marks CSV</strong> to import</li>
-                    <li>Review the preview table — marks exceeding the max are capped automatically</li>
-                    <li>Click <strong>Confirm & Save</strong> to store the data for attainment calculation</li>
+                    <li>
+                      Select an assessment above and click <strong>Download CSV Template</strong>
+                    </li>
+                    <li>
+                      Open the CSV in Excel/Google Sheets — columns: Roll Number, Student Name, one
+                      per question
+                    </li>
+                    <li>
+                      Fill in the marks. Column headers match question numbers from your blueprint
+                      (e.g., Q1, Q2, O1, A1)
+                    </li>
+                    <li>
+                      Save as CSV and click <strong>Upload Marks CSV</strong> to import
+                    </li>
+                    <li>
+                      Review the preview table — marks exceeding the max are capped automatically
+                    </li>
+                    <li>
+                      Click <strong>Confirm & Save</strong> to store the data for attainment
+                      calculation
+                    </li>
                   </ol>
                 </>
               )}
@@ -1074,7 +1253,11 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button size="sm" onClick={onNext} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
+          <Button
+            size="sm"
+            onClick={onNext}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
+          >
             Next: Attainment Dashboard
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

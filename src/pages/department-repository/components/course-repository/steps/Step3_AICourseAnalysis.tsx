@@ -32,7 +32,15 @@ interface Step3Props {
   completionPercentage: number;
 }
 
-export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step3Props) {
+export default function Step3_AICourseAnalysis({
+  courseFile,
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
+}: Step3Props) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showResults, setShowResults] = useState(!!data);
 
@@ -43,17 +51,49 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
     setTimeout(() => {
       const analysis: AICourseAnalysis = {
         confidenceScore: 92,
-        extractedUnits: courseFile.units.map((u) => ({ ...u })),
+        extractedUnits: courseFile.units.map(u => ({ ...u })),
         extractedObjectives: [...courseFile.courseObjectives],
-        extractedBooks: courseFile.textBooks.map((b) => ({ ...b })),
-        extractedReferences: courseFile.referenceBooks.map((b) => ({ ...b })),
+        extractedBooks: courseFile.textBooks.map(b => ({ ...b })),
+        extractedReferences: courseFile.referenceBooks.map(b => ({ ...b })),
         extractedPrerequisites: [...courseFile.preRequisites],
         suggestedCOs: [
-          { id: 'sco1', code: 'CO1', description: 'Understand fundamental concepts of machine learning and its applications', bloomsLevel: 'Understand', unit: 'Unit 1' },
-          { id: 'sco2', code: 'CO2', description: 'Apply supervised learning algorithms to solve classification and regression problems', bloomsLevel: 'Apply', unit: 'Unit 2' },
-          { id: 'sco3', code: 'CO3', description: 'Implement unsupervised learning techniques for pattern discovery in data', bloomsLevel: 'Apply', unit: 'Unit 3' },
-          { id: 'sco4', code: 'CO4', description: 'Analyze and evaluate neural network architectures for complex problems', bloomsLevel: 'Analyze', unit: 'Unit 4' },
-          { id: 'sco5', code: 'CO5', description: 'Evaluate model performance using appropriate metrics and validation techniques', bloomsLevel: 'Evaluate', unit: 'Unit 5' },
+          {
+            id: 'sco1',
+            code: 'CO1',
+            description: 'Understand fundamental concepts of machine learning and its applications',
+            bloomsLevel: 'Understand',
+            unit: 'Unit 1',
+          },
+          {
+            id: 'sco2',
+            code: 'CO2',
+            description:
+              'Apply supervised learning algorithms to solve classification and regression problems',
+            bloomsLevel: 'Apply',
+            unit: 'Unit 2',
+          },
+          {
+            id: 'sco3',
+            code: 'CO3',
+            description: 'Implement unsupervised learning techniques for pattern discovery in data',
+            bloomsLevel: 'Apply',
+            unit: 'Unit 3',
+          },
+          {
+            id: 'sco4',
+            code: 'CO4',
+            description: 'Analyze and evaluate neural network architectures for complex problems',
+            bloomsLevel: 'Analyze',
+            unit: 'Unit 4',
+          },
+          {
+            id: 'sco5',
+            code: 'CO5',
+            description:
+              'Evaluate model performance using appropriate metrics and validation techniques',
+            bloomsLevel: 'Evaluate',
+            unit: 'Unit 5',
+          },
         ],
         analysisDate: new Date().toISOString(),
       };
@@ -77,9 +117,13 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
             <Brain className="h-5 w-5 text-indigo-600" />
             AI Course Analysis
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">AI analyzes the course file and extracts structured data with confidence scoring</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            AI analyzes the course file and extracts structured data with confidence scoring
+          </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <Badge variant="outline" className="text-xs">
+          {completionPercentage}% Complete
+        </Badge>
       </div>
       <Separator />
 
@@ -87,8 +131,12 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Course file not uploaded yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Please upload the course file in Step 2 before running AI analysis</p>
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              Course file not uploaded yet
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Please upload the course file in Step 2 before running AI analysis
+            </p>
           </CardContent>
         </Card>
       ) : !showResults ? (
@@ -98,9 +146,14 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
           </div>
           <p className="text-lg font-semibold mb-1">Ready for AI Analysis</p>
           <p className="text-xs text-muted-foreground mb-6 text-center max-w-md">
-            AI will extract units, topics, course objectives, books, and references from the uploaded course file
+            AI will extract units, topics, course objectives, books, and references from the
+            uploaded course file
           </p>
-          <Button onClick={handleAnalyze} disabled={isAnalyzing} className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <Button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600"
+          >
             {isAnalyzing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -119,7 +172,12 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
           {/* Confidence Score */}
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className={cn('px-3 py-1.5 rounded-lg border', getConfidenceColor(data.confidenceScore))}>
+              <div
+                className={cn(
+                  'px-3 py-1.5 rounded-lg border',
+                  getConfidenceColor(data.confidenceScore)
+                )}
+              >
                 <span className="text-lg font-bold">{data.confidenceScore}%</span>
               </div>
               <div className="flex-1">
@@ -147,10 +205,16 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
                   {data.extractedUnits.map((unit, i) => (
                     <div key={unit.id} className="p-2 rounded-lg bg-muted/30">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium">Unit {i + 1}: {unit.title}</p>
-                        <Badge variant="outline" className="text-[9px]">{unit.hours} hrs</Badge>
+                        <p className="text-xs font-medium">
+                          Unit {i + 1}: {unit.title}
+                        </p>
+                        <Badge variant="outline" className="text-[9px]">
+                          {unit.hours} hrs
+                        </Badge>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{unit.topics.slice(0, 3).join(', ')}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {unit.topics.slice(0, 3).join(', ')}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -186,7 +250,7 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.extractedBooks.map((book) => (
+                {data.extractedBooks.map(book => (
                   <div key={book.id} className="text-xs text-muted-foreground mb-2">
                     <span className="font-medium">{book.title}</span> — {book.author}
                   </div>
@@ -203,7 +267,7 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.extractedReferences.map((book) => (
+                {data.extractedReferences.map(book => (
                   <div key={book.id} className="text-xs text-muted-foreground mb-2">
                     <span className="font-medium">{book.title}</span> — {book.author}
                   </div>
@@ -221,14 +285,23 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {data.suggestedCOs.map((co) => (
-                    <div key={co.id} className="p-2.5 rounded-lg border border-border/50 bg-card flex items-start gap-2">
-                      <Badge className="bg-indigo-600 text-white text-[9px] shrink-0">{co.code}</Badge>
+                  {data.suggestedCOs.map(co => (
+                    <div
+                      key={co.id}
+                      className="p-2.5 rounded-lg border border-border/50 bg-card flex items-start gap-2"
+                    >
+                      <Badge className="bg-indigo-600 text-white text-[9px] shrink-0">
+                        {co.code}
+                      </Badge>
                       <div>
                         <p className="text-xs">{co.description}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-[9px]">{co.bloomsLevel}</Badge>
-                          <Badge variant="outline" className="text-[9px]">{co.unit}</Badge>
+                          <Badge variant="secondary" className="text-[9px]">
+                            {co.bloomsLevel}
+                          </Badge>
+                          <Badge variant="outline" className="text-[9px]">
+                            {co.unit}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -249,9 +322,13 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
           <div className="flex items-start gap-2">
             <Brain className="h-4 w-4 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground">AI Architecture — Extension Points (Future)</p>
+              <p className="text-[10px] font-semibold text-muted-foreground">
+                AI Architecture — Extension Points (Future)
+              </p>
               <p className="text-[9px] text-muted-foreground mt-0.5">
-                Course File Analysis • CO Generation • Bloom Validation • CO Improvement • CO-PO Mapping • CO-PSO Mapping • Gap Analysis • Activity Recommendation • Assessment Blueprint • Question Paper Analysis • CO Attainment Insights • PO Gap Analysis • CQI
+                Course File Analysis • CO Generation • Bloom Validation • CO Improvement • CO-PO
+                Mapping • CO-PSO Mapping • Gap Analysis • Activity Recommendation • Assessment
+                Blueprint • Question Paper Analysis • CO Attainment Insights • PO Gap Analysis • CQI
               </p>
             </div>
           </div>
@@ -269,7 +346,12 @@ export default function Step3_AICourseAnalysis({ courseFile, data, onUpdate, onS
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button size="sm" onClick={onNext} disabled={!data} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
+          <Button
+            size="sm"
+            onClick={onNext}
+            disabled={!data}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
+          >
             Next: Course Outcomes
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

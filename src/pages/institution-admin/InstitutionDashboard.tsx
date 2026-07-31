@@ -22,7 +22,10 @@ import {
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { institutionAdminService, DashboardSummaryData } from '@/services/institution-admin.service';
+import {
+  institutionAdminService,
+  DashboardSummaryData,
+} from '@/services/institution-admin.service';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /** ── Helper: convert an ISO timestamp to a short relative time string ── */
@@ -45,22 +48,93 @@ function mapIcon(icon: string): 'upload' | 'check' | 'verify' | 'calendar' {
   if (lower.includes('upload') || lower.includes('create')) return 'upload';
   if (lower.includes('verify') || lower.includes('audit')) return 'verify';
   if (lower.includes('check') || lower.includes('approve')) return 'check';
-  if (lower.includes('calendar') || lower.includes('date') || lower.includes('schedule')) return 'calendar';
+  if (lower.includes('calendar') || lower.includes('date') || lower.includes('schedule'))
+    return 'calendar';
   return 'upload';
 }
 
 // KPI card configuration (values populated from API data inside the component)
 const kpiDefinitions = [
-  { label: 'Total Departments', icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30', key: 'totalDepartments' as const, suffix: '' },
-  { label: 'Total Programs', icon: GraduationCap, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', key: 'totalPrograms' as const, suffix: '' },
-  { label: 'Total Users', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/30', key: 'totalUsers' as const, suffix: '' },
-  { label: 'Active Users', icon: UserCheck, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', key: 'activeUsers' as const, suffix: '' },
-  { label: 'Blocked Users', icon: UserX, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950/30', key: 'blockedUsers' as const, suffix: '' },
-  { label: 'Repository Completion', icon: Database, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-950/30', key: 'repositoryCompletion' as const, suffix: '%' },
-  { label: 'Pending Reviews', icon: ClipboardList, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30', key: 'pendingReviews' as const, suffix: '' },
-  { label: 'Pending Approvals', icon: CheckCircle2, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30', key: 'pendingApprovals' as const, suffix: '' },
-  { label: 'Missing Evidence', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-950/30', key: 'missingEvidence' as const, suffix: '' },
-  { label: 'Health Score', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30', key: 'repositoryHealthScore' as const, suffix: '%' },
+  {
+    label: 'Total Departments',
+    icon: Building2,
+    color: 'text-blue-600',
+    bg: 'bg-blue-50 dark:bg-blue-950/30',
+    key: 'totalDepartments' as const,
+    suffix: '',
+  },
+  {
+    label: 'Total Programs',
+    icon: GraduationCap,
+    color: 'text-purple-600',
+    bg: 'bg-purple-50 dark:bg-purple-950/30',
+    key: 'totalPrograms' as const,
+    suffix: '',
+  },
+  {
+    label: 'Total Users',
+    icon: Users,
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50 dark:bg-indigo-950/30',
+    key: 'totalUsers' as const,
+    suffix: '',
+  },
+  {
+    label: 'Active Users',
+    icon: UserCheck,
+    color: 'text-green-600',
+    bg: 'bg-green-50 dark:bg-green-950/30',
+    key: 'activeUsers' as const,
+    suffix: '',
+  },
+  {
+    label: 'Blocked Users',
+    icon: UserX,
+    color: 'text-red-600',
+    bg: 'bg-red-50 dark:bg-red-950/30',
+    key: 'blockedUsers' as const,
+    suffix: '',
+  },
+  {
+    label: 'Repository Completion',
+    icon: Database,
+    color: 'text-teal-600',
+    bg: 'bg-teal-50 dark:bg-teal-950/30',
+    key: 'repositoryCompletion' as const,
+    suffix: '%',
+  },
+  {
+    label: 'Pending Reviews',
+    icon: ClipboardList,
+    color: 'text-amber-600',
+    bg: 'bg-amber-50 dark:bg-amber-950/30',
+    key: 'pendingReviews' as const,
+    suffix: '',
+  },
+  {
+    label: 'Pending Approvals',
+    icon: CheckCircle2,
+    color: 'text-orange-600',
+    bg: 'bg-orange-50 dark:bg-orange-950/30',
+    key: 'pendingApprovals' as const,
+    suffix: '',
+  },
+  {
+    label: 'Missing Evidence',
+    icon: AlertTriangle,
+    color: 'text-rose-600',
+    bg: 'bg-rose-50 dark:bg-rose-950/30',
+    key: 'missingEvidence' as const,
+    suffix: '',
+  },
+  {
+    label: 'Health Score',
+    icon: Activity,
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    key: 'repositoryHealthScore' as const,
+    suffix: '%',
+  },
 ];
 
 export const InstitutionDashboard = () => {
@@ -106,11 +180,11 @@ export const InstitutionDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4].map(i => (
                 <Card key={i} className="border bg-muted/30">
                   <CardContent className="p-4 space-y-3">
                     <Skeleton className="h-4 w-28" />
-                    {[1, 2, 3, 4].map((j) => (
+                    {[1, 2, 3, 4].map(j => (
                       <div key={j} className="space-y-1">
                         <Skeleton className="h-3 w-20" />
                         <Skeleton className="h-1.5 w-full" />
@@ -128,7 +202,7 @@ export const InstitutionDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4].map(i => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
@@ -144,7 +218,9 @@ export const InstitutionDashboard = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Institution Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your institution's accreditation readiness</p>
+          <p className="text-muted-foreground">
+            Overview of your institution's accreditation readiness
+          </p>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -166,13 +242,13 @@ export const InstitutionDashboard = () => {
   const { kpis, repositoryOverview, departmentReadiness, recentActivities } = summary!;
 
   // Build KPI card values from live API data
-  const kpiCards = kpiDefinitions.map((def) => ({
+  const kpiCards = kpiDefinitions.map(def => ({
     ...def,
     value: def.suffix ? `${kpis[def.key]}${def.suffix}` : kpis[def.key],
   }));
 
   // Transform recent activities to the UI-friendly format
-  const transformedActivities = recentActivities.map((act) => ({
+  const transformedActivities = recentActivities.map(act => ({
     text: `${act.user} ${act.action}`,
     time: timeAgo(act.timestamp),
     icon: mapIcon(act.icon),
@@ -183,7 +259,9 @@ export const InstitutionDashboard = () => {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Institution Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your institution's accreditation readiness</p>
+        <p className="text-muted-foreground">
+          Overview of your institution's accreditation readiness
+        </p>
       </div>
 
       {/* KPI Cards */}
@@ -222,7 +300,7 @@ export const InstitutionDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {repositoryOverview.map((repo) => (
+            {repositoryOverview.map(repo => (
               <Card key={repo.id} className="border bg-muted/30">
                 <CardContent className="p-4 space-y-3">
                   <h4 className="font-semibold text-sm">{repo.name} Repository</h4>
@@ -268,46 +346,77 @@ export const InstitutionDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Department</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Academic</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Faculty</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Students</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Research</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Evidence</th>
-                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">Readiness</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                    Department
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Academic
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Faculty
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Students
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Research
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Evidence
+                  </th>
+                  <th className="text-center py-3 px-2 font-medium text-muted-foreground">
+                    Readiness
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {departmentReadiness.map((dept) => (
+                {departmentReadiness.map(dept => (
                   <tr key={dept.department} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-3 px-2 font-medium">{dept.department}</td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={dept.academic >= 90 ? 'default' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={dept.academic >= 90 ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {dept.academic}%
                       </Badge>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={dept.faculty >= 90 ? 'default' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={dept.faculty >= 90 ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {dept.faculty}%
                       </Badge>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={dept.student >= 90 ? 'default' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={dept.student >= 90 ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {dept.student}%
                       </Badge>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={dept.research >= 80 ? 'default' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={dept.research >= 80 ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {dept.research}%
                       </Badge>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={dept.evidence >= 80 ? 'default' : 'secondary'} className="text-xs">
+                      <Badge
+                        variant={dept.evidence >= 80 ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {dept.evidence}%
                       </Badge>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className={`font-bold ${dept.overall >= 85 ? 'text-green-600' : dept.overall >= 75 ? 'text-amber-600' : 'text-red-600'}`}>
+                      <span
+                        className={`font-bold ${dept.overall >= 85 ? 'text-green-600' : dept.overall >= 75 ? 'text-amber-600' : 'text-red-600'}`}
+                      >
                         {dept.overall}%
                       </span>
                     </td>
@@ -339,14 +448,20 @@ export const InstitutionDashboard = () => {
                 <div key={idx} className="flex items-center gap-3 py-2 border-b last:border-0">
                   <div className="p-1.5 rounded-full bg-primary/10">
                     {activity.icon === 'upload' && <Upload className="h-3.5 w-3.5 text-primary" />}
-                    {activity.icon === 'check' && <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
+                    {activity.icon === 'check' && (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                    )}
                     {activity.icon === 'verify' && <Shield className="h-3.5 w-3.5 text-blue-600" />}
-                    {activity.icon === 'calendar' && <Calendar className="h-3.5 w-3.5 text-purple-600" />}
+                    {activity.icon === 'calendar' && (
+                      <Calendar className="h-3.5 w-3.5 text-purple-600" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm">{activity.text}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {activity.time}
+                  </span>
                 </div>
               ))}
             </div>

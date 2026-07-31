@@ -1,5 +1,14 @@
 import { motion } from 'framer-motion';
-import { Building2, Users, FileText, Database, CheckCircle2, PieChart, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Building2,
+  Users,
+  FileText,
+  Database,
+  CheckCircle2,
+  PieChart,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { AnalyticsCard } from './types';
@@ -61,17 +70,29 @@ export function StatCards({ cards }: StatCardsProps) {
                           isPositive ? 'text-emerald-500' : 'text-red-500'
                         )}
                       >
-                        {isPositive ? '+' : ''}{card.change}%
+                        {isPositive ? '+' : ''}
+                        {card.change}%
                       </span>
                       <span className="text-xs text-muted-foreground">{card.changeLabel}</span>
                     </div>
                   </div>
-                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg', gradient)}>
+                  <div
+                    className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg',
+                      gradient
+                    )}
+                  >
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                 </div>
               </CardContent>
-              <div className={cn('absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r', gradient, 'opacity-60')} />
+              <div
+                className={cn(
+                  'absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r',
+                  gradient,
+                  'opacity-60'
+                )}
+              />
             </Card>
           </motion.div>
         );

@@ -6,7 +6,11 @@ import { repositoryKPIs } from '../repository-config';
 import { TrendingUp, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 const verificationConfig = {
-  verified: { icon: CheckCircle2, label: 'Verified', className: 'bg-emerald-500/10 text-emerald-600' },
+  verified: {
+    icon: CheckCircle2,
+    label: 'Verified',
+    className: 'bg-emerald-500/10 text-emerald-600',
+  },
   partial: { icon: Clock, label: 'Partial', className: 'bg-amber-500/10 text-amber-600' },
   pending: { icon: AlertCircle, label: 'Pending', className: 'bg-red-500/10 text-red-600' },
 };
@@ -39,9 +43,11 @@ export const RepositoryKPICards = () => {
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
-                          kpi.completionPercent >= 90 ? 'bg-emerald-500' :
-                          kpi.completionPercent >= 70 ? 'bg-indigo-500' :
-                          'bg-amber-500'
+                          kpi.completionPercent >= 90
+                            ? 'bg-emerald-500'
+                            : kpi.completionPercent >= 70
+                              ? 'bg-indigo-500'
+                              : 'bg-amber-500'
                         )}
                         style={{ width: `${kpi.completionPercent}%` }}
                       />
@@ -49,7 +55,10 @@ export const RepositoryKPICards = () => {
                     <span className="text-[10px] font-medium">{kpi.completionPercent}%</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className={cn('text-[9px] px-1.5 py-0', vConfig.className)}>
+                    <Badge
+                      variant="secondary"
+                      className={cn('text-[9px] px-1.5 py-0', vConfig.className)}
+                    >
                       <VIcon className="h-2.5 w-2.5 mr-0.5" />
                       {vConfig.label}
                     </Badge>

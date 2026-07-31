@@ -149,7 +149,9 @@ const AppRoutes = () => {
       <Route
         path="/app/infrastructure-repository"
         element={
-          <ProtectedRoute allowedRoles={[UserRole.INFRASTRUCTURE_COORDINATOR, UserRole.DEPARTMENT_COORDINATOR]}>
+          <ProtectedRoute
+            allowedRoles={[UserRole.INFRASTRUCTURE_COORDINATOR, UserRole.DEPARTMENT_COORDINATOR]}
+          >
             <InfrastructureCoordinatorLayout />
           </ProtectedRoute>
         }
@@ -285,7 +287,10 @@ const AppRoutes = () => {
       <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
       <Route path="/reports" element={<Navigate to="/app/reports" replace />} />
       <Route path="/institutions" element={<Navigate to="/admin/institutions" replace />} />
-      <Route path="/departments" element={<Navigate to="/app/academic-structure/departments" replace />} />
+      <Route
+        path="/departments"
+        element={<Navigate to="/app/academic-structure/departments" replace />}
+      />
       <Route path="/accreditation" element={<Navigate to="/app/accreditation" replace />} />
       <Route path="/users" element={<Navigate to="/app/users" replace />} />
       <Route path="/settings" element={<Navigate to="/app/settings" replace />} />

@@ -5,7 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RecentActivityItem } from './types';
 
-const typeConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
+const typeConfig: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }
+> = {
   upload: { icon: Upload, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
   create: { icon: Plus, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   update: { icon: Pencil, color: 'text-amber-500', bg: 'bg-amber-500/10' },
@@ -50,7 +53,12 @@ export function RecentActivity({ data }: RecentActivityProps) {
                   transition={{ duration: 0.2, delay: index * 0.03 }}
                   className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', config.bg)}>
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                      config.bg
+                    )}
+                  >
                     <Icon className={cn('h-4 w-4', config.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -58,7 +66,9 @@ export function RecentActivity({ data }: RecentActivityProps) {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-muted-foreground">{item.user}</span>
                       <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground truncate">{item.institution}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {item.institution}
+                      </span>
                     </div>
                   </div>
                   <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">

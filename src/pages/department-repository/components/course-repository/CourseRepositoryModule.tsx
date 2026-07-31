@@ -6,7 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   CourseState,
   CourseDetails,
@@ -173,7 +179,7 @@ export const CourseRepositoryModule = () => {
       aiAnalysis: null,
       courseOutcomes: [],
       coPoMapping: [],
-      poCoverage: NBA_POS.map((po) => ({
+      poCoverage: NBA_POS.map(po => ({
         poId: po.id,
         poCode: po.code,
         coveragePercentage: 0,
@@ -183,7 +189,7 @@ export const CourseRepositoryModule = () => {
       gapAnalysis: null,
       revisedMapping: null,
       coPsoMapping: [],
-      psoCoverage: NBA_PSOS.map((pso) => ({
+      psoCoverage: NBA_PSOS.map(pso => ({
         poId: pso.id,
         poCode: pso.code,
         coveragePercentage: 0,
@@ -205,8 +211,8 @@ export const CourseRepositoryModule = () => {
         'co-pso-mapping': 0,
         'assessment-blueprint': 0,
         'marks-upload': 0,
-        'attainment': 0,
-        'reports': 0,
+        attainment: 0,
+        reports: 0,
       },
     };
   }
@@ -223,13 +229,16 @@ export const CourseRepositoryModule = () => {
   // ============ Filtered courses for selected academic year / year / semester ============
   const filteredCourses = useMemo(() => {
     let filtered = courses.filter(
-      (c) => c.academicYear === selectedAcademicYear && c.year === selectedYear && c.semester === selectedSemester
+      c =>
+        c.academicYear === selectedAcademicYear &&
+        c.year === selectedYear &&
+        c.semester === selectedSemester
     );
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (c) =>
+        c =>
           c.courseCode.toLowerCase().includes(q) ||
           c.courseName.toLowerCase().includes(q) ||
           c.facultyName.toLowerCase().includes(q)
@@ -237,56 +246,72 @@ export const CourseRepositoryModule = () => {
     }
 
     if (filterType && filterType !== 'all') {
-      filtered = filtered.filter((c) => c.courseType === filterType);
+      filtered = filtered.filter(c => c.courseType === filterType);
     }
 
     if (filterStatus && filterStatus !== 'all') {
-      filtered = filtered.filter((c) => c.status === filterStatus);
+      filtered = filtered.filter(c => c.status === filterStatus);
     }
 
     return filtered;
-  }, [courses, selectedAcademicYear, selectedYear, selectedSemester, searchQuery, filterType, filterStatus]);
+  }, [
+    courses,
+    selectedAcademicYear,
+    selectedYear,
+    selectedSemester,
+    searchQuery,
+    filterType,
+    filterStatus,
+  ]);
 
   // ============ Semester Summary Stats ============
   const semesterStats = useMemo(() => {
     const semCourses = courses.filter(
-      (c) => c.academicYear === selectedAcademicYear && c.year === selectedYear && c.semester === selectedSemester
+      c =>
+        c.academicYear === selectedAcademicYear &&
+        c.year === selectedYear &&
+        c.semester === selectedSemester
     );
     const totalCredits = semCourses.reduce((sum, c) => sum + c.credits, 0);
     const totalContactHours = semCourses.reduce((sum, c) => sum + c.totalHours, 0);
-    const theoryCourses = semCourses.filter((c) => c.courseType === 'Theory').length;
-    const labCourses = semCourses.filter((c) => c.courseType === 'Lab' || c.courseType === 'Theory + Lab').length;
+    const theoryCourses = semCourses.filter(c => c.courseType === 'Theory').length;
+    const labCourses = semCourses.filter(
+      c => c.courseType === 'Lab' || c.courseType === 'Theory + Lab'
+    ).length;
     return { total: semCourses.length, totalCredits, totalContactHours, theoryCourses, labCourses };
   }, [courses, selectedAcademicYear, selectedYear, selectedSemester]);
 
   // ============ Dashboard Metrics ============
-  const metrics: DashboardMetrics = useMemo(() => ({
-    totalCourses: courses.length,
-    coursesWithFile: courses.filter((c) => c.courseFileUploaded).length,
-    coursesWithCOs: courses.filter((c) => c.cosGenerated).length,
-    coursesWithCOPOMapping: courses.filter((c) => c.coPoMapped).length,
-    coursesWithCOPSOMapping: courses.filter((c) => c.coPsoMapped).length,
-    coursesWithMarks: courses.filter((c) => c.marksUploaded).length,
-    coursesWithCOAttainment: courses.filter((c) => c.coAttainmentCalculated).length,
-    coursesWithPOAttainment: courses.filter((c) => c.poAttainmentCalculated).length,
-    nbaReadyCourses: courses.filter((c) => c.nbaReady).length,
-    courseCompletion: Math.round(
-      courses.reduce((s, c) => s + c.progress, 0) / Math.max(courses.length, 1)
-    ),
-    departmentReadiness: Math.round(
-      (courses.filter((c) => c.nbaReady).length / Math.max(courses.length, 1)) * 100
-    ),
-    evidenceCompletion: Math.round(
-      (courses.filter((c) => c.courseFileUploaded).length / Math.max(courses.length, 1)) * 100
-    ),
-    attainmentStatus: Math.round(
-      (courses.filter((c) => c.coAttainmentCalculated).length / Math.max(courses.length, 1)) * 100
-    ),
-  }), [courses]);
+  const metrics: DashboardMetrics = useMemo(
+    () => ({
+      totalCourses: courses.length,
+      coursesWithFile: courses.filter(c => c.courseFileUploaded).length,
+      coursesWithCOs: courses.filter(c => c.cosGenerated).length,
+      coursesWithCOPOMapping: courses.filter(c => c.coPoMapped).length,
+      coursesWithCOPSOMapping: courses.filter(c => c.coPsoMapped).length,
+      coursesWithMarks: courses.filter(c => c.marksUploaded).length,
+      coursesWithCOAttainment: courses.filter(c => c.coAttainmentCalculated).length,
+      coursesWithPOAttainment: courses.filter(c => c.poAttainmentCalculated).length,
+      nbaReadyCourses: courses.filter(c => c.nbaReady).length,
+      courseCompletion: Math.round(
+        courses.reduce((s, c) => s + c.progress, 0) / Math.max(courses.length, 1)
+      ),
+      departmentReadiness: Math.round(
+        (courses.filter(c => c.nbaReady).length / Math.max(courses.length, 1)) * 100
+      ),
+      evidenceCompletion: Math.round(
+        (courses.filter(c => c.courseFileUploaded).length / Math.max(courses.length, 1)) * 100
+      ),
+      attainmentStatus: Math.round(
+        (courses.filter(c => c.coAttainmentCalculated).length / Math.max(courses.length, 1)) * 100
+      ),
+    }),
+    [courses]
+  );
 
   // ============ Workflow step statuses ============
-  const workflowSteps: WorkflowStepInfo[] = WORKFLOW_STEPS.map((step) => {
-    const stepsOrder: WorkflowStepId[] = WORKFLOW_STEPS.map((s) => s.id);
+  const workflowSteps: WorkflowStepInfo[] = WORKFLOW_STEPS.map(step => {
+    const stepsOrder: WorkflowStepId[] = WORKFLOW_STEPS.map(s => s.id);
     const currentIdx = stepsOrder.indexOf(courseState.currentStep);
     const stepIdx = stepsOrder.indexOf(step.id);
     if (stepIdx < currentIdx) return { ...step, status: 'completed' as const };
@@ -301,24 +326,24 @@ export const CourseRepositoryModule = () => {
 
   // ============ Step Navigation ============
   const goToStep = (stepId: WorkflowStepId) => {
-    setCourseState((prev) => ({ ...prev, currentStep: stepId }));
+    setCourseState(prev => ({ ...prev, currentStep: stepId }));
   };
 
   const goNext = () => {
-    const steps = WORKFLOW_STEPS.map((s) => s.id);
+    const steps = WORKFLOW_STEPS.map(s => s.id);
     const currentIdx = steps.indexOf(courseState.currentStep);
     if (currentIdx < steps.length - 1) goToStep(steps[currentIdx + 1]);
   };
 
   const goPrev = () => {
-    const steps = WORKFLOW_STEPS.map((s) => s.id);
+    const steps = WORKFLOW_STEPS.map(s => s.id);
     const currentIdx = steps.indexOf(courseState.currentStep);
     if (currentIdx > 0) goToStep(steps[currentIdx - 1]);
   };
 
   const handleSave = () => {
     localStorage.setItem(`course-${courseState.id}`, JSON.stringify(courseState));
-    setCourseState((prev) => ({
+    setCourseState(prev => ({
       ...prev,
       completionPercentages: {
         ...prev.completionPercentages,
@@ -329,7 +354,8 @@ export const CourseRepositoryModule = () => {
 
   // ============ CSV Download Template ============
   const handleDownloadTemplate = useCallback(() => {
-    const header = 'Academic Year,Year,Semester,Course Code,Course Name,Faculty Name,Course Type,Lecture Hours (CI),Theory Hours (CI),Practical Hours (PI),Team Work Hours (TW),Self Learning Hours (SL),Status';
+    const header =
+      'Academic Year,Year,Semester,Course Code,Course Name,Faculty Name,Course Type,Lecture Hours (CI),Theory Hours (CI),Practical Hours (PI),Team Work Hours (TW),Self Learning Hours (SL),Status';
     const sampleRows = [
       `${selectedAcademicYear},${selectedYear},${selectedSemester},CS501,Machine Learning,Dr. Anita Sharma,Theory,3,0,0,1,2,Active`,
       `${selectedAcademicYear},${selectedYear},${selectedSemester},CS501L,Machine Learning Lab,Dr. Rajesh Kumar,Lab,0,0,3,0,1,Active`,
@@ -351,17 +377,17 @@ export const CourseRepositoryModule = () => {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const text = event.target?.result as string;
-        const lines = text.split('\n').filter((line) => line.trim());
-        const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+        const lines = text.split('\n').filter(line => line.trim());
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
 
         const parsed: CourseRecord[] = [];
         let validCount = 0;
         let invalidCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+          const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
           const row: Record<string, string> = {};
           headers.forEach((h, idx) => {
             row[h] = values[idx] || '';
@@ -374,7 +400,9 @@ export const CourseRepositoryModule = () => {
           if (!row['Course Name']) errors.push('Course Name is mandatory');
           if (!row['Faculty Name']) errors.push('Faculty Name is mandatory');
           if (row['Course Type'] && !COURSE_TYPES.includes(row['Course Type'])) {
-            errors.push(`Course Type "${row['Course Type']}" must be one of: ${COURSE_TYPES.join(', ')}`);
+            errors.push(
+              `Course Type "${row['Course Type']}" must be one of: ${COURSE_TYPES.join(', ')}`
+            );
           }
 
           const yearVal = row['Year'] || selectedYear;
@@ -384,9 +412,13 @@ export const CourseRepositoryModule = () => {
 
           const lectureHrs = parseFloat(row['Lecture Hours (CI)'] || row['Lecture Hours'] || '0');
           const theoryHrs = parseFloat(row['Theory Hours (CI)'] || row['Theory Hours'] || '0');
-          const practicalHrs = parseFloat(row['Practical Hours (PI)'] || row['Practical Hours'] || '0');
+          const practicalHrs = parseFloat(
+            row['Practical Hours (PI)'] || row['Practical Hours'] || '0'
+          );
           const twHrs = parseFloat(row['Team Work Hours (TW)'] || row['Team Work Hours'] || '0');
-          const slHrs = parseFloat(row['Self Learning Hours (SL)'] || row['Self Learning Hours'] || '0');
+          const slHrs = parseFloat(
+            row['Self Learning Hours (SL)'] || row['Self Learning Hours'] || '0'
+          );
 
           const metrics = calculateCourseMetrics(lectureHrs, theoryHrs, practicalHrs, twHrs, slHrs);
 
@@ -430,9 +462,9 @@ export const CourseRepositoryModule = () => {
         }
 
         // Add valid records to courses
-        const validCourses = parsed.filter((c) => c.validationStatus === 'valid');
+        const validCourses = parsed.filter(c => c.validationStatus === 'valid');
         if (validCourses.length > 0) {
-          setCourses((prev) => [...prev, ...validCourses]);
+          setCourses(prev => [...prev, ...validCourses]);
           setSaveSuccess(true);
           setTimeout(() => setSaveSuccess(false), 4000);
         }
@@ -446,12 +478,12 @@ export const CourseRepositoryModule = () => {
   // ============ Delete Course ============
   const handleDeleteCourse = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCourses((prev) => prev.filter((c) => c.id !== id));
+    setCourses(prev => prev.filter(c => c.id !== id));
   }, []);
 
   // ============ Open Course Workspace ============
   const openCourse = (courseId: string) => {
-    const course = courses.find((c) => c.id === courseId);
+    const course = courses.find(c => c.id === courseId);
     if (course) {
       const saved = localStorage.getItem(`course-${courseId}`);
       if (saved) {
@@ -493,7 +525,9 @@ export const CourseRepositoryModule = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight">Course Repository</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Outcome Based Education (OBE) workflow for every course</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Outcome Based Education (OBE) workflow for every course
+            </p>
           </div>
           <Button
             size="sm"
@@ -581,16 +615,46 @@ export const CourseRepositoryModule = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: 'Course File Uploaded', value: metrics.coursesWithFile, total: metrics.totalCourses, color: 'bg-emerald-500' },
-                { label: 'COs Generated', value: metrics.coursesWithCOs, total: metrics.totalCourses, color: 'bg-blue-500' },
-                { label: 'CO-PO Mapping', value: metrics.coursesWithCOPOMapping, total: metrics.totalCourses, color: 'bg-purple-500' },
-                { label: 'CO Attainment', value: metrics.coursesWithCOAttainment, total: metrics.totalCourses, color: 'bg-orange-500' },
-                { label: 'NBA Ready', value: metrics.nbaReadyCourses, total: metrics.totalCourses, color: 'bg-emerald-600' },
-              ].map((item) => (
+                {
+                  label: 'Course File Uploaded',
+                  value: metrics.coursesWithFile,
+                  total: metrics.totalCourses,
+                  color: 'bg-emerald-500',
+                },
+                {
+                  label: 'COs Generated',
+                  value: metrics.coursesWithCOs,
+                  total: metrics.totalCourses,
+                  color: 'bg-blue-500',
+                },
+                {
+                  label: 'CO-PO Mapping',
+                  value: metrics.coursesWithCOPOMapping,
+                  total: metrics.totalCourses,
+                  color: 'bg-purple-500',
+                },
+                {
+                  label: 'CO Attainment',
+                  value: metrics.coursesWithCOAttainment,
+                  total: metrics.totalCourses,
+                  color: 'bg-orange-500',
+                },
+                {
+                  label: 'NBA Ready',
+                  value: metrics.nbaReadyCourses,
+                  total: metrics.totalCourses,
+                  color: 'bg-emerald-600',
+                },
+              ].map(item => (
                 <div key={item.label} className="flex items-center gap-3">
                   <span className="text-[10px] font-medium w-36">{item.label}</span>
-                  <Progress value={(item.value / Math.max(item.total, 1)) * 100} className="flex-1 h-2" />
-                  <span className="text-[10px] font-bold w-12 text-right">{item.value}/{item.total}</span>
+                  <Progress
+                    value={(item.value / Math.max(item.total, 1)) * 100}
+                    className="flex-1 h-2"
+                  />
+                  <span className="text-[10px] font-bold w-12 text-right">
+                    {item.value}/{item.total}
+                  </span>
                 </div>
               ))}
             </CardContent>
@@ -640,22 +704,28 @@ export const CourseRepositoryModule = () => {
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Department
+              </span>
             </div>
             <p className="text-sm font-semibold text-white truncate">{DEPARTMENTS[0]}</p>
           </div>
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-4 w-4 text-purple-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Academic Year</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Academic Year
+              </span>
             </div>
             <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-purple-300 shadow-none focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ACADEMIC_YEARS.map((y) => (
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                {ACADEMIC_YEARS.map(y => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -663,15 +733,19 @@ export const CourseRepositoryModule = () => {
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Year</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Year
+              </span>
             </div>
             <Select value={selectedYear} onValueChange={handleYearChange}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-emerald-300 shadow-none focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {YEARS_OF_STUDY.map((y) => (
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                {YEARS_OF_STUDY.map(y => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -679,15 +753,19 @@ export const CourseRepositoryModule = () => {
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Semester</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Semester
+              </span>
             </div>
             <Select value={selectedSemester} onValueChange={setSelectedSemester}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-amber-300 shadow-none focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {availableSemesters.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {availableSemesters.map(s => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -695,11 +773,11 @@ export const CourseRepositoryModule = () => {
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 dark:from-indigo-800/40 dark:to-indigo-900/40 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Calculator className="h-4 w-4 text-indigo-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Courses</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Courses
+              </span>
             </div>
-            <p className="text-sm font-bold text-indigo-300">
-              {semesterStats.total} Courses
-            </p>
+            <p className="text-sm font-bold text-indigo-300">{semesterStats.total} Courses</p>
           </div>
         </div>
 
@@ -720,7 +798,9 @@ export const CourseRepositoryModule = () => {
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3 text-center">
-                <p className="text-lg font-bold text-violet-600">{semesterStats.totalContactHours}</p>
+                <p className="text-lg font-bold text-violet-600">
+                  {semesterStats.totalContactHours}
+                </p>
                 <p className="text-[10px] text-muted-foreground">Contact Hrs</p>
               </CardContent>
             </Card>
@@ -743,7 +823,12 @@ export const CourseRepositoryModule = () => {
         <Card className="border-border/50">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadTemplate}
+                className="gap-2"
+              >
                 <Download className="h-3.5 w-3.5" />
                 Download CSV Template
               </Button>
@@ -779,7 +864,9 @@ export const CourseRepositoryModule = () => {
                 <CardContent className="p-4 flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="text-sm font-semibold text-green-700">Courses Uploaded Successfully</p>
+                    <p className="text-sm font-semibold text-green-700">
+                      Courses Uploaded Successfully
+                    </p>
                     <p className="text-xs text-green-600 mt-0.5">
                       Courses added for {selectedAcademicYear} / {selectedYear} / {selectedSemester}
                     </p>
@@ -797,7 +884,7 @@ export const CourseRepositoryModule = () => {
             <Input
               placeholder="Search by course code or name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-sm"
             />
           </div>
@@ -807,8 +894,10 @@ export const CourseRepositoryModule = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {COURSE_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
+              {COURSE_TYPES.map(t => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -818,8 +907,10 @@ export const CourseRepositoryModule = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              {COURSE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+              {COURSE_STATUSES.map(s => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -847,7 +938,9 @@ export const CourseRepositoryModule = () => {
                 <table className="w-full text-xs min-w-[1100px]">
                   <thead>
                     <tr className="bg-muted/30">
-                      <th className="text-left p-3 font-semibold sticky left-0 bg-muted/30 z-10 w-8">#</th>
+                      <th className="text-left p-3 font-semibold sticky left-0 bg-muted/30 z-10 w-8">
+                        #
+                      </th>
                       <th className="text-left p-3 font-semibold">Course Code</th>
                       <th className="text-left p-3 font-semibold">Course Name</th>
                       <th className="text-left p-3 font-semibold">Faculty</th>
@@ -860,7 +953,9 @@ export const CourseRepositoryModule = () => {
                       <th className="text-center p-3 font-semibold">Credits</th>
                       <th className="text-center p-3 font-semibold">Status</th>
                       <th className="text-center p-3 font-semibold">Progress</th>
-                      <th className="text-right p-3 font-semibold sticky right-0 bg-muted/30 z-10">Actions</th>
+                      <th className="text-right p-3 font-semibold sticky right-0 bg-muted/30 z-10">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -870,11 +965,16 @@ export const CourseRepositoryModule = () => {
                         className="border-t border-border/50 hover:bg-muted/10 cursor-pointer"
                         onClick={() => openCourse(course.id)}
                       >
-                        <td className="p-3 text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</td>
+                        <td className="p-3 text-muted-foreground sticky left-0 bg-background z-10">
+                          {idx + 1}
+                        </td>
                         <td className="p-3 font-mono font-medium">{course.courseCode}</td>
                         <td className="p-3 font-medium">
                           <button
-                            onClick={(e) => { e.stopPropagation(); openCourse(course.id); }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              openCourse(course.id);
+                            }}
                             className="text-left hover:text-indigo-600 hover:underline transition-colors"
                           >
                             {course.courseName}
@@ -882,28 +982,51 @@ export const CourseRepositoryModule = () => {
                         </td>
                         <td className="p-3 text-muted-foreground">{course.facultyName || '-'}</td>
                         <td className="p-3 text-center">
-                          <Badge variant="outline" className={cn('text-[9px]',
-                            course.courseType === 'Theory' ? 'bg-blue-500/10 text-blue-600' :
-                            course.courseType === 'Lab' ? 'bg-purple-500/10 text-purple-600' :
-                            'bg-teal-500/10 text-teal-600'
-                          )}>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-[9px]',
+                              course.courseType === 'Theory'
+                                ? 'bg-blue-500/10 text-blue-600'
+                                : course.courseType === 'Lab'
+                                  ? 'bg-purple-500/10 text-purple-600'
+                                  : 'bg-teal-500/10 text-teal-600'
+                            )}
+                          >
                             {course.courseType}
                           </Badge>
                         </td>
-                        <td className="p-3 text-center text-blue-600 font-semibold">{course.ciHours}</td>
-                        <td className="p-3 text-center text-purple-600 font-semibold">{course.piHours}</td>
-                        <td className="p-3 text-center text-emerald-600 font-semibold">{course.teamWorkHours}</td>
-                        <td className="p-3 text-center text-amber-600 font-semibold">{course.selfLearningHours}</td>
-                        <td className="p-3 text-center font-bold text-rose-600">{course.totalHours}</td>
-                        <td className="p-3 text-center">
-                          <Badge className="bg-indigo-600 text-white text-[9px] font-bold">{course.credits}</Badge>
+                        <td className="p-3 text-center text-blue-600 font-semibold">
+                          {course.ciHours}
+                        </td>
+                        <td className="p-3 text-center text-purple-600 font-semibold">
+                          {course.piHours}
+                        </td>
+                        <td className="p-3 text-center text-emerald-600 font-semibold">
+                          {course.teamWorkHours}
+                        </td>
+                        <td className="p-3 text-center text-amber-600 font-semibold">
+                          {course.selfLearningHours}
+                        </td>
+                        <td className="p-3 text-center font-bold text-rose-600">
+                          {course.totalHours}
                         </td>
                         <td className="p-3 text-center">
-                          <Badge variant="outline" className={cn('text-[9px]',
-                            course.status === 'Active' && 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-                            course.status === 'Inactive' && 'bg-gray-500/10 text-gray-600',
-                            course.status === 'Proposed' && 'bg-amber-500/10 text-amber-600',
-                          )}>
+                          <Badge className="bg-indigo-600 text-white text-[9px] font-bold">
+                            {course.credits}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-[9px]',
+                              course.status === 'Active' &&
+                                'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                              course.status === 'Inactive' && 'bg-gray-500/10 text-gray-600',
+                              course.status === 'Proposed' && 'bg-amber-500/10 text-amber-600'
+                            )}
+                          >
                             {course.status}
                           </Badge>
                         </td>
@@ -915,10 +1038,23 @@ export const CourseRepositoryModule = () => {
                         </td>
                         <td className="p-3 text-right sticky right-0 bg-background z-10">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openCourse(course.id); }}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={e => {
+                                e.stopPropagation();
+                                openCourse(course.id);
+                              }}
+                            >
                               <ArrowRight className="h-3 w-3 text-indigo-600" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => handleDeleteCourse(course.id, e)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={e => handleDeleteCourse(course.id, e)}
+                            >
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -928,7 +1064,9 @@ export const CourseRepositoryModule = () => {
                     {/* Totals Row */}
                     <tr className="bg-muted/50 border-t-2 font-semibold">
                       <td className="sticky left-0 bg-muted/50 z-10 p-3"></td>
-                      <td colSpan={4} className="p-3 text-xs text-right font-bold">SEMESTER TOTALS →</td>
+                      <td colSpan={4} className="p-3 text-xs text-right font-bold">
+                        SEMESTER TOTALS →
+                      </td>
                       <td className="p-3 text-center text-xs font-bold text-blue-700">
                         {filteredCourses.reduce((s, c) => s + c.ciHours, 0)}
                       </td>
@@ -967,7 +1105,7 @@ export const CourseRepositoryModule = () => {
     'course-details': (
       <Step1_CourseDetails
         data={courseState.details}
-        onUpdate={(details) => setCourseState((prev) => ({ ...prev, details }))}
+        onUpdate={details => setCourseState(prev => ({ ...prev, details }))}
         onSave={handleSave}
         onNext={goNext}
         completionPercentage={courseState.completionPercentages['course-details']}
@@ -976,7 +1114,7 @@ export const CourseRepositoryModule = () => {
     'upload-course-file': (
       <Step2_UploadCourseFile
         data={courseState.courseFile}
-        onUpdate={(file) => setCourseState((prev) => ({ ...prev, courseFile: file }))}
+        onUpdate={file => setCourseState(prev => ({ ...prev, courseFile: file }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -987,7 +1125,7 @@ export const CourseRepositoryModule = () => {
       <Step3_AICourseAnalysis
         courseFile={courseState.courseFile}
         data={courseState.aiAnalysis}
-        onUpdate={(analysis) => setCourseState((prev) => ({ ...prev, aiAnalysis: analysis }))}
+        onUpdate={analysis => setCourseState(prev => ({ ...prev, aiAnalysis: analysis }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -998,7 +1136,7 @@ export const CourseRepositoryModule = () => {
       <Step4_CourseOutcomes
         outcomes={courseState.courseOutcomes}
         aiAnalysis={courseState.aiAnalysis}
-        onUpdate={(outcomes) => setCourseState((prev) => ({ ...prev, courseOutcomes: outcomes }))}
+        onUpdate={outcomes => setCourseState(prev => ({ ...prev, courseOutcomes: outcomes }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1010,7 +1148,9 @@ export const CourseRepositoryModule = () => {
         outcomes={courseState.courseOutcomes}
         mappings={courseState.coPoMapping}
         coverage={courseState.poCoverage}
-        onUpdate={(mappings, coverage) => setCourseState((prev) => ({ ...prev, coPoMapping: mappings, poCoverage: coverage }))}
+        onUpdate={(mappings, coverage) =>
+          setCourseState(prev => ({ ...prev, coPoMapping: mappings, poCoverage: coverage }))
+        }
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1022,7 +1162,7 @@ export const CourseRepositoryModule = () => {
         outcomes={courseState.courseOutcomes}
         coverage={courseState.poCoverage}
         data={courseState.gapAnalysis}
-        onUpdate={(gap) => setCourseState((prev) => ({ ...prev, gapAnalysis: gap }))}
+        onUpdate={gap => setCourseState(prev => ({ ...prev, gapAnalysis: gap }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1035,7 +1175,7 @@ export const CourseRepositoryModule = () => {
         mappings={courseState.coPoMapping}
         coverage={courseState.poCoverage}
         data={courseState.revisedMapping}
-        onUpdate={(revised) => setCourseState((prev) => ({ ...prev, revisedMapping: revised }))}
+        onUpdate={revised => setCourseState(prev => ({ ...prev, revisedMapping: revised }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1047,7 +1187,9 @@ export const CourseRepositoryModule = () => {
         outcomes={courseState.courseOutcomes}
         mappings={courseState.coPsoMapping}
         coverage={courseState.psoCoverage}
-        onUpdate={(mappings, coverage) => setCourseState((prev) => ({ ...prev, coPsoMapping: mappings, psoCoverage: coverage }))}
+        onUpdate={(mappings, coverage) =>
+          setCourseState(prev => ({ ...prev, coPsoMapping: mappings, psoCoverage: coverage }))
+        }
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1058,7 +1200,7 @@ export const CourseRepositoryModule = () => {
       <Step9_AssessmentBlueprint
         outcomes={courseState.courseOutcomes}
         data={courseState.assessmentBlueprint}
-        onUpdate={(bp) => setCourseState((prev) => ({ ...prev, assessmentBlueprint: bp }))}
+        onUpdate={bp => setCourseState(prev => ({ ...prev, assessmentBlueprint: bp }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
@@ -1071,14 +1213,14 @@ export const CourseRepositoryModule = () => {
         data={courseState.marksUploads}
         courseDetails={courseState.details}
         academicYear={selectedAcademicYear}
-        onUpdate={(marks) => setCourseState((prev) => ({ ...prev, marksUploads: marks }))}
+        onUpdate={marks => setCourseState(prev => ({ ...prev, marksUploads: marks }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
         completionPercentage={courseState.completionPercentages['marks-upload']}
       />
     ),
-    'attainment': (
+    attainment: (
       <Step11_AttainmentDashboard
         outcomes={courseState.courseOutcomes}
         marks={courseState.marksUploads}
@@ -1086,14 +1228,14 @@ export const CourseRepositoryModule = () => {
         coPoMappings={courseState.coPoMapping}
         coPsoMappings={courseState.coPsoMapping}
         data={courseState.attainmentResult}
-        onUpdate={(result) => setCourseState((prev) => ({ ...prev, attainmentResult: result }))}
+        onUpdate={result => setCourseState(prev => ({ ...prev, attainmentResult: result }))}
         onSave={handleSave}
         onNext={goNext}
         onPrev={goPrev}
         completionPercentage={courseState.completionPercentages['attainment']}
       />
     ),
-    'reports': (
+    reports: (
       <Step12_Reports
         state={courseState}
         onSave={handleSave}
@@ -1125,7 +1267,8 @@ export const CourseRepositoryModule = () => {
               {courseState.details.courseName || 'New Course'}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {courseState.details.courseCode || 'No Code'} • {courseState.details.semester || 'No Semester'} • {DEPARTMENTS[0]}
+              {courseState.details.courseCode || 'No Code'} •{' '}
+              {courseState.details.semester || 'No Semester'} • {DEPARTMENTS[0]}
             </p>
           </div>
         </div>
@@ -1150,14 +1293,14 @@ export const CourseRepositoryModule = () => {
             Workflow Steps
           </p>
           <Badge variant="outline" className="text-[9px]">
-            Step {workflowSteps.find((s) => s.status === 'current')?.stepNumber || 1} of 12
+            Step {workflowSteps.find(s => s.status === 'current')?.stepNumber || 1} of 12
           </Badge>
         </div>
         <ProgressStepper
           steps={workflowSteps}
           currentStepId={courseState.currentStep}
-          onStepClick={(stepId) => {
-            const step = workflowSteps.find((s) => s.id === stepId);
+          onStepClick={stepId => {
+            const step = workflowSteps.find(s => s.id === stepId);
             if (step && step.status !== 'pending') goToStep(stepId);
           }}
         />

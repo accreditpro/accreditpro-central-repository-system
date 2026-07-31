@@ -80,7 +80,9 @@ export function InstitutionOverview() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Students</p>
-                    <p className="text-lg font-bold">{institutionStats.students.toLocaleString()}</p>
+                    <p className="text-lg font-bold">
+                      {institutionStats.students.toLocaleString()}
+                    </p>
                     <p className="text-[10px] text-muted-foreground">Enrolled</p>
                   </div>
                 </div>
@@ -109,7 +111,9 @@ export function InstitutionOverview() {
                   <div>
                     <p className="text-xs text-muted-foreground">Publications</p>
                     <p className="text-lg font-bold">{institutionStats.researchPublications}</p>
-                    <p className="text-[10px] text-muted-foreground">{institutionStats.patents} Patents</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {institutionStats.patents} Patents
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -123,7 +127,9 @@ export function InstitutionOverview() {
                   <div>
                     <p className="text-xs text-muted-foreground">Placement Rate</p>
                     <p className="text-lg font-bold">{institutionStats.placementRate}%</p>
-                    <p className="text-[10px] text-muted-foreground">{institutionStats.recruiters} Recruiters</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {institutionStats.recruiters} Recruiters
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -214,28 +220,55 @@ export function InstitutionOverview() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">Department</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Repository</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Evidence</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Faculty</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Students</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Research</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Placements</th>
-                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">Health</th>
+                      <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+                        Department
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Repository
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Evidence
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Faculty
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Students
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Research
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Placements
+                      </th>
+                      <th className="text-center py-2 px-2 font-medium text-muted-foreground">
+                        Health
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {departmentScores.map((dept) => (
+                    {departmentScores.map(dept => (
                       <tr key={dept.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="py-2 px-2 font-medium">{dept.code}</td>
                         <td className="text-center py-2 px-2">{dept.repository}%</td>
                         <td className="text-center py-2 px-2">{dept.evidence}%</td>
-                        <td className="text-center py-2 px-2">{Math.round(dept.repository * 0.95)}%</td>
-                        <td className="text-center py-2 px-2">{Math.round(dept.evidence * 1.02)}%</td>
-                        <td className="text-center py-2 px-2">{Math.round(dept.verification * 0.9)}%</td>
-                        <td className="text-center py-2 px-2">{Math.round(dept.readiness * 0.92)}%</td>
                         <td className="text-center py-2 px-2">
-                          <Badge variant="outline" className={`text-[9px] ${dept.health === 'excellent' ? 'border-green-500 text-green-600' : dept.health === 'good' ? 'border-blue-500 text-blue-600' : dept.health === 'warning' ? 'border-yellow-500 text-yellow-600' : 'border-red-500 text-red-600'}`}>
+                          {Math.round(dept.repository * 0.95)}%
+                        </td>
+                        <td className="text-center py-2 px-2">
+                          {Math.round(dept.evidence * 1.02)}%
+                        </td>
+                        <td className="text-center py-2 px-2">
+                          {Math.round(dept.verification * 0.9)}%
+                        </td>
+                        <td className="text-center py-2 px-2">
+                          {Math.round(dept.readiness * 0.92)}%
+                        </td>
+                        <td className="text-center py-2 px-2">
+                          <Badge
+                            variant="outline"
+                            className={`text-[9px] ${dept.health === 'excellent' ? 'border-green-500 text-green-600' : dept.health === 'good' ? 'border-blue-500 text-blue-600' : dept.health === 'warning' ? 'border-yellow-500 text-yellow-600' : 'border-red-500 text-red-600'}`}
+                          >
                             {dept.health}
                           </Badge>
                         </td>
@@ -260,8 +293,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={(fiveYearTrends.students[idx] / 5000) * 100} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-12 text-right">{fiveYearTrends.students[idx].toLocaleString()}</span>
+                      <Progress
+                        value={(fiveYearTrends.students[idx] / 5000) * 100}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-12 text-right">
+                        {fiveYearTrends.students[idx].toLocaleString()}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -278,8 +316,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={(fiveYearTrends.faculty[idx] / 350) * 100} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-8 text-right">{fiveYearTrends.faculty[idx]}</span>
+                      <Progress
+                        value={(fiveYearTrends.faculty[idx] / 350) * 100}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-8 text-right">
+                        {fiveYearTrends.faculty[idx]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -296,8 +339,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={(fiveYearTrends.publications[idx] / 500) * 100} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-8 text-right">{fiveYearTrends.publications[idx]}</span>
+                      <Progress
+                        value={(fiveYearTrends.publications[idx] / 500) * 100}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-8 text-right">
+                        {fiveYearTrends.publications[idx]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -314,8 +362,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={fiveYearTrends.placements[idx]} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-8 text-right">{fiveYearTrends.placements[idx]}%</span>
+                      <Progress
+                        value={fiveYearTrends.placements[idx]}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-8 text-right">
+                        {fiveYearTrends.placements[idx]}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -332,8 +385,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={fiveYearTrends.passPercentage[idx]} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-8 text-right">{fiveYearTrends.passPercentage[idx]}%</span>
+                      <Progress
+                        value={fiveYearTrends.passPercentage[idx]}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-8 text-right">
+                        {fiveYearTrends.passPercentage[idx]}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -350,8 +408,13 @@ export function InstitutionOverview() {
                   {fiveYearTrends.years.map((year, idx) => (
                     <div key={year} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16">{year}</span>
-                      <Progress value={(fiveYearTrends.revenue[idx] / 140) * 100} className="h-2 flex-1 mx-2" />
-                      <span className="text-xs font-medium w-8 text-right">{fiveYearTrends.revenue[idx]}</span>
+                      <Progress
+                        value={(fiveYearTrends.revenue[idx] / 140) * 100}
+                        className="h-2 flex-1 mx-2"
+                      />
+                      <span className="text-xs font-medium w-8 text-right">
+                        {fiveYearTrends.revenue[idx]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -367,7 +430,7 @@ export function InstitutionOverview() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {departmentScores.map((dept) => (
+                {departmentScores.map(dept => (
                   <div key={dept.id} className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium">{dept.name}</span>

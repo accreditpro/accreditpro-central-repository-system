@@ -102,7 +102,9 @@ const Login = () => {
 
       <Card className="border-0 shadow-none lg:border lg:shadow-xl lg:shadow-black/5">
         <CardHeader className="space-y-2 px-0 lg:px-8 lg:pt-8">
-          <CardTitle className="text-2xl font-bold tracking-tight">Sign in to your account</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Sign in to your account
+          </CardTitle>
           <CardDescription className="text-base">
             Enter your credentials to access the accreditation platform
           </CardDescription>
@@ -197,7 +199,7 @@ const Login = () => {
               <Checkbox
                 id="remember"
                 checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                onCheckedChange={checked => setRememberMe(checked === true)}
                 disabled={isLoading || loginState === 'success'}
               />
               <Label

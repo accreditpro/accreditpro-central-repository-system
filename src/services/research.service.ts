@@ -71,10 +71,7 @@ class ResearchService {
     departmentId: number,
     data: CreatePublicationRequest
   ): Promise<PublicationResponse> {
-    return apiService.post<PublicationResponse>(
-      `${this.baseUrl(departmentId)}/publications`,
-      data
-    );
+    return apiService.post<PublicationResponse>(`${this.baseUrl(departmentId)}/publications`, data);
   }
 
   // ── Section 6.4: UPDATE Publication ──
@@ -128,10 +125,7 @@ class ResearchService {
 
   // ── Section 6.8: CREATE Patent ──
 
-  async createPatent(
-    departmentId: number,
-    data: CreatePatentRequest
-  ): Promise<PatentResponse> {
+  async createPatent(departmentId: number, data: CreatePatentRequest): Promise<PatentResponse> {
     return apiService.post<PatentResponse>(`${this.baseUrl(departmentId)}/patents`, data);
   }
 
@@ -177,10 +171,7 @@ class ResearchService {
 
   // ── Section 6.13: CREATE Grant ──
 
-  async createGrant(
-    departmentId: number,
-    data: CreateGrantRequest
-  ): Promise<GrantResponse> {
+  async createGrant(departmentId: number, data: CreateGrantRequest): Promise<GrantResponse> {
     return apiService.post<GrantResponse>(`${this.baseUrl(departmentId)}/grants`, data);
   }
 
@@ -221,7 +212,9 @@ class ResearchService {
   // ── Section 6.17: GET Sponsored Project by ID ──
 
   async getSponsoredProject(departmentId: number, id: number): Promise<SponsoredProjectResponse> {
-    return apiService.get<SponsoredProjectResponse>(`${this.baseUrl(departmentId)}/sponsored-projects/${id}`);
+    return apiService.get<SponsoredProjectResponse>(
+      `${this.baseUrl(departmentId)}/sponsored-projects/${id}`
+    );
   }
 
   // ── Section 6.18: CREATE Sponsored Project ──
@@ -230,7 +223,10 @@ class ResearchService {
     departmentId: number,
     data: CreateSponsoredProjectRequest
   ): Promise<SponsoredProjectResponse> {
-    return apiService.post<SponsoredProjectResponse>(`${this.baseUrl(departmentId)}/sponsored-projects`, data);
+    return apiService.post<SponsoredProjectResponse>(
+      `${this.baseUrl(departmentId)}/sponsored-projects`,
+      data
+    );
   }
 
   // ── Section 6.19: UPDATE Sponsored Project ──
@@ -240,7 +236,10 @@ class ResearchService {
     id: number,
     data: UpdateSponsoredProjectRequest
   ): Promise<SponsoredProjectResponse> {
-    return apiService.put<SponsoredProjectResponse>(`${this.baseUrl(departmentId)}/sponsored-projects/${id}`, data);
+    return apiService.put<SponsoredProjectResponse>(
+      `${this.baseUrl(departmentId)}/sponsored-projects/${id}`,
+      data
+    );
   }
 
   // ── Section 6.20: DELETE Sponsored Project ──
@@ -289,7 +288,10 @@ class ResearchService {
     id: number,
     data: UpdateConsultancyRequest
   ): Promise<ConsultancyResponse> {
-    return apiService.put<ConsultancyResponse>(`${this.baseUrl(departmentId)}/consultancy/${id}`, data);
+    return apiService.put<ConsultancyResponse>(
+      `${this.baseUrl(departmentId)}/consultancy/${id}`,
+      data
+    );
   }
 
   // ── Section 6.25: DELETE Consultancy ──

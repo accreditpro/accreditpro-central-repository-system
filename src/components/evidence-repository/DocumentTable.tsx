@@ -9,15 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Eye,
-  Upload,
-  RefreshCw,
-  Download,
-  History,
-  FileText,
-  AlertCircle,
-} from 'lucide-react';
+import { Eye, Upload, RefreshCw, Download, History, FileText, AlertCircle } from 'lucide-react';
 import {
   EvidenceFolder,
   EvidenceDocument,
@@ -62,7 +54,9 @@ export function DocumentTable({ folder, searchQuery, activeFilter }: DocumentTab
         docs = docs.filter(d => !d.mandatory);
         break;
       case 'uploaded':
-        docs = docs.filter(d => d.status === 'uploaded' || d.status === 'submitted' || d.status === 'approved');
+        docs = docs.filter(
+          d => d.status === 'uploaded' || d.status === 'submitted' || d.status === 'approved'
+        );
         break;
       case 'pending':
         docs = docs.filter(d => d.status === 'not_uploaded');
@@ -149,11 +143,7 @@ export function DocumentTable({ folder, searchQuery, activeFilter }: DocumentTab
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {doc.frameworks.map(fw => (
-                        <Badge
-                          key={fw}
-                          variant="secondary"
-                          className="text-[9px] px-1.5 py-0"
-                        >
+                        <Badge key={fw} variant="secondary" className="text-[9px] px-1.5 py-0">
                           {fw}
                         </Badge>
                       ))}
@@ -182,12 +172,7 @@ export function DocumentTable({ folder, searchQuery, activeFilter }: DocumentTab
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Download"
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Download">
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                           <Button
@@ -220,11 +205,7 @@ export function DocumentTable({ folder, searchQuery, activeFilter }: DocumentTab
       </div>
 
       {/* Upload Dialog */}
-      <UploadDialog
-        document={uploadDoc}
-        open={!!uploadDoc}
-        onClose={() => setUploadDoc(null)}
-      />
+      <UploadDialog document={uploadDoc} open={!!uploadDoc} onClose={() => setUploadDoc(null)} />
 
       {/* Preview Drawer */}
       <PreviewDrawer

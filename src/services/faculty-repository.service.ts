@@ -255,10 +255,7 @@ export async function downloadProfessionPracticeTemplate(
 
 // ─── 5.1 Professional Memberships ────────────────────────────────────────────
 
-export async function getMemberships(
-  academicYear: string,
-  departmentId: number
-): Promise<any> {
+export async function getMemberships(academicYear: string, departmentId: number): Promise<any> {
   const query = qs({ academicYear, departmentId, size: 500 });
   return apiService.get<any>(`${BASE}/professional-development/memberships?${query}`);
 }
@@ -372,10 +369,7 @@ export async function uploadFDPParticipationsCSV(
 // GET/POST/DELETE → resource-persons
 // PUT/upload-csv  → faculty-resource-person (DIFFERENT PREFIX!)
 
-export async function getResourcePersons(
-  academicYear: string,
-  departmentId: number
-): Promise<any> {
+export async function getResourcePersons(academicYear: string, departmentId: number): Promise<any> {
   const query = qs({ academicYear, departmentId, size: 500 });
   return apiService.get<any>(`${BASE}/professional-development/resource-persons?${query}`);
 }
@@ -409,9 +403,7 @@ export async function deleteResourcePerson(
   departmentId: number
 ): Promise<any> {
   const query = qs({ academicYear, departmentId });
-  return apiService.delete<any>(
-    `${BASE}/professional-development/resource-persons/${id}?${query}`
-  );
+  return apiService.delete<any>(`${BASE}/professional-development/resource-persons/${id}?${query}`);
 }
 
 export async function uploadResourcePersonsCSV(
@@ -434,10 +426,7 @@ export async function uploadResourcePersonsCSV(
 // GET/POST/DELETE → moocs
 // PUT/upload-csv  → moocs-certification (DIFFERENT SUFFIX!)
 
-export async function getMOOCs(
-  academicYear: string,
-  departmentId: number
-): Promise<any> {
+export async function getMOOCs(academicYear: string, departmentId: number): Promise<any> {
   const query = qs({ academicYear, departmentId, size: 500 });
   return apiService.get<any>(`${BASE}/professional-development/moocs?${query}`);
 }
@@ -528,9 +517,7 @@ export async function deleteDeptOrganizedProgram(
   departmentId: number
 ): Promise<any> {
   const query = qs({ academicYear, departmentId });
-  return apiService.delete<any>(
-    `${BASE}/professional-development/dept-organized/${id}?${query}`
-  );
+  return apiService.delete<any>(`${BASE}/professional-development/dept-organized/${id}?${query}`);
 }
 
 export async function uploadDeptOrganizedCSV(
@@ -639,7 +626,7 @@ export async function uploadFacultyEvidenceDocument(
   form.append('departmentId', String(data.departmentId));
   form.append('academicYear', data.academicYear);
   form.append('uploadedBy', data.uploadedBy);
-  
+
   return apiService.post<any>(`${FACULTY_EVIDENCE_BASE}/${facultyId}/upload`, form);
 }
 
@@ -653,7 +640,10 @@ export async function downloadFacultyEvidenceDocumentVersion(
   versionId: string | number,
   fileName: string
 ): Promise<void> {
-  await apiService.download(`${FACULTY_EVIDENCE_BASE}/documents/versions/${versionId}/download`, fileName);
+  await apiService.download(
+    `${FACULTY_EVIDENCE_BASE}/documents/versions/${versionId}/download`,
+    fileName
+  );
 }
 
 export async function getFacultyEvidenceActivity(

@@ -46,10 +46,7 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
       // apiService.post already unwraps ApiResponse<LoginResponseData>
-      const data = await apiService.post<LoginResponseData>(
-        '/auth/login',
-        credentials
-      );
+      const data = await apiService.post<LoginResponseData>('/auth/login', credentials);
 
       // Extract user (without token fields) and tokens separately
       const { accessToken, refreshToken, tokenType, ...userFields } = data;

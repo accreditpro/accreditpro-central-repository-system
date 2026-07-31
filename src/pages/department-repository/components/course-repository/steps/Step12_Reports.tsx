@@ -7,12 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-import {
-  CourseState,
-  NBA_POS,
-  NBA_PSOS,
-  BLOOMS_TAXONOMY_LEVELS,
-} from '../types';
+import { CourseState, NBA_POS, NBA_PSOS, BLOOMS_TAXONOMY_LEVELS } from '../types';
 import { cn } from '@/lib/utils';
 import {
   FileText,
@@ -88,21 +83,21 @@ function generateCourseFileReport(state: CourseState): { rows: string[]; filenam
     rows.push('');
     rows.push('"Units"');
     rows.push('"Unit","Title","Topics","Hours"');
-    state.courseFile.units.forEach((u) => {
+    state.courseFile.units.forEach(u => {
       rows.push(`"${u.id}","${u.title}","${u.topics.join('; ')}",${u.hours}`);
     });
 
     rows.push('');
     rows.push('"Textbooks"');
     rows.push('"Title","Author","Edition","Publisher"');
-    state.courseFile.textBooks.forEach((b) => {
+    state.courseFile.textBooks.forEach(b => {
       rows.push(`"${b.title}","${b.author}","${b.edition || ''}","${b.publisher || ''}"`);
     });
 
     rows.push('');
     rows.push('"Reference Books"');
     rows.push('"Title","Author","Edition","Publisher"');
-    state.courseFile.referenceBooks.forEach((b) => {
+    state.courseFile.referenceBooks.forEach(b => {
       rows.push(`"${b.title}","${b.author}","${b.edition || ''}","${b.publisher || ''}"`);
     });
   }
@@ -114,10 +109,12 @@ function generateCourseFileReport(state: CourseState): { rows: string[]; filenam
 function generateCOReport(state: CourseState): { rows: string[]; filename: string } {
   const rows: string[] = [];
   rows.push('"Course Outcomes Report"');
-  rows.push(`"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`);
+  rows.push(
+    `"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`
+  );
   rows.push('');
   rows.push('"CO Code","Description","Bloom\'s Taxonomy Level"');
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     rows.push(`"${co.code}","${co.description}","${co.bloomsLevel}"`);
   });
   return { rows, filename: `course_outcomes_${state.details.courseCode}.csv` };
@@ -125,9 +122,9 @@ function generateCOReport(state: CourseState): { rows: string[]; filename: strin
 
 // ---- 3. Bloom's Distribution Report ----
 function generateBloomReport(state: CourseState): { rows: string[]; filename: string } {
-  const distribution = BLOOMS_TAXONOMY_LEVELS.map((level) => ({
+  const distribution = BLOOMS_TAXONOMY_LEVELS.map(level => ({
     level,
-    count: state.courseOutcomes.filter((co) => co.bloomsLevel === level).length,
+    count: state.courseOutcomes.filter(co => co.bloomsLevel === level).length,
   }));
 
   const rows: string[] = [];
@@ -136,7 +133,7 @@ function generateBloomReport(state: CourseState): { rows: string[]; filename: st
   rows.push('');
   rows.push('"Bloom\'s Level","Count","Percentage"');
   const total = state.courseOutcomes.length || 1;
-  distribution.forEach((d) => {
+  distribution.forEach(d => {
     const pct = Math.round((d.count / total) * 100);
     rows.push(`"${d.level}",${d.count},${pct}%`);
   });
@@ -147,18 +144,20 @@ function generateBloomReport(state: CourseState): { rows: string[]; filename: st
 function generateCOPOMatrixReport(state: CourseState): { rows: string[]; filename: string } {
   const rows: string[] = [];
   rows.push('"CO-PO Articulation Matrix Report"');
-  rows.push(`"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`);
+  rows.push(
+    `"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`
+  );
   rows.push('');
 
   // Header row: CO | PO1 ... PO11
-  const header = ['"CO Code"', ...NBA_POS.map((po) => `"${po.code}"`)];
+  const header = ['"CO Code"', ...NBA_POS.map(po => `"${po.code}"`)];
   rows.push(header.join(','));
 
   // Data rows
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     const row: string[] = [`"${co.code}"`];
-    NBA_POS.forEach((po) => {
-      const mapping = state.coPoMapping.find((m) => m.coId === co.id && m.poId === po.id);
+    NBA_POS.forEach(po => {
+      const mapping = state.coPoMapping.find(m => m.coId === co.id && m.poId === po.id);
       row.push(mapping ? mapping.level.toString() : '-');
     });
     rows.push(row.join(','));
@@ -168,9 +167,9 @@ function generateCOPOMatrixReport(state: CourseState): { rows: string[]; filenam
   rows.push('');
   rows.push('"Justifications"');
   rows.push('"CO","PO","Level","Justification"');
-  state.coPoMapping.forEach((m) => {
-    const co = state.courseOutcomes.find((c) => c.id === m.coId);
-    const po = NBA_POS.find((p) => p.id === m.poId);
+  state.coPoMapping.forEach(m => {
+    const co = state.courseOutcomes.find(c => c.id === m.coId);
+    const po = NBA_POS.find(p => p.id === m.poId);
     rows.push(`"${co?.code || m.coId}","${po?.code || m.poId}",${m.level},"${m.justification}"`);
   });
 
@@ -179,8 +178,10 @@ function generateCOPOMatrixReport(state: CourseState): { rows: string[]; filenam
     rows.push('');
     rows.push('"Coverage Analysis"');
     rows.push('"PO","Coverage %","Avg Level","Mapped COs"');
-    state.poCoverage.forEach((pc) => {
-      rows.push(`"${pc.poCode}",${pc.coveragePercentage}%,${pc.avgLevel},"${pc.mappedCOs.join(', ')}"`);
+    state.poCoverage.forEach(pc => {
+      rows.push(
+        `"${pc.poCode}",${pc.coveragePercentage}%,${pc.avgLevel},"${pc.mappedCOs.join(', ')}"`
+      );
     });
   }
 
@@ -191,16 +192,18 @@ function generateCOPOMatrixReport(state: CourseState): { rows: string[]; filenam
 function generateCOPSOMatrixReport(state: CourseState): { rows: string[]; filename: string } {
   const rows: string[] = [];
   rows.push('"CO-PSO Articulation Matrix Report"');
-  rows.push(`"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`);
+  rows.push(
+    `"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`
+  );
   rows.push('');
 
-  const header = ['"CO Code"', ...NBA_PSOS.map((pso) => `"${pso.code}"`)];
+  const header = ['"CO Code"', ...NBA_PSOS.map(pso => `"${pso.code}"`)];
   rows.push(header.join(','));
 
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     const row: string[] = [`"${co.code}"`];
-    NBA_PSOS.forEach((pso) => {
-      const mapping = state.coPsoMapping.find((m) => m.coId === co.id && m.psoId === pso.id);
+    NBA_PSOS.forEach(pso => {
+      const mapping = state.coPsoMapping.find(m => m.coId === co.id && m.psoId === pso.id);
       row.push(mapping ? mapping.level.toString() : '-');
     });
     rows.push(row.join(','));
@@ -209,9 +212,9 @@ function generateCOPSOMatrixReport(state: CourseState): { rows: string[]; filena
   rows.push('');
   rows.push('"Justifications"');
   rows.push('"CO","PSO","Level","Justification"');
-  state.coPsoMapping.forEach((m) => {
-    const co = state.courseOutcomes.find((c) => c.id === m.coId);
-    const pso = NBA_PSOS.find((p) => p.id === m.psoId);
+  state.coPsoMapping.forEach(m => {
+    const co = state.courseOutcomes.find(c => c.id === m.coId);
+    const pso = NBA_PSOS.find(p => p.id === m.psoId);
     rows.push(`"${co?.code || m.coId}","${pso?.code || m.psoId}",${m.level},"${m.justification}"`);
   });
 
@@ -234,7 +237,7 @@ function generateGapAnalysisReport(state: CourseState): { rows: string[]; filena
   if (gap.weakPOs.length > 0) {
     rows.push('"Weak POs"');
     rows.push('"PO","Reason","Recommendation","Expected Improvement"');
-    gap.weakPOs.forEach((w) => {
+    gap.weakPOs.forEach(w => {
       rows.push(`"${w.poCode}","${w.reason}","${w.recommendation}","${w.expectedImprovement}"`);
     });
   }
@@ -243,7 +246,7 @@ function generateGapAnalysisReport(state: CourseState): { rows: string[]; filena
     rows.push('');
     rows.push('"Missing POs"');
     rows.push('"PO","Reason","Recommendation","Expected Improvement"');
-    gap.missingPOs.forEach((m) => {
+    gap.missingPOs.forEach(m => {
       rows.push(`"${m.poCode}","${m.reason}","${m.recommendation}","${m.expectedImprovement}"`);
     });
   }
@@ -252,8 +255,10 @@ function generateGapAnalysisReport(state: CourseState): { rows: string[]; filena
     rows.push('');
     rows.push('"Activity Recommendations"');
     rows.push('"Type","Title","Description","Duration","Mapped PO","Mapped CO"');
-    gap.recommendations.forEach((r) => {
-      rows.push(`"${r.activityType}","${r.title}","${r.description}","${r.duration}","${r.mappedPO}","${r.mappedCO}"`);
+    gap.recommendations.forEach(r => {
+      rows.push(
+        `"${r.activityType}","${r.title}","${r.description}","${r.duration}","${r.mappedPO}","${r.mappedCO}"`
+      );
     });
   }
 
@@ -264,7 +269,9 @@ function generateGapAnalysisReport(state: CourseState): { rows: string[]; filena
 function generateBlueprintReport(state: CourseState): { rows: string[]; filename: string } {
   const rows: string[] = [];
   rows.push('"Assessment Blueprint Report"');
-  rows.push(`"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`);
+  rows.push(
+    `"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`
+  );
   rows.push('');
 
   if (!state.assessmentBlueprint) {
@@ -272,10 +279,10 @@ function generateBlueprintReport(state: CourseState): { rows: string[]; filename
     return { rows, filename: `assessment_blueprint_${state.details.courseCode}.csv` };
   }
 
-  state.assessmentBlueprint.assessments.forEach((assessment) => {
+  state.assessmentBlueprint.assessments.forEach(assessment => {
     rows.push(`"Assessment: ${assessment.name}","Weightage: ${assessment.weightage}%"`);
     rows.push('"Q. No","Mapped CO","Max Marks"');
-    assessment.questions.forEach((q) => {
+    assessment.questions.forEach(q => {
       rows.push(`"${q.questionNumber}","${q.mappedCO}",${q.maxMarks}`);
     });
     const total = assessment.questions.reduce((s, q) => s + q.maxMarks, 0);
@@ -290,7 +297,9 @@ function generateBlueprintReport(state: CourseState): { rows: string[]; filename
 function generateCOAttainmentReport(state: CourseState): { rows: string[]; filename: string } {
   const rows: string[] = [];
   rows.push('"CO Attainment Report"');
-  rows.push(`"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`);
+  rows.push(
+    `"Course Code","${state.details.courseCode}","Course Name","${state.details.courseName}"`
+  );
   rows.push('');
 
   if (!state.attainmentResult) {
@@ -299,8 +308,10 @@ function generateCOAttainmentReport(state: CourseState): { rows: string[]; filen
   }
 
   rows.push('"CO Code","Average Marks","Threshold","Attainment %","Target %","Status"');
-  state.attainmentResult.coAttainments.forEach((co) => {
-    rows.push(`"${co.coCode}",${co.averageMarks},${co.threshold},${co.attainment},${co.target},"${co.status}"`);
+  state.attainmentResult.coAttainments.forEach(co => {
+    rows.push(
+      `"${co.coCode}",${co.averageMarks},${co.threshold},${co.attainment},${co.target},"${co.status}"`
+    );
   });
 
   // Per-assessment contribution
@@ -310,10 +321,10 @@ function generateCOAttainmentReport(state: CourseState): { rows: string[]; filen
     rows.push('"CO","Assessment","Avg %","Students Above Threshold"');
     for (const co of state.courseOutcomes) {
       for (const assessment of state.assessmentBlueprint.assessments) {
-        const upload = state.marksUploads.find((m) => m.assessmentId === assessment.id);
+        const upload = state.marksUploads.find(m => m.assessmentId === assessment.id);
         if (!upload || upload.studentMarks.length === 0) continue;
 
-        const coQuestions = assessment.questions.filter((q) => q.mappedCO === co.code);
+        const coQuestions = assessment.questions.filter(q => q.mappedCO === co.code);
         if (coQuestions.length === 0) continue;
 
         const maxForCO = coQuestions.reduce((s, q) => s + q.maxMarks, 0);
@@ -331,7 +342,9 @@ function generateCOAttainmentReport(state: CourseState): { rows: string[]; filen
           if (pct >= (upload.threshold || 60)) aboveThreshold++;
         }
         const avgPct = Math.round((totalPct / upload.studentMarks.length) * 10) / 10;
-        rows.push(`"${co.code}","${assessment.name}",${avgPct}%,${aboveThreshold}/${upload.studentMarks.length}`);
+        rows.push(
+          `"${co.code}","${assessment.name}",${avgPct}%,${aboveThreshold}/${upload.studentMarks.length}`
+        );
       }
     }
   }
@@ -353,7 +366,9 @@ function generatePOAttainmentReport(state: CourseState): { rows: string[]; filen
 
   rows.push('"PO Code","Description","COs Mapped","Attainment %","Target %","Status"');
   state.attainmentResult.poAttainments.forEach((po, idx) => {
-    rows.push(`"${po.poCode}","${NBA_POS[idx]?.shortName || ''}",${po.contribution},${po.attainment},${po.target},"${po.status}"`);
+    rows.push(
+      `"${po.poCode}","${NBA_POS[idx]?.shortName || ''}",${po.contribution},${po.attainment},${po.target},"${po.status}"`
+    );
   });
 
   return { rows, filename: `po_attainment_${state.details.courseCode}.csv` };
@@ -373,7 +388,9 @@ function generatePSOAttainmentReport(state: CourseState): { rows: string[]; file
 
   rows.push('"PSO Code","Description","COs Mapped","Attainment %","Target %","Status"');
   state.attainmentResult.psoAttainments.forEach((pso, idx) => {
-    rows.push(`"${pso.poCode}","${NBA_PSOS[idx]?.description || ''}",${pso.contribution},${pso.attainment},${pso.target},"${pso.status}"`);
+    rows.push(
+      `"${pso.poCode}","${NBA_PSOS[idx]?.description || ''}",${pso.contribution},${pso.attainment},${pso.target},"${pso.status}"`
+    );
   });
 
   return { rows, filename: `pso_attainment_${state.details.courseCode}.csv` };
@@ -389,26 +406,30 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
   rows.push(`"Generated","${new Date().toLocaleDateString()}"`);
   rows.push('');
   rows.push('"=== SECTION 1: COURSE INFORMATION ==="');
-  rows.push('"Course Code","Course Name","Faculty","Department","Program","Regulation","Semester","Credits"');
-  rows.push(`"${d.courseCode}","${d.courseName}","${d.facultyName}","${d.department}","${d.program}","${d.regulation}","${d.semester}",${d.credits}`);
+  rows.push(
+    '"Course Code","Course Name","Faculty","Department","Program","Regulation","Semester","Credits"'
+  );
+  rows.push(
+    `"${d.courseCode}","${d.courseName}","${d.facultyName}","${d.department}","${d.program}","${d.regulation}","${d.semester}",${d.credits}`
+  );
   rows.push('');
 
   // COs
   rows.push('"=== SECTION 2: COURSE OUTCOMES ==="');
   rows.push('"CO","Description","Bloom\'s Level"');
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     rows.push(`"${co.code}","${co.description}","${co.bloomsLevel}"`);
   });
   rows.push('');
 
   // CO-PO Matrix
   rows.push('"=== SECTION 3: CO-PO ARTICULATION MATRIX ==="');
-  const coPoHeader = ['"CO"', ...NBA_POS.map((p) => `"${p.code}"`)];
+  const coPoHeader = ['"CO"', ...NBA_POS.map(p => `"${p.code}"`)];
   rows.push(coPoHeader.join(','));
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     const row = [`"${co.code}"`];
-    NBA_POS.forEach((po) => {
-      const m = state.coPoMapping.find((x) => x.coId === co.id && x.poId === po.id);
+    NBA_POS.forEach(po => {
+      const m = state.coPoMapping.find(x => x.coId === co.id && x.poId === po.id);
       row.push(m ? m.level.toString() : '0');
     });
     rows.push(row.join(','));
@@ -417,12 +438,12 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
 
   // CO-PSO Matrix
   rows.push('"=== SECTION 4: CO-PSO ARTICULATION MATRIX ==="');
-  const coPsoHeader = ['"CO"', ...NBA_PSOS.map((p) => `"${p.code}"`)];
+  const coPsoHeader = ['"CO"', ...NBA_PSOS.map(p => `"${p.code}"`)];
   rows.push(coPsoHeader.join(','));
-  state.courseOutcomes.forEach((co) => {
+  state.courseOutcomes.forEach(co => {
     const row = [`"${co.code}"`];
-    NBA_PSOS.forEach((pso) => {
-      const m = state.coPsoMapping.find((x) => x.coId === co.id && x.psoId === pso.id);
+    NBA_PSOS.forEach(pso => {
+      const m = state.coPsoMapping.find(x => x.coId === co.id && x.psoId === pso.id);
       row.push(m ? m.level.toString() : '0');
     });
     rows.push(row.join(','));
@@ -435,7 +456,7 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
     for (const a of state.assessmentBlueprint.assessments) {
       rows.push(`"Assessment: ${a.name}","Weightage: ${a.weightage}%"`);
       rows.push('"Q. No","CO","Max Marks"');
-      a.questions.forEach((q) => rows.push(`"${q.questionNumber}","${q.mappedCO}",${q.maxMarks}`));
+      a.questions.forEach(q => rows.push(`"${q.questionNumber}","${q.mappedCO}",${q.maxMarks}`));
       rows.push('');
     }
   }
@@ -445,7 +466,7 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
     rows.push('"=== SECTION 6: ATTAINMENT ==="');
     rows.push('"CO Attainment"');
     rows.push('"CO","Attainment %","Target","Status"');
-    state.attainmentResult.coAttainments.forEach((c) => {
+    state.attainmentResult.coAttainments.forEach(c => {
       rows.push(`"${c.coCode}",${c.attainment},${c.target},"${c.status}"`);
     });
     rows.push('');
@@ -457,7 +478,7 @@ function generateNBAReport(state: CourseState): { rows: string[]; filename: stri
     rows.push('');
     rows.push('"PSO Attainment"');
     rows.push('"PSO","Attainment %","COs Mapped","Status"');
-    state.attainmentResult.psoAttainments.forEach((p) => {
+    state.attainmentResult.psoAttainments.forEach(p => {
       rows.push(`"${p.poCode}",${p.attainment},${p.contribution},"${p.status}"`);
     });
   }
@@ -479,7 +500,12 @@ interface ReportCard {
   generate: () => { rows: string[]; filename: string } | null;
 }
 
-export default function Step12_Reports({ state, onSave, onPrev, completionPercentage }: Step12Props) {
+export default function Step12_Reports({
+  state,
+  onSave,
+  onPrev,
+  completionPercentage,
+}: Step12Props) {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [previewReport, setPreviewReport] = useState<string | null>(null);
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
@@ -494,105 +520,156 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
   const hasCOPOMapping = state.coPoMapping.length > 0;
   const hasCOPSOMapping = state.coPsoMapping.length > 0;
 
-  const reports: ReportCard[] = useMemo(() => [
-    {
-      id: 'course-file', title: 'Course File', icon: BookOpen,
-      description: 'Course details, objectives, units, textbooks & references',
-      color: 'from-blue-500 to-blue-600', available: hasCourseFile,
-      generate: () => generateCourseFileReport(state),
-    },
-    {
-      id: 'course-outcomes', title: 'Course Outcomes', icon: Target,
-      description: 'List of COs with Bloom\'s Taxonomy levels',
-      color: 'from-emerald-500 to-emerald-600', available: hasCOs,
-      generate: () => generateCOReport(state),
-    },
-    {
-      id: 'bloom-mapping', title: 'Bloom\'s Distribution', icon: BarChart3,
-      description: 'Distribution of Bloom\'s Taxonomy across COs',
-      color: 'from-teal-500 to-teal-600', available: hasCOs,
-      generate: () => generateBloomReport(state),
-    },
-    {
-      id: 'co-po-matrix', title: 'CO-PO Matrix', icon: GitBranch,
-      description: 'CO-PO articulation matrix with justifications & coverage',
-      color: 'from-indigo-500 to-indigo-600', available: hasCOPOMapping,
-      generate: () => generateCOPOMatrixReport(state),
-    },
-    {
-      id: 'co-pso-matrix', title: 'CO-PSO Matrix', icon: GitFork,
-      description: 'CO-PSO articulation matrix with justifications',
-      color: 'from-purple-500 to-purple-600', available: hasCOPSOMapping,
-      generate: () => generateCOPSOMatrixReport(state),
-    },
-    {
-      id: 'gap-analysis', title: 'Gap Analysis', icon: Search,
-      description: 'PO gap analysis with recommendations & activities',
-      color: 'from-amber-500 to-amber-600', available: hasGap,
-      generate: () => generateGapAnalysisReport(state),
-    },
-    {
-      id: 'assessment-blueprint', title: 'Assessment Blueprint', icon: ClipboardList,
-      description: 'Assessment structure with question-CO mappings & weightages',
-      color: 'from-rose-500 to-rose-600', available: hasBlueprint,
-      generate: () => generateBlueprintReport(state),
-    },
-    {
-      id: 'co-attainment', title: 'CO Attainment', icon: BarChart3,
-      description: 'Course Outcome attainment with per-assessment breakdown',
-      color: 'from-emerald-500 to-emerald-600', available: hasAttainment,
-      generate: () => generateCOAttainmentReport(state),
-    },
-    {
-      id: 'po-attainment', title: 'PO Attainment', icon: GitBranch,
-      description: 'Program Outcome attainment derived from CO data',
-      color: 'from-blue-500 to-blue-600', available: hasAttainment,
-      generate: () => generatePOAttainmentReport(state),
-    },
-    {
-      id: 'pso-attainment', title: 'PSO Attainment', icon: GitFork,
-      description: 'Program Specific Outcome attainment',
-      color: 'from-purple-500 to-purple-600', available: hasAttainment,
-      generate: () => generatePSOAttainmentReport(state),
-    },
-    {
-      id: 'nba-course', title: 'NBA Course Report', icon: Award,
-      description: 'Complete NBA-ready consolidated report (all sections)',
-      color: 'from-red-500 to-red-600', available: true,
-      generate: () => generateNBAReport(state),
-    },
-  ], [state, hasCourseFile, hasCOs, hasCOPOMapping, hasCOPSOMapping, hasGap, hasBlueprint, hasAttainment]);
+  const reports: ReportCard[] = useMemo(
+    () => [
+      {
+        id: 'course-file',
+        title: 'Course File',
+        icon: BookOpen,
+        description: 'Course details, objectives, units, textbooks & references',
+        color: 'from-blue-500 to-blue-600',
+        available: hasCourseFile,
+        generate: () => generateCourseFileReport(state),
+      },
+      {
+        id: 'course-outcomes',
+        title: 'Course Outcomes',
+        icon: Target,
+        description: "List of COs with Bloom's Taxonomy levels",
+        color: 'from-emerald-500 to-emerald-600',
+        available: hasCOs,
+        generate: () => generateCOReport(state),
+      },
+      {
+        id: 'bloom-mapping',
+        title: "Bloom's Distribution",
+        icon: BarChart3,
+        description: "Distribution of Bloom's Taxonomy across COs",
+        color: 'from-teal-500 to-teal-600',
+        available: hasCOs,
+        generate: () => generateBloomReport(state),
+      },
+      {
+        id: 'co-po-matrix',
+        title: 'CO-PO Matrix',
+        icon: GitBranch,
+        description: 'CO-PO articulation matrix with justifications & coverage',
+        color: 'from-indigo-500 to-indigo-600',
+        available: hasCOPOMapping,
+        generate: () => generateCOPOMatrixReport(state),
+      },
+      {
+        id: 'co-pso-matrix',
+        title: 'CO-PSO Matrix',
+        icon: GitFork,
+        description: 'CO-PSO articulation matrix with justifications',
+        color: 'from-purple-500 to-purple-600',
+        available: hasCOPSOMapping,
+        generate: () => generateCOPSOMatrixReport(state),
+      },
+      {
+        id: 'gap-analysis',
+        title: 'Gap Analysis',
+        icon: Search,
+        description: 'PO gap analysis with recommendations & activities',
+        color: 'from-amber-500 to-amber-600',
+        available: hasGap,
+        generate: () => generateGapAnalysisReport(state),
+      },
+      {
+        id: 'assessment-blueprint',
+        title: 'Assessment Blueprint',
+        icon: ClipboardList,
+        description: 'Assessment structure with question-CO mappings & weightages',
+        color: 'from-rose-500 to-rose-600',
+        available: hasBlueprint,
+        generate: () => generateBlueprintReport(state),
+      },
+      {
+        id: 'co-attainment',
+        title: 'CO Attainment',
+        icon: BarChart3,
+        description: 'Course Outcome attainment with per-assessment breakdown',
+        color: 'from-emerald-500 to-emerald-600',
+        available: hasAttainment,
+        generate: () => generateCOAttainmentReport(state),
+      },
+      {
+        id: 'po-attainment',
+        title: 'PO Attainment',
+        icon: GitBranch,
+        description: 'Program Outcome attainment derived from CO data',
+        color: 'from-blue-500 to-blue-600',
+        available: hasAttainment,
+        generate: () => generatePOAttainmentReport(state),
+      },
+      {
+        id: 'pso-attainment',
+        title: 'PSO Attainment',
+        icon: GitFork,
+        description: 'Program Specific Outcome attainment',
+        color: 'from-purple-500 to-purple-600',
+        available: hasAttainment,
+        generate: () => generatePSOAttainmentReport(state),
+      },
+      {
+        id: 'nba-course',
+        title: 'NBA Course Report',
+        icon: Award,
+        description: 'Complete NBA-ready consolidated report (all sections)',
+        color: 'from-red-500 to-red-600',
+        available: true,
+        generate: () => generateNBAReport(state),
+      },
+    ],
+    [
+      state,
+      hasCourseFile,
+      hasCOs,
+      hasCOPOMapping,
+      hasCOPSOMapping,
+      hasGap,
+      hasBlueprint,
+      hasAttainment,
+    ]
+  );
 
-  const handleDownload = useCallback((reportId: string) => {
-    const report = reports.find((r) => r.id === reportId);
-    if (!report || !report.available) return;
+  const handleDownload = useCallback(
+    (reportId: string) => {
+      const report = reports.find(r => r.id === reportId);
+      if (!report || !report.available) return;
 
-    setGenerating(reportId);
-    setTimeout(() => {
-      const result = report.generate?.();
-      if (result) {
-        downloadCSV(result.filename, result.rows);
-        setDownloadMsg(`✅ ${report.title} downloaded`);
-        setTimeout(() => setDownloadMsg(null), 3000);
-      }
-      setGenerating(null);
-    }, 200);
-  }, [reports]);
+      setGenerating(reportId);
+      setTimeout(() => {
+        const result = report.generate?.();
+        if (result) {
+          downloadCSV(result.filename, result.rows);
+          setDownloadMsg(`✅ ${report.title} downloaded`);
+          setTimeout(() => setDownloadMsg(null), 3000);
+        }
+        setGenerating(null);
+      }, 200);
+    },
+    [reports]
+  );
 
-  const handlePreview = useCallback((reportId: string) => {
-    setPreviewReport(previewReport === reportId ? null : reportId);
-  }, [previewReport]);
+  const handlePreview = useCallback(
+    (reportId: string) => {
+      setPreviewReport(previewReport === reportId ? null : reportId);
+    },
+    [previewReport]
+  );
 
   // Get preview rows for the selected report
   const previewRows = useMemo(() => {
     if (!previewReport) return null;
-    const report = reports.find((r) => r.id === previewReport);
+    const report = reports.find(r => r.id === previewReport);
     if (!report || !report.available) return null;
     const result = report.generate?.();
     return result?.rows.slice(0, 50) ?? null; // Limit preview to 50 lines
   }, [previewReport, reports]);
 
-  const completedCount = reports.filter((r) => r.available).length;
+  const completedCount = reports.filter(r => r.available).length;
   const totalReports = reports.length;
 
   return (
@@ -608,7 +685,9 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+          <Badge variant="outline" className="text-xs">
+            {completionPercentage}% Complete
+          </Badge>
           <Badge className="bg-indigo-500/10 text-indigo-600 text-[10px]">
             {completedCount}/{totalReports} Reports Ready
           </Badge>
@@ -619,7 +698,11 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
       {/* Download status */}
       <AnimatePresence>
         {downloadMsg && (
-          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+          >
             <Card className="border-emerald-500/30 bg-emerald-500/5">
               <CardContent className="p-3 flex items-center gap-2 text-xs text-emerald-700">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -635,7 +718,9 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
         <CardContent className="p-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-medium text-muted-foreground">Report Readiness</span>
-            <span className="text-[10px] font-bold">{Math.round((completedCount / totalReports) * 100)}%</span>
+            <span className="text-[10px] font-bold">
+              {Math.round((completedCount / totalReports) * 100)}%
+            </span>
           </div>
           <Progress value={(completedCount / totalReports) * 100} className="h-1.5" />
         </CardContent>
@@ -643,7 +728,7 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
 
       {/* Report Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {reports.map((report) => {
+        {reports.map(report => {
           const Icon = report.icon;
           const isGenerating = generating === report.id;
           const isPreviewOpen = previewReport === report.id;
@@ -656,17 +741,19 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
                 className={cn(
                   'w-full relative p-4 rounded-xl border text-left transition-all',
                   report.available
-                    ? (isPreviewOpen
+                    ? isPreviewOpen
                       ? 'border-indigo-500/30 bg-indigo-500/5 ring-2 ring-indigo-500/20'
-                      : 'border-border/50 hover:border-indigo-500/30 hover:bg-indigo-500/5 cursor-pointer')
-                    : 'border-dashed border-border/30 bg-muted/10 cursor-not-allowed opacity-60',
+                      : 'border-border/50 hover:border-indigo-500/30 hover:bg-indigo-500/5 cursor-pointer'
+                    : 'border-dashed border-border/30 bg-muted/10 cursor-not-allowed opacity-60'
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <div className={cn(
-                    'h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0',
-                    report.color
-                  )}>
+                  <div
+                    className={cn(
+                      'h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0',
+                      report.color
+                    )}
+                  >
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
@@ -682,7 +769,10 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
                     size="sm"
                     className="h-7 text-[10px] gap-1 text-indigo-600"
                     disabled={!report.available}
-                    onClick={(e) => { e.stopPropagation(); handleDownload(report.id); }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDownload(report.id);
+                    }}
                   >
                     {isGenerating ? (
                       <span className="animate-pulse">...</span>
@@ -694,8 +784,14 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={cn('h-7 text-[10px] gap-1', isPreviewOpen ? 'text-indigo-600' : 'text-muted-foreground')}
-                    onClick={(e) => { e.stopPropagation(); handlePreview(report.id); }}
+                    className={cn(
+                      'h-7 text-[10px] gap-1',
+                      isPreviewOpen ? 'text-indigo-600' : 'text-muted-foreground'
+                    )}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handlePreview(report.id);
+                    }}
                     disabled={!report.available}
                   >
                     <Eye className="h-3 w-3" />
@@ -705,7 +801,10 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
                     variant="ghost"
                     size="sm"
                     className="h-7 text-[10px] gap-1 text-purple-600"
-                    onClick={(e) => { e.stopPropagation(); window.print(); }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      window.print();
+                    }}
                     disabled={!report.available}
                   >
                     <Printer className="h-3 w-3" />
@@ -715,7 +814,9 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
 
                 {!report.available && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/50 backdrop-blur-[1px]">
-                    <p className="text-[9px] text-muted-foreground font-medium">Complete previous steps</p>
+                    <p className="text-[9px] text-muted-foreground font-medium">
+                      Complete previous steps
+                    </p>
                   </div>
                 )}
               </button>
@@ -764,8 +865,8 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
             <div>
               <p className="text-sm font-bold">NBA Course Report (Complete)</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Consolidated report with all 6 sections: Course Info, COs, CO-PO Matrix, CO-PSO Matrix,
-                Assessment Blueprint, and Attainment
+                Consolidated report with all 6 sections: Course Info, COs, CO-PO Matrix, CO-PSO
+                Matrix, Assessment Blueprint, and Attainment
               </p>
             </div>
           </div>
@@ -800,8 +901,16 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
             <SummaryItem label="Program" value={d.program || '—'} color="text-blue-600" />
             <SummaryItem label="Semester" value={d.semester || '—'} color="text-amber-600" />
             <SummaryItem label="Credits" value={String(d.credits || '—')} color="text-purple-600" />
-            <SummaryItem label="COs" value={String(state.courseOutcomes.length)} color="text-emerald-600" />
-            <SummaryItem label="Assessments" value={String(state.assessmentBlueprint?.assessments.length || 0)} color="text-rose-600" />
+            <SummaryItem
+              label="COs"
+              value={String(state.courseOutcomes.length)}
+              color="text-emerald-600"
+            />
+            <SummaryItem
+              label="Assessments"
+              value={String(state.assessmentBlueprint?.assessments.length || 0)}
+              color="text-rose-600"
+            />
           </div>
 
           <Separator className="my-3" />
@@ -844,7 +953,9 @@ export default function Step12_Reports({ state, onSave, onPrev, completionPercen
 function SummaryItem({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="text-center p-2 rounded-lg border border-border/30 bg-card/50">
-      <p className="text-[18px] font-bold mb-0.5"><span className={color}>{value}</span></p>
+      <p className="text-[18px] font-bold mb-0.5">
+        <span className={color}>{value}</span>
+      </p>
       <p className="text-[9px] text-muted-foreground">{label}</p>
     </div>
   );
@@ -852,16 +963,20 @@ function SummaryItem({ label, value, color }: { label: string; value: string; co
 
 function ChecklistItem({ label, done }: { label: string; done: boolean }) {
   return (
-    <div className={cn(
-      'flex items-center gap-1.5 px-2 py-1 rounded text-[9px]',
-      done ? 'bg-emerald-500/5' : 'bg-muted/20'
-    )}>
+    <div
+      className={cn(
+        'flex items-center gap-1.5 px-2 py-1 rounded text-[9px]',
+        done ? 'bg-emerald-500/5' : 'bg-muted/20'
+      )}
+    >
       {done ? (
         <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
       ) : (
         <AlertCircle className="h-3 w-3 text-muted-foreground/50 shrink-0" />
       )}
-      <span className={done ? 'text-emerald-700 font-medium' : 'text-muted-foreground'}>{label}</span>
+      <span className={done ? 'text-emerald-700 font-medium' : 'text-muted-foreground'}>
+        {label}
+      </span>
     </div>
   );
 }

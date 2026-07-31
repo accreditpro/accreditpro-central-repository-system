@@ -131,27 +131,30 @@ export const FacultyEmploymentTab = () => {
 
   // ── Fetch employment when faculty changes ──
 
-  const fetchEmployment = useCallback(async (facultyId: number) => {
-    if (!departmentId || !facultyId) return;
-    setEmpLoading(true);
-    setEmpError(null);
-    setEmployment(null);
-    try {
-      const result = await facultyService.getEmployment(departmentId, facultyId);
-      setEmployment(result);
-    } catch (err: unknown) {
-      // 404 means no employment record yet — that's okay
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
-        setEmployment(null);
-      } else {
-        setEmpError(msg || 'Failed to load employment information');
-        toast.error(msg || 'Failed to load employment information');
+  const fetchEmployment = useCallback(
+    async (facultyId: number) => {
+      if (!departmentId || !facultyId) return;
+      setEmpLoading(true);
+      setEmpError(null);
+      setEmployment(null);
+      try {
+        const result = await facultyService.getEmployment(departmentId, facultyId);
+        setEmployment(result);
+      } catch (err: unknown) {
+        // 404 means no employment record yet — that's okay
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+          setEmployment(null);
+        } else {
+          setEmpError(msg || 'Failed to load employment information');
+          toast.error(msg || 'Failed to load employment information');
+        }
+      } finally {
+        setEmpLoading(false);
       }
-    } finally {
-      setEmpLoading(false);
-    }
-  }, [departmentId]);
+    },
+    [departmentId]
+  );
 
   const handleFacultyChange = (facultyIdStr: string) => {
     const fid = parseInt(facultyIdStr, 10);
@@ -178,9 +181,12 @@ export const FacultyEmploymentTab = () => {
     );
   };
 
-  const filteredEmployment = employment && employmentMatchesSearch(employment, searchQuery)
-    ? employment
-    : searchQuery && employment ? null : employment;
+  const filteredEmployment =
+    employment && employmentMatchesSearch(employment, searchQuery)
+      ? employment
+      : searchQuery && employment
+        ? null
+        : employment;
 
   // ── Open form dialog (Add or Edit) ──
 
@@ -194,7 +200,7 @@ export const FacultyEmploymentTab = () => {
     if (!employment) return;
     setIsEditing(true);
     const displayType = employment.employmentType
-      ? (EMPLOYMENT_TYPE_MAP[employment.employmentType] || employment.employmentType)
+      ? EMPLOYMENT_TYPE_MAP[employment.employmentType] || employment.employmentType
       : '';
     setFormData({
       employmentType: displayType || undefined,
@@ -229,9 +235,17 @@ export const FacultyEmploymentTab = () => {
         industryExperienceYears: formData.industryExperienceYears ?? undefined,
         aicteFacultyId: formData.aicteFacultyId || undefined,
       };
-      const result = await facultyService.updateEmployment(departmentId, selectedFacultyId, payload);
+      const result = await facultyService.updateEmployment(
+        departmentId,
+        selectedFacultyId,
+        payload
+      );
       setEmployment(result);
-      toast.success(isEditing ? 'Employment information updated successfully' : 'Employment information added successfully');
+      toast.success(
+        isEditing
+          ? 'Employment information updated successfully'
+          : 'Employment information added successfully'
+      );
       setFormDialogOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save employment information';
@@ -254,15 +268,7 @@ export const FacultyEmploymentTab = () => {
       'AICTE Faculty ID',
     ];
 
-    const sampleRow = [
-      'Regular',
-      'Full-Time',
-      '2010-07-01',
-      '2005-08-15',
-      '18',
-      '2',
-      'AICTE-001',
-    ];
+    const sampleRow = ['Regular', 'Full-Time', '2010-07-01', '2005-08-15', '18', '2', 'AICTE-001'];
 
     const csvContent = `\ufeff${headers.join(',')}\n${sampleRow.join(',')}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -279,7 +285,7 @@ export const FacultyEmploymentTab = () => {
   // ── Format helpers ──
 
   const formatEmploymentType = (val: string | null | undefined): string =>
-    val ? (EMPLOYMENT_TYPE_MAP[val] || val) : '-';
+    val ? EMPLOYMENT_TYPE_MAP[val] || val : '-';
 
   // ── Render ──
 
@@ -323,10 +329,12 @@ export const FacultyEmploymentTab = () => {
                 onValueChange={handleFacultyChange}
               >
                 <SelectTrigger className="h-9 text-xs pl-8">
-                  <SelectValue placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'} />
+                  <SelectValue
+                    placeholder={facultyLoading ? 'Loading faculty...' : 'Select a faculty member'}
+                  />
                 </SelectTrigger>
                 <SelectContent className="max-h-[240px]">
-                  {facultyList.map((f) => (
+                  {facultyList.map(f => (
                     <SelectItem key={f.id} value={String(f.id)} className="text-xs">
                       {f.employeeId} — {f.facultyName}
                     </SelectItem>
@@ -348,7 +356,7 @@ export const FacultyEmploymentTab = () => {
                     className="h-9 text-xs pl-8"
                     placeholder="Search fields..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
                 {employment ? (
@@ -360,15 +368,32 @@ export const FacultyEmploymentTab = () => {
                     <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1" /> Download Template
                 </Button>
                 {employment && (
-                  <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Delete API not available yet">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8"
+                    disabled
+                    title="Delete API not available yet"
+                  >
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1" /> Upload CSV
                 </Button>
                 <Button
@@ -414,12 +439,22 @@ export const FacultyEmploymentTab = () => {
                   <TableRow className="bg-muted/40">
                     <TableHead className="text-[10px] font-semibold">Employment Type</TableHead>
                     <TableHead className="text-[10px] font-semibold">Faculty Category</TableHead>
-                    <TableHead className="text-[10px] font-semibold">Date of Joining Institution</TableHead>
-                    <TableHead className="text-[10px] font-semibold">Date of Joining Profession</TableHead>
-                    <TableHead className="text-[10px] font-semibold">Total Experience (Years)</TableHead>
-                    <TableHead className="text-[10px] font-semibold">Industry Experience (Years)</TableHead>
+                    <TableHead className="text-[10px] font-semibold">
+                      Date of Joining Institution
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold">
+                      Date of Joining Profession
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold">
+                      Total Experience (Years)
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold">
+                      Industry Experience (Years)
+                    </TableHead>
                     <TableHead className="text-[10px] font-semibold">AICTE Faculty ID</TableHead>
-                    <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                    <TableHead className="text-[10px] font-semibold text-center w-16">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -460,7 +495,9 @@ export const FacultyEmploymentTab = () => {
                       <TableCell colSpan={8} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <Briefcase className="h-8 w-8 opacity-40" />
-                          <p className="text-xs">No employment record found for this faculty member.</p>
+                          <p className="text-xs">
+                            No employment record found for this faculty member.
+                          </p>
                           <Button size="sm" className="text-xs" onClick={openAddDialog}>
                             <Plus className="h-3.5 w-3.5 mr-1" /> Add Employment Record
                           </Button>
@@ -476,7 +513,12 @@ export const FacultyEmploymentTab = () => {
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <Search className="h-8 w-8 opacity-40" />
                           <p className="text-xs">No fields match your search.</p>
-                          <Button variant="outline" size="sm" className="text-xs" onClick={() => setSearchQuery('')}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => setSearchQuery('')}
+                          >
                             Clear Search
                           </Button>
                         </div>
@@ -563,14 +605,18 @@ export const FacultyEmploymentTab = () => {
                 <Label className="text-xs font-medium">Employment Type</Label>
                 <Select
                   value={formData.employmentType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, employmentType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, employmentType: v || undefined }))
+                  }
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
                     {EMPLOYMENT_TYPE_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -579,14 +625,18 @@ export const FacultyEmploymentTab = () => {
                 <Label className="text-xs font-medium">Faculty Category</Label>
                 <Select
                   value={formData.facultyCategory || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, facultyCategory: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, facultyCategory: v || undefined }))
+                  }
                 >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {FACULTY_CATEGORY_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -599,7 +649,9 @@ export const FacultyEmploymentTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.dateOfJoiningInstitution}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfJoiningInstitution: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, dateOfJoiningInstitution: e.target.value }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
@@ -608,7 +660,9 @@ export const FacultyEmploymentTab = () => {
                   className="h-9 text-xs"
                   type="date"
                   value={formData.dateOfJoiningProfession || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfJoiningProfession: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, dateOfJoiningProfession: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -620,10 +674,14 @@ export const FacultyEmploymentTab = () => {
                   type="number"
                   placeholder="e.g. 18"
                   value={formData.totalExperienceYears ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    totalExperienceYears: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      totalExperienceYears: e.target.value
+                        ? parseInt(e.target.value, 10)
+                        : undefined,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-1.5">
@@ -633,10 +691,14 @@ export const FacultyEmploymentTab = () => {
                   type="number"
                   placeholder="e.g. 2"
                   value={formData.industryExperienceYears ?? ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    industryExperienceYears: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      industryExperienceYears: e.target.value
+                        ? parseInt(e.target.value, 10)
+                        : undefined,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -646,12 +708,17 @@ export const FacultyEmploymentTab = () => {
                 className="h-9 text-xs"
                 placeholder="e.g. AICTE-001"
                 value={formData.aicteFacultyId || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, aicteFacultyId: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, aicteFacultyId: e.target.value }))}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setFormDialogOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setFormDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button

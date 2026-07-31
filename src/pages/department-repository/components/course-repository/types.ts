@@ -1,7 +1,8 @@
 // Course Repository Type Definitions
 // Outcome Based Education (OBE) Workflow
 
-export type BloomsTaxonomyLevel = 'Remember' | 'Understand' | 'Apply' | 'Analyze' | 'Evaluate' | 'Create';
+export type BloomsTaxonomyLevel =
+  'Remember' | 'Understand' | 'Apply' | 'Analyze' | 'Evaluate' | 'Create';
 
 export const BLOOMS_TAXONOMY_LEVELS: BloomsTaxonomyLevel[] = [
   'Remember',
@@ -87,17 +88,83 @@ export interface PO {
 }
 
 export const NBA_POS: PO[] = [
-  { id: 'po1', code: 'PO1', shortName: 'Engineering Knowledge', description: 'Apply knowledge of mathematics, natural sciences, engineering fundamentals, and an engineering specialization to develop solutions for complex engineering problems.' },
-  { id: 'po2', code: 'PO2', shortName: 'Problem Analysis', description: 'Identify, formulate, review research literature, and analyze complex engineering problems using first principles of mathematics, natural sciences, and engineering sciences.' },
-  { id: 'po3', code: 'PO3', shortName: 'Design/Development of Solutions', description: 'Design creative solutions for complex engineering problems and develop systems, components, or processes that meet specified needs while considering health, safety, culture, society, and sustainability.' },
-  { id: 'po4', code: 'PO4', shortName: 'Conduct Investigations of Complex Problems', description: 'Conduct investigations using research methods including experiments, data analysis, interpretation, and synthesis to reach valid conclusions.' },
-  { id: 'po5', code: 'PO5', shortName: 'Engineering Tool Usage', description: 'Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools for modeling, prediction, and engineering activities while understanding their limitations.' },
-  { id: 'po6', code: 'PO6', shortName: 'The Engineer and the World', description: 'Analyze and evaluate sustainable development impacts, societal, health, safety, legal, cultural, and environmental responsibilities in engineering practice, and make informed judgments.' },
-  { id: 'po7', code: 'PO7', shortName: 'Ethics', description: 'Apply ethical principles and commit to professional ethics, responsibilities, inclusivity, diversity, equity, and norms of engineering practice.' },
-  { id: 'po8', code: 'PO8', shortName: 'Individual and Collaborative Team Work', description: 'Function effectively as an individual and as a member or leader in diverse and multidisciplinary teams.' },
-  { id: 'po9', code: 'PO9', shortName: 'Communication', description: 'Communicate effectively with engineering communities and society through reports, presentations, documentation, and clear technical discussions.' },
-  { id: 'po10', code: 'PO10', shortName: 'Project Management and Finance', description: 'Apply engineering and management principles to manage projects effectively while considering financial and economic aspects as an individual and team member.' },
-  { id: 'po11', code: 'PO11', shortName: 'Life-long Learning', description: 'Recognize the need for and engage in independent, lifelong learning to adapt to technological and societal changes.' },
+  {
+    id: 'po1',
+    code: 'PO1',
+    shortName: 'Engineering Knowledge',
+    description:
+      'Apply knowledge of mathematics, natural sciences, engineering fundamentals, and an engineering specialization to develop solutions for complex engineering problems.',
+  },
+  {
+    id: 'po2',
+    code: 'PO2',
+    shortName: 'Problem Analysis',
+    description:
+      'Identify, formulate, review research literature, and analyze complex engineering problems using first principles of mathematics, natural sciences, and engineering sciences.',
+  },
+  {
+    id: 'po3',
+    code: 'PO3',
+    shortName: 'Design/Development of Solutions',
+    description:
+      'Design creative solutions for complex engineering problems and develop systems, components, or processes that meet specified needs while considering health, safety, culture, society, and sustainability.',
+  },
+  {
+    id: 'po4',
+    code: 'PO4',
+    shortName: 'Conduct Investigations of Complex Problems',
+    description:
+      'Conduct investigations using research methods including experiments, data analysis, interpretation, and synthesis to reach valid conclusions.',
+  },
+  {
+    id: 'po5',
+    code: 'PO5',
+    shortName: 'Engineering Tool Usage',
+    description:
+      'Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools for modeling, prediction, and engineering activities while understanding their limitations.',
+  },
+  {
+    id: 'po6',
+    code: 'PO6',
+    shortName: 'The Engineer and the World',
+    description:
+      'Analyze and evaluate sustainable development impacts, societal, health, safety, legal, cultural, and environmental responsibilities in engineering practice, and make informed judgments.',
+  },
+  {
+    id: 'po7',
+    code: 'PO7',
+    shortName: 'Ethics',
+    description:
+      'Apply ethical principles and commit to professional ethics, responsibilities, inclusivity, diversity, equity, and norms of engineering practice.',
+  },
+  {
+    id: 'po8',
+    code: 'PO8',
+    shortName: 'Individual and Collaborative Team Work',
+    description:
+      'Function effectively as an individual and as a member or leader in diverse and multidisciplinary teams.',
+  },
+  {
+    id: 'po9',
+    code: 'PO9',
+    shortName: 'Communication',
+    description:
+      'Communicate effectively with engineering communities and society through reports, presentations, documentation, and clear technical discussions.',
+  },
+  {
+    id: 'po10',
+    code: 'PO10',
+    shortName: 'Project Management and Finance',
+    description:
+      'Apply engineering and management principles to manage projects effectively while considering financial and economic aspects as an individual and team member.',
+  },
+  {
+    id: 'po11',
+    code: 'PO11',
+    shortName: 'Life-long Learning',
+    description:
+      'Recognize the need for and engage in independent, lifelong learning to adapt to technological and societal changes.',
+  },
 ];
 
 // PSO (Program Specific Outcome)
@@ -108,8 +175,18 @@ export interface PSO {
 }
 
 export const NBA_PSOS: PSO[] = [
-  { id: 'pso1', code: 'PSO1', description: 'Apply computing and domain knowledge to solve real-world problems using appropriate tools and techniques' },
-  { id: 'pso2', code: 'PSO2', description: 'Design and develop innovative solutions, products, and services using cutting-edge technologies' },
+  {
+    id: 'pso1',
+    code: 'PSO1',
+    description:
+      'Apply computing and domain knowledge to solve real-world problems using appropriate tools and techniques',
+  },
+  {
+    id: 'pso2',
+    code: 'PSO2',
+    description:
+      'Design and develop innovative solutions, products, and services using cutting-edge technologies',
+  },
 ];
 
 export type MappingLevel = 0 | 1 | 2 | 3;
@@ -162,7 +239,15 @@ export interface POAnalysis {
 
 export interface ActivityRecommendation {
   id: string;
-  activityType: 'Seminar' | 'Workshop' | 'Hands-on Session' | 'Assignment' | 'Mini Project' | 'Case Study' | 'Guest Lecture' | 'Industry Visit';
+  activityType:
+    | 'Seminar'
+    | 'Workshop'
+    | 'Hands-on Session'
+    | 'Assignment'
+    | 'Mini Project'
+    | 'Case Study'
+    | 'Guest Lecture'
+    | 'Industry Visit';
   title: string;
   description: string;
   duration: string;
@@ -273,16 +358,70 @@ export interface WorkflowStepInfo {
 }
 
 export const WORKFLOW_STEPS: WorkflowStepInfo[] = [
-  { id: 'course-details', label: 'Course Details', stepNumber: 1, icon: 'FileText', status: 'pending' },
-  { id: 'upload-course-file', label: 'Upload Course File', stepNumber: 2, icon: 'Upload', status: 'pending' },
-  { id: 'ai-course-analysis', label: 'AI Course Analysis', stepNumber: 3, icon: 'Brain', status: 'pending' },
-  { id: 'course-outcomes', label: 'Course Outcomes', stepNumber: 4, icon: 'Target', status: 'pending' },
-  { id: 'co-po-mapping', label: 'CO-PO Mapping', stepNumber: 5, icon: 'GitBranch', status: 'pending' },
+  {
+    id: 'course-details',
+    label: 'Course Details',
+    stepNumber: 1,
+    icon: 'FileText',
+    status: 'pending',
+  },
+  {
+    id: 'upload-course-file',
+    label: 'Upload Course File',
+    stepNumber: 2,
+    icon: 'Upload',
+    status: 'pending',
+  },
+  {
+    id: 'ai-course-analysis',
+    label: 'AI Course Analysis',
+    stepNumber: 3,
+    icon: 'Brain',
+    status: 'pending',
+  },
+  {
+    id: 'course-outcomes',
+    label: 'Course Outcomes',
+    stepNumber: 4,
+    icon: 'Target',
+    status: 'pending',
+  },
+  {
+    id: 'co-po-mapping',
+    label: 'CO-PO Mapping',
+    stepNumber: 5,
+    icon: 'GitBranch',
+    status: 'pending',
+  },
   { id: 'gap-analysis', label: 'Gap Analysis', stepNumber: 6, icon: 'Search', status: 'pending' },
-  { id: 'revised-co-po-mapping', label: 'Revised CO-PO', stepNumber: 7, icon: 'RefreshCw', status: 'pending' },
-  { id: 'co-pso-mapping', label: 'CO-PSO Mapping', stepNumber: 8, icon: 'GitFork', status: 'pending' },
-  { id: 'assessment-blueprint', label: 'Assessment Blueprint', stepNumber: 9, icon: 'ClipboardList', status: 'pending' },
-  { id: 'marks-upload', label: 'Marks Upload', stepNumber: 10, icon: 'FileSpreadsheet', status: 'pending' },
+  {
+    id: 'revised-co-po-mapping',
+    label: 'Revised CO-PO',
+    stepNumber: 7,
+    icon: 'RefreshCw',
+    status: 'pending',
+  },
+  {
+    id: 'co-pso-mapping',
+    label: 'CO-PSO Mapping',
+    stepNumber: 8,
+    icon: 'GitFork',
+    status: 'pending',
+  },
+  {
+    id: 'assessment-blueprint',
+    label: 'Assessment Blueprint',
+    stepNumber: 9,
+    icon: 'ClipboardList',
+    status: 'pending',
+  },
+  {
+    id: 'marks-upload',
+    label: 'Marks Upload',
+    stepNumber: 10,
+    icon: 'FileSpreadsheet',
+    status: 'pending',
+  },
   { id: 'attainment', label: 'Attainment', stepNumber: 11, icon: 'BarChart3', status: 'pending' },
   { id: 'reports', label: 'Reports', stepNumber: 12, icon: 'FileText', status: 'pending' },
 ];

@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, PerformanceResponse, CreatePerformanceRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  PerformanceResponse,
+  CreatePerformanceRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,8 +100,9 @@ export const StudentPerformanceTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         if (result.content.length === 1) {
           setSelectedStudentId(result.content[0].id);
@@ -112,21 +117,24 @@ export const StudentPerformanceTab = () => {
 
   // ── Fetch performances for selected student ──
 
-  const fetchPerformances = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studentService.listPerformances(departmentId, studentId);
-      setPerformances(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load performances';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchPerformances = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await studentService.listPerformances(departmentId, studentId);
+        setPerformances(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load performances';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -149,7 +157,7 @@ export const StudentPerformanceTab = () => {
   };
 
   const filteredPerformances = searchQuery
-    ? performances.filter((p) => performanceMatchesSearch(p, searchQuery))
+    ? performances.filter(p => performanceMatchesSearch(p, searchQuery))
     : performances;
 
   // ── Create ──
@@ -199,7 +207,12 @@ export const StudentPerformanceTab = () => {
     if (!departmentId || !selectedStudentId || !selectedPerformance) return;
     setSaving(true);
     try {
-      await studentService.updatePerformance(departmentId, selectedStudentId, selectedPerformance.id, formData);
+      await studentService.updatePerformance(
+        departmentId,
+        selectedStudentId,
+        selectedPerformance.id,
+        formData
+      );
       toast.success('Performance record updated successfully');
       setEditDialogOpen(false);
       setSelectedPerformance(null);
@@ -226,16 +239,7 @@ export const StudentPerformanceTab = () => {
       'Graduation Status',
     ];
 
-    const sampleRow = [
-      'REG2025001',
-      '2025-26',
-      '1',
-      '8.50',
-      '8.20',
-      '0',
-      '92.50',
-      'Continuing',
-    ];
+    const sampleRow = ['REG2025001', '2025-26', '1', '8.50', '8.20', '0', '92.50', 'Continuing'];
 
     const csvContent = `\ufeff${headers.join(',')}\n${sampleRow.join(',')}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -291,7 +295,7 @@ export const StudentPerformanceTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -300,7 +304,7 @@ export const StudentPerformanceTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -349,10 +353,21 @@ export const StudentPerformanceTab = () => {
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Performance
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -377,7 +392,7 @@ export const StudentPerformanceTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -403,26 +418,45 @@ export const StudentPerformanceTab = () => {
                       <TableHead className="text-[10px] font-semibold">Backlog Count</TableHead>
                       <TableHead className="text-[10px] font-semibold">Attendance %</TableHead>
                       <TableHead className="text-[10px] font-semibold">Graduation Status</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-10" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-10" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -431,7 +465,14 @@ export const StudentPerformanceTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchPerformances(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() =>
+                                selectedStudentId && fetchPerformances(selectedStudentId)
+                              }
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -456,41 +497,67 @@ export const StudentPerformanceTab = () => {
                     )}
 
                     {/* Data rows */}
-                    {!loading && !error && filteredPerformances.map((p, index) => (
-                      <TableRow key={p.id} className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">{index + 1}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{getAcademicYearLabel(p.academicYearId)}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono font-medium">Sem {p.semester}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{p.sgpa?.toFixed(2) ?? '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{p.cgpa?.toFixed(2) ?? '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'text-[9px]',
-                              p.backlogCount > 0
-                                ? 'bg-red-500/10 text-red-600'
-                                : 'bg-emerald-500/10 text-emerald-600'
-                            )}
-                          >
-                            {p.backlogCount}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">
-                          {p.attendancePercentage != null ? `${p.attendancePercentage.toFixed(1)}%` : '-'}
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className={cn('text-[9px]', p.graduationStatus && getGraduationStatusBadge(p.graduationStatus))}>
-                            {p.graduationStatus || '-'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditDialog(p)} title="Edit">
-                            <Pencil className="h-3 w-3 text-blue-600" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {!loading &&
+                      !error &&
+                      filteredPerformances.map((p, index) => (
+                        <TableRow key={p.id} className="hover:bg-muted/20">
+                          <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {getAcademicYearLabel(p.academicYearId)}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono font-medium">
+                            Sem {p.semester}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {p.sgpa?.toFixed(2) ?? '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {p.cgpa?.toFixed(2) ?? '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'text-[9px]',
+                                p.backlogCount > 0
+                                  ? 'bg-red-500/10 text-red-600'
+                                  : 'bg-emerald-500/10 text-emerald-600'
+                              )}
+                            >
+                              {p.backlogCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {p.attendancePercentage != null
+                              ? `${p.attendancePercentage.toFixed(1)}%`
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[9px]',
+                                p.graduationStatus && getGraduationStatusBadge(p.graduationStatus)
+                              )}
+                            >
+                              {p.graduationStatus || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center p-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              onClick={() => openEditDialog(p)}
+                              title="Edit"
+                            >
+                              <Pencil className="h-3 w-3 text-blue-600" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -507,7 +574,8 @@ export const StudentPerformanceTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Performance Record</DialogTitle>
             <DialogDescription className="text-xs">
-              Fill in the details to add a new academic performance record. Required fields are marked with *.
+              Fill in the details to add a new academic performance record. Required fields are
+              marked with *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
@@ -516,12 +584,16 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Semester *</Label>
                 <Select
                   value={String(formData.semester)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, semester: Number(v) }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, semester: Number(v) }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {SEMESTER_OPTIONS.map((sem) => (
-                      <SelectItem key={sem} value={String(sem)} className="text-xs">Semester {sem}</SelectItem>
+                    {SEMESTER_OPTIONS.map(sem => (
+                      <SelectItem key={sem} value={String(sem)} className="text-xs">
+                        Semester {sem}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -530,12 +602,18 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -544,29 +622,72 @@ export const StudentPerformanceTab = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">SGPA</Label>
-                <Input className="h-9 text-xs" type="number" step="0.01" min="0" max="10" placeholder="e.g. 8.50"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
+                  placeholder="e.g. 8.50"
                   value={formData.sgpa ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sgpa: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      sgpa: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">CGPA</Label>
-                <Input className="h-9 text-xs" type="number" step="0.01" min="0" max="10" placeholder="e.g. 8.20"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
+                  placeholder="e.g. 8.20"
                   value={formData.cgpa ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cgpa: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      cgpa: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Backlog Count</Label>
-                <Input className="h-9 text-xs" type="number" min="0" placeholder="e.g. 0"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 0"
                   value={formData.backlogCount ?? 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, backlogCount: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, backlogCount: Number(e.target.value) }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Attendance Percentage</Label>
-                <Input className="h-9 text-xs" type="number" step="0.1" min="0" max="100" placeholder="e.g. 92.50"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 92.50"
                   value={formData.attendancePercentage ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, attendancePercentage: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      attendancePercentage: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -574,12 +695,18 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Graduation Status</Label>
                 <Select
                   value={formData.graduationStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, graduationStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, graduationStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {GRADUATION_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {GRADUATION_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -587,9 +714,20 @@ export const StudentPerformanceTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.semester}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={saving || !formData.semester}
+            >
               {saving ? 'Adding...' : 'Add Performance'}
             </Button>
           </DialogFooter>
@@ -603,7 +741,9 @@ export const StudentPerformanceTab = () => {
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Performance Record</DialogTitle>
-            <DialogDescription className="text-xs">Update the performance record details.</DialogDescription>
+            <DialogDescription className="text-xs">
+              Update the performance record details.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid grid-cols-2 gap-3">
@@ -611,12 +751,16 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Semester</Label>
                 <Select
                   value={String(formData.semester)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, semester: Number(v) }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, semester: Number(v) }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {SEMESTER_OPTIONS.map((sem) => (
-                      <SelectItem key={sem} value={String(sem)} className="text-xs">Semester {sem}</SelectItem>
+                    {SEMESTER_OPTIONS.map(sem => (
+                      <SelectItem key={sem} value={String(sem)} className="text-xs">
+                        Semester {sem}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -625,12 +769,18 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -639,29 +789,68 @@ export const StudentPerformanceTab = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">SGPA</Label>
-                <Input className="h-9 text-xs" type="number" step="0.01" min="0" max="10"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
                   value={formData.sgpa ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sgpa: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      sgpa: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">CGPA</Label>
-                <Input className="h-9 text-xs" type="number" step="0.01" min="0" max="10"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
                   value={formData.cgpa ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cgpa: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      cgpa: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Backlog Count</Label>
-                <Input className="h-9 text-xs" type="number" min="0"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
                   value={formData.backlogCount ?? 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, backlogCount: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, backlogCount: Number(e.target.value) }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Attendance %</Label>
-                <Input className="h-9 text-xs" type="number" step="0.1" min="0" max="100"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
                   value={formData.attendancePercentage ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, attendancePercentage: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      attendancePercentage: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -669,12 +858,18 @@ export const StudentPerformanceTab = () => {
                 <Label className="text-xs font-medium">Graduation Status</Label>
                 <Select
                   value={formData.graduationStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, graduationStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, graduationStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {GRADUATION_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {GRADUATION_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -682,7 +877,14 @@ export const StudentPerformanceTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>

@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AssessmentBlueprint, Assessment, CourseOutcome } from '../types';
 import { parseCSVLine } from '../utils/csv';
 import { cn } from '@/lib/utils';
@@ -71,21 +77,23 @@ function parseCSVQuestions(text: string): { assessments: Assessment[]; errors: s
   const rows: CSVQuestionRow[] = [];
 
   // Split lines, handling quoted fields with commas
-  const lines = text.split('\n').filter((l) => l.trim());
+  const lines = text.split('\n').filter(l => l.trim());
   if (lines.length < 2) {
     return { assessments: [], errors: ['CSV file is empty or has no data rows'] };
   }
 
   // Parse header
   const headers = parseCSVLine(lines[0]);
-  const nameIdx = headers.findIndex((h) => h.toLowerCase().includes('assessment name'));
-  const sectionIdx = headers.findIndex((h) => h.toLowerCase().includes('section'));
-  const qNoIdx = headers.findIndex((h) => h.toLowerCase().includes('question number'));
-  const typeIdx = headers.findIndex((h) => h.toLowerCase().includes('question type'));
-  const marksIdx = headers.findIndex((h) => h.toLowerCase().includes('max marks'));
-  const coIdx = headers.findIndex((h) => h.toLowerCase().includes('co code') || h.toLowerCase() === 'co');
-  const attemptIdx = headers.findIndex((h) => h.toLowerCase().includes('attempt'));
-  const descIdx = headers.findIndex((h) => h.toLowerCase().includes('description'));
+  const nameIdx = headers.findIndex(h => h.toLowerCase().includes('assessment name'));
+  const sectionIdx = headers.findIndex(h => h.toLowerCase().includes('section'));
+  const qNoIdx = headers.findIndex(h => h.toLowerCase().includes('question number'));
+  const typeIdx = headers.findIndex(h => h.toLowerCase().includes('question type'));
+  const marksIdx = headers.findIndex(h => h.toLowerCase().includes('max marks'));
+  const coIdx = headers.findIndex(
+    h => h.toLowerCase().includes('co code') || h.toLowerCase() === 'co'
+  );
+  const attemptIdx = headers.findIndex(h => h.toLowerCase().includes('attempt'));
+  const descIdx = headers.findIndex(h => h.toLowerCase().includes('description'));
 
   if (nameIdx === -1) errors.push('Missing "Assessment Name" column');
   if (qNoIdx === -1) errors.push('Missing "Question Number" column');
@@ -147,9 +155,21 @@ function parseCSVQuestions(text: string): { assessments: Assessment[]; errors: s
   return { assessments, errors };
 }
 
-export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step9Props) {
+export default function Step9_AssessmentBlueprint({
+  outcomes,
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
+}: Step9Props) {
   const [activeAssessment, setActiveAssessment] = useState<string | null>(null);
-  const [newQuestion, setNewQuestion] = useState({ questionNumber: '', mappedCO: '', maxMarks: 10 });
+  const [newQuestion, setNewQuestion] = useState({
+    questionNumber: '',
+    mappedCO: '',
+    maxMarks: 10,
+  });
   const [csvImportErrors, setCsvImportErrors] = useState<string[]>([]);
   const [csvImportSuccess, setCsvImportSuccess] = useState<string | null>(null);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
@@ -164,7 +184,7 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
     setCsvImportSuccess(null);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = event => {
       const text = event.target?.result as string;
       const { assessments: importedAssessments, errors } = parseCSVQuestions(text);
 
@@ -174,22 +194,24 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
 
       if (importedAssessments.length === 0) {
         if (errors.length === 0) {
-          setCsvImportErrors(['No valid assessment questions found in the CSV. Please check the template format.']);
+          setCsvImportErrors([
+            'No valid assessment questions found in the CSV. Please check the template format.',
+          ]);
         }
         if (csvFileInputRef.current) csvFileInputRef.current.value = '';
         return;
       }
 
       // Merge imported assessments with existing ones (replace if same name)
-      const existingNames = new Set(blueprint.assessments.map((a) => a.name));
-      const newAssessments = importedAssessments.filter((a) => !existingNames.has(a.name));
-      const replaceAssessments = importedAssessments.filter((a) => existingNames.has(a.name));
+      const existingNames = new Set(blueprint.assessments.map(a => a.name));
+      const newAssessments = importedAssessments.filter(a => !existingNames.has(a.name));
+      const replaceAssessments = importedAssessments.filter(a => existingNames.has(a.name));
 
       let merged = [...blueprint.assessments];
 
       // Replace assessments with same name
       for (const replace of replaceAssessments) {
-        merged = merged.map((a) => (a.name === replace.name ? replace : a));
+        merged = merged.map(a => (a.name === replace.name ? replace : a));
       }
 
       // Add new assessments
@@ -202,8 +224,8 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
 
       // Show success summary
       const totalQuestions = importedAssessments.reduce((s, a) => s + a.questions.length, 0);
-      const replacedNames = replaceAssessments.map((a) => a.name).join(', ');
-      const addedNames = newAssessments.map((a) => a.name).join(', ');
+      const replacedNames = replaceAssessments.map(a => a.name).join(', ');
+      const addedNames = newAssessments.map(a => a.name).join(', ');
       let successMsg = `✅ Imported ${totalQuestions} questions across ${importedAssessments.length} assessment(s)`;
       if (addedNames) successMsg += `. Added: ${addedNames}`;
       if (replacedNames) successMsg += `. Replaced existing: ${replacedNames}`;
@@ -224,8 +246,8 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
     reader.readAsText(file);
   };
 
-  const addAssessment = (template: typeof ASSESSMENT_TYPES[0]) => {
-    const exists = blueprint.assessments.find((a) => a.name === template.name);
+  const addAssessment = (template: (typeof ASSESSMENT_TYPES)[0]) => {
+    const exists = blueprint.assessments.find(a => a.name === template.name);
     if (exists) return;
     const newAssessment: Assessment = {
       id: `assess-${Date.now()}`,
@@ -244,7 +266,7 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
     if (!newQuestion.questionNumber || !newQuestion.mappedCO) return;
     onUpdate({
       ...blueprint,
-      assessments: blueprint.assessments.map((a) =>
+      assessments: blueprint.assessments.map(a =>
         a.id === assessmentId
           ? {
               ...a,
@@ -267,9 +289,9 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
   const removeQuestion = (assessmentId: string, questionId: string) => {
     onUpdate({
       ...blueprint,
-      assessments: blueprint.assessments.map((a) =>
+      assessments: blueprint.assessments.map(a =>
         a.id === assessmentId
-          ? { ...a, questions: a.questions.filter((q) => q.id !== questionId) }
+          ? { ...a, questions: a.questions.filter(q => q.id !== questionId) }
           : a
       ),
     });
@@ -278,11 +300,14 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
   const removeAssessment = (assessmentId: string) => {
     onUpdate({
       ...blueprint,
-      assessments: blueprint.assessments.filter((a) => a.id !== assessmentId),
+      assessments: blueprint.assessments.filter(a => a.id !== assessmentId),
     });
   };
 
-  const totalMarks = blueprint.assessments.reduce((sum, a) => sum + a.questions.reduce((qs, q) => qs + q.maxMarks, 0), 0);
+  const totalMarks = blueprint.assessments.reduce(
+    (sum, a) => sum + a.questions.reduce((qs, q) => qs + q.maxMarks, 0),
+    0
+  );
   const totalWeightage = blueprint.assessments.reduce((sum, a) => sum + a.weightage, 0);
 
   return (
@@ -293,16 +318,20 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
             <ClipboardList className="h-5 w-5 text-indigo-600" />
             Assessment Blueprint
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Define assessments and map questions to COs for attainment calculation</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Define assessments and map questions to COs for attainment calculation
+          </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <Badge variant="outline" className="text-xs">
+          {completionPercentage}% Complete
+        </Badge>
       </div>
       <Separator />
 
       {/* Assessment Type Selector */}
       <div className="flex flex-wrap gap-2">
-        {ASSESSMENT_TYPES.map((template) => {
-          const exists = blueprint.assessments.find((a) => a.name === template.name);
+        {ASSESSMENT_TYPES.map(template => {
+          const exists = blueprint.assessments.find(a => a.name === template.name);
           return (
             <Button
               key={template.name}
@@ -312,11 +341,7 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
               onClick={() => addAssessment(template)}
               disabled={!!exists}
             >
-              {exists ? (
-                <span className="text-[9px]">✓</span>
-              ) : (
-                <Plus className="h-3 w-3" />
-              )}
+              {exists ? <span className="text-[9px]">✓</span> : <Plus className="h-3 w-3" />}
               {template.name} ({template.weightage}%)
             </Button>
           );
@@ -362,20 +387,42 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
         <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-border/50">
           <ClipboardList className="h-12 w-12 text-muted-foreground/30 mb-3" />
           <p className="text-sm font-medium text-muted-foreground">No assessments defined</p>
-          <p className="text-xs text-muted-foreground mt-1">Click an assessment type above to add it</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Click an assessment type above to add it
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {blueprint.assessments.map((assessment) => (
-            <Card key={assessment.id} className={cn('border-border/50', activeAssessment === assessment.id && 'ring-2 ring-indigo-500/20')}>
-              <CardHeader className="pb-2 cursor-pointer" onClick={() => setActiveAssessment(activeAssessment === assessment.id ? null : assessment.id)}>
+          {blueprint.assessments.map(assessment => (
+            <Card
+              key={assessment.id}
+              className={cn(
+                'border-border/50',
+                activeAssessment === assessment.id && 'ring-2 ring-indigo-500/20'
+              )}
+            >
+              <CardHeader
+                className="pb-2 cursor-pointer"
+                onClick={() =>
+                  setActiveAssessment(activeAssessment === assessment.id ? null : assessment.id)
+                }
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-sm font-semibold">{assessment.name}</CardTitle>
-                    <Badge variant="secondary" className="text-[9px]">{assessment.weightage}%</Badge>
-                    <Badge variant="outline" className="text-[9px]">{assessment.questions.length} questions</Badge>
+                    <Badge variant="secondary" className="text-[9px]">
+                      {assessment.weightage}%
+                    </Badge>
+                    <Badge variant="outline" className="text-[9px]">
+                      {assessment.questions.length} questions
+                    </Badge>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeAssessment(assessment.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive"
+                    onClick={() => removeAssessment(assessment.id)}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -394,15 +441,22 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
                           </tr>
                         </thead>
                         <tbody>
-                          {assessment.questions.map((q) => (
+                          {assessment.questions.map(q => (
                             <tr key={q.id} className="border-t border-border/50">
                               <td className="p-2 font-mono">{q.questionNumber}</td>
                               <td className="p-2">
-                                <Badge className="bg-indigo-500/10 text-indigo-600 text-[9px]">{q.mappedCO}</Badge>
+                                <Badge className="bg-indigo-500/10 text-indigo-600 text-[9px]">
+                                  {q.mappedCO}
+                                </Badge>
                               </td>
                               <td className="p-2 text-center font-semibold">{q.maxMarks}</td>
                               <td className="p-2 text-right">
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeQuestion(assessment.id, q.id)}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-destructive"
+                                  onClick={() => removeQuestion(assessment.id, q.id)}
+                                >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </td>
@@ -418,21 +472,25 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
                     <div className="flex-1">
                       <Input
                         value={newQuestion.questionNumber}
-                        onChange={(e) => setNewQuestion({ ...newQuestion, questionNumber: e.target.value })}
+                        onChange={e =>
+                          setNewQuestion({ ...newQuestion, questionNumber: e.target.value })
+                        }
                         placeholder="Q. No (e.g., 1a, 2b)"
                         className="h-8 text-xs"
                       />
                     </div>
                     <Select
                       value={newQuestion.mappedCO}
-                      onValueChange={(v) => setNewQuestion({ ...newQuestion, mappedCO: v })}
+                      onValueChange={v => setNewQuestion({ ...newQuestion, mappedCO: v })}
                     >
                       <SelectTrigger className="h-8 text-xs w-[100px]">
                         <SelectValue placeholder="CO" />
                       </SelectTrigger>
                       <SelectContent>
-                        {outcomes.map((co) => (
-                          <SelectItem key={co.id} value={co.code} className="text-xs">{co.code}</SelectItem>
+                        {outcomes.map(co => (
+                          <SelectItem key={co.id} value={co.code} className="text-xs">
+                            {co.code}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -440,7 +498,12 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
                       <Input
                         type="number"
                         value={newQuestion.maxMarks}
-                        onChange={(e) => setNewQuestion({ ...newQuestion, maxMarks: parseInt(e.target.value) || 0 })}
+                        onChange={e =>
+                          setNewQuestion({
+                            ...newQuestion,
+                            maxMarks: parseInt(e.target.value) || 0,
+                          })
+                        }
                         className="h-8 text-xs"
                         placeholder="Marks"
                         min={1}
@@ -466,7 +529,9 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
             <CardContent className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-indigo-600">{blueprint.assessments.length}</p>
+                  <p className="text-lg font-bold text-indigo-600">
+                    {blueprint.assessments.length}
+                  </p>
                   <p className="text-[9px] text-muted-foreground">Assessments</p>
                 </div>
                 <div className="text-center">
@@ -506,10 +571,14 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
             <CardContent className="p-3 space-y-1">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-                <p className="text-xs font-semibold text-red-700 dark:text-red-400">CSV Import Issues</p>
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+                  CSV Import Issues
+                </p>
               </div>
               {csvImportErrors.map((err, idx) => (
-                <p key={idx} className="text-[10px] text-red-600/80 dark:text-red-400/80 ml-6">• {err}</p>
+                <p key={idx} className="text-[10px] text-red-600/80 dark:text-red-400/80 ml-6">
+                  • {err}
+                </p>
               ))}
             </CardContent>
           </Card>
@@ -522,8 +591,15 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
           <div className="flex items-start gap-2">
             <Lightbulb className="h-4 w-4 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground">💡 Tip: Download the Mid Semester CSV template above, fill in the CO codes for each question, then import it back!</p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">The template comes pre-filled with the standard mid-semester structure: 4 essay questions (5 marks each, attempt any 2), 10 objective questions (0.5 marks each), and 1 assignment (5 marks). Just update the CO mapping column.</p>
+              <p className="text-[10px] font-semibold text-muted-foreground">
+                💡 Tip: Download the Mid Semester CSV template above, fill in the CO codes for each
+                question, then import it back!
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                The template comes pre-filled with the standard mid-semester structure: 4 essay
+                questions (5 marks each, attempt any 2), 10 objective questions (0.5 marks each),
+                and 1 assignment (5 marks). Just update the CO mapping column.
+              </p>
             </div>
           </div>
         </CardContent>
@@ -540,7 +616,11 @@ export default function Step9_AssessmentBlueprint({ outcomes, data, onUpdate, on
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>
-          <Button size="sm" onClick={onNext} className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700">
+          <Button
+            size="sm"
+            onClick={onNext}
+            className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700"
+          >
             Next: Marks Upload
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

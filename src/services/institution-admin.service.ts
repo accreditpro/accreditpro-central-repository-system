@@ -211,7 +211,7 @@ export interface AcademicYearApiResponse {
   id: number;
   year: string;
   startDate: string; // ISO date string e.g. "2026-07-13"
-  endDate: string;   // ISO date string
+  endDate: string; // ISO date string
   institutionId: number;
   status: 'ACTIVE' | 'INACTIVE';
 }
@@ -220,7 +220,7 @@ export interface AcademicYearApiResponse {
 export interface CreateAcademicYearRequest {
   year: string;
   startDate: string; // "2026-07-13"
-  endDate: string;   // "2026-07-13"
+  endDate: string; // "2026-07-13"
   status: 'ACTIVE' | 'INACTIVE';
 }
 
@@ -624,7 +624,9 @@ class InstitutionAdminService {
    * Create a new specialization.
    * POST /api/v1/app/specializations
    */
-  async createSpecialization(data: CreateSpecializationRequest): Promise<SpecializationApiResponse> {
+  async createSpecialization(
+    data: CreateSpecializationRequest
+  ): Promise<SpecializationApiResponse> {
     return apiService.post<SpecializationApiResponse>('/v1/app/specializations', data);
   }
 
@@ -632,7 +634,10 @@ class InstitutionAdminService {
    * Toggle specialization status.
    * PATCH /api/v1/app/specializations/{id}/status
    */
-  async toggleSpecializationStatus(id: number, data: Record<string, string>): Promise<Record<string, unknown>> {
+  async toggleSpecializationStatus(
+    id: number,
+    data: Record<string, string>
+  ): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/specializations/${id}/status`, data);
   }
 
@@ -666,7 +671,10 @@ class InstitutionAdminService {
    * Toggle department status.
    * PATCH /api/v1/app/departments/{id}/status
    */
-  async toggleDepartmentStatus(id: number, data: Record<string, string>): Promise<Record<string, unknown>> {
+  async toggleDepartmentStatus(
+    id: number,
+    data: Record<string, string>
+  ): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/departments/${id}/status`, data);
   }
 
@@ -700,7 +708,10 @@ class InstitutionAdminService {
    * Toggle program status.
    * PATCH /api/v1/app/programs/{id}/status
    */
-  async toggleProgramStatus(id: number, data: Record<string, string>): Promise<Record<string, unknown>> {
+  async toggleProgramStatus(
+    id: number,
+    data: Record<string, string>
+  ): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/programs/${id}/status`, data);
   }
 
@@ -768,7 +779,10 @@ class InstitutionAdminService {
    * Toggle regulation status.
    * PATCH /api/v1/app/regulations/{id}/status
    */
-  async toggleRegulationStatus(id: number, data: Record<string, string>): Promise<Record<string, unknown>> {
+  async toggleRegulationStatus(
+    id: number,
+    data: Record<string, string>
+  ): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/regulations/${id}/status`, data);
   }
 
@@ -803,7 +817,9 @@ class InstitutionAdminService {
    * Create a new program offering.
    * POST /api/v1/app/program-offerings
    */
-  async createProgramOffering(data: CreateProgramOfferingRequest): Promise<CreateProgramOfferingResponse> {
+  async createProgramOffering(
+    data: CreateProgramOfferingRequest
+  ): Promise<CreateProgramOfferingResponse> {
     return apiService.post<CreateProgramOfferingResponse>('/v1/app/program-offerings', data);
   }
 
@@ -836,7 +852,9 @@ class InstitutionAdminService {
    * Create a new program intake.
    * POST /api/v1/app/program-intakes
    */
-  async createProgramIntake(data: CreateProgramIntakeRequest): Promise<CreateProgramIntakeResponse> {
+  async createProgramIntake(
+    data: CreateProgramIntakeRequest
+  ): Promise<CreateProgramIntakeResponse> {
     return apiService.post<CreateProgramIntakeResponse>('/v1/app/program-intakes', data);
   }
 
@@ -918,9 +936,7 @@ class InstitutionAdminService {
    * Fetch paginated users for the institution.
    * GET /api/v1/app/users?page=&pageSize=&search=&role=&status=&sortBy=&sortDirection=
    */
-  async getUsers(
-    params: UserQueryParams
-  ): Promise<PaginatedListResponse<UserApiResponse>> {
+  async getUsers(params: UserQueryParams): Promise<PaginatedListResponse<UserApiResponse>> {
     const query = new URLSearchParams();
     query.set('page', String(params.page));
     query.set('pageSize', String(params.pageSize));
@@ -957,10 +973,7 @@ class InstitutionAdminService {
    * Update an existing user.
    * PUT /api/v1/app/users/{id}
    */
-  async updateUser(
-    id: number,
-    data: UpdateUserRequest
-  ): Promise<UserApiResponse> {
+  async updateUser(id: number, data: UpdateUserRequest): Promise<UserApiResponse> {
     return apiService.put<UserApiResponse>(`/v1/app/users/${id}`, data);
   }
 
@@ -969,9 +982,7 @@ class InstitutionAdminService {
    * POST /api/v1/app/users/{id}/reset-password
    */
   async resetUserPassword(id: number): Promise<Record<string, unknown>> {
-    return apiService.post<Record<string, unknown>>(
-      `/v1/app/users/${id}/reset-password`
-    );
+    return apiService.post<Record<string, unknown>>(`/v1/app/users/${id}/reset-password`);
   }
 
   /**
@@ -982,10 +993,7 @@ class InstitutionAdminService {
     id: number,
     data: { status: UserStatusEnum }
   ): Promise<Record<string, unknown>> {
-    return apiService.patch<Record<string, unknown>>(
-      `/v1/app/users/${id}/status`,
-      data
-    );
+    return apiService.patch<Record<string, unknown>>(`/v1/app/users/${id}/status`, data);
   }
 
   // ──────────────────────────────────────────────
@@ -1004,9 +1012,7 @@ class InstitutionAdminService {
    * Update the admin's settings profile.
    * PUT /api/v1/app/settings/profile
    */
-  async updateSettingsProfile(
-    data: UpdateSettingsProfileRequest
-  ): Promise<SettingsProfile> {
+  async updateSettingsProfile(data: UpdateSettingsProfileRequest): Promise<SettingsProfile> {
     return apiService.put<SettingsProfile>('/v1/app/settings/profile', data);
   }
 
@@ -1014,13 +1020,8 @@ class InstitutionAdminService {
    * Change the admin's password.
    * PUT /api/v1/app/settings/password
    */
-  async changePassword(
-    data: ChangePasswordRequest
-  ): Promise<Record<string, unknown>> {
-    return apiService.put<Record<string, unknown>>(
-      '/v1/app/settings/password',
-      data
-    );
+  async changePassword(data: ChangePasswordRequest): Promise<Record<string, unknown>> {
+    return apiService.put<Record<string, unknown>>('/v1/app/settings/password', data);
   }
 
   /**
@@ -1030,10 +1031,7 @@ class InstitutionAdminService {
   async updateNotificationSettings(
     data: NotificationSettingsRequest
   ): Promise<Record<string, unknown>> {
-    return apiService.patch<Record<string, unknown>>(
-      '/v1/app/settings/notifications',
-      data
-    );
+    return apiService.patch<Record<string, unknown>>('/v1/app/settings/notifications', data);
   }
 
   // ──────────────────────────────────────────────

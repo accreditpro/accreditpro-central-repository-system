@@ -32,8 +32,11 @@ export const AdminDashboard = () => {
     setErrorMessage('');
 
     // Step 1: Try the summary endpoint first (all data in one call)
-    const summaryResult = await adminService.getDashboardSummary().catch((err) => {
-      console.warn('[Dashboard] Summary endpoint failed, falling back to individual endpoints:', err?.message);
+    const summaryResult = await adminService.getDashboardSummary().catch(err => {
+      console.warn(
+        '[Dashboard] Summary endpoint failed, falling back to individual endpoints:',
+        err?.message
+      );
       return null;
     });
 
@@ -52,15 +55,21 @@ export const AdminDashboard = () => {
     }
 
     // Step 2: Fallback — fetch all data from individual endpoints in parallel
-    const [stats, institutionGrowth, categoryDistribution, repositoryCompletion, topInstitutions, recentActivities] =
-      await Promise.allSettled([
-        adminService.getDashboardStats(),
-        adminService.getInstitutionGrowth(),
-        adminService.getCategoryDistribution(),
-        adminService.getRepositoryCompletion(),
-        adminService.getTopInstitutions(),
-        adminService.getRecentActivities(),
-      ]);
+    const [
+      stats,
+      institutionGrowth,
+      categoryDistribution,
+      repositoryCompletion,
+      topInstitutions,
+      recentActivities,
+    ] = await Promise.allSettled([
+      adminService.getDashboardStats(),
+      adminService.getInstitutionGrowth(),
+      adminService.getCategoryDistribution(),
+      adminService.getRepositoryCompletion(),
+      adminService.getTopInstitutions(),
+      adminService.getRecentActivities(),
+    ]);
 
     const unwrap = <T,>(result: PromiseSettledResult<T>): T[] => {
       if (result.status === 'fulfilled') {
@@ -102,13 +111,14 @@ export const AdminDashboard = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            System overview and analytics
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">System overview and analytics</p>
         </div>
         <ErrorState
           title="Failed to load dashboard"
-          message={errorMessage || "We couldn't fetch the latest data. Please check your connection and try again."}
+          message={
+            errorMessage ||
+            "We couldn't fetch the latest data. Please check your connection and try again."
+          }
           onRetry={fetchDashboard}
         />
       </div>

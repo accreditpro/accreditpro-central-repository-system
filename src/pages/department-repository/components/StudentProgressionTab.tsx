@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, ProgressionResponse, UpdateProgressionRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  ProgressionResponse,
+  UpdateProgressionRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,8 +100,9 @@ export const StudentProgressionTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         if (result.content.length === 1) {
           setSelectedStudentId(result.content[0].id);
@@ -112,27 +117,30 @@ export const StudentProgressionTab = () => {
 
   // ── Fetch progression for selected student ──
 
-  const fetchProgression = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    setProgression(null);
-    try {
-      const result = await studentService.getProgression(departmentId, studentId);
-      setProgression(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
-        setProgression(null);
-        setError(null);
-      } else {
-        setError(msg);
-        toast.error(msg);
+  const fetchProgression = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      setProgression(null);
+      try {
+        const result = await studentService.getProgression(departmentId, studentId);
+        setProgression(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
+          setProgression(null);
+          setError(null);
+        } else {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -153,9 +161,12 @@ export const StudentProgressionTab = () => {
     );
   };
 
-  const filteredProgression = progression && searchQuery
-    ? (progressionMatchesSearch(progression, searchQuery) ? progression : null)
-    : progression;
+  const filteredProgression =
+    progression && searchQuery
+      ? progressionMatchesSearch(progression, searchQuery)
+        ? progression
+        : null
+      : progression;
 
   // ── Dialog ──
 
@@ -185,7 +196,11 @@ export const StudentProgressionTab = () => {
     if (!departmentId || !selectedStudentId) return;
     setSaving(true);
     try {
-      const result = await studentService.updateProgression(departmentId, selectedStudentId, formData);
+      const result = await studentService.updateProgression(
+        departmentId,
+        selectedStudentId,
+        formData
+      );
       setProgression(result);
       toast.success(`Progression record ${isEditing ? 'updated' : 'created'} successfully`);
       setDialogOpen(false);
@@ -210,15 +225,7 @@ export const StudentProgressionTab = () => {
       'Internship Completed',
     ];
 
-    const sampleRow = [
-      'REG2025001',
-      '2025-26',
-      'Placed',
-      'Not Pursuing',
-      'GATE',
-      'No',
-      'Yes',
-    ];
+    const sampleRow = ['REG2025001', '2025-26', 'Placed', 'Not Pursuing', 'GATE', 'No', 'Yes'];
 
     const csvContent = `\ufeff${headers.join(',')}\n${sampleRow.join(',')}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -275,7 +282,7 @@ export const StudentProgressionTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -284,7 +291,7 @@ export const StudentProgressionTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -339,10 +346,21 @@ export const StudentProgressionTab = () => {
                     <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Progression
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -369,7 +387,7 @@ export const StudentProgressionTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -393,26 +411,45 @@ export const StudentProgressionTab = () => {
                       <TableHead className="text-[10px] font-semibold">Higher Education</TableHead>
                       <TableHead className="text-[10px] font-semibold">Competitive Exam</TableHead>
                       <TableHead className="text-[10px] font-semibold">Entrepreneurship</TableHead>
-                      <TableHead className="text-[10px] font-semibold">Internship Completed</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold">
+                        Internship Completed
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -421,7 +458,14 @@ export const StudentProgressionTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchProgression(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() =>
+                                selectedStudentId && fetchProgression(selectedStudentId)
+                              }
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -448,10 +492,20 @@ export const StudentProgressionTab = () => {
                     {/* Data row */}
                     {!loading && !error && filteredProgression && (
                       <TableRow className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">1</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{getAcademicYearLabel(filteredProgression.academicYearId)}</TableCell>
+                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                          1
+                        </TableCell>
                         <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="secondary" className={cn('text-[9px]', getPlacementBadge(filteredProgression.placementStatus))}>
+                          {getAcademicYearLabel(filteredProgression.academicYearId)}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'text-[9px]',
+                              getPlacementBadge(filteredProgression.placementStatus)
+                            )}
+                          >
                             {filteredProgression.placementStatus || '-'}
                           </Badge>
                         </TableCell>
@@ -502,7 +556,13 @@ export const StudentProgressionTab = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={openEditDialog} title="Edit">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={openEditDialog}
+                            title="Edit"
+                          >
                             <Pencil className="h-3 w-3 text-blue-600" />
                           </Button>
                         </TableCell>
@@ -537,12 +597,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -551,12 +617,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Placement Status</Label>
                 <Select
                   value={formData.placementStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, placementStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, placementStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PLACEMENT_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {PLACEMENT_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -567,12 +639,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Higher Education Status</Label>
                 <Select
                   value={formData.higherEducationStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, higherEducationStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, higherEducationStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {HIGHER_EDUCATION_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {HIGHER_EDUCATION_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -581,12 +659,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Competitive Exam Qualified</Label>
                 <Select
                   value={formData.competitiveExamQualified || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, competitiveExamQualified: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, competitiveExamQualified: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select exam" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select exam" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {COMPETITIVE_EXAM_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {COMPETITIVE_EXAM_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -597,12 +681,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Entrepreneurship Status</Label>
                 <Select
                   value={formData.entrepreneurshipStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, entrepreneurshipStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, entrepreneurshipStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -611,12 +701,18 @@ export const StudentProgressionTab = () => {
                 <Label className="text-xs font-medium">Internship Completed</Label>
                 <Select
                   value={formData.internshipCompleted || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, internshipCompleted: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, internshipCompleted: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -624,7 +720,14 @@ export const StudentProgressionTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button size="sm" className="text-xs" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Progression'}
             </Button>

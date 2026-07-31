@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppLayout = () => {
-  const { sidebarCollapsed } = useAppSelector((state) => state.ui);
+  const { sidebarCollapsed } = useAppSelector(state => state.ui);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

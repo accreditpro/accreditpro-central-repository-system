@@ -6,13 +6,31 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -36,7 +54,25 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { institutionAdminService, AcademicYearApiResponse, CreateAcademicYearRequest, ProgramApiResponse, CreateProgramRequest, DepartmentApiResponse, CreateDepartmentRequest, SpecializationApiResponse, CreateSpecializationRequest, RegulationApiResponse, CreateRegulationRequest, ProgramOfferingApiResponse, CreateProgramOfferingRequest, CreateProgramOfferingResponse, ProgramIntakeApiResponse, CreateProgramIntakeRequest, CreateProgramIntakeResponse } from '@/services/institution-admin.service';
+import {
+  institutionAdminService,
+  AcademicYearApiResponse,
+  CreateAcademicYearRequest,
+  ProgramApiResponse,
+  CreateProgramRequest,
+  DepartmentApiResponse,
+  CreateDepartmentRequest,
+  SpecializationApiResponse,
+  CreateSpecializationRequest,
+  RegulationApiResponse,
+  CreateRegulationRequest,
+  ProgramOfferingApiResponse,
+  CreateProgramOfferingRequest,
+  CreateProgramOfferingResponse,
+  ProgramIntakeApiResponse,
+  CreateProgramIntakeRequest,
+  CreateProgramIntakeResponse,
+} from '@/services/institution-admin.service';
 import { AcademicStructureSummary } from '@/types/institution-admin.types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -63,7 +99,12 @@ import {
 const DashboardTab = () => {
   const { isAuthenticated } = useAuth();
 
-  const { data: summary, isLoading, error, refetch } = useQuery<AcademicStructureSummary>({
+  const {
+    data: summary,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<AcademicStructureSummary>({
     queryKey: ['academicStructureSummary'],
     queryFn: () => institutionAdminService.getAcademicStructureSummary(),
     enabled: isAuthenticated,
@@ -71,13 +112,48 @@ const DashboardTab = () => {
 
   const cards = summary
     ? [
-        { label: 'Academic Years', value: summary.academicYears, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
-        { label: 'Programs', value: summary.programs, icon: GraduationCap, color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' },
-        { label: 'Departments', value: summary.departments, icon: Building2, color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30' },
-        { label: 'Specializations', value: summary.specializations, icon: Layers, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
-        { label: 'Regulations', value: summary.regulations, icon: BookOpen, color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30' },
-        { label: 'Program Offering', value: summary.programOfferings, icon: Combine, color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30' },
-        { label: 'Total Intake (Current Year)', value: summary.totalIntakeCurrentYear, icon: Users, color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30' },
+        {
+          label: 'Academic Years',
+          value: summary.academicYears,
+          icon: Calendar,
+          color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
+        },
+        {
+          label: 'Programs',
+          value: summary.programs,
+          icon: GraduationCap,
+          color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30',
+        },
+        {
+          label: 'Departments',
+          value: summary.departments,
+          icon: Building2,
+          color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30',
+        },
+        {
+          label: 'Specializations',
+          value: summary.specializations,
+          icon: Layers,
+          color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30',
+        },
+        {
+          label: 'Regulations',
+          value: summary.regulations,
+          icon: BookOpen,
+          color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30',
+        },
+        {
+          label: 'Program Offering',
+          value: summary.programOfferings,
+          icon: Combine,
+          color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30',
+        },
+        {
+          label: 'Total Intake (Current Year)',
+          value: summary.totalIntakeCurrentYear,
+          icon: Users,
+          color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30',
+        },
       ]
     : [];
 
@@ -103,7 +179,9 @@ const DashboardTab = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-red-500">Failed to load academic summary.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -111,7 +189,7 @@ const DashboardTab = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {cards.map((card) => (
+        {cards.map(card => (
           <Card key={card.label} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
               <div className={`inline-flex p-2 rounded-lg ${card.color} mb-2`}>
@@ -134,17 +212,21 @@ const DashboardTab = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {summary?.programDistribution.map((p) => (
+              {summary?.programDistribution.map(p => (
                 <div key={p.programName} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{p.programName}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full"
-                        style={{ width: `${(p.departmentCount / (summary.departments || 1)) * 100}%` }}
+                        style={{
+                          width: `${(p.departmentCount / (summary.departments || 1)) * 100}%`,
+                        }}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground w-8">{p.departmentCount} depts</span>
+                    <span className="text-xs text-muted-foreground w-8">
+                      {p.departmentCount} depts
+                    </span>
                   </div>
                 </div>
               ))}
@@ -162,14 +244,16 @@ const DashboardTab = () => {
           <CardContent>
             <div className="space-y-3">
               {summary?.intakeTrend && summary.intakeTrend.length > 0 ? (
-                summary.intakeTrend.map((t) => (
+                summary.intakeTrend.map(t => (
                   <div key={t.year} className="flex items-center justify-between">
                     <span className="text-sm font-medium">{t.year}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${(t.count / (summary.totalIntakeCurrentYear || 1)) * 100}%` }}
+                          style={{
+                            width: `${(t.count / (summary.totalIntakeCurrentYear || 1)) * 100}%`,
+                          }}
                         />
                       </div>
                       <span className="text-xs text-muted-foreground w-12">{t.count}</span>
@@ -212,7 +296,7 @@ const AcademicYearsTab = () => {
   });
 
   // Map API response to the local AcademicYear shape
-  const years: AcademicYear[] = (apiYears ?? []).map((y) => ({
+  const years: AcademicYear[] = (apiYears ?? []).map(y => ({
     id: String(y.id),
     year: y.year,
     startDate: y.startDate,
@@ -264,14 +348,14 @@ const AcademicYearsTab = () => {
   });
 
   const handleSetActive = (id: string) => {
-    const year = apiYears?.find((y) => String(y.id) === id);
+    const year = apiYears?.find(y => String(y.id) === id);
     if (year) {
       activateMutation.mutate(year.id);
     }
   };
 
   const handleDelete = (id: string) => {
-    const year = apiYears?.find((y) => String(y.id) === id);
+    const year = apiYears?.find(y => String(y.id) === id);
     if (year) {
       deleteMutation.mutate(year.id);
     }
@@ -299,7 +383,7 @@ const AcademicYearsTab = () => {
           <Skeleton className="h-9 w-36" />
         </div>
         <div className="grid gap-3">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map(i => (
             <Card key={i}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -356,7 +440,7 @@ const AcademicYearsTab = () => {
                 <Input
                   placeholder="e.g., 2026-27"
                   value={formYear}
-                  onChange={(e) => setFormYear(e.target.value)}
+                  onChange={e => setFormYear(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -364,7 +448,7 @@ const AcademicYearsTab = () => {
                 <Input
                   type="date"
                   value={formStartDate}
-                  onChange={(e) => setFormStartDate(e.target.value)}
+                  onChange={e => setFormStartDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -372,7 +456,7 @@ const AcademicYearsTab = () => {
                 <Input
                   type="date"
                   value={formEndDate}
-                  onChange={(e) => setFormEndDate(e.target.value)}
+                  onChange={e => setFormEndDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -381,7 +465,9 @@ const AcademicYearsTab = () => {
                   value={formStatus}
                   onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -418,12 +504,10 @@ const AcademicYearsTab = () => {
             </CardContent>
           </Card>
         ) : (
-          years.map((year) => (
+          years.map(year => (
             <Card
               key={year.id}
-              className={
-                year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''
-              }
+              className={year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''}
             >
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -434,9 +518,7 @@ const AcademicYearsTab = () => {
                   >
                     <Calendar
                       className={`h-4 w-4 ${
-                        year.status === 'active'
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
+                        year.status === 'active' ? 'text-primary' : 'text-muted-foreground'
                       }`}
                     />
                   </div>
@@ -464,9 +546,8 @@ const AcademicYearsTab = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Academic Year</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete <strong>{year.year}</strong>?
-                          This action cannot be undone. Years with existing repository data
-                          cannot be deleted.
+                          Are you sure you want to delete <strong>{year.year}</strong>? This action
+                          cannot be undone. Years with existing repository data cannot be deleted.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -531,7 +612,7 @@ const ProgramsTab = () => {
   });
 
   // Map API response to the local Program shape
-  const programs: Program[] = (apiPrograms ?? []).map((p) => ({
+  const programs: Program[] = (apiPrograms ?? []).map(p => ({
     id: String(p.id),
     programCode: p.programCode,
     name: p.name,
@@ -557,8 +638,7 @@ const ProgramsTab = () => {
 
   // ── Mutation: create program ──
   const createMutation = useMutation({
-    mutationFn: (data: CreateProgramRequest) =>
-      institutionAdminService.createProgram(data),
+    mutationFn: (data: CreateProgramRequest) => institutionAdminService.createProgram(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       setShowAddDialog(false);
@@ -591,7 +671,7 @@ const ProgramsTab = () => {
   };
 
   const handleToggle = (id: string) => {
-    const apiProgram = apiPrograms?.find((p) => String(p.id) === id);
+    const apiProgram = apiPrograms?.find(p => String(p.id) === id);
     if (apiProgram) {
       const newStatus = apiProgram.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       toggleMutation.mutate({ id: apiProgram.id, newStatus });
@@ -614,7 +694,7 @@ const ProgramsTab = () => {
   };
 
   const handleDelete = (id: string) => {
-    const apiProgram = apiPrograms?.find((p) => String(p.id) === id);
+    const apiProgram = apiPrograms?.find(p => String(p.id) === id);
     if (apiProgram) {
       deleteMutation.mutate(apiProgram.id);
     }
@@ -630,7 +710,7 @@ const ProgramsTab = () => {
         </div>
         <div className="rounded-lg border">
           <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-32" />
@@ -679,7 +759,7 @@ const ProgramsTab = () => {
                 <Input
                   placeholder="e.g., BSC"
                   value={formCode}
-                  onChange={(e) => setFormCode(e.target.value)}
+                  onChange={e => setFormCode(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -687,7 +767,7 @@ const ProgramsTab = () => {
                 <Input
                   placeholder="e.g., B.Sc"
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={e => setFormName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -696,7 +776,9 @@ const ProgramsTab = () => {
                   value={formLevel}
                   onValueChange={(v: 'UG' | 'PG' | 'Doctoral') => setFormLevel(v)}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UG">UG</SelectItem>
                     <SelectItem value="PG">PG</SelectItem>
@@ -710,7 +792,7 @@ const ProgramsTab = () => {
                   type="number"
                   placeholder="e.g., 4"
                   value={formDuration}
-                  onChange={(e) => setFormDuration(e.target.value)}
+                  onChange={e => setFormDuration(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -719,7 +801,9 @@ const ProgramsTab = () => {
                   value={formStatus}
                   onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -765,12 +849,16 @@ const ProgramsTab = () => {
                 </td>
               </tr>
             ) : (
-              programs.map((program) => (
+              programs.map(program => (
                 <tr key={program.id} className="border-t hover:bg-muted/30">
                   <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
                   <td className="py-3 px-4 font-medium">
                     {program.name}
-                    {program.isCustom && <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>}
+                    {program.isCustom && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        Custom
+                      </Badge>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     <Badge variant="secondary">{program.level}</Badge>
@@ -804,8 +892,8 @@ const ProgramsTab = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Program</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete <strong>{program.name}</strong>?
-                              This action cannot be undone.
+                              Are you sure you want to delete <strong>{program.name}</strong>? This
+                              action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -865,7 +953,7 @@ const DepartmentsTab = () => {
   });
 
   // Map API response to local Department shape
-  const depts: Department[] = (apiDepartments ?? []).map((d) => ({
+  const depts: Department[] = (apiDepartments ?? []).map(d => ({
     id: String(d.id),
     name: d.name,
     code: d.code,
@@ -879,9 +967,10 @@ const DepartmentsTab = () => {
   }));
 
   // Search filter
-  const filtered = depts.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = depts.filter(
+    d =>
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.code.toLowerCase().includes(search.toLowerCase())
   );
 
   // ── Mutation: toggle department status ──
@@ -899,8 +988,7 @@ const DepartmentsTab = () => {
 
   // ── Mutation: create department ──
   const createMutation = useMutation({
-    mutationFn: (data: CreateDepartmentRequest) =>
-      institutionAdminService.createDepartment(data),
+    mutationFn: (data: CreateDepartmentRequest) => institutionAdminService.createDepartment(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       setShowAddDialog(false);
@@ -933,7 +1021,7 @@ const DepartmentsTab = () => {
   };
 
   const handleToggle = (id: string) => {
-    const apiDept = apiDepartments?.find((d) => String(d.id) === id);
+    const apiDept = apiDepartments?.find(d => String(d.id) === id);
     if (apiDept) {
       const newStatus = apiDept.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       toggleMutation.mutate({ id: apiDept.id, newStatus });
@@ -955,7 +1043,7 @@ const DepartmentsTab = () => {
   };
 
   const handleDelete = (id: string) => {
-    const apiDept = apiDepartments?.find((d) => String(d.id) === id);
+    const apiDept = apiDepartments?.find(d => String(d.id) === id);
     if (apiDept) {
       deleteMutation.mutate(apiDept.id);
     }
@@ -971,7 +1059,7 @@ const DepartmentsTab = () => {
         </div>
         <div className="rounded-lg border">
           <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-40" />
@@ -1007,7 +1095,7 @@ const DepartmentsTab = () => {
           <Input
             placeholder="Search departments..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -1028,7 +1116,7 @@ const DepartmentsTab = () => {
                 <Input
                   placeholder="e.g., AERO"
                   value={formCode}
-                  onChange={(e) => setFormCode(e.target.value)}
+                  onChange={e => setFormCode(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -1036,17 +1124,23 @@ const DepartmentsTab = () => {
                 <Input
                   placeholder="e.g., Aerospace Engineering"
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={e => setFormName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Program *</Label>
                 <Select value={formProgramId} onValueChange={setFormProgramId}>
-                  <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiProgramsForDept ?? []).filter((p) => p.status === 'ACTIVE').map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                    ))}
+                    {(apiProgramsForDept ?? [])
+                      .filter(p => p.status === 'ACTIVE')
+                      .map(p => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1056,7 +1150,7 @@ const DepartmentsTab = () => {
                   type="number"
                   placeholder="e.g., 2020"
                   value={formEstYear}
-                  onChange={(e) => setFormEstYear(e.target.value)}
+                  onChange={e => setFormEstYear(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -1065,7 +1159,9 @@ const DepartmentsTab = () => {
                   value={formStatus}
                   onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -1107,11 +1203,13 @@ const DepartmentsTab = () => {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                  {search ? 'No departments match your search.' : 'No departments found. Click "Add Custom Department" to create one.'}
+                  {search
+                    ? 'No departments match your search.'
+                    : 'No departments found. Click "Add Custom Department" to create one.'}
                 </td>
               </tr>
             ) : (
-              filtered.map((dept) => (
+              filtered.map(dept => (
                 <tr key={dept.id} className="border-t hover:bg-muted/30">
                   <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
                   <td className="py-3 px-4 font-medium">{dept.name}</td>
@@ -1145,8 +1243,8 @@ const DepartmentsTab = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Department</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete <strong>{dept.name}</strong>?
-                              This action cannot be undone.
+                              Are you sure you want to delete <strong>{dept.name}</strong>? This
+                              action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -1203,7 +1301,7 @@ const SpecializationsTab = () => {
   });
 
   // Map API response to local Specialization shape
-  const specs: Specialization[] = (apiSpecs ?? []).map((s) => ({
+  const specs: Specialization[] = (apiSpecs ?? []).map(s => ({
     id: String(s.id),
     name: s.name,
     departmentId: String(s.departmentId),
@@ -1266,7 +1364,7 @@ const SpecializationsTab = () => {
   };
 
   const handleToggle = (id: string) => {
-    const apiSpec = apiSpecs?.find((s) => String(s.id) === id);
+    const apiSpec = apiSpecs?.find(s => String(s.id) === id);
     if (apiSpec) {
       const newStatus = apiSpec.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       toggleMutation.mutate({ id: apiSpec.id, newStatus });
@@ -1286,7 +1384,7 @@ const SpecializationsTab = () => {
   };
 
   const handleDelete = (id: string) => {
-    const apiSpec = apiSpecs?.find((s) => String(s.id) === id);
+    const apiSpec = apiSpecs?.find(s => String(s.id) === id);
     if (apiSpec) {
       deleteMutation.mutate(apiSpec.id);
     }
@@ -1301,14 +1399,14 @@ const SpecializationsTab = () => {
           <Skeleton className="h-9 w-36" />
         </div>
         <div className="grid gap-4">
-          {[1, 2].map((i) => (
+          {[1, 2].map(i => (
             <Card key={i}>
               <CardHeader className="py-3 px-4">
                 <Skeleton className="h-5 w-48" />
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map((j) => (
+                  {[1, 2, 3].map(j => (
                     <Skeleton key={j} className="h-10 rounded-lg" />
                   ))}
                 </div>
@@ -1353,17 +1451,23 @@ const SpecializationsTab = () => {
                 <Input
                   placeholder="e.g., Machine Learning"
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={e => setFormName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
                 <Select value={formDeptId} onValueChange={setFormDeptId}>
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiDeptsForSpec ?? []).filter((d) => d.status === 'ACTIVE').map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>{d.code} — {d.name}</SelectItem>
-                    ))}
+                    {(apiDeptsForSpec ?? [])
+                      .filter(d => d.status === 'ACTIVE')
+                      .map(d => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.code} — {d.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1373,7 +1477,9 @@ const SpecializationsTab = () => {
                   value={formStatus}
                   onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -1413,16 +1519,24 @@ const SpecializationsTab = () => {
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-primary" />
                   {dept}
-                  <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {items.length} specializations
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {items.map((spec) => (
-                    <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                  {items.map(spec => (
+                    <div
+                      key={spec.id}
+                      className="flex items-center justify-between p-2 rounded-lg border bg-muted/30"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{spec.name}</span>
-                        <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
+                        <Badge
+                          variant={spec.status === 'active' ? 'default' : 'secondary'}
+                          className="text-xs scale-90"
+                        >
                           {spec.status === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
@@ -1448,8 +1562,8 @@ const SpecializationsTab = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Specialization</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete <strong>{spec.name}</strong>?
-                                This action cannot be undone.
+                                Are you sure you want to delete <strong>{spec.name}</strong>? This
+                                action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -1557,8 +1671,7 @@ const AcademicRegulationsTab = () => {
 
   // ── Mutation: create regulation ──
   const createMutation = useMutation({
-    mutationFn: (data: CreateRegulationRequest) =>
-      institutionAdminService.createRegulation(data),
+    mutationFn: (data: CreateRegulationRequest) => institutionAdminService.createRegulation(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['regulations'] });
       setShowAddDialog(false);
@@ -1605,7 +1718,7 @@ const AcademicRegulationsTab = () => {
   };
 
   const handleToggle = (id: string) => {
-    const apiReg = apiRegulations?.find((r) => String(r.id) === id);
+    const apiReg = apiRegulations?.find(r => String(r.id) === id);
     if (apiReg) {
       const newStatus = apiReg.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       toggleMutation.mutate({ id: apiReg.id, newStatus });
@@ -1613,7 +1726,14 @@ const AcademicRegulationsTab = () => {
   };
 
   const handleCreate = () => {
-    if (!formCode || !formName || !formProgramId || !formAcademicYearIntroduced || !formEffFromBatch || !formDuration) {
+    if (
+      !formCode ||
+      !formName ||
+      !formProgramId ||
+      !formAcademicYearIntroduced ||
+      !formEffFromBatch ||
+      !formDuration
+    ) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -1662,7 +1782,7 @@ const AcademicRegulationsTab = () => {
         </div>
         <div className="rounded-lg border">
           <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-32" />
@@ -1691,7 +1811,7 @@ const AcademicRegulationsTab = () => {
     );
   }
 
-  const activePrograms = (apiProgramsForReg ?? []).filter((p) => p.status === 'ACTIVE');
+  const activePrograms = (apiProgramsForReg ?? []).filter(p => p.status === 'ACTIVE');
   const activeAcademicYears = apiAcademicYearsForReg ?? [];
 
   return (
@@ -1715,50 +1835,87 @@ const AcademicRegulationsTab = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Regulation Code *</Label>
-                    <Input placeholder="e.g., R24" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
+                    <Input
+                      placeholder="e.g., R24"
+                      value={formCode}
+                      onChange={e => setFormCode(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Regulation Name *</Label>
-                    <Input placeholder="e.g., Regulation 2024" value={formName} onChange={(e) => setFormName(e.target.value)} />
+                    <Input
+                      placeholder="e.g., Regulation 2024"
+                      value={formName}
+                      onChange={e => setFormName(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Program *</Label>
                     <Select value={formProgramId} onValueChange={setFormProgramId}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
                       <SelectContent>
-                        {activePrograms.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        {activePrograms.map(p => (
+                          <SelectItem key={p.id} value={String(p.id)}>
+                            {p.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Academic Year Introduced *</Label>
-                    <Select value={formAcademicYearIntroduced} onValueChange={setFormAcademicYearIntroduced}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <Select
+                      value={formAcademicYearIntroduced}
+                      onValueChange={setFormAcademicYearIntroduced}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
                       <SelectContent>
-                        {activeAcademicYears.map((y) => (
-                          <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
+                        {activeAcademicYears.map(y => (
+                          <SelectItem key={y.id} value={y.year}>
+                            {y.year}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Effective From Batch *</Label>
-                    <Input placeholder="e.g., 2024" value={formEffFromBatch} onChange={(e) => setFormEffFromBatch(e.target.value)} />
+                    <Input
+                      placeholder="e.g., 2024"
+                      value={formEffFromBatch}
+                      onChange={e => setFormEffFromBatch(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Effective To Batch</Label>
-                    <Input placeholder="e.g., 2027" value={formEffToBatch} onChange={(e) => setFormEffToBatch(e.target.value)} />
+                    <Input
+                      placeholder="e.g., 2027"
+                      value={formEffToBatch}
+                      onChange={e => setFormEffToBatch(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Duration (Years) *</Label>
-                    <Input type="number" placeholder="e.g., 4" value={formDuration} onChange={(e) => setFormDuration(e.target.value)} />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 4"
+                      value={formDuration}
+                      onChange={e => setFormDuration(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={formStatus}
+                      onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ACTIVE">Active</SelectItem>
                         <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -1771,24 +1928,108 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Total Credits</Label><Input type="number" value={formTotalCredits} onChange={(e) => setFormTotalCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Core Credits</Label><Input type="number" value={formCoreCredits} onChange={(e) => setFormCoreCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Professional Elective Credits</Label><Input type="number" value={formProfElectiveCredits} onChange={(e) => setFormProfElectiveCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Open Elective Credits</Label><Input type="number" value={formOpenElectiveCredits} onChange={(e) => setFormOpenElectiveCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Laboratory Credits</Label><Input type="number" value={formLabCredits} onChange={(e) => setFormLabCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Project Credits</Label><Input type="number" value={formProjectCredits} onChange={(e) => setFormProjectCredits(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Internship Credits</Label><Input type="number" value={formInternshipCredits} onChange={(e) => setFormInternshipCredits(e.target.value)} /></div>
+                  <div className="space-y-2">
+                    <Label>Total Credits</Label>
+                    <Input
+                      type="number"
+                      value={formTotalCredits}
+                      onChange={e => setFormTotalCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Core Credits</Label>
+                    <Input
+                      type="number"
+                      value={formCoreCredits}
+                      onChange={e => setFormCoreCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Professional Elective Credits</Label>
+                    <Input
+                      type="number"
+                      value={formProfElectiveCredits}
+                      onChange={e => setFormProfElectiveCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Open Elective Credits</Label>
+                    <Input
+                      type="number"
+                      value={formOpenElectiveCredits}
+                      onChange={e => setFormOpenElectiveCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Laboratory Credits</Label>
+                    <Input
+                      type="number"
+                      value={formLabCredits}
+                      onChange={e => setFormLabCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Project Credits</Label>
+                    <Input
+                      type="number"
+                      value={formProjectCredits}
+                      onChange={e => setFormProjectCredits(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Internship Credits</Label>
+                    <Input
+                      type="number"
+                      value={formInternshipCredits}
+                      onChange={e => setFormInternshipCredits(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Internal Marks</Label><Input type="number" value={formInternalMarks} onChange={(e) => setFormInternalMarks(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>External Marks</Label><Input type="number" value={formExternalMarks} onChange={(e) => setFormExternalMarks(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Passing Marks</Label><Input type="number" value={formPassingMarks} onChange={(e) => setFormPassingMarks(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Grading System</Label><Input placeholder="e.g., CGPA Based" value={formGradingSystem} onChange={(e) => setFormGradingSystem(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>CGPA Scale</Label><Input type="number" value={formCgpaScale} onChange={(e) => setFormCgpaScale(e.target.value)} /></div>
+                  <div className="space-y-2">
+                    <Label>Internal Marks</Label>
+                    <Input
+                      type="number"
+                      value={formInternalMarks}
+                      onChange={e => setFormInternalMarks(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>External Marks</Label>
+                    <Input
+                      type="number"
+                      value={formExternalMarks}
+                      onChange={e => setFormExternalMarks(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passing Marks</Label>
+                    <Input
+                      type="number"
+                      value={formPassingMarks}
+                      onChange={e => setFormPassingMarks(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Grading System</Label>
+                    <Input
+                      placeholder="e.g., CGPA Based"
+                      value={formGradingSystem}
+                      onChange={e => setFormGradingSystem(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CGPA Scale</Label>
+                    <Input
+                      type="number"
+                      value={formCgpaScale}
+                      onChange={e => setFormCgpaScale(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <Separator />
@@ -1797,29 +2038,53 @@ const AcademicRegulationsTab = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="flex items-center justify-between p-2 rounded-lg border">
                     <Label className="text-xs">Internship Mandatory</Label>
-                    <Switch checked={formInternshipMandatory} onCheckedChange={setFormInternshipMandatory} className="scale-75" />
+                    <Switch
+                      checked={formInternshipMandatory}
+                      onCheckedChange={setFormInternshipMandatory}
+                      className="scale-75"
+                    />
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg border">
                     <Label className="text-xs">Industry Training</Label>
-                    <Switch checked={formIndustryTraining} onCheckedChange={setFormIndustryTraining} className="scale-75" />
+                    <Switch
+                      checked={formIndustryTraining}
+                      onCheckedChange={setFormIndustryTraining}
+                      className="scale-75"
+                    />
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg border">
                     <Label className="text-xs">Mini Project</Label>
-                    <Switch checked={formMiniProject} onCheckedChange={setFormMiniProject} className="scale-75" />
+                    <Switch
+                      checked={formMiniProject}
+                      onCheckedChange={setFormMiniProject}
+                      className="scale-75"
+                    />
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg border">
                     <Label className="text-xs">Major Project</Label>
-                    <Switch checked={formMajorProject} onCheckedChange={setFormMajorProject} className="scale-75" />
+                    <Switch
+                      checked={formMajorProject}
+                      onCheckedChange={setFormMajorProject}
+                      className="scale-75"
+                    />
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg border">
                     <Label className="text-xs">Capstone Project</Label>
-                    <Switch checked={formCapstoneProject} onCheckedChange={setFormCapstoneProject} className="scale-75" />
+                    <Switch
+                      checked={formCapstoneProject}
+                      onCheckedChange={setFormCapstoneProject}
+                      className="scale-75"
+                    />
                   </div>
                 </div>
                 {formInternshipMandatory && (
                   <div className="mt-3">
                     <Label>Internship Duration</Label>
-                    <Input placeholder="e.g., 8 weeks" value={formInternshipDuration} onChange={(e) => setFormInternshipDuration(e.target.value)} />
+                    <Input
+                      placeholder="e.g., 8 weeks"
+                      value={formInternshipDuration}
+                      onChange={e => setFormInternshipDuration(e.target.value)}
+                    />
                   </div>
                 )}
               </div>
@@ -1827,10 +2092,38 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Approvals</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Approved By</Label><Input placeholder="e.g., Academic Council" value={formApprovedBy} onChange={(e) => setFormApprovedBy(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Approval Date</Label><Input type="date" value={formApprovalDate} onChange={(e) => setFormApprovalDate(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>BoS Approval</Label><Input placeholder="e.g., Approved - BoS/2024/02" value={formBosApproval} onChange={(e) => setFormBosApproval(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Academic Council Approval</Label><Input placeholder="e.g., Approved - AC/2024/03" value={formAcademicCouncilApproval} onChange={(e) => setFormAcademicCouncilApproval(e.target.value)} /></div>
+                  <div className="space-y-2">
+                    <Label>Approved By</Label>
+                    <Input
+                      placeholder="e.g., Academic Council"
+                      value={formApprovedBy}
+                      onChange={e => setFormApprovedBy(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Approval Date</Label>
+                    <Input
+                      type="date"
+                      value={formApprovalDate}
+                      onChange={e => setFormApprovalDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>BoS Approval</Label>
+                    <Input
+                      placeholder="e.g., Approved - BoS/2024/02"
+                      value={formBosApproval}
+                      onChange={e => setFormBosApproval(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Academic Council Approval</Label>
+                    <Input
+                      placeholder="e.g., Approved - AC/2024/03"
+                      value={formAcademicCouncilApproval}
+                      onChange={e => setFormAcademicCouncilApproval(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <Separator />
@@ -1838,13 +2131,27 @@ const AcademicRegulationsTab = () => {
                 <h4 className="text-sm font-semibold mb-3">Documents</h4>
                 <div className="space-y-2">
                   <Label>Document References</Label>
-                  <Input placeholder="Comma-separated document names" value={formDocuments} onChange={(e) => setFormDocuments(e.target.value)} />
-                  <p className="text-xs text-muted-foreground">Enter comma-separated document names</p>
+                  <Input
+                    placeholder="Comma-separated document names"
+                    value={formDocuments}
+                    onChange={e => setFormDocuments(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter comma-separated document names
+                  </p>
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Adding…' : 'Add Regulation'}
               </Button>
@@ -1874,12 +2181,15 @@ const AcademicRegulationsTab = () => {
                 </td>
               </tr>
             ) : (
-              apiRegulations.map((reg) => (
+              apiRegulations.map(reg => (
                 <tr key={reg.id} className="border-t hover:bg-muted/30">
                   <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
                   <td className="py-3 px-4">{reg.regulationName}</td>
                   <td className="py-3 px-4">{reg.programName}</td>
-                  <td className="py-3 px-4 text-center text-xs">{reg.effectiveFromBatch}{reg.effectiveToBatch ? ` - ${reg.effectiveToBatch}` : ''}</td>
+                  <td className="py-3 px-4 text-center text-xs">
+                    {reg.effectiveFromBatch}
+                    {reg.effectiveToBatch ? ` - ${reg.effectiveToBatch}` : ''}
+                  </td>
                   <td className="py-3 px-4 text-center">{reg.totalCredits}</td>
                   <td className="py-3 px-4 text-center">
                     <Badge variant={reg.status === 'ACTIVE' ? 'default' : 'secondary'}>
@@ -1894,7 +2204,12 @@ const AcademicRegulationsTab = () => {
                         disabled={toggleMutation.isPending}
                         className="scale-75"
                       />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setViewReg(reg)}
+                      >
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -1910,38 +2225,93 @@ const AcademicRegulationsTab = () => {
       <Dialog open={!!viewReg} onOpenChange={() => setViewReg(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{viewReg?.regulationCode} - {viewReg?.regulationName}</DialogTitle>
+            <DialogTitle>
+              {viewReg?.regulationCode} - {viewReg?.regulationName}
+            </DialogTitle>
           </DialogHeader>
           {viewReg && (
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><Label className="text-xs text-muted-foreground">Program</Label><p className="text-sm font-medium">{viewReg.programName}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Duration</Label><p className="text-sm font-medium">{viewReg.duration} Years</p></div>
-                <div><Label className="text-xs text-muted-foreground">Effective Batch</Label><p className="text-sm font-medium">{viewReg.effectiveFromBatch}{viewReg.effectiveToBatch ? ` - ${viewReg.effectiveToBatch}` : ''}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant={viewReg.status === 'ACTIVE' ? 'default' : 'secondary'}>{viewReg.status === 'ACTIVE' ? 'Active' : 'Inactive'}</Badge></div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Program</Label>
+                  <p className="text-sm font-medium">{viewReg.programName}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Duration</Label>
+                  <p className="text-sm font-medium">{viewReg.duration} Years</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Effective Batch</Label>
+                  <p className="text-sm font-medium">
+                    {viewReg.effectiveFromBatch}
+                    {viewReg.effectiveToBatch ? ` - ${viewReg.effectiveToBatch}` : ''}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Badge variant={viewReg.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                    {viewReg.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Total Credits</p><p className="text-lg font-bold">{viewReg.totalCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Core</p><p className="text-lg font-bold">{viewReg.coreCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Prof. Elective</p><p className="text-lg font-bold">{viewReg.professionalElectiveCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Open Elective</p><p className="text-lg font-bold">{viewReg.openElectiveCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Laboratory</p><p className="text-lg font-bold">{viewReg.laboratoryCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Project</p><p className="text-lg font-bold">{viewReg.projectCredits}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internship</p><p className="text-lg font-bold">{viewReg.internshipCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Total Credits</p>
+                    <p className="text-lg font-bold">{viewReg.totalCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Core</p>
+                    <p className="text-lg font-bold">{viewReg.coreCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Prof. Elective</p>
+                    <p className="text-lg font-bold">{viewReg.professionalElectiveCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Open Elective</p>
+                    <p className="text-lg font-bold">{viewReg.openElectiveCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Laboratory</p>
+                    <p className="text-lg font-bold">{viewReg.laboratoryCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Project</p>
+                    <p className="text-lg font-bold">{viewReg.projectCredits}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Internship</p>
+                    <p className="text-lg font-bold">{viewReg.internshipCredits}</p>
+                  </div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internal</p><p className="text-lg font-bold">{viewReg.internalMarks}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">External</p><p className="text-lg font-bold">{viewReg.externalMarks}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Passing</p><p className="text-lg font-bold">{viewReg.passingMarks}%</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Grading</p><p className="text-sm font-bold">{viewReg.gradingSystem}</p></div>
-                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.cgpaScale}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Internal</p>
+                    <p className="text-lg font-bold">{viewReg.internalMarks}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">External</p>
+                    <p className="text-lg font-bold">{viewReg.externalMarks}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Passing</p>
+                    <p className="text-lg font-bold">{viewReg.passingMarks}%</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Grading</p>
+                    <p className="text-sm font-bold">{viewReg.gradingSystem}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">CGPA Scale</p>
+                    <p className="text-lg font-bold">{viewReg.cgpaScale}</p>
+                  </div>
                 </div>
               </div>
               <Separator />
@@ -1949,17 +2319,47 @@ const AcademicRegulationsTab = () => {
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Internship Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span>Internship Mandatory</span><Badge variant={viewReg.internshipMandatory ? 'default' : 'secondary'}>{viewReg.internshipMandatory ? 'Yes' : 'No'}</Badge></div>
-                    {viewReg.internshipDuration && <div className="flex justify-between text-sm"><span>Duration</span><span className="font-medium">{viewReg.internshipDuration}</span></div>}
-                    <div className="flex justify-between text-sm"><span>Industry Training</span><Badge variant={viewReg.industryTrainingMandatory ? 'default' : 'secondary'}>{viewReg.industryTrainingMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm">
+                      <span>Internship Mandatory</span>
+                      <Badge variant={viewReg.internshipMandatory ? 'default' : 'secondary'}>
+                        {viewReg.internshipMandatory ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                    {viewReg.internshipDuration && (
+                      <div className="flex justify-between text-sm">
+                        <span>Duration</span>
+                        <span className="font-medium">{viewReg.internshipDuration}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span>Industry Training</span>
+                      <Badge variant={viewReg.industryTrainingMandatory ? 'default' : 'secondary'}>
+                        {viewReg.industryTrainingMandatory ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Project Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span>Mini Project</span><Badge variant={viewReg.miniProjectMandatory ? 'default' : 'secondary'}>{viewReg.miniProjectMandatory ? 'Yes' : 'No'}</Badge></div>
-                    <div className="flex justify-between text-sm"><span>Major Project</span><Badge variant={viewReg.majorProjectMandatory ? 'default' : 'secondary'}>{viewReg.majorProjectMandatory ? 'Yes' : 'No'}</Badge></div>
-                    <div className="flex justify-between text-sm"><span>Capstone Project</span><Badge variant={viewReg.capstoneProjectMandatory ? 'default' : 'secondary'}>{viewReg.capstoneProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm">
+                      <span>Mini Project</span>
+                      <Badge variant={viewReg.miniProjectMandatory ? 'default' : 'secondary'}>
+                        {viewReg.miniProjectMandatory ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Major Project</span>
+                      <Badge variant={viewReg.majorProjectMandatory ? 'default' : 'secondary'}>
+                        {viewReg.majorProjectMandatory ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Capstone Project</span>
+                      <Badge variant={viewReg.capstoneProjectMandatory ? 'default' : 'secondary'}>
+                        {viewReg.capstoneProjectMandatory ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1967,22 +2367,36 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Approvals</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs text-muted-foreground">Approved By</Label><p className="text-sm font-medium">{viewReg.approvedBy || '-'}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">Approval Date</Label><p className="text-sm font-medium">{viewReg.approvalDate || '-'}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">BoS Approval</Label><p className="text-sm font-medium">{viewReg.bosApproval || '-'}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">Academic Council</Label><p className="text-sm font-medium">{viewReg.academicCouncilApproval || '-'}</p></div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Approved By</Label>
+                    <p className="text-sm font-medium">{viewReg.approvedBy || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Approval Date</Label>
+                    <p className="text-sm font-medium">{viewReg.approvalDate || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">BoS Approval</Label>
+                    <p className="text-sm font-medium">{viewReg.bosApproval || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Academic Council</Label>
+                    <p className="text-sm font-medium">{viewReg.academicCouncilApproval || '-'}</p>
+                  </div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Documents</h4>
                 <div className="flex flex-wrap gap-2">
-                  {viewReg.documents ? viewReg.documents.split(',').map((doc, i) => (
-                    <Badge key={i} variant="outline" className="flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      {doc.trim()}
-                    </Badge>
-                  )) : (
+                  {viewReg.documents ? (
+                    viewReg.documents.split(',').map((doc, i) => (
+                      <Badge key={i} variant="outline" className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        {doc.trim()}
+                      </Badge>
+                    ))
+                  ) : (
                     <p className="text-xs text-muted-foreground">No documents attached</p>
                   )}
                 </div>
@@ -2023,9 +2437,10 @@ const ProgramOfferingsTab = () => {
     refetch,
   } = useQuery<ProgramOfferingApiResponse[]>({
     queryKey: ['programOfferings', filterAcademicYearId],
-    queryFn: () => institutionAdminService.getProgramOfferings({
-      academicYearId: filterAcademicYearId,
-    }),
+    queryFn: () =>
+      institutionAdminService.getProgramOfferings({
+        academicYearId: filterAcademicYearId,
+      }),
     enabled: isAuthenticated,
   });
 
@@ -2099,7 +2514,13 @@ const ProgramOfferingsTab = () => {
   };
 
   const handleCreate = () => {
-    if (!formAcademicYearId || !formProgramId || !formDepartmentId || !formRegulationId || !formDuration) {
+    if (
+      !formAcademicYearId ||
+      !formProgramId ||
+      !formDepartmentId ||
+      !formRegulationId ||
+      !formDuration
+    ) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -2116,18 +2537,23 @@ const ProgramOfferingsTab = () => {
   };
 
   const handleDelete = (id: string) => {
-    const offering = apiOfferings?.find((o) => String(o.id) === id);
+    const offering = apiOfferings?.find(o => String(o.id) === id);
     if (offering) {
       deleteMutation.mutate(offering.id);
     }
   };
 
   // Auto-generate name when program, department, specialization, and regulation are selected
-  const selectedProgram = apiProgramsForOffering?.find((p) => String(p.id) === formProgramId);
-  const selectedDept = apiDeptsForOffering?.find((d) => String(d.id) === formDepartmentId);
-  const selectedSpec = apiSpecsForOffering?.find((s) => String(s.id) === formSpecializationId);
-  const selectedReg = apiRegsForOffering?.find((r) => String(r.id) === formRegulationId);
-  const autoName = [selectedProgram?.name, selectedDept?.code, selectedSpec?.name, selectedReg?.regulationCode]
+  const selectedProgram = apiProgramsForOffering?.find(p => String(p.id) === formProgramId);
+  const selectedDept = apiDeptsForOffering?.find(d => String(d.id) === formDepartmentId);
+  const selectedSpec = apiSpecsForOffering?.find(s => String(s.id) === formSpecializationId);
+  const selectedReg = apiRegsForOffering?.find(r => String(r.id) === formRegulationId);
+  const autoName = [
+    selectedProgram?.name,
+    selectedDept?.code,
+    selectedSpec?.name,
+    selectedReg?.regulationCode,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -2141,7 +2567,7 @@ const ProgramOfferingsTab = () => {
         </div>
         <div className="rounded-lg border">
           <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-20" />
@@ -2181,8 +2607,10 @@ const ProgramOfferingsTab = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {(apiYearsForOffering ?? []).map((y) => (
-                <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
+              {(apiYearsForOffering ?? []).map(y => (
+                <SelectItem key={y.id} value={String(y.id)}>
+                  {y.year}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -2205,10 +2633,14 @@ const ProgramOfferingsTab = () => {
               <div className="space-y-2">
                 <Label>Academic Year *</Label>
                 <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiYearsForOffering ?? []).map((y) => (
-                      <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
+                    {(apiYearsForOffering ?? []).map(y => (
+                      <SelectItem key={y.id} value={String(y.id)}>
+                        {y.year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -2216,64 +2648,100 @@ const ProgramOfferingsTab = () => {
               <div className="space-y-2">
                 <Label>Program *</Label>
                 <Select value={formProgramId} onValueChange={setFormProgramId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiProgramsForOffering ?? []).filter((p) => p.status === 'ACTIVE').map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                    ))}
+                    {(apiProgramsForOffering ?? [])
+                      .filter(p => p.status === 'ACTIVE')
+                      .map(p => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
                 <Select value={formDepartmentId} onValueChange={setFormDepartmentId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiDeptsForOffering ?? []).filter((d) => d.status === 'ACTIVE').map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>{d.code} - {d.name}</SelectItem>
-                    ))}
+                    {(apiDeptsForOffering ?? [])
+                      .filter(d => d.status === 'ACTIVE')
+                      .map(d => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.code} - {d.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Specialization</Label>
                 <Select value={formSpecializationId} onValueChange={setFormSpecializationId}>
-                  <SelectTrigger><SelectValue placeholder="Select (optional)" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select (optional)" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiSpecsForOffering ?? []).filter((s) => s.status === 'ACTIVE').map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
-                    ))}
+                    {(apiSpecsForOffering ?? [])
+                      .filter(s => s.status === 'ACTIVE')
+                      .map(s => (
+                        <SelectItem key={s.id} value={String(s.id)}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Regulation *</Label>
                 <Select value={formRegulationId} onValueChange={setFormRegulationId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiRegsForOffering ?? []).filter((r) => r.status === 'ACTIVE').map((r) => (
-                      <SelectItem key={r.id} value={String(r.id)}>{r.regulationCode} - {r.regulationName}</SelectItem>
-                    ))}
+                    {(apiRegsForOffering ?? [])
+                      .filter(r => r.status === 'ACTIVE')
+                      .map(r => (
+                        <SelectItem key={r.id} value={String(r.id)}>
+                          {r.regulationCode} - {r.regulationName}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Duration (Years) *</Label>
-                <Input type="number" placeholder="e.g., 4" value={formDuration} onChange={(e) => setFormDuration(e.target.value)} />
+                <Input
+                  type="number"
+                  placeholder="e.g., 4"
+                  value={formDuration}
+                  onChange={e => setFormDuration(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Generated Name</Label>
                 <Input
                   placeholder="Auto-generated or specify manually"
                   value={formGeneratedName || autoName}
-                  onChange={(e) => setFormGeneratedName(e.target.value)}
+                  onChange={e => setFormGeneratedName(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Auto-generated: <strong>{autoName}</strong></p>
+                <p className="text-xs text-muted-foreground">
+                  Auto-generated: <strong>{autoName}</strong>
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -2282,7 +2750,15 @@ const ProgramOfferingsTab = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Creating…' : 'Create'}
               </Button>
@@ -2318,11 +2794,15 @@ const ProgramOfferingsTab = () => {
                 </td>
               </tr>
             ) : (
-              apiOfferings.map((offering) => {
-                const academicYear = apiYearsForOffering?.find((y) => y.id === offering.academicYearId);
+              apiOfferings.map(offering => {
+                const academicYear = apiYearsForOffering?.find(
+                  y => y.id === offering.academicYearId
+                );
                 return (
                   <tr key={offering.id} className="border-t hover:bg-muted/30">
-                    <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
+                    <td className="py-3 px-4 font-semibold text-primary">
+                      {offering.generatedName}
+                    </td>
                     <td className="py-3 px-4">{academicYear?.year ?? offering.academicYearId}</td>
                     <td className="py-3 px-4">{offering.program}</td>
                     <td className="py-3 px-4">{offering.department}</td>
@@ -2350,8 +2830,9 @@ const ProgramOfferingsTab = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Program Offering</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete <strong>{offering.generatedName}</strong>?
-                              This action cannot be undone.
+                              Are you sure you want to delete{' '}
+                              <strong>{offering.generatedName}</strong>? This action cannot be
+                              undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -2375,7 +2856,7 @@ const ProgramOfferingsTab = () => {
       </div>
     </div>
   );
-};// Program Intake Tab
+}; // Program Intake Tab
 const ProgramIntakeTab = () => {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
@@ -2402,9 +2883,10 @@ const ProgramIntakeTab = () => {
     refetch,
   } = useQuery<ProgramIntakeApiResponse[]>({
     queryKey: ['programIntakes', filterAcademicYearId],
-    queryFn: () => institutionAdminService.getProgramIntakes({
-      academicYearId: filterAcademicYearId,
-    }),
+    queryFn: () =>
+      institutionAdminService.getProgramIntakes({
+        academicYearId: filterAcademicYearId,
+      }),
     enabled: isAuthenticated,
   });
 
@@ -2465,7 +2947,12 @@ const ProgramIntakeTab = () => {
   };
 
   const handleCreate = () => {
-    if (!formAcademicYearId || !formProgramOfferingId || !formSanctionedIntake || !formAdmittedIntake) {
+    if (
+      !formAcademicYearId ||
+      !formProgramOfferingId ||
+      !formSanctionedIntake ||
+      !formAdmittedIntake
+    ) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -2481,7 +2968,7 @@ const ProgramIntakeTab = () => {
   };
 
   const handleDelete = (id: string) => {
-    const intake = apiIntakes?.find((i) => String(i.id) === id);
+    const intake = apiIntakes?.find(i => String(i.id) === id);
     if (intake) {
       deleteMutation.mutate(intake.id);
     }
@@ -2501,13 +2988,13 @@ const ProgramIntakeTab = () => {
           <Skeleton className="h-9 w-32" />
         </div>
         <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map(i => (
             <Skeleton key={i} className="h-20 rounded-lg" />
           ))}
         </div>
         <div className="rounded-lg border">
           <div className="p-4 space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-20" />
@@ -2546,8 +3033,10 @@ const ProgramIntakeTab = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {(apiYearsForIntake ?? []).map((y) => (
-                <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
+              {(apiYearsForIntake ?? []).map(y => (
+                <SelectItem key={y.id} value={String(y.id)}>
+                  {y.year}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -2570,10 +3059,14 @@ const ProgramIntakeTab = () => {
               <div className="space-y-2">
                 <Label>Academic Year *</Label>
                 <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiYearsForIntake ?? []).map((y) => (
-                      <SelectItem key={y.id} value={String(y.id)}>{y.year}</SelectItem>
+                    {(apiYearsForIntake ?? []).map(y => (
+                      <SelectItem key={y.id} value={String(y.id)}>
+                        {y.year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -2581,26 +3074,47 @@ const ProgramIntakeTab = () => {
               <div className="space-y-2">
                 <Label>Program Offering *</Label>
                 <Select value={formProgramOfferingId} onValueChange={setFormProgramOfferingId}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(apiOfferingsForIntake ?? []).filter((o) => o.status === 'ACTIVE').map((o) => (
-                      <SelectItem key={o.id} value={String(o.id)}>{o.generatedName}</SelectItem>
-                    ))}
+                    {(apiOfferingsForIntake ?? [])
+                      .filter(o => o.status === 'ACTIVE')
+                      .map(o => (
+                        <SelectItem key={o.id} value={String(o.id)}>
+                          {o.generatedName}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Sanctioned Intake *</Label>
-                  <Input type="number" placeholder="e.g., 120" value={formSanctionedIntake} onChange={(e) => setFormSanctionedIntake(e.target.value)} />
+                  <Input
+                    type="number"
+                    placeholder="e.g., 120"
+                    value={formSanctionedIntake}
+                    onChange={e => setFormSanctionedIntake(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Admitted Intake *</Label>
-                  <Input type="number" placeholder="e.g., 118" value={formAdmittedIntake} onChange={(e) => setFormAdmittedIntake(e.target.value)} />
+                  <Input
+                    type="number"
+                    placeholder="e.g., 118"
+                    value={formAdmittedIntake}
+                    onChange={e => setFormAdmittedIntake(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Lateral Entry Intake</Label>
-                  <Input type="number" placeholder="e.g., 12" value={formLateralEntryIntake} onChange={(e) => setFormLateralEntryIntake(e.target.value)} />
+                  <Input
+                    type="number"
+                    placeholder="e.g., 12"
+                    value={formLateralEntryIntake}
+                    onChange={e => setFormLateralEntryIntake(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Vacant Seats (Auto)</Label>
@@ -2609,12 +3123,21 @@ const ProgramIntakeTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Approval Authority</Label>
-                <Input placeholder="e.g., AICTE" value={formApprovalAuthority} onChange={(e) => setFormApprovalAuthority(e.target.value)} />
+                <Input
+                  placeholder="e.g., AICTE"
+                  value={formApprovalAuthority}
+                  onChange={e => setFormApprovalAuthority(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={formStatus} onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={formStatus}
+                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
@@ -2623,7 +3146,15 @@ const ProgramIntakeTab = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Adding…' : 'Add Intake'}
               </Button>
@@ -2677,18 +3208,25 @@ const ProgramIntakeTab = () => {
                 </td>
               </tr>
             ) : (
-              apiIntakes.map((intake) => {
-                const offering = apiOfferingsForIntake?.find((o) => o.id === intake.programOfferingId);
-                const academicYear = apiYearsForIntake?.find((y) => y.id === intake.academicYearId);
+              apiIntakes.map(intake => {
+                const offering = apiOfferingsForIntake?.find(
+                  o => o.id === intake.programOfferingId
+                );
+                const academicYear = apiYearsForIntake?.find(y => y.id === intake.academicYearId);
                 return (
                   <tr key={intake.id} className="border-t hover:bg-muted/30">
-                    <td className="py-3 px-4 font-semibold">{offering?.generatedName ?? intake.programOfferingId}</td>
+                    <td className="py-3 px-4 font-semibold">
+                      {offering?.generatedName ?? intake.programOfferingId}
+                    </td>
                     <td className="py-3 px-4">{academicYear?.year ?? intake.academicYearId}</td>
                     <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
                     <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
                     <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
                     <td className="py-3 px-4 text-center">
-                      <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
+                      <Badge
+                        variant={intake.vacantSeats === 0 ? 'default' : 'secondary'}
+                        className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}
+                      >
                         {intake.vacantSeats}
                       </Badge>
                     </td>
@@ -2714,8 +3252,8 @@ const ProgramIntakeTab = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Program Intake</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this intake record?
-                              This action cannot be undone.
+                              Are you sure you want to delete this intake record? This action cannot
+                              be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -2776,41 +3314,66 @@ export const AcademicStructurePage = () => {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Academic Structure</h1>
         <p className="text-muted-foreground">
-          Configure the academic hierarchy: Academic Year → Program → Department → Specialization → Regulation → Program Offering → Program Intake
+          Configure the academic hierarchy: Academic Year → Program → Department → Specialization →
+          Regulation → Program Offering → Program Intake
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          <TabsTrigger value="dashboard" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="dashboard"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <BarChart3 className="h-3.5 w-3.5" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="academic-years" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="academic-years"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <Calendar className="h-3.5 w-3.5" />
             Academic Years
           </TabsTrigger>
-          <TabsTrigger value="programs" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="programs"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <GraduationCap className="h-3.5 w-3.5" />
             Programs
           </TabsTrigger>
-          <TabsTrigger value="departments" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="departments"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <Building2 className="h-3.5 w-3.5" />
             Departments
           </TabsTrigger>
-          <TabsTrigger value="specializations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="specializations"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <Layers className="h-3.5 w-3.5" />
             Specializations
           </TabsTrigger>
-          <TabsTrigger value="regulations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="regulations"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <BookOpen className="h-3.5 w-3.5" />
             Regulations
           </TabsTrigger>
-          <TabsTrigger value="offerings" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="offerings"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <Combine className="h-3.5 w-3.5" />
             Program Offerings
           </TabsTrigger>
-          <TabsTrigger value="intake" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger
+            value="intake"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
+          >
             <Users className="h-3.5 w-3.5" />
             Program Intake
           </TabsTrigger>
@@ -2823,14 +3386,30 @@ export const AcademicStructurePage = () => {
           transition={{ duration: 0.2 }}
           className="mt-6"
         >
-          <TabsContent value="dashboard" className="mt-0"><DashboardTab /></TabsContent>
-          <TabsContent value="academic-years" className="mt-0"><AcademicYearsTab /></TabsContent>
-          <TabsContent value="programs" className="mt-0"><ProgramsTab /></TabsContent>
-          <TabsContent value="departments" className="mt-0"><DepartmentsTab /></TabsContent>
-          <TabsContent value="specializations" className="mt-0"><SpecializationsTab /></TabsContent>
-          <TabsContent value="regulations" className="mt-0"><AcademicRegulationsTab /></TabsContent>
-          <TabsContent value="offerings" className="mt-0"><ProgramOfferingsTab /></TabsContent>
-          <TabsContent value="intake" className="mt-0"><ProgramIntakeTab /></TabsContent>
+          <TabsContent value="dashboard" className="mt-0">
+            <DashboardTab />
+          </TabsContent>
+          <TabsContent value="academic-years" className="mt-0">
+            <AcademicYearsTab />
+          </TabsContent>
+          <TabsContent value="programs" className="mt-0">
+            <ProgramsTab />
+          </TabsContent>
+          <TabsContent value="departments" className="mt-0">
+            <DepartmentsTab />
+          </TabsContent>
+          <TabsContent value="specializations" className="mt-0">
+            <SpecializationsTab />
+          </TabsContent>
+          <TabsContent value="regulations" className="mt-0">
+            <AcademicRegulationsTab />
+          </TabsContent>
+          <TabsContent value="offerings" className="mt-0">
+            <ProgramOfferingsTab />
+          </TabsContent>
+          <TabsContent value="intake" className="mt-0">
+            <ProgramIntakeTab />
+          </TabsContent>
         </motion.div>
       </Tabs>
     </div>

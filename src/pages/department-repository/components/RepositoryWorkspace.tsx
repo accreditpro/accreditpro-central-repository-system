@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { academicRepositoryService, AcademicRepositorySummary } from '@/services/academic-repository.service';
+import {
+  academicRepositoryService,
+  AcademicRepositorySummary,
+} from '@/services/academic-repository.service';
 import { getFacultyMetrics, FacultyMetrics } from '@/services/faculty-repository.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -127,7 +130,11 @@ interface RepositoryWorkspaceProps {
   academicYear?: string;
 }
 
-export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: RepositoryWorkspaceProps) => {
+export const RepositoryWorkspace = ({
+  config,
+  initialTabIndex,
+  academicYear,
+}: RepositoryWorkspaceProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
   const { user } = useAuth();
   const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
@@ -143,13 +150,12 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
     const year = academicYear || '2025-26';
 
     if (config.id === 'academic') {
-      academicRepositoryService.getDashboardSummary(year, departmentId)
+      academicRepositoryService
+        .getDashboardSummary(year, departmentId)
         .then(setAcademicSummary)
         .catch(console.error);
     } else if (config.id === 'faculty') {
-      getFacultyMetrics(year, departmentId)
-        .then(setFacultySummary)
-        .catch(console.error);
+      getFacultyMetrics(year, departmentId).then(setFacultySummary).catch(console.error);
     }
   }, [config.id, academicYear, user]);
 
@@ -157,7 +163,7 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
     dataCompleteness: 0,
     evidenceCompleteness: 0,
     verificationPercent: 0,
-    readinessScore: 0
+    readinessScore: 0,
   };
 
   if (config.id === 'academic' && academicSummary) {
@@ -216,18 +222,35 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
         {/* Score Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
-            { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
-            { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
-            { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
-          ].map((metric) => (
-            <div
-              key={metric.label}
-              className="p-3 rounded-xl border border-border/50 bg-card"
-            >
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
+            {
+              label: 'Data Completeness',
+              value: metrics.dataCompleteness,
+              color: 'text-indigo-600 bg-indigo-500/10',
+            },
+            {
+              label: 'Evidence Score',
+              value: metrics.evidenceCompleteness,
+              color: 'text-violet-600 bg-violet-500/10',
+            },
+            {
+              label: 'Verification Score',
+              value: metrics.verificationPercent,
+              color: 'text-emerald-600 bg-emerald-500/10',
+            },
+            {
+              label: 'Readiness Score',
+              value: metrics.readinessScore,
+              color: 'text-amber-600 bg-amber-500/10',
+            },
+          ].map(metric => (
+            <div key={metric.label} className="p-3 rounded-xl border border-border/50 bg-card">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                {metric.label}
+              </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>{metric.value}%</span>
+                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>
+                  {metric.value}%
+                </span>
                 <Progress value={metric.value} className="h-1.5 flex-1" />
               </div>
             </div>
@@ -238,7 +261,7 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          {config.tabs.map((tab) => {
+          {config.tabs.map(tab => {
             const Icon = iconMap[tab.icon] || FileText;
             return (
               <TabsTrigger
@@ -253,7 +276,7 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
           })}
         </TabsList>
 
-        {config.tabs.map((tab) => (
+        {config.tabs.map(tab => (
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'academic-calendar' && config.id === 'academic' ? (
               <AcademicCalendarModule
@@ -306,7 +329,11 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
                 academicYear={academicYear || '2025-26'}
               />
             ) : (
-              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} academicYear={academicYear || '2025-26'} />
+              <RepositoryTabContent
+                tabConfig={tab}
+                repositoryId={config.id}
+                academicYear={academicYear || '2025-26'}
+              />
             )}
           </TabsContent>
         ))}

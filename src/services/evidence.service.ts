@@ -91,7 +91,10 @@ class EvidenceService {
     id: number,
     data: VerifyEvidenceRequest
   ): Promise<EvidenceDocumentResponse> {
-    return apiService.put<EvidenceDocumentResponse>(`${this.baseUrl(departmentId)}/${id}/verify`, data);
+    return apiService.put<EvidenceDocumentResponse>(
+      `${this.baseUrl(departmentId)}/${id}/verify`,
+      data
+    );
   }
 }
 

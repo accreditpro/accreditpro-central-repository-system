@@ -31,7 +31,9 @@ export const InstitutionGrowthChart = ({ data }: { data: InstitutionGrowthData[]
         <CardHeader className="pb-2">
           <div>
             <CardTitle className="text-base font-semibold">Institution Growth</CardTitle>
-            <CardDescription className="text-xs">Monthly institution registration and activity trends</CardDescription>
+            <CardDescription className="text-xs">
+              Monthly institution registration and activity trends
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="pt-2">
@@ -151,9 +153,7 @@ export const CategoryDistributionChart = ({ data }: { data: CategoryDistribution
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Category Distribution</CardTitle>
-            <CardDescription className="text-xs">
-              Institutions by academic category
-            </CardDescription>
+            <CardDescription className="text-xs">Institutions by academic category</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
             {total} total
@@ -175,7 +175,10 @@ export const CategoryDistributionChart = ({ data }: { data: CategoryDistribution
                 stroke="none"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill || `hsl(${210 + index * 30}, 70%, 50%)`} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.fill || `hsl(${210 + index * 30}, 70%, 50%)`}
+                  />
                 ))}
               </Pie>
               <Tooltip
@@ -229,9 +232,7 @@ export const RepositoryCompletionChart = ({ data }: { data: RepositoryCompletion
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Repository Completion Trend</CardTitle>
-            <CardDescription className="text-xs">
-              Weekly completion rate vs target
-            </CardDescription>
+            <CardDescription className="text-xs">Weekly completion rate vs target</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
             Last 8 weeks
@@ -243,12 +244,7 @@ export const RepositoryCompletionChart = ({ data }: { data: RepositoryCompletion
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
-              <XAxis
-                dataKey="week"
-                tick={{ fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
+              <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis
                 tick={{ fontSize: 11 }}
                 tickLine={false}
@@ -298,7 +294,7 @@ export const RepositoryCompletionChart = ({ data }: { data: RepositoryCompletion
 };
 
 export const TopInstitutionsChart = ({ institutions }: { institutions: TopInstitutionData[] }) => {
-  const data = institutions.slice(0, 5).map((inst) => ({
+  const data = institutions.slice(0, 5).map(inst => ({
     name: inst.name.length > 15 ? inst.name.slice(0, 15) + '…' : inst.name,
     score: inst.repositoryCompletion,
   }));
@@ -327,9 +323,7 @@ export const TopInstitutionsChart = ({ institutions }: { institutions: TopInstit
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Top Active Institutions</CardTitle>
-            <CardDescription className="text-xs">
-              By repository completion score
-            </CardDescription>
+            <CardDescription className="text-xs">By repository completion score</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
             Top 5
@@ -339,8 +333,16 @@ export const TopInstitutionsChart = ({ institutions }: { institutions: TopInstit
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" horizontal={false} />
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                className="stroke-border/50"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 tick={{ fontSize: 11 }}
@@ -367,12 +369,7 @@ export const TopInstitutionsChart = ({ institutions }: { institutions: TopInstit
                 }}
                 formatter={(value: number) => [`${value}%`, 'Completion']}
               />
-              <Bar
-                dataKey="score"
-                fill="hsl(var(--chart-1))"
-                radius={[0, 4, 4, 0]}
-                barSize={24}
-              />
+              <Bar dataKey="score" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </div>

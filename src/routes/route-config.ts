@@ -53,11 +53,7 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Dashboard',
     href: '/app/dashboard',
     icon: 'LayoutDashboard',
-    roles: [
-      UserRole.INSTITUTION_ADMIN,
-      UserRole.IQAC_COORDINATOR,
-      UserRole.PRINCIPAL,
-    ],
+    roles: [UserRole.INSTITUTION_ADMIN, UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
   },
   {
     title: 'Institution Profile',
@@ -123,28 +119,19 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Documents',
     href: '/app/documents',
     icon: 'FileText',
-    roles: [
-      UserRole.IQAC_COORDINATOR,
-      UserRole.PRINCIPAL,
-    ],
+    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
   },
   {
     title: 'Accreditation',
     href: '/app/accreditation',
     icon: 'Award',
-    roles: [
-      UserRole.IQAC_COORDINATOR,
-      UserRole.PRINCIPAL,
-    ],
+    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
   },
   {
     title: 'Reports',
     href: '/app/reports',
     icon: 'BarChart3',
-    roles: [
-      UserRole.IQAC_COORDINATOR,
-      UserRole.PRINCIPAL,
-    ],
+    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
   },
   {
     title: 'Settings',
@@ -155,15 +142,12 @@ export const appNavigationConfig: NavItem[] = [
 ];
 
 // Combined config for backward compatibility
-export const navigationConfig: NavItem[] = [
-  ...adminNavigationConfig,
-  ...appNavigationConfig,
-];
+export const navigationConfig: NavItem[] = [...adminNavigationConfig, ...appNavigationConfig];
 
 // Helper to get navigation based on user role
 export const getNavigationForRole = (role: UserRole): NavItem[] => {
   if (role === UserRole.SUPER_ADMIN) {
     return adminNavigationConfig;
   }
-  return appNavigationConfig.filter((item) => item.roles.includes(role));
+  return appNavigationConfig.filter(item => item.roles.includes(role));
 };

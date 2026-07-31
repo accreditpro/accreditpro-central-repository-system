@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { researchService } from '@/services/research.service';
-import { PublicationResponse, CreatePublicationRequest, PaginatedData } from '@/types/research.types';
+import {
+  PublicationResponse,
+  CreatePublicationRequest,
+  PaginatedData,
+} from '@/types/research.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -112,26 +116,29 @@ export const ResearchPublicationTab = () => {
 
   // ── Fetch publications from API ──
 
-  const fetchPublications = useCallback(async (currentPage: number, search?: string) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await researchService.listPublications(departmentId, {
-        page: currentPage,
-        size: PAGE_SIZE,
-        search: search || undefined,
-      });
-      setData(result);
-      setTotalPages(result.totalPages);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load publications';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchPublications = useCallback(
+    async (currentPage: number, search?: string) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await researchService.listPublications(departmentId, {
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: search || undefined,
+        });
+        setData(result);
+        setTotalPages(result.totalPages);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load publications';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     fetchPublications(page, submittedSearch);
@@ -365,10 +372,21 @@ export const ResearchPublicationTab = () => {
             <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Publication
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleDownloadTemplate}
+            >
               <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              disabled
+              title="Upload CSV API not available yet"
+            >
               <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
             </Button>
           </div>
@@ -395,7 +413,7 @@ export const ResearchPublicationTab = () => {
                 className="h-8 text-xs pl-8 pr-8"
                 placeholder="Search publications..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
               {searchQuery && (
@@ -418,32 +436,55 @@ export const ResearchPublicationTab = () => {
                   <TableHead className="text-[10px] font-semibold w-48">Title</TableHead>
                   <TableHead className="text-[10px] font-semibold w-20">Type</TableHead>
                   <TableHead className="text-[10px] font-semibold w-28">Authors</TableHead>
-                  <TableHead className="text-[10px] font-semibold w-28">Journal / Conference</TableHead>
+                  <TableHead className="text-[10px] font-semibold w-28">
+                    Journal / Conference
+                  </TableHead>
                   <TableHead className="text-[10px] font-semibold w-12">Year</TableHead>
                   <TableHead className="text-[10px] font-semibold w-12">Impact Factor</TableHead>
                   <TableHead className="text-[10px] font-semibold w-14">Citations</TableHead>
                   <TableHead className="text-[10px] font-semibold w-14">Status</TableHead>
-                  <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                  <TableHead className="text-[10px] font-semibold text-center w-16">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {/* Loading skeleton */}
-                {loading && (
+                {loading &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skel-${i}`}>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center">
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-36" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-14" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12 mx-auto" />
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
 
                 {/* Error state */}
                 {!loading && error && (
@@ -452,7 +493,12 @@ export const ResearchPublicationTab = () => {
                       <div className="flex flex-col items-center gap-2 text-destructive">
                         <AlertCircle className="h-8 w-8" />
                         <p className="text-xs font-medium">{error}</p>
-                        <Button variant="outline" size="sm" className="text-xs" onClick={() => fetchPublications(page, submittedSearch)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => fetchPublications(page, submittedSearch)}
+                        >
                           <RefreshCw className="h-3 w-3 mr-1" /> Retry
                         </Button>
                       </div>
@@ -477,45 +523,80 @@ export const ResearchPublicationTab = () => {
                 )}
 
                 {/* Data rows */}
-                {!loading && !error && data?.content.map((pub, index) => (
-                  <TableRow key={pub.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                      {data.page * data.size + index + 1}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-medium truncate max-w-[180px]" title={pub.publicationTitle}>
-                      {pub.publicationTitle}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge variant="secondary" className={cn('text-[9px]', getTypeBadge(pub.publicationType))}>
-                        {pub.publicationType || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[110px]" title={pub.authors}>
-                      {pub.authors}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[110px]" title={pub.journalConferenceName ?? ''}>
-                      {pub.journalConferenceName || '-'}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{pub.publicationDate?.substring(0, 4) || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{pub.impactFactor?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{pub.citationCount ?? '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge variant="secondary" className={cn('text-[9px]', getStatusBadge(pub.status))}>
-                        {pub.status || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center p-1.5">
-                      <div className="flex items-center justify-center gap-0">
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditDialog(pub)} title="Edit">
-                          <Pencil className="h-3 w-3 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openDeleteDialog(pub)} title="Delete">
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {!loading &&
+                  !error &&
+                  data?.content.map((pub, index) => (
+                    <TableRow key={pub.id} className="hover:bg-muted/20">
+                      <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                        {data.page * data.size + index + 1}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 font-medium truncate max-w-[180px]"
+                        title={pub.publicationTitle}
+                      >
+                        {pub.publicationTitle}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn('text-[9px]', getTypeBadge(pub.publicationType))}
+                        >
+                          {pub.publicationType || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[110px]"
+                        title={pub.authors}
+                      >
+                        {pub.authors}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[110px]"
+                        title={pub.journalConferenceName ?? ''}
+                      >
+                        {pub.journalConferenceName || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {pub.publicationDate?.substring(0, 4) || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {pub.impactFactor?.toFixed(1) ?? '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {pub.citationCount ?? '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn('text-[9px]', getStatusBadge(pub.status))}
+                        >
+                          {pub.status || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center p-1.5">
+                        <div className="flex items-center justify-center gap-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openEditDialog(pub)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openDeleteDialog(pub)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -528,7 +609,10 @@ export const ResearchPublicationTab = () => {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => handlePageChange(Math.max(0, page - 1))}
-                      className={cn(page === 0 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page === 0 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                   {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
@@ -539,7 +623,11 @@ export const ResearchPublicationTab = () => {
                     else pageNum = page - 2 + i;
                     return (
                       <PaginationItem key={pageNum}>
-                        <PaginationLink onClick={() => handlePageChange(pageNum)} isActive={pageNum === page} className="cursor-pointer">
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pageNum === page}
+                          className="cursor-pointer"
+                        >
                           {pageNum + 1}
                         </PaginationLink>
                       </PaginationItem>
@@ -548,7 +636,10 @@ export const ResearchPublicationTab = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
-                      className={cn(page >= totalPages - 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page >= totalPages - 1 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                 </PaginationContent>
@@ -572,21 +663,30 @@ export const ResearchPublicationTab = () => {
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Publication Title *</Label>
-              <Input className="h-9 text-xs" placeholder="e.g. Deep Learning for Image Classification"
+              <Input
+                className="h-9 text-xs"
+                placeholder="e.g. Deep Learning for Image Classification"
                 value={formData.publicationTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, publicationTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, publicationTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Publication Type</Label>
                 <Select
                   value={formData.publicationType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, publicationType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, publicationType: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PUBLICATION_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {PUBLICATION_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -595,12 +695,16 @@ export const ResearchPublicationTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v || undefined }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -609,98 +713,174 @@ export const ResearchPublicationTab = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Authors (Faculty) *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Rajesh Kumar, Dr. Amit Singh"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Rajesh Kumar, Dr. Amit Singh"
                   value={formData.authors}
-                  onChange={(e) => setFormData(prev => ({ ...prev, authors: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, authors: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Student Authors</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Priya Sharma"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Priya Sharma"
                   value={formData.studentAuthors || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, studentAuthors: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, studentAuthors: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Corresponding Author</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Rajesh Kumar"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Rajesh Kumar"
                   value={formData.correspondingAuthor || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, correspondingAuthor: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, correspondingAuthor: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Journal / Conference Name</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. IEEE Transactions on AI"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. IEEE Transactions on AI"
                   value={formData.journalConferenceName || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, journalConferenceName: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, journalConferenceName: e.target.value }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Publisher</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. IEEE"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. IEEE"
                   value={formData.publisher || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, publisher: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, publisher: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">ISSN / ISBN</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. 1234-5678"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. 1234-5678"
                   value={formData.issnIsbn || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, issnIsbn: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, issnIsbn: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">DOI</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. 10.1109/TAI.2024.001"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. 10.1109/TAI.2024.001"
                   value={formData.doi || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, doi: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, doi: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Indexed In</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. SCI, Scopus"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. SCI, Scopus"
                   value={formData.indexedIn || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, indexedIn: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, indexedIn: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Impact Factor</Label>
-                <Input className="h-9 text-xs" type="number" step="0.001" min="0" placeholder="e.g. 5.5"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  placeholder="e.g. 5.5"
                   value={formData.impactFactor ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, impactFactor: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      impactFactor: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Citation Count</Label>
-                <Input className="h-9 text-xs" type="number" min="0" placeholder="e.g. 25"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 25"
                   value={formData.citationCount ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, citationCount: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      citationCount: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Publication Date *</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.publicationDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, publicationDate: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, publicationDate: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Academic Year</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. 2023-24"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. 2023-24"
                   value={formData.academicYear || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, academicYear: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, academicYear: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Publication URL</Label>
-              <Input className="h-9 text-xs" placeholder="e.g. https://doi.org/10.1109/TAI.2024.001"
+              <Input
+                className="h-9 text-xs"
+                placeholder="e.g. https://doi.org/10.1109/TAI.2024.001"
                 value={formData.publicationUrl || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, publicationUrl: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, publicationUrl: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.publicationTitle || !formData.authors || !formData.publicationDate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={
+                saving ||
+                !formData.publicationTitle ||
+                !formData.authors ||
+                !formData.publicationDate
+              }
+            >
               {saving ? 'Creating...' : 'Create Publication'}
             </Button>
           </DialogFooter>
@@ -714,26 +894,36 @@ export const ResearchPublicationTab = () => {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Publication</DialogTitle>
-            <DialogDescription className="text-xs">Update the publication details.</DialogDescription>
+            <DialogDescription className="text-xs">
+              Update the publication details.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Publication Title</Label>
-              <Input className="h-9 text-xs"
+              <Input
+                className="h-9 text-xs"
                 value={formData.publicationTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, publicationTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, publicationTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Publication Type</Label>
                 <Select
                   value={formData.publicationType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, publicationType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, publicationType: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PUBLICATION_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {PUBLICATION_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -742,12 +932,16 @@ export const ResearchPublicationTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v || undefined }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -756,68 +950,112 @@ export const ResearchPublicationTab = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Authors</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.authors}
-                  onChange={(e) => setFormData(prev => ({ ...prev, authors: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, authors: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Student Authors</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.studentAuthors || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, studentAuthors: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, studentAuthors: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Journal / Conference</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.journalConferenceName || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, journalConferenceName: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, journalConferenceName: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">DOI</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.doi || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, doi: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, doi: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Impact Factor</Label>
-                <Input className="h-9 text-xs" type="number" step="0.001"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.001"
                   value={formData.impactFactor ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, impactFactor: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      impactFactor: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Citation Count</Label>
-                <Input className="h-9 text-xs" type="number" min="0"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
                   value={formData.citationCount ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, citationCount: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      citationCount: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Publication Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.publicationDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, publicationDate: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, publicationDate: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Academic Year</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.academicYear || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, academicYear: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, academicYear: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Publication URL</Label>
-              <Input className="h-9 text-xs"
+              <Input
+                className="h-9 text-xs"
                 value={formData.publicationUrl || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, publicationUrl: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, publicationUrl: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -833,12 +1071,27 @@ export const ResearchPublicationTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Publication</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>&ldquo;{selectedPublication?.publicationTitle}&rdquo;</strong>? This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <strong>&ldquo;{selectedPublication?.publicationTitle}&rdquo;</strong>? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" size="sm" className="text-xs" onClick={handleDelete} disabled={deleting}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="text-xs"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>

@@ -120,7 +120,9 @@ class AdminService {
    * GET /api/admin/analytics/institution-growth?timeRange={timeRange}
    * @param timeRange — e.g. '12months', '30days', '7days'
    */
-  async getAnalyticsInstitutionGrowth(timeRange = '12months'): Promise<AnalyticsInstitutionGrowthData[]> {
+  async getAnalyticsInstitutionGrowth(
+    timeRange = '12months'
+  ): Promise<AnalyticsInstitutionGrowthData[]> {
     return apiService.get<AnalyticsInstitutionGrowthData[]>('/admin/analytics/institution-growth', {
       params: { timeRange },
     });
@@ -133,10 +135,13 @@ class AdminService {
    */
   async getAnalyticsDistribution(timeRange = '12months'): Promise<InstitutionDistributionData[]> {
     // API returns `fill` but the type uses `color` — map accordingly
-    const raw = await apiService.get<{ name: string; value: number; fill: string }[]>('/admin/analytics/distribution', {
-      params: { timeRange },
-    });
-    return raw.map((item) => ({
+    const raw = await apiService.get<{ name: string; value: number; fill: string }[]>(
+      '/admin/analytics/distribution',
+      {
+        params: { timeRange },
+      }
+    );
+    return raw.map(item => ({
       name: item.name,
       value: item.value,
       color: item.fill,
@@ -149,7 +154,10 @@ class AdminService {
    * @param timeRange — e.g. '12months', '30days', '7days'
    * @param limit — number of results (default 10)
    */
-  async getAnalyticsTopInstitutions(timeRange = '12months', limit = 10): Promise<AnalyticsTopInstitutionData[]> {
+  async getAnalyticsTopInstitutions(
+    timeRange = '12months',
+    limit = 10
+  ): Promise<AnalyticsTopInstitutionData[]> {
     return apiService.get<AnalyticsTopInstitutionData[]>('/admin/analytics/top-institutions', {
       params: { timeRange, limit },
     });
@@ -161,10 +169,16 @@ class AdminService {
    * @param timeRange — e.g. '12months', '30days', '7days'
    * @param limit — number of results (default 10)
    */
-  async getAnalyticsRepositoryCompletion(timeRange = '12months', limit = 10): Promise<AnalyticsRepositoryCompletionData[]> {
-    return apiService.get<AnalyticsRepositoryCompletionData[]>('/admin/analytics/repository-completion', {
-      params: { timeRange, limit },
-    });
+  async getAnalyticsRepositoryCompletion(
+    timeRange = '12months',
+    limit = 10
+  ): Promise<AnalyticsRepositoryCompletionData[]> {
+    return apiService.get<AnalyticsRepositoryCompletionData[]>(
+      '/admin/analytics/repository-completion',
+      {
+        params: { timeRange, limit },
+      }
+    );
   }
 
   /**
@@ -197,19 +211,24 @@ class AdminService {
    * @param timeRange — e.g. '12months', '30days', '7days'
    * @param limit — number of results (default 10)
    */
-  async getAnalyticsRecentActivity(timeRange = '12months', limit = 10): Promise<RecentActivityItem[]> {
-    const raw = await apiService.get<{
-      id: string;
-      type: string;
-      title: string;
-      description: string;
-      institution: string;
-      timestamp: string;
-      user: string;
-    }[]>('/admin/analytics/recent-activity', {
+  async getAnalyticsRecentActivity(
+    timeRange = '12months',
+    limit = 10
+  ): Promise<RecentActivityItem[]> {
+    const raw = await apiService.get<
+      {
+        id: string;
+        type: string;
+        title: string;
+        description: string;
+        institution: string;
+        timestamp: string;
+        user: string;
+      }[]
+    >('/admin/analytics/recent-activity', {
       params: { timeRange, limit },
     });
-    return raw.map((item) => ({
+    return raw.map(item => ({
       id: item.id,
       action: item.title,
       user: item.user,
@@ -251,7 +270,8 @@ class AdminService {
     if (params.status && params.status !== 'all') queryParams.status = params.status;
     if (params.category && params.category !== 'all') queryParams.category = params.category;
     if (params.state && params.state !== 'all') queryParams.state = params.state;
-    if (params.repositoryCompletion && params.repositoryCompletion !== 'all') queryParams.repositoryCompletion = params.repositoryCompletion;
+    if (params.repositoryCompletion && params.repositoryCompletion !== 'all')
+      queryParams.repositoryCompletion = params.repositoryCompletion;
     if (params.sortBy) queryParams.sortBy = params.sortBy;
     if (params.sortDirection) queryParams.sortDirection = params.sortDirection;
 
@@ -260,7 +280,7 @@ class AdminService {
     });
   }
 
-    /**
+  /**
    * Convert a base64 data URL to a Blob with the correct MIME type.
    */
   private dataURLToBlob(dataURL: string): Blob {
@@ -285,7 +305,9 @@ class AdminService {
    * - If logo is a base64 data URL → convert to File blob, send as multipart
    * - If logo is a URL or empty → send as regular JSON
    */
-  private buildCreatePayload(request: CreateInstitutionRequest): FormData | CreateInstitutionRequest {
+  private buildCreatePayload(
+    request: CreateInstitutionRequest
+  ): FormData | CreateInstitutionRequest {
     const logo = request.basicInfo.logo;
 
     if (logo && logo.startsWith('data:')) {
@@ -327,7 +349,10 @@ class AdminService {
    * Accepts the same JSON shape as create. Supports logo file upload
    * via multipart/form-data when logo is a base64 data URL.
    */
-  async updateInstitution(id: number, data: CreateInstitutionRequest): Promise<CreateInstitutionResponse> {
+  async updateInstitution(
+    id: number,
+    data: CreateInstitutionRequest
+  ): Promise<CreateInstitutionResponse> {
     const payload = this.buildCreatePayload(data);
     return apiService.put<CreateInstitutionResponse>(`/admin/institutions/${id}`, payload);
   }
@@ -347,7 +372,10 @@ class AdminService {
    * Request body: { status: 'ACTIVE' | 'INACTIVE' }
    * Response: Updated institution object
    */
-  async updateInstitutionStatus(id: number, status: 'ACTIVE' | 'INACTIVE'): Promise<InstitutionSummary> {
+  async updateInstitutionStatus(
+    id: number,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<InstitutionSummary> {
     return apiService.patch<InstitutionSummary>(`/admin/institutions/${id}/status`, { status });
   }
 

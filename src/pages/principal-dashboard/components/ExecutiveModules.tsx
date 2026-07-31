@@ -42,7 +42,7 @@ import {
 export function ApprovalCenter() {
   const [search, setSearch] = useState('');
   const filtered = approvalItems.filter(
-    (item) =>
+    item =>
       item.repository.toLowerCase().includes(search.toLowerCase()) ||
       item.submittedBy.toLowerCase().includes(search.toLowerCase())
   );
@@ -52,13 +52,17 @@ export function ApprovalCenter() {
       <div className="grid grid-cols-3 gap-3">
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-orange-600">{approvalItems.filter((i) => i.status === 'pending').length}</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {approvalItems.filter(i => i.status === 'pending').length}
+            </p>
             <p className="text-xs text-muted-foreground">Pending Approval</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-blue-600">{approvalItems.filter((i) => i.status === 'in-review').length}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {approvalItems.filter(i => i.status === 'in-review').length}
+            </p>
             <p className="text-xs text-muted-foreground">In Review</p>
           </CardContent>
         </Card>
@@ -72,21 +76,37 @@ export function ApprovalCenter() {
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search approvals..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+        <Input
+          placeholder="Search approvals..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-9 h-9"
+        />
       </div>
 
       <div className="space-y-3">
-        {filtered.map((item) => (
+        {filtered.map(item => (
           <Card key={item.id}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-semibold">{item.repository}</h4>
-                    <Badge variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'default' : 'secondary'} className="text-[10px]">
+                    <Badge
+                      variant={
+                        item.priority === 'high'
+                          ? 'destructive'
+                          : item.priority === 'medium'
+                            ? 'default'
+                            : 'secondary'
+                      }
+                      className="text-[10px]"
+                    >
                       {item.priority}
                     </Badge>
-                    <Badge variant="outline" className="text-[10px]">{item.status}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {item.status}
+                    </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{item.description}</p>
                   <p className="text-[10px] text-muted-foreground">
@@ -94,19 +114,35 @@ export function ApprovalCenter() {
                   </p>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  >
                     <Check className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
                     <X className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                  >
                     <RotateCcw className="h-3.5 w-3.5" />
                   </Button>
                   <Button size="icon" variant="ghost" className="h-7 w-7">
                     <MessageSquare className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
                     <Forward className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -130,26 +166,32 @@ export function GapAnalysis() {
     low: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   };
 
-  const filteredGaps = filter === 'all' ? gapItems : gapItems.filter((g) => g.impact === filter);
+  const filteredGaps = filter === 'all' ? gapItems : gapItems.filter(g => g.impact === filter);
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-3">
         <Card className="cursor-pointer hover:shadow-md" onClick={() => setFilter('critical')}>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-red-600">{gapItems.filter((g) => g.impact === 'critical').length}</p>
+            <p className="text-2xl font-bold text-red-600">
+              {gapItems.filter(g => g.impact === 'critical').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Critical</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md" onClick={() => setFilter('high')}>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-orange-600">{gapItems.filter((g) => g.impact === 'high').length}</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {gapItems.filter(g => g.impact === 'high').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">High</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md" onClick={() => setFilter('medium')}>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-yellow-600">{gapItems.filter((g) => g.impact === 'medium').length}</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {gapItems.filter(g => g.impact === 'medium').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Medium</p>
           </CardContent>
         </Card>
@@ -162,14 +204,20 @@ export function GapAnalysis() {
       </div>
 
       <div className="space-y-3">
-        {filteredGaps.map((gap) => (
+        {filteredGaps.map(gap => (
           <Card key={gap.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Badge className={`text-[10px] ${impactColors[gap.impact]}`}>{gap.impact}</Badge>
-                  <Badge variant="outline" className="text-[10px]">{gap.category}</Badge>
-                  {gap.department && <Badge variant="secondary" className="text-[10px]">{gap.department}</Badge>}
+                  <Badge variant="outline" className="text-[10px]">
+                    {gap.category}
+                  </Badge>
+                  {gap.department && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {gap.department}
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-[10px] text-muted-foreground">Priority #{gap.priority}</span>
               </div>
@@ -244,16 +292,23 @@ export function FrameworkReadiness() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {naacCriteria.map((criterion) => (
+                {naacCriteria.map(criterion => (
                   <div key={criterion.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium">C{criterion.id}. {criterion.name}</span>
-                        <Badge variant="outline" className={`text-[9px] ${criterion.status === 'ready' ? 'text-green-600 border-green-500' : 'text-yellow-600 border-yellow-500'}`}>
+                        <span className="text-xs font-medium">
+                          C{criterion.id}. {criterion.name}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] ${criterion.status === 'ready' ? 'text-green-600 border-green-500' : 'text-yellow-600 border-yellow-500'}`}
+                        >
                           {criterion.status}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">Wt: {criterion.weightage}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Wt: {criterion.weightage}
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -305,16 +360,23 @@ export function FrameworkReadiness() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {nbaCriteria.map((criterion) => (
+                {nbaCriteria.map(criterion => (
                   <div key={criterion.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium">C{criterion.id}. {criterion.name}</span>
-                        <Badge variant="outline" className={`text-[9px] ${criterion.status === 'ready' ? 'text-green-600 border-green-500' : 'text-yellow-600 border-yellow-500'}`}>
+                        <span className="text-xs font-medium">
+                          C{criterion.id}. {criterion.name}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] ${criterion.status === 'ready' ? 'text-green-600 border-green-500' : 'text-yellow-600 border-yellow-500'}`}
+                        >
                           {criterion.status}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">Wt: {criterion.weightage}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Wt: {criterion.weightage}
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -366,12 +428,14 @@ export function FrameworkReadiness() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {nirfParameters.map((param) => (
+                {nirfParameters.map(param => (
                   <div key={param.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium">{param.name}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Wt: {param.weightage}%</span>
+                        <span className="text-xs text-muted-foreground">
+                          Wt: {param.weightage}%
+                        </span>
                         <span className="text-xs font-semibold">{param.score}/100</span>
                       </div>
                     </div>
@@ -413,7 +477,9 @@ export function AIInsights() {
             </div>
             <div>
               <h3 className="text-sm font-semibold">AI-Powered Institutional Intelligence</h3>
-              <p className="text-xs text-muted-foreground">Analyzing {11} repositories across {8} departments • Last updated 5 min ago</p>
+              <p className="text-xs text-muted-foreground">
+                Analyzing {11} repositories across {8} departments • Last updated 5 min ago
+              </p>
             </div>
           </div>
         </CardContent>
@@ -423,50 +489,66 @@ export function AIInsights() {
         <Card>
           <CardContent className="p-3 text-center">
             <TrendingUp className="h-4 w-4 text-blue-600 mx-auto mb-1" />
-            <p className="text-lg font-bold">{aiInsights.filter((i) => i.type === 'forecast').length}</p>
+            <p className="text-lg font-bold">
+              {aiInsights.filter(i => i.type === 'forecast').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Forecasts</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
             <AlertTriangle className="h-4 w-4 text-red-600 mx-auto mb-1" />
-            <p className="text-lg font-bold">{aiInsights.filter((i) => i.type === 'risk').length}</p>
+            <p className="text-lg font-bold">{aiInsights.filter(i => i.type === 'risk').length}</p>
             <p className="text-[10px] text-muted-foreground">Risks</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
             <Lightbulb className="h-4 w-4 text-green-600 mx-auto mb-1" />
-            <p className="text-lg font-bold">{aiInsights.filter((i) => i.type === 'recommendation').length}</p>
+            <p className="text-lg font-bold">
+              {aiInsights.filter(i => i.type === 'recommendation').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Recommendations</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
             <Target className="h-4 w-4 text-purple-600 mx-auto mb-1" />
-            <p className="text-lg font-bold">{aiInsights.filter((i) => i.type === 'opportunity').length}</p>
+            <p className="text-lg font-bold">
+              {aiInsights.filter(i => i.type === 'opportunity').length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Opportunities</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-3">
-        {aiInsights.map((insight) => {
+        {aiInsights.map(insight => {
           const Icon = typeIcons[insight.type];
           return (
             <Card key={insight.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${typeColors[insight.type]}`}>
+                  <div
+                    className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${typeColors[insight.type]}`}
+                  >
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-semibold">{insight.title}</h4>
-                      <Badge variant="outline" className="text-[9px]">{insight.confidence}% confidence</Badge>
-                      {insight.actionable && <Badge className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Actionable</Badge>}
+                      <Badge variant="outline" className="text-[9px]">
+                        {insight.confidence}% confidence
+                      </Badge>
+                      {insight.actionable && (
+                        <Badge className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                          Actionable
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {insight.description}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -483,14 +565,14 @@ export function ExecutiveReports() {
   const [generating, setGenerating] = useState<string | null>(null);
 
   const iconMap: Record<string, React.ElementType> = {
-    'building': Shield,
+    building: Shield,
     'bar-chart': FileBarChart,
-    'database': CheckSquare,
-    'target': Target,
+    database: CheckSquare,
+    target: Target,
     'alert-triangle': AlertTriangle,
     'trending-up': TrendingUp,
-    'calendar': Calendar,
-    'award': Trophy,
+    calendar: Calendar,
+    award: Trophy,
   };
 
   const handleGenerate = (id: string) => {
@@ -513,10 +595,13 @@ export function ExecutiveReports() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {reportTypes.map((report) => {
+            {reportTypes.map(report => {
               const Icon = iconMap[report.icon] || FileBarChart;
               return (
-                <div key={report.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div
+                  key={report.id}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Icon className="h-4 w-4 text-primary" />
@@ -548,11 +633,16 @@ export function ExecutiveReports() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {recentReports.map((report) => (
-              <div key={report.name} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+            {recentReports.map(report => (
+              <div
+                key={report.name}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50"
+              >
                 <div>
                   <p className="text-xs font-medium">{report.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{report.date} • {report.format}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {report.date} • {report.format}
+                  </p>
                 </div>
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" className="h-7 w-7">
@@ -595,27 +685,35 @@ export function ActivityTimeline() {
     milestone: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
   };
 
-  const filteredEvents = filter === 'all' ? activityEvents : activityEvents.filter((e) => e.type === filter);
+  const filteredEvents =
+    filter === 'all' ? activityEvents : activityEvents.filter(e => e.type === filter);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        {['all', 'submitted', 'approved', 'uploaded', 'verified', 'gap-closed', 'milestone'].map((f) => (
-          <Button
-            key={f}
-            size="sm"
-            variant={filter === f ? 'default' : 'outline'}
-            className="h-7 text-xs capitalize"
-            onClick={() => setFilter(f)}
-          >
-            {f === 'all' ? 'All' : f.replace('-', ' ')}
-          </Button>
-        ))}
+        {['all', 'submitted', 'approved', 'uploaded', 'verified', 'gap-closed', 'milestone'].map(
+          f => (
+            <Button
+              key={f}
+              size="sm"
+              variant={filter === f ? 'default' : 'outline'}
+              className="h-7 text-xs capitalize"
+              onClick={() => setFilter(f)}
+            >
+              {f === 'all' ? 'All' : f.replace('-', ' ')}
+            </Button>
+          )
+        )}
       </div>
 
       <div className="space-y-0">
@@ -624,7 +722,9 @@ export function ActivityTimeline() {
           return (
             <div key={event.id} className="flex gap-3 pb-4">
               <div className="flex flex-col items-center">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${typeColors[event.type] || 'bg-gray-100'}`}>
+                <div
+                  className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${typeColors[event.type] || 'bg-gray-100'}`}
+                >
                   <Icon className="h-3.5 w-3.5" />
                 </div>
                 {idx < filteredEvents.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
@@ -632,12 +732,18 @@ export function ActivityTimeline() {
               <div className="flex-1 pb-2">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-semibold">{event.title}</h4>
-                  {event.department && <Badge variant="secondary" className="text-[9px]">{event.department}</Badge>}
+                  {event.department && (
+                    <Badge variant="secondary" className="text-[9px]">
+                      {event.department}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{event.description}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">{formatTime(event.timestamp)}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatTime(event.timestamp)}
+                  </span>
                   <span className="text-[10px] text-muted-foreground">• {event.actor}</span>
                 </div>
               </div>
@@ -696,7 +802,7 @@ export function PrincipalProfile() {
               'Generate Reports',
               'Monitor Institutional Performance',
               'View AI Recommendations',
-            ].map((perm) => (
+            ].map(perm => (
               <div key={perm} className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-green-600" />
                 <span className="text-xs">{perm}</span>
@@ -710,7 +816,7 @@ export function PrincipalProfile() {
                 'Upload Repository CSVs',
                 'Change Repository Configuration',
                 'Delete Repository Records',
-              ].map((perm) => (
+              ].map(perm => (
                 <div key={perm} className="flex items-center gap-2">
                   <X className="h-3.5 w-3.5 text-red-600" />
                   <span className="text-xs text-muted-foreground">{perm}</span>

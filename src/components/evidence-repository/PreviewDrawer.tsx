@@ -1,26 +1,9 @@
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  FileText,
-  Calendar,
-  User,
-  ShieldCheck,
-  Clock,
-  Tag,
-  Layers,
-} from 'lucide-react';
-import {
-  EvidenceDocument,
-  getStatusColor,
-  getStatusLabel,
-} from './types';
+import { FileText, Calendar, User, ShieldCheck, Clock, Tag, Layers } from 'lucide-react';
+import { EvidenceDocument, getStatusColor, getStatusLabel } from './types';
 
 interface PreviewDrawerProps {
   document: EvidenceDocument | null;
@@ -52,7 +35,8 @@ export function PreviewDrawer({ document, open, onClose }: PreviewDrawerProps) {
                 {latestVersion?.fileName || document.name}
               </p>
               <p className="text-xs text-muted-foreground/70 mt-1">
-                {latestVersion?.fileType?.toUpperCase() || 'PDF'} • {latestVersion ? `${(latestVersion.fileSize / 1024).toFixed(0)} KB` : '—'}
+                {latestVersion?.fileType?.toUpperCase() || 'PDF'} •{' '}
+                {latestVersion ? `${(latestVersion.fileSize / 1024).toFixed(0)} KB` : '—'}
               </p>
             </div>
 
@@ -75,7 +59,10 @@ export function PreviewDrawer({ document, open, onClose }: PreviewDrawerProps) {
                     </Badge>
                   }
                 />
-                <InfoItem label="Current Version" value={document.currentVersion ? `V${document.currentVersion}` : '—'} />
+                <InfoItem
+                  label="Current Version"
+                  value={document.currentVersion ? `V${document.currentVersion}` : '—'}
+                />
               </div>
             </div>
 
@@ -156,7 +143,7 @@ export function PreviewDrawer({ document, open, onClose }: PreviewDrawerProps) {
                 <p className="text-sm text-muted-foreground">No versions available</p>
               ) : (
                 <div className="space-y-2">
-                  {[...document.versions].reverse().map((version) => (
+                  {[...document.versions].reverse().map(version => (
                     <div
                       key={version.id}
                       className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20"

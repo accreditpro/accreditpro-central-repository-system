@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { researchService } from '@/services/research.service';
-import { ConsultancyResponse, CreateConsultancyRequest, PaginatedData } from '@/types/research.types';
+import {
+  ConsultancyResponse,
+  CreateConsultancyRequest,
+  PaginatedData,
+} from '@/types/research.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,26 +108,29 @@ export const ResearchConsultancyTab = () => {
 
   // ── Fetch consultancies from API ──
 
-  const fetchConsultancies = useCallback(async (currentPage: number, search?: string) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await researchService.listConsultancies(departmentId, {
-        page: currentPage,
-        size: PAGE_SIZE,
-        search: search || undefined,
-      });
-      setData(result);
-      setTotalPages(result.totalPages);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load consultancy projects';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchConsultancies = useCallback(
+    async (currentPage: number, search?: string) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await researchService.listConsultancies(departmentId, {
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: search || undefined,
+        });
+        setData(result);
+        setTotalPages(result.totalPages);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load consultancy projects';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     fetchConsultancies(page, submittedSearch);
@@ -155,7 +162,13 @@ export const ResearchConsultancyTab = () => {
 
   const handleCreate = async () => {
     if (!departmentId) return;
-    if (!formData.consultancyTitle || !formData.clientOrganization || !formData.facultyLead || !formData.consultancyValue || !formData.startDate) {
+    if (
+      !formData.consultancyTitle ||
+      !formData.clientOrganization ||
+      !formData.facultyLead ||
+      !formData.consultancyValue ||
+      !formData.startDate
+    ) {
       toast.error('Title, Client, Faculty Lead, Value, and Start Date are required');
       return;
     }
@@ -334,10 +347,21 @@ export const ResearchConsultancyTab = () => {
             <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Consultancy
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleDownloadTemplate}
+            >
               <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              disabled
+              title="Upload CSV API not available yet"
+            >
               <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
             </Button>
           </div>
@@ -364,7 +388,7 @@ export const ResearchConsultancyTab = () => {
                 className="h-8 text-xs pl-8 pr-8"
                 placeholder="Search consultancies..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
               {searchQuery && (
@@ -391,26 +415,45 @@ export const ResearchConsultancyTab = () => {
                   <TableHead className="text-[10px] font-semibold w-14">Start</TableHead>
                   <TableHead className="text-[10px] font-semibold w-14">End</TableHead>
                   <TableHead className="text-[10px] font-semibold w-12">Status</TableHead>
-                  <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                  <TableHead className="text-[10px] font-semibold text-center w-16">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {/* Loading skeleton */}
-                {loading && (
+                {loading &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skel-${i}`}>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-18" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center">
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-18" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-10" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12 mx-auto" />
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
 
                 {/* Error state */}
                 {!loading && error && (
@@ -419,7 +462,12 @@ export const ResearchConsultancyTab = () => {
                       <div className="flex flex-col items-center gap-2 text-destructive">
                         <AlertCircle className="h-8 w-8" />
                         <p className="text-xs font-medium">{error}</p>
-                        <Button variant="outline" size="sm" className="text-xs" onClick={() => fetchConsultancies(page, submittedSearch)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => fetchConsultancies(page, submittedSearch)}
+                        >
                           <RefreshCw className="h-3 w-3 mr-1" /> Retry
                         </Button>
                       </div>
@@ -444,40 +492,72 @@ export const ResearchConsultancyTab = () => {
                 )}
 
                 {/* Data rows */}
-                {!loading && !error && data?.content.map((item, index) => (
-                  <TableRow key={item.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                      {data.page * data.size + index + 1}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-medium truncate max-w-[150px]" title={item.consultancyTitle}>
-                      {item.consultancyTitle}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[80px]" title={item.clientOrganization}>
-                      {item.clientOrganization}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[100px]" title={item.facultyLead}>
-                      {item.facultyLead}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{formatAmount(item.consultancyValue)}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{item.startDate}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{item.endDate || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge variant="secondary" className={cn('text-[9px]', getStatusBadge(item.status))}>
-                        {item.status || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center p-1.5">
-                      <div className="flex items-center justify-center gap-0">
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditDialog(item)} title="Edit">
-                          <Pencil className="h-3 w-3 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openDeleteDialog(item)} title="Delete">
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {!loading &&
+                  !error &&
+                  data?.content.map((item, index) => (
+                    <TableRow key={item.id} className="hover:bg-muted/20">
+                      <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                        {data.page * data.size + index + 1}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 font-medium truncate max-w-[150px]"
+                        title={item.consultancyTitle}
+                      >
+                        {item.consultancyTitle}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[80px]"
+                        title={item.clientOrganization}
+                      >
+                        {item.clientOrganization}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[100px]"
+                        title={item.facultyLead}
+                      >
+                        {item.facultyLead}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {formatAmount(item.consultancyValue)}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {item.startDate}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {item.endDate || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn('text-[9px]', getStatusBadge(item.status))}
+                        >
+                          {item.status || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center p-1.5">
+                        <div className="flex items-center justify-center gap-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openEditDialog(item)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openDeleteDialog(item)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -490,7 +570,10 @@ export const ResearchConsultancyTab = () => {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => handlePageChange(Math.max(0, page - 1))}
-                      className={cn(page === 0 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page === 0 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                   {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
@@ -501,7 +584,11 @@ export const ResearchConsultancyTab = () => {
                     else pageNum = page - 2 + i;
                     return (
                       <PaginationItem key={pageNum}>
-                        <PaginationLink onClick={() => handlePageChange(pageNum)} isActive={pageNum === page} className="cursor-pointer">
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pageNum === page}
+                          className="cursor-pointer"
+                        >
                           {pageNum + 1}
                         </PaginationLink>
                       </PaginationItem>
@@ -510,7 +597,10 @@ export const ResearchConsultancyTab = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
-                      className={cn(page >= totalPages - 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page >= totalPages - 1 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                 </PaginationContent>
@@ -528,56 +618,85 @@ export const ResearchConsultancyTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Consultancy Project</DialogTitle>
             <DialogDescription className="text-xs">
-              Fill in the details to add a new consultancy project. Required fields are marked with *.
+              Fill in the details to add a new consultancy project. Required fields are marked with
+              *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Consultancy Title *</Label>
-              <Input className="h-9 text-xs" placeholder="e.g. Software Development for Banking"
+              <Input
+                className="h-9 text-xs"
+                placeholder="e.g. Software Development for Banking"
                 value={formData.consultancyTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, consultancyTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, consultancyTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Client Organization *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. SBI Bank"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. SBI Bank"
                   value={formData.clientOrganization}
-                  onChange={(e) => setFormData(prev => ({ ...prev, clientOrganization: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, clientOrganization: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Faculty Lead *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Rajesh Kumar"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Rajesh Kumar"
                   value={formData.facultyLead}
-                  onChange={(e) => setFormData(prev => ({ ...prev, facultyLead: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, facultyLead: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Team Members</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Amit Singh, Priya Sharma"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Amit Singh, Priya Sharma"
                   value={formData.teamMembers || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, teamMembers: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, teamMembers: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Consultancy Value (INR) *</Label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.01" placeholder="e.g. 1500000"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 1500000"
                   value={formData.consultancyValue || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, consultancyValue: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, consultancyValue: Number(e.target.value) }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Start Date *</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">End Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.endDate || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -585,28 +704,53 @@ export const ResearchConsultancyTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v || undefined }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Outcome Summary</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Successfully delivered"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Successfully delivered"
                   value={formData.outcomeSummary || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, outcomeSummary: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, outcomeSummary: e.target.value }))}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.consultancyTitle || !formData.clientOrganization || !formData.facultyLead || !formData.consultancyValue || !formData.startDate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={
+                saving ||
+                !formData.consultancyTitle ||
+                !formData.clientOrganization ||
+                !formData.facultyLead ||
+                !formData.consultancyValue ||
+                !formData.startDate
+              }
+            >
               {saving ? 'Creating...' : 'Create Project'}
             </Button>
           </DialogFooter>
@@ -620,55 +764,80 @@ export const ResearchConsultancyTab = () => {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Consultancy Project</DialogTitle>
-            <DialogDescription className="text-xs">Update the consultancy project details.</DialogDescription>
+            <DialogDescription className="text-xs">
+              Update the consultancy project details.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Consultancy Title</Label>
-              <Input className="h-9 text-xs"
+              <Input
+                className="h-9 text-xs"
                 value={formData.consultancyTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, consultancyTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, consultancyTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Client Organization</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.clientOrganization}
-                  onChange={(e) => setFormData(prev => ({ ...prev, clientOrganization: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, clientOrganization: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Faculty Lead</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.facultyLead}
-                  onChange={(e) => setFormData(prev => ({ ...prev, facultyLead: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, facultyLead: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Team Members</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.teamMembers || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, teamMembers: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, teamMembers: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Value</Label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.01"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   value={formData.consultancyValue || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, consultancyValue: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, consultancyValue: Number(e.target.value) }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Start Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">End Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.endDate || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -676,26 +845,39 @@ export const ResearchConsultancyTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.status || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, status: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, status: v || undefined }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Outcome</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.outcomeSummary || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, outcomeSummary: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, outcomeSummary: e.target.value }))}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -711,12 +893,27 @@ export const ResearchConsultancyTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Consultancy Project</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>&ldquo;{selectedConsultancy?.consultancyTitle}&rdquo;</strong>? This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <strong>&ldquo;{selectedConsultancy?.consultancyTitle}&rdquo;</strong>? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" size="sm" className="text-xs" onClick={handleDelete} disabled={deleting}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="text-xs"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>

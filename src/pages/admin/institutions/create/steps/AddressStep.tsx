@@ -7,13 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { MapPin } from 'lucide-react';
 import { INDIAN_STATES, CreateInstitutionFormData } from '../types';
 
@@ -27,7 +21,9 @@ export const AddressStep = () => {
           <MapPin className="h-5 w-5 text-primary" />
           Address
         </h2>
-        <p className="text-sm text-muted-foreground">Enter the institution&apos;s physical address</p>
+        <p className="text-sm text-muted-foreground">
+          Enter the institution&apos;s physical address
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -79,8 +75,10 @@ export const AddressStep = () => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {INDIAN_STATES.map((state) => (
-                    <SelectItem key={state} value={state}>{state}</SelectItem>
+                  {INDIAN_STATES.map(state => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

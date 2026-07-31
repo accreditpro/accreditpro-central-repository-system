@@ -39,7 +39,7 @@ interface ProgressStepperProps {
 }
 
 export const ProgressStepper = ({ steps, currentStepId, onStepClick }: ProgressStepperProps) => {
-  const currentIndex = steps.findIndex((s) => s.id === currentStepId);
+  const currentIndex = steps.findIndex(s => s.id === currentStepId);
 
   return (
     <div className="w-full overflow-x-auto">
@@ -71,10 +71,13 @@ export const ProgressStepper = ({ steps, currentStepId, onStepClick }: ProgressS
                 disabled={isFuture}
                 className={cn(
                   'relative z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
-                  isCompleted && 'border-indigo-500 bg-indigo-500 text-white cursor-pointer hover:bg-indigo-600',
-                  isCurrent && 'border-indigo-500 bg-indigo-500/10 text-indigo-600 cursor-pointer ring-2 ring-indigo-500/30',
+                  isCompleted &&
+                    'border-indigo-500 bg-indigo-500 text-white cursor-pointer hover:bg-indigo-600',
+                  isCurrent &&
+                    'border-indigo-500 bg-indigo-500/10 text-indigo-600 cursor-pointer ring-2 ring-indigo-500/30',
                   isPending && 'border-border bg-card text-muted-foreground',
-                  isFuture && 'border-border/50 bg-muted/30 text-muted-foreground/40 cursor-not-allowed'
+                  isFuture &&
+                    'border-border/50 bg-muted/30 text-muted-foreground/40 cursor-not-allowed'
                 )}
                 title={`Step ${step.stepNumber}: ${step.label}`}
               >
@@ -95,24 +98,28 @@ export const ProgressStepper = ({ steps, currentStepId, onStepClick }: ProgressS
               </button>
 
               {/* Step Number */}
-              <span className={cn(
-                'text-[9px] font-bold mt-1',
-                isCompleted && 'text-indigo-600',
-                isCurrent && 'text-indigo-600',
-                isPending && 'text-muted-foreground',
-                isFuture && 'text-muted-foreground/40'
-              )}>
+              <span
+                className={cn(
+                  'text-[9px] font-bold mt-1',
+                  isCompleted && 'text-indigo-600',
+                  isCurrent && 'text-indigo-600',
+                  isPending && 'text-muted-foreground',
+                  isFuture && 'text-muted-foreground/40'
+                )}
+              >
                 Step {step.stepNumber}
               </span>
 
               {/* Step Label */}
-              <span className={cn(
-                'text-[10px] font-medium text-center mt-0.5 leading-tight max-w-[80px]',
-                isCompleted && 'text-indigo-600',
-                isCurrent && 'text-indigo-700 dark:text-indigo-400 font-semibold',
-                isPending && 'text-muted-foreground',
-                isFuture && 'text-muted-foreground/40'
-              )}>
+              <span
+                className={cn(
+                  'text-[10px] font-medium text-center mt-0.5 leading-tight max-w-[80px]',
+                  isCompleted && 'text-indigo-600',
+                  isCurrent && 'text-indigo-700 dark:text-indigo-400 font-semibold',
+                  isPending && 'text-muted-foreground',
+                  isFuture && 'text-muted-foreground/40'
+                )}
+              >
                 {step.label}
               </span>
             </div>

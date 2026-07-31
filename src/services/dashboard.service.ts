@@ -1,8 +1,5 @@
 import { apiService } from './api.service';
-import {
-  DashboardData,
-  DashboardQueryParams,
-} from '@/types/dashboard.types';
+import { DashboardData, DashboardQueryParams } from '@/types/dashboard.types';
 
 /**
  * Dashboard Service — wraps GET /api/v1/department-coordinator/dashboard.
@@ -23,9 +20,7 @@ class DashboardService {
     query.set('academicYear', params.academicYear);
     query.set('departmentId', String(params.departmentId));
 
-    return apiService.get<DashboardData>(
-      `${this.baseUrl}?${query.toString()}`
-    );
+    return apiService.get<DashboardData>(`${this.baseUrl}?${query.toString()}`);
   }
 }
 

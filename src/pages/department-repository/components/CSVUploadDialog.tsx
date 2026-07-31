@@ -74,7 +74,11 @@ interface ValidationResult {
   validData: Record<string, string>[];
 }
 
-const steps: { id: UploadStep; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const steps: {
+  id: UploadStep;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'mapping', label: 'Mapping', icon: Columns },
   { id: 'validate', label: 'Validate', icon: CheckCircle2 },
@@ -87,8 +91,14 @@ const UNMAPPED_VALUE = '__unmapped__';
 
 // Fuzzy match helper for column mapping
 function computeConfidence(csvCol: string, fieldCol: string): number {
-  const a = csvCol.toLowerCase().trim().replace(/[_\s-]+/g, '');
-  const b = fieldCol.toLowerCase().trim().replace(/[_\s-]+/g, '');
+  const a = csvCol
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s-]+/g, '');
+  const b = fieldCol
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s-]+/g, '');
   if (a === b) return 100;
   if (a.includes(b) || b.includes(a)) return 90;
   const aWords = csvCol.toLowerCase().split(/[\s_-]+/);
@@ -119,7 +129,13 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUploadComplete }: CSVUploadDialogProps) => {
+export const CSVUploadDialog = ({
+  open,
+  onClose,
+  tabConfig,
+  existingData,
+  onUploadComplete,
+}: CSVUploadDialogProps) => {
   const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
   const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -136,7 +152,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     setUploadedFileName(file.name);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const text = e.target?.result as string;
       if (!text) return;
       const lines = text.split('\n').filter(line => line.trim());
@@ -171,7 +187,12 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           csvColumn: bestConfidence >= 50 ? bestMatch : '',
           mappedField: field.csvColumn,
           confidence: bestConfidence,
-          status: bestConfidence >= 80 ? 'auto' as const : bestConfidence >= 50 ? 'manual' as const : 'unmapped' as const,
+          status:
+            bestConfidence >= 80
+              ? ('auto' as const)
+              : bestConfidence >= 50
+                ? ('manual' as const)
+                : ('unmapped' as const),
         };
       });
       setColumnMappings(mappings);
@@ -187,52 +208,87 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       case 'courses':
         return row['Course Code'] || null;
       case 'academic-calendar':
-        return row['Academic Year'] && row['Semester'] ? `${row['Academic Year']}|${row['Semester']}` : null;
+        return row['Academic Year'] && row['Semester']
+          ? `${row['Academic Year']}|${row['Semester']}`
+          : null;
       case 'value-added-courses':
-        return row['Course Name'] && row['Academic Year'] ? `${row['Course Name']}|${row['Academic Year']}` : null;
+        return row['Course Name'] && row['Academic Year']
+          ? `${row['Course Name']}|${row['Academic Year']}`
+          : null;
       case 'moocs':
         return row['Platform Name'] && row['Course Name'] && row['Academic Year']
-          ? `${row['Platform Name']}|${row['Course Name']}|${row['Academic Year']}` : null;
+          ? `${row['Platform Name']}|${row['Course Name']}|${row['Academic Year']}`
+          : null;
       case 'faculty-profiles':
         return row['Employee ID'] || null;
       case 'qualifications':
-        return row['Employee ID'] && row['Degree'] ? `${row['Employee ID']}|${row['Degree']}` : null;
+        return row['Employee ID'] && row['Degree']
+          ? `${row['Employee ID']}|${row['Degree']}`
+          : null;
       case 'certifications':
-        return row['Employee ID'] && row['Certification Name'] ? `${row['Employee ID']}|${row['Certification Name']}` : null;
+        return row['Employee ID'] && row['Certification Name']
+          ? `${row['Employee ID']}|${row['Certification Name']}`
+          : null;
       case 'alumni-details':
         return row['Alumni ID'] || null;
       case 'employment-career':
-        return row['Alumni ID'] && row['Organization Name'] ? `${row['Alumni ID']}|${row['Organization Name']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Organization Name']
+          ? `${row['Alumni ID']}|${row['Organization Name']}`
+          : row['Alumni ID'] || null;
       case 'higher-education':
-        return row['Alumni ID'] && row['Institution Name'] ? `${row['Alumni ID']}|${row['Institution Name']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Institution Name']
+          ? `${row['Alumni ID']}|${row['Institution Name']}`
+          : row['Alumni ID'] || null;
       case 'alumni-engagement':
-        return row['Alumni ID'] && row['Activity Name'] ? `${row['Alumni ID']}|${row['Activity Name']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Activity Name']
+          ? `${row['Alumni ID']}|${row['Activity Name']}`
+          : row['Alumni ID'] || null;
       case 'alumni-contributions':
-        return row['Alumni ID'] && row['Contribution Title'] ? `${row['Alumni ID']}|${row['Contribution Title']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Contribution Title']
+          ? `${row['Alumni ID']}|${row['Contribution Title']}`
+          : row['Alumni ID'] || null;
       case 'alumni-mentorship':
-        return row['Alumni ID'] && row['Mentorship Program'] ? `${row['Alumni ID']}|${row['Mentorship Program']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Mentorship Program']
+          ? `${row['Alumni ID']}|${row['Mentorship Program']}`
+          : row['Alumni ID'] || null;
       case 'alumni-achievements':
-        return row['Alumni ID'] && row['Achievement Title'] ? `${row['Alumni ID']}|${row['Achievement Title']}` : (row['Alumni ID'] || null);
+        return row['Alumni ID'] && row['Achievement Title']
+          ? `${row['Alumni ID']}|${row['Achievement Title']}`
+          : row['Alumni ID'] || null;
       case 'alumni-chapters':
         return row['Chapter Name'] || null;
       case 'alumni-events':
-        return row['Event Name'] && row['Event Date'] ? `${row['Event Name']}|${row['Event Date']}` : (row['Event Name'] || null);
+        return row['Event Name'] && row['Event Date']
+          ? `${row['Event Name']}|${row['Event Date']}`
+          : row['Event Name'] || null;
       case 'student-profile':
         return row['Student Registration Number'] || null;
       case 'admission-info':
-        return row['Student Registration Number'] && row['Admission Year'] ? `${row['Student Registration Number']}|${row['Admission Year']}` : null;
+        return row['Student Registration Number'] && row['Admission Year']
+          ? `${row['Student Registration Number']}|${row['Admission Year']}`
+          : null;
       case 'student-diversity':
         return row['Student Registration Number'] || null;
       case 'academic-performance':
-        return row['Student Registration Number'] && row['Semester'] ? `${row['Student Registration Number']}|${row['Semester']}` : null;
+        return row['Student Registration Number'] && row['Semester']
+          ? `${row['Student Registration Number']}|${row['Semester']}`
+          : null;
       case 'student-progression':
-        return row['Student Registration Number'] && row['Academic Year'] ? `${row['Student Registration Number']}|${row['Academic Year']}` : null;
+        return row['Student Registration Number'] && row['Academic Year']
+          ? `${row['Student Registration Number']}|${row['Academic Year']}`
+          : null;
       case 'scholarship-freeship':
-        return row['Student Registration Number'] && row['Scholarship Name'] ? `${row['Student Registration Number']}|${row['Scholarship Name']}` : null;
+        return row['Student Registration Number'] && row['Scholarship Name']
+          ? `${row['Student Registration Number']}|${row['Scholarship Name']}`
+          : null;
       case 'mooc-online-certifications':
-        return row['Student Registration Number'] && row['Course Name'] ? `${row['Student Registration Number']}|${row['Course Name']}` : null;
+        return row['Student Registration Number'] && row['Course Name']
+          ? `${row['Student Registration Number']}|${row['Course Name']}`
+          : null;
       case 'student-achievements':
-        return row['Student Registration Number'] && row['Achievement Name'] ? `${row['Student Registration Number']}|${row['Achievement Name']}` : null;
+        return row['Student Registration Number'] && row['Achievement Name']
+          ? `${row['Student Registration Number']}|${row['Achievement Name']}`
+          : null;
       case 'publications':
         return row['Publication Title'] || null;
       case 'patents':
@@ -246,34 +302,62 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
 
   const getDuplicateKeyColumn = (tabId: string): string => {
     switch (tabId) {
-      case 'curriculum': return 'Program + Regulation';
-      case 'courses': return 'Course Code';
-      case 'academic-calendar': return 'Academic Year + Semester';
-      case 'value-added-courses': return 'Course Name + Academic Year';
-      case 'moocs': return 'Platform + Course + Year';
-      case 'faculty-profiles': return 'Employee ID';
-      case 'qualifications': return 'Employee ID + Degree';
-      case 'certifications': return 'Employee ID + Certification';
-      case 'alumni-details': return 'Alumni ID';
-      case 'employment-career': return 'Alumni ID + Organization';
-      case 'higher-education': return 'Alumni ID + Institution';
-      case 'alumni-engagement': return 'Alumni ID + Activity Name';
-      case 'alumni-contributions': return 'Alumni ID + Contribution Title';
-      case 'alumni-mentorship': return 'Alumni ID + Mentorship Program';
-      case 'alumni-achievements': return 'Alumni ID + Achievement Title';
-      case 'alumni-chapters': return 'Chapter Name';
-      case 'alumni-events': return 'Event Name + Event Date';
-      case 'student-profile': return 'Student Registration Number';
-      case 'admission-info': return 'Registration Number + Admission Year';
-      case 'student-diversity': return 'Student Registration Number';
-      case 'academic-performance': return 'Registration Number + Semester';
-      case 'student-progression': return 'Registration Number + Academic Year';
-      case 'scholarship-freeship': return 'Registration Number + Scholarship Name';
-      case 'mooc-online-certifications': return 'Registration Number + Course Name';
-      case 'student-achievements': return 'Registration Number + Achievement';
-      case 'publications': return 'Publication Title';
-      case 'patents': return 'Application Number';
-      default: return 'Primary Key';
+      case 'curriculum':
+        return 'Program + Regulation';
+      case 'courses':
+        return 'Course Code';
+      case 'academic-calendar':
+        return 'Academic Year + Semester';
+      case 'value-added-courses':
+        return 'Course Name + Academic Year';
+      case 'moocs':
+        return 'Platform + Course + Year';
+      case 'faculty-profiles':
+        return 'Employee ID';
+      case 'qualifications':
+        return 'Employee ID + Degree';
+      case 'certifications':
+        return 'Employee ID + Certification';
+      case 'alumni-details':
+        return 'Alumni ID';
+      case 'employment-career':
+        return 'Alumni ID + Organization';
+      case 'higher-education':
+        return 'Alumni ID + Institution';
+      case 'alumni-engagement':
+        return 'Alumni ID + Activity Name';
+      case 'alumni-contributions':
+        return 'Alumni ID + Contribution Title';
+      case 'alumni-mentorship':
+        return 'Alumni ID + Mentorship Program';
+      case 'alumni-achievements':
+        return 'Alumni ID + Achievement Title';
+      case 'alumni-chapters':
+        return 'Chapter Name';
+      case 'alumni-events':
+        return 'Event Name + Event Date';
+      case 'student-profile':
+        return 'Student Registration Number';
+      case 'admission-info':
+        return 'Registration Number + Admission Year';
+      case 'student-diversity':
+        return 'Student Registration Number';
+      case 'academic-performance':
+        return 'Registration Number + Semester';
+      case 'student-progression':
+        return 'Registration Number + Academic Year';
+      case 'scholarship-freeship':
+        return 'Registration Number + Scholarship Name';
+      case 'mooc-online-certifications':
+        return 'Registration Number + Course Name';
+      case 'student-achievements':
+        return 'Registration Number + Achievement';
+      case 'publications':
+        return 'Publication Title';
+      case 'patents':
+        return 'Application Number';
+      default:
+        return 'Primary Key';
     }
   };
 
@@ -321,7 +405,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         if (field.masterDataSource) {
           const value = row[field.csvColumn]?.trim() || '';
           if (value) {
-            const validValues = masterData[field.masterDataSource as keyof typeof masterData] as string[];
+            const validValues = masterData[
+              field.masterDataSource as keyof typeof masterData
+            ] as string[];
             if (!validValues.includes(value)) {
               errors.push({
                 row: rowIndex + 1,
@@ -357,9 +443,10 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       if (tabConfig.id === 'alumni-details') {
         const almId = row['Alumni ID']?.trim();
         const rollNo = row['Roll Number']?.trim();
-        const existingDup = existingData.find(ex =>
-          (almId && ex['Alumni ID']?.trim() === almId) ||
-          (rollNo && ex['Roll Number']?.trim() === rollNo)
+        const existingDup = existingData.find(
+          ex =>
+            (almId && ex['Alumni ID']?.trim() === almId) ||
+            (rollNo && ex['Roll Number']?.trim() === rollNo)
         );
         if (existingDup) {
           const isAlmDup = almId && existingDup['Alumni ID']?.trim() === almId;
@@ -375,10 +462,13 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           rowHasError = true;
         }
 
-        const withinFileDup = mappedData.slice(0, rowIndex).find(prev =>
-          (almId && prev['Alumni ID']?.trim() === almId) ||
-          (rollNo && prev['Roll Number']?.trim() === rollNo)
-        );
+        const withinFileDup = mappedData
+          .slice(0, rowIndex)
+          .find(
+            prev =>
+              (almId && prev['Alumni ID']?.trim() === almId) ||
+              (rollNo && prev['Roll Number']?.trim() === rollNo)
+          );
         if (withinFileDup) {
           const isAlmDup = almId && withinFileDup['Alumni ID']?.trim() === almId;
           const dupField = isAlmDup ? 'Alumni ID' : 'Roll Number';
@@ -431,7 +521,12 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       tabConfig.fields.forEach(field => {
         if (field.type === 'boolean') {
           const value = row[field.csvColumn]?.trim() || '';
-          if (value && !['Yes', 'No', 'yes', 'no', 'YES', 'NO', 'true', 'false', 'True', 'False'].includes(value)) {
+          if (
+            value &&
+            !['Yes', 'No', 'yes', 'no', 'YES', 'NO', 'true', 'false', 'True', 'False'].includes(
+              value
+            )
+          ) {
             errors.push({
               row: rowIndex + 1,
               column: field.csvColumn,
@@ -541,7 +636,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           <>
             <FileSpreadsheet className="h-12 w-12 mx-auto text-emerald-500 mb-3" />
             <p className="text-sm font-medium text-emerald-600">{uploadedFileName}</p>
-            <p className="text-xs text-muted-foreground mt-1">{parsedData.length} records detected • {csvHeaders.length} columns</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {parsedData.length} records detected • {csvHeaders.length} columns
+            </p>
             <p className="text-[10px] text-muted-foreground mt-1">Click to replace file</p>
           </>
         ) : (
@@ -557,7 +654,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div>
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Validation Rules</p>
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              Validation Rules
+            </p>
             <ul className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
               {tabConfig.validationRules.map((rule, i) => (
                 <li key={i}>• {rule}</li>
@@ -573,7 +672,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           <p className="text-xs font-medium mb-2">Detected Columns:</p>
           <div className="flex flex-wrap gap-1">
             {csvHeaders.map(h => (
-              <Badge key={h} variant="outline" className="text-[9px]">{h}</Badge>
+              <Badge key={h} variant="outline" className="text-[9px]">
+                {h}
+              </Badge>
             ))}
           </div>
         </div>
@@ -583,7 +684,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
 
   const renderMappingStep = () => (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">Map your CSV columns to the expected fields. Auto-detected mappings are shown below:</p>
+      <p className="text-xs text-muted-foreground">
+        Map your CSV columns to the expected fields. Auto-detected mappings are shown below:
+      </p>
       <div className="rounded-lg border overflow-hidden max-h-[280px] overflow-y-auto">
         <Table>
           <TableHeader>
@@ -605,17 +708,21 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
                     {field.required && <span className="text-red-500 ml-0.5 text-[9px]">*</span>}
                   </TableCell>
                   <TableCell className="p-2">
-                    <Select
-                      value={selectValue}
-                      onValueChange={(v) => handleMappingChange(idx, v)}
-                    >
+                    <Select value={selectValue} onValueChange={v => handleMappingChange(idx, v)}>
                       <SelectTrigger className="h-7 text-[10px]">
                         <SelectValue placeholder="Select column" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={UNMAPPED_VALUE} className="text-[10px] text-muted-foreground">-- Unmapped --</SelectItem>
+                        <SelectItem
+                          value={UNMAPPED_VALUE}
+                          className="text-[10px] text-muted-foreground"
+                        >
+                          -- Unmapped --
+                        </SelectItem>
                         {csvHeaders.map(h => (
-                          <SelectItem key={h} value={h} className="text-[10px]">{h}</SelectItem>
+                          <SelectItem key={h} value={h} className="text-[10px]">
+                            {h}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -630,11 +737,15 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
                   </TableCell>
                   <TableCell className="p-2">
                     {mapping && (
-                      <Badge variant="secondary" className={cn('text-[8px]',
-                        mapping.status === 'auto' && 'bg-emerald-500/10 text-emerald-600',
-                        mapping.status === 'manual' && 'bg-blue-500/10 text-blue-600',
-                        mapping.status === 'unmapped' && 'bg-red-500/10 text-red-600',
-                      )}>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          'text-[8px]',
+                          mapping.status === 'auto' && 'bg-emerald-500/10 text-emerald-600',
+                          mapping.status === 'manual' && 'bg-blue-500/10 text-blue-600',
+                          mapping.status === 'unmapped' && 'bg-red-500/10 text-red-600'
+                        )}
+                      >
                         {mapping.status}
                       </Badge>
                     )}
@@ -649,7 +760,8 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         <div className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
           <p className="text-[10px] text-amber-600">
             <AlertTriangle className="h-3 w-3 inline mr-1" />
-            {columnMappings.filter(m => m.status === 'unmapped').length} field(s) unmapped. Unmapped required fields will cause validation errors.
+            {columnMappings.filter(m => m.status === 'unmapped').length} field(s) unmapped. Unmapped
+            required fields will cause validation errors.
           </p>
         </div>
       )}
@@ -689,17 +801,29 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         {validationResult.errors.filter(e => e.severity === 'error').length > 0 && (
           <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5 max-h-[120px] overflow-y-auto">
             <p className="text-xs font-medium text-red-600 mb-2 flex items-center gap-1">
-              <XCircle className="h-3.5 w-3.5" /> Errors ({validationResult.errors.filter(e => e.severity === 'error').length}):
+              <XCircle className="h-3.5 w-3.5" /> Errors (
+              {validationResult.errors.filter(e => e.severity === 'error').length}):
             </p>
             <ul className="text-[10px] text-muted-foreground space-y-1">
-              {validationResult.errors.filter(e => e.severity === 'error').slice(0, 15).map((err, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-red-500 font-mono shrink-0">Row {err.row}:</span>
-                  <span>{err.message} {err.value !== '(empty)' && <span className="text-red-400">("{err.value}")</span>}</span>
-                </li>
-              ))}
+              {validationResult.errors
+                .filter(e => e.severity === 'error')
+                .slice(0, 15)
+                .map((err, i) => (
+                  <li key={i} className="flex items-start gap-1">
+                    <span className="text-red-500 font-mono shrink-0">Row {err.row}:</span>
+                    <span>
+                      {err.message}{' '}
+                      {err.value !== '(empty)' && (
+                        <span className="text-red-400">("{err.value}")</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
               {validationResult.errors.filter(e => e.severity === 'error').length > 15 && (
-                <li className="text-red-400 italic">...and {validationResult.errors.filter(e => e.severity === 'error').length - 15} more errors</li>
+                <li className="text-red-400 italic">
+                  ...and {validationResult.errors.filter(e => e.severity === 'error').length - 15}{' '}
+                  more errors
+                </li>
               )}
             </ul>
           </div>
@@ -711,12 +835,15 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
               <AlertTriangle className="h-3.5 w-3.5" /> Warnings ({validationResult.warnings}):
             </p>
             <ul className="text-[10px] text-muted-foreground space-y-1">
-              {validationResult.errors.filter(e => e.severity === 'warning').slice(0, 10).map((err, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-amber-500 font-mono shrink-0">Row {err.row}:</span>
-                  <span>{err.message}</span>
-                </li>
-              ))}
+              {validationResult.errors
+                .filter(e => e.severity === 'warning')
+                .slice(0, 10)
+                .map((err, i) => (
+                  <li key={i} className="flex items-start gap-1">
+                    <span className="text-amber-500 font-mono shrink-0">Row {err.row}:</span>
+                    <span>{err.message}</span>
+                  </li>
+                ))}
             </ul>
           </div>
         )}
@@ -768,7 +895,10 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
                 <tr className="border-b">
                   <th className="text-left font-semibold p-2 w-8 text-center">#</th>
                   {tabConfig.fields.map(f => (
-                    <th key={f.key} className="text-left font-semibold p-2 min-w-[80px] whitespace-nowrap">
+                    <th
+                      key={f.key}
+                      className="text-left font-semibold p-2 min-w-[80px] whitespace-nowrap"
+                    >
                       {f.csvColumn}
                     </th>
                   ))}
@@ -800,13 +930,18 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
 
   const renderEvidenceStep = () => (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">Upload supporting evidence documents for this submission:</p>
+      <p className="text-xs text-muted-foreground">
+        Upload supporting evidence documents for this submission:
+      </p>
       <div className="space-y-2">
-        {tabConfig.requiredEvidence.map((evidence) => {
+        {tabConfig.requiredEvidence.map(evidence => {
           const fileAttached = step5EvidenceFiles[evidence];
           const inputId = `step5-file-${evidence.replace(/[^a-zA-Z0-9]/g, '-')}`;
           return (
-            <div key={evidence} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/20">
+            <div
+              key={evidence}
+              className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/20"
+            >
               <div className="flex items-center gap-2">
                 <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
                 <div>
@@ -823,7 +958,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
                   type="file"
                   id={inputId}
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={e => {
                     const f = e.target.files?.[0];
                     if (f) {
                       setStep5EvidenceFiles(prev => ({ ...prev, [evidence]: f }));
@@ -845,7 +980,8 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       </div>
       <div className="p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
         <p className="text-[10px] text-muted-foreground">
-          <span className="font-medium text-indigo-600">Tip:</span> Evidence documents support PDF, DOCX, XLSX, and ZIP formats up to 25MB each.
+          <span className="font-medium text-indigo-600">Tip:</span> Evidence documents support PDF,
+          DOCX, XLSX, and ZIP formats up to 25MB each.
         </p>
       </div>
     </div>
@@ -868,7 +1004,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       <div className="p-3 rounded-lg bg-muted/50 text-left">
         <p className="text-[10px] text-muted-foreground">Workflow Status:</p>
         <div className="flex items-center gap-2 mt-1">
-          <Badge variant="secondary" className="text-[9px] bg-indigo-500/10 text-indigo-600">Submitted</Badge>
+          <Badge variant="secondary" className="text-[9px] bg-indigo-500/10 text-indigo-600">
+            Submitted
+          </Badge>
           <ArrowRight className="h-3 w-3 text-muted-foreground" />
           <span className="text-[10px] text-muted-foreground">Awaiting HOD Review</span>
         </div>
@@ -914,22 +1052,42 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
             return (
               <div key={step.id} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all',
-                    isCompleted && 'bg-emerald-500 border-emerald-500 text-white',
-                    isActive && 'border-primary bg-primary/10 text-primary',
-                    !isActive && !isCompleted && 'border-muted-foreground/30 text-muted-foreground/40',
-                  )}>
-                    {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Icon className="h-3 w-3" />}
+                  <div
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all',
+                      isCompleted && 'bg-emerald-500 border-emerald-500 text-white',
+                      isActive && 'border-primary bg-primary/10 text-primary',
+                      !isActive &&
+                        !isCompleted &&
+                        'border-muted-foreground/30 text-muted-foreground/40'
+                    )}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <Icon className="h-3 w-3" />
+                    )}
                   </div>
-                  <span className={cn('text-[8px] mt-1 font-medium',
-                    isActive ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-[8px] mt-1 font-medium',
+                      isActive
+                        ? 'text-primary'
+                        : isCompleted
+                          ? 'text-foreground'
+                          : 'text-muted-foreground'
+                    )}
+                  >
                     {step.label}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={cn('h-0.5 w-3 mx-0.5 rounded-full', isCompleted ? 'bg-emerald-500' : 'bg-muted-foreground/20')} />
+                  <div
+                    className={cn(
+                      'h-0.5 w-3 mx-0.5 rounded-full',
+                      isCompleted ? 'bg-emerald-500' : 'bg-muted-foreground/20'
+                    )}
+                  />
                 )}
               </div>
             );
@@ -937,21 +1095,20 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         </div>
 
         {/* Step Content */}
-        <div className="min-h-[280px] flex-1 overflow-y-auto px-1">
-          {renderStepContent()}
-        </div>
+        <div className="min-h-[280px] flex-1 overflow-y-auto px-1">{renderStepContent()}</div>
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t">
-          <Button variant="ghost" size="sm" className="text-xs" onClick={handleBack} disabled={currentStepIndex === 0}>
-            Back
-          </Button>
           <Button
+            variant="ghost"
             size="sm"
             className="text-xs"
-            onClick={handleNext}
-            disabled={!canProceed}
+            onClick={handleBack}
+            disabled={currentStepIndex === 0}
           >
+            Back
+          </Button>
+          <Button size="sm" className="text-xs" onClick={handleNext} disabled={!canProceed}>
             {currentStep === 'submit' ? 'Submit & Close' : 'Next'}
             {currentStep !== 'submit' && <ArrowRight className="h-3 w-3 ml-1" />}
           </Button>

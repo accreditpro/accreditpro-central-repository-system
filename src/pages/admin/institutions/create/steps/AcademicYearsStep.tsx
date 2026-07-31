@@ -2,13 +2,7 @@ import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Plus, X, Calendar } from 'lucide-react';
 import { CreateInstitutionFormData } from '../types';
 import { useState } from 'react';
@@ -29,7 +23,7 @@ export const AcademicYearsStep = () => {
   const removeYear = (year: string) => {
     form.setValue(
       'academicYears.academicYears',
-      academicYears.filter((y) => y !== year)
+      academicYears.filter(y => y !== year)
     );
   };
 
@@ -40,7 +34,9 @@ export const AcademicYearsStep = () => {
           <Calendar className="h-5 w-5 text-primary" />
           Academic Years
         </h2>
-        <p className="text-sm text-muted-foreground">Configure the academic years for this institution</p>
+        <p className="text-sm text-muted-foreground">
+          Configure the academic years for this institution
+        </p>
       </div>
 
       <FormField
@@ -54,7 +50,7 @@ export const AcademicYearsStep = () => {
             <FormControl>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {academicYears.map((year) => (
+                  {academicYears.map(year => (
                     <div
                       key={year}
                       className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
@@ -79,9 +75,9 @@ export const AcademicYearsStep = () => {
                   <Input
                     placeholder="e.g., 2027-28"
                     value={newYear}
-                    onChange={(e) => setNewYear(e.target.value)}
+                    onChange={e => setNewYear(e.target.value)}
                     className="h-9 text-sm"
-                    onKeyDown={(e) => {
+                    onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addYear();

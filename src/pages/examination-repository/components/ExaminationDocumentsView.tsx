@@ -9,7 +9,7 @@ import { examDocumentCategories } from '../examination-configs';
 export function ExaminationDocumentsView() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredCategories = examDocumentCategories.filter((cat) =>
+  const filteredCategories = examDocumentCategories.filter(cat =>
     cat.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -35,14 +35,17 @@ export function ExaminationDocumentsView() {
         <Input
           placeholder="Search document categories..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           className="pl-9"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCategories.map((category) => (
-          <Card key={category.id} className="hover:shadow-md transition-shadow cursor-pointer group">
+        {filteredCategories.map(category => (
+          <Card
+            key={category.id}
+            className="hover:shadow-md transition-shadow cursor-pointer group"
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center justify-between">
                 <span className="flex items-center gap-2">

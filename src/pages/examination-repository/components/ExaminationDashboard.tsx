@@ -12,18 +12,70 @@ import {
 } from 'lucide-react';
 
 const kpiCards = [
-  { label: 'Active Sessions', value: '4', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Courses Examined', value: '48', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Students Evaluated', value: '2,450', icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { label: 'Avg Pass %', value: '83%', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
-  { label: 'Pending Results', value: '6', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
-  { label: 'Backlog Cases', value: '45', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
-  { label: 'Results Published', value: '42', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-  { label: 'University Ranks', value: '12', icon: Trophy, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  {
+    label: 'Active Sessions',
+    value: '4',
+    icon: Calendar,
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+  },
+  {
+    label: 'Courses Examined',
+    value: '48',
+    icon: FileText,
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+  },
+  {
+    label: 'Students Evaluated',
+    value: '2,450',
+    icon: Users,
+    color: 'text-violet-600',
+    bg: 'bg-violet-50',
+  },
+  {
+    label: 'Avg Pass %',
+    value: '83%',
+    icon: TrendingUp,
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+  },
+  {
+    label: 'Pending Results',
+    value: '6',
+    icon: Clock,
+    color: 'text-orange-600',
+    bg: 'bg-orange-50',
+  },
+  {
+    label: 'Backlog Cases',
+    value: '45',
+    icon: AlertTriangle,
+    color: 'text-red-600',
+    bg: 'bg-red-50',
+  },
+  {
+    label: 'Results Published',
+    value: '42',
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bg: 'bg-green-50',
+  },
+  {
+    label: 'University Ranks',
+    value: '12',
+    icon: Trophy,
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
 ];
 
 const recentActivities = [
-  { text: 'End Semester results published for B.Tech CSE Sem 4', time: '2 hours ago', type: 'success' },
+  {
+    text: 'End Semester results published for B.Tech CSE Sem 4',
+    time: '2 hours ago',
+    type: 'success',
+  },
   { text: 'Internal assessment marks verified for CS401', time: '4 hours ago', type: 'info' },
   { text: 'Supplementary exam schedule released', time: '1 day ago', type: 'info' },
   { text: 'CO attainment data uploaded for 12 courses', time: '1 day ago', type: 'success' },
@@ -32,10 +84,28 @@ const recentActivities = [
 ];
 
 const examSessionSummary = [
-  { session: 'End Sem - Even 2024', programs: 5, courses: 30, students: 1200, status: 'Results Published' },
-  { session: 'Supplementary Jul 2024', programs: 5, courses: 24, students: 180, status: 'Results Published' },
+  {
+    session: 'End Sem - Even 2024',
+    programs: 5,
+    courses: 30,
+    students: 1200,
+    status: 'Results Published',
+  },
+  {
+    session: 'Supplementary Jul 2024',
+    programs: 5,
+    courses: 24,
+    students: 180,
+    status: 'Results Published',
+  },
   { session: 'End Sem - Odd 2024', programs: 5, courses: 35, students: 1250, status: 'Ongoing' },
-  { session: 'Mid-Term 1 - Odd 2024', programs: 5, courses: 35, students: 1250, status: 'Completed' },
+  {
+    session: 'Mid-Term 1 - Odd 2024',
+    programs: 5,
+    courses: 35,
+    students: 1250,
+    status: 'Completed',
+  },
 ];
 
 export function ExaminationDashboard() {
@@ -43,12 +113,14 @@ export function ExaminationDashboard() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Examination Dashboard</h2>
-        <p className="text-muted-foreground">Overview of examination activities, results, and analytics</p>
+        <p className="text-muted-foreground">
+          Overview of examination activities, results, and analytics
+        </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {kpiCards.map((kpi) => (
+        {kpiCards.map(kpi => (
           <Card key={kpi.label} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -77,11 +149,15 @@ export function ExaminationDashboard() {
           <CardContent>
             <div className="space-y-3">
               {examSessionSummary.map((session, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                >
                   <div>
                     <p className="text-sm font-medium">{session.session}</p>
                     <p className="text-xs text-muted-foreground">
-                      {session.programs} programs • {session.courses} courses • {session.students} students
+                      {session.programs} programs • {session.courses} courses • {session.students}{' '}
+                      students
                     </p>
                   </div>
                   <Badge
@@ -90,8 +166,8 @@ export function ExaminationDashboard() {
                       session.status === 'Results Published'
                         ? 'bg-green-100 text-green-700'
                         : session.status === 'Ongoing'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-amber-100 text-amber-700'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-amber-100 text-amber-700'
                     }
                   >
                     {session.status}
@@ -119,8 +195,8 @@ export function ExaminationDashboard() {
                       activity.type === 'success'
                         ? 'bg-green-500'
                         : activity.type === 'warning'
-                        ? 'bg-amber-500'
-                        : 'bg-blue-500'
+                          ? 'bg-amber-500'
+                          : 'bg-blue-500'
                     }`}
                   />
                   <div className="flex-1">
@@ -144,9 +220,14 @@ export function ExaminationDashboard() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-amber-900/80 leading-relaxed">
-            Every examination record is linked with: <strong>Academic Year → Program Offering → Semester → Course → Faculty → Student</strong>.
-            This relationship must never change as future modules (OBE, NBA, NAAC, NIRF, AI Analytics, Institution Readiness) will consume this data directly.
-            The Examination Repository references master records created by the Institution Admin and does not duplicate master data.
+            Every examination record is linked with:{' '}
+            <strong>
+              Academic Year → Program Offering → Semester → Course → Faculty → Student
+            </strong>
+            . This relationship must never change as future modules (OBE, NBA, NAAC, NIRF, AI
+            Analytics, Institution Readiness) will consume this data directly. The Examination
+            Repository references master records created by the Institution Admin and does not
+            duplicate master data.
           </p>
         </CardContent>
       </Card>

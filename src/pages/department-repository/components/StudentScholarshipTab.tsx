@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, ScholarshipResponse, CreateScholarshipRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  ScholarshipResponse,
+  CreateScholarshipRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,8 +99,9 @@ export const StudentScholarshipTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         if (result.content.length === 1) {
           setSelectedStudentId(result.content[0].id);
@@ -111,21 +116,24 @@ export const StudentScholarshipTab = () => {
 
   // ── Fetch scholarships for selected student ──
 
-  const fetchScholarships = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studentService.listScholarships(departmentId, studentId);
-      setScholarships(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load scholarships';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchScholarships = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await studentService.listScholarships(departmentId, studentId);
+        setScholarships(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load scholarships';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -148,7 +156,7 @@ export const StudentScholarshipTab = () => {
   };
 
   const filteredScholarships = searchQuery
-    ? scholarships.filter((s) => scholarshipMatchesSearch(s, searchQuery))
+    ? scholarships.filter(s => scholarshipMatchesSearch(s, searchQuery))
     : scholarships;
 
   // ── Create ──
@@ -224,10 +232,14 @@ export const StudentScholarshipTab = () => {
 
   const getDisbursementBadge = (status: string) => {
     switch (status) {
-      case 'Disbursed': return 'bg-emerald-500/10 text-emerald-600';
-      case 'Pending': return 'bg-amber-500/10 text-amber-600';
-      case 'Rejected': return 'bg-red-500/10 text-red-600';
-      default: return 'bg-gray-500/10 text-gray-600';
+      case 'Disbursed':
+        return 'bg-emerald-500/10 text-emerald-600';
+      case 'Pending':
+        return 'bg-amber-500/10 text-amber-600';
+      case 'Rejected':
+        return 'bg-red-500/10 text-red-600';
+      default:
+        return 'bg-gray-500/10 text-gray-600';
     }
   };
 
@@ -265,7 +277,7 @@ export const StudentScholarshipTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -274,7 +286,7 @@ export const StudentScholarshipTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -301,7 +313,9 @@ export const StudentScholarshipTab = () => {
           <Card className="border-border/50">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Scholarships & Financial Support</CardTitle>
+                <CardTitle className="text-sm font-semibold">
+                  Scholarships & Financial Support
+                </CardTitle>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-[10px]">
                     {scholarships.length} record{scholarships.length !== 1 ? 's' : ''}
@@ -323,10 +337,21 @@ export const StudentScholarshipTab = () => {
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Scholarship
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -351,7 +376,7 @@ export const StudentScholarshipTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -377,26 +402,45 @@ export const StudentScholarshipTab = () => {
                       <TableHead className="text-[10px] font-semibold">Academic Year</TableHead>
                       <TableHead className="text-[10px] font-semibold">Fee Waiver</TableHead>
                       <TableHead className="text-[10px] font-semibold">Disbursement</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-28" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -405,7 +449,14 @@ export const StudentScholarshipTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchScholarships(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() =>
+                                selectedStudentId && fetchScholarships(selectedStudentId)
+                              }
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -430,33 +481,60 @@ export const StudentScholarshipTab = () => {
                     )}
 
                     {/* Data rows */}
-                    {!loading && !error && filteredScholarships.map((s, index) => (
-                      <TableRow key={s.id} className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">{index + 1}</TableCell>
-                        <TableCell className="text-xs p-1.5 font-medium">{s.scholarshipName}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className="text-[9px]">{s.scholarshipType || '-'}</Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5">{s.provider || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{formatAmount(s.amount)}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{getAcademicYearLabel(s.academicYearId)}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className={cn('text-[9px]', s.feeWaiverStatus && 'font-medium')}>
-                            {s.feeWaiverStatus || '-'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="secondary" className={cn('text-[9px]', getDisbursementBadge(s.disbursementStatus))}>
-                            {s.disbursementStatus}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-40 cursor-not-allowed" disabled title="Update API not available yet">
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {!loading &&
+                      !error &&
+                      filteredScholarships.map((s, index) => (
+                        <TableRow key={s.id} className="hover:bg-muted/20">
+                          <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-xs p-1.5 font-medium">
+                            {s.scholarshipName}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge variant="outline" className="text-[9px]">
+                              {s.scholarshipType || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">{s.provider || '-'}</TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {formatAmount(s.amount)}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {getAcademicYearLabel(s.academicYearId)}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="outline"
+                              className={cn('text-[9px]', s.feeWaiverStatus && 'font-medium')}
+                            >
+                              {s.feeWaiverStatus || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'text-[9px]',
+                                getDisbursementBadge(s.disbursementStatus)
+                              )}
+                            >
+                              {s.disbursementStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center p-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-40 cursor-not-allowed"
+                              disabled
+                              title="Update API not available yet"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -473,27 +551,39 @@ export const StudentScholarshipTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Scholarship Record</DialogTitle>
             <DialogDescription className="text-xs">
-              Fill in the details to add a new scholarship record. Required fields are marked with *.
+              Fill in the details to add a new scholarship record. Required fields are marked with
+              *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Scholarship Name *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Merit Scholarship"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Merit Scholarship"
                   value={formData.scholarshipName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, scholarshipName: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, scholarshipName: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Scholarship Type</Label>
                 <Select
                   value={formData.scholarshipType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, scholarshipType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, scholarshipType: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {SCHOLARSHIP_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {SCHOLARSHIP_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -502,15 +592,29 @@ export const StudentScholarshipTab = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Provider / Agency</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. State Government"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. State Government"
                   value={formData.provider || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, provider: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, provider: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Amount (INR)</Label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.01" placeholder="e.g. 50000"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 50000"
                   value={formData.amount ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      amount: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -518,12 +622,18 @@ export const StudentScholarshipTab = () => {
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -532,12 +642,18 @@ export const StudentScholarshipTab = () => {
                 <Label className="text-xs font-medium">Fee Waiver Status</Label>
                 <Select
                   value={formData.feeWaiverStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, feeWaiverStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, feeWaiverStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {FEE_WAIVER_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {FEE_WAIVER_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -548,12 +664,16 @@ export const StudentScholarshipTab = () => {
                 <Label className="text-xs font-medium">Disbursement Status</Label>
                 <Select
                   value={formData.disbursementStatus || 'Pending'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, disbursementStatus: v }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, disbursementStatus: v }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {DISBURSEMENT_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {DISBURSEMENT_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -561,9 +681,20 @@ export const StudentScholarshipTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.scholarshipName}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={saving || !formData.scholarshipName}
+            >
               {saving ? 'Adding...' : 'Add Scholarship'}
             </Button>
           </DialogFooter>

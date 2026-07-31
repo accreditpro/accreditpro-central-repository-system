@@ -158,13 +158,8 @@ class FacultyService {
    * Section 3.12: LIST Faculty FDPs
    * Returns an array of FdpResponse for a given faculty member.
    */
-  async listFdps(
-    departmentId: number,
-    facultyId: number
-  ): Promise<FdpResponse[]> {
-    return apiService.get<FdpResponse[]>(
-      `${this.baseUrl(departmentId)}/${facultyId}/fdps`
-    );
+  async listFdps(departmentId: number, facultyId: number): Promise<FdpResponse[]> {
+    return apiService.get<FdpResponse[]>(`${this.baseUrl(departmentId)}/${facultyId}/fdps`);
   }
 
   /**
@@ -175,10 +170,7 @@ class FacultyService {
     facultyId: number,
     data: CreateFdpRequest
   ): Promise<FdpResponse> {
-    return apiService.post<FdpResponse>(
-      `${this.baseUrl(departmentId)}/${facultyId}/fdps`,
-      data
-    );
+    return apiService.post<FdpResponse>(`${this.baseUrl(departmentId)}/${facultyId}/fdps`, data);
   }
 
   /**
@@ -199,14 +191,8 @@ class FacultyService {
   /**
    * Section 3.15: DELETE Faculty FDP
    */
-  async deleteFdp(
-    departmentId: number,
-    facultyId: number,
-    fdpId: number
-  ): Promise<void> {
-    await apiService.delete<void>(
-      `${this.baseUrl(departmentId)}/${facultyId}/fdps/${fdpId}`
-    );
+  async deleteFdp(departmentId: number, facultyId: number, fdpId: number): Promise<void> {
+    await apiService.delete<void>(`${this.baseUrl(departmentId)}/${facultyId}/fdps/${fdpId}`);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -218,10 +204,7 @@ class FacultyService {
    * Returns a single EmploymentResponse for a given faculty member.
    * May throw a 404 if no employment record exists yet.
    */
-  async getEmployment(
-    departmentId: number,
-    facultyId: number
-  ): Promise<EmploymentResponse> {
+  async getEmployment(departmentId: number, facultyId: number): Promise<EmploymentResponse> {
     return apiService.get<EmploymentResponse>(
       `${this.baseUrl(departmentId)}/${facultyId}/employment`
     );
@@ -257,9 +240,7 @@ class FacultyService {
    * Fetch metrics for all repositories in this department.
    */
   async getAllMetrics(departmentId: number): Promise<RepositoryMetricsResponse[]> {
-    return apiService.get<RepositoryMetricsResponse[]>(
-      `/v1/departments/${departmentId}/metrics`
-    );
+    return apiService.get<RepositoryMetricsResponse[]>(`/v1/departments/${departmentId}/metrics`);
   }
 }
 

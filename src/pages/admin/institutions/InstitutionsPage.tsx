@@ -54,7 +54,10 @@ export const InstitutionsPage = () => {
     state: 'all',
     repositoryCompletion: 'all',
   });
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; institution: Institution | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    institution: Institution | null;
+  }>({
     open: false,
     institution: null,
   });
@@ -83,7 +86,8 @@ export const InstitutionsPage = () => {
         status: filters.status !== 'all' ? filters.status : undefined,
         category: filters.category !== 'all' ? filters.category : undefined,
         state: filters.state !== 'all' ? filters.state : undefined,
-        repositoryCompletion: filters.repositoryCompletion !== 'all' ? filters.repositoryCompletion : undefined,
+        repositoryCompletion:
+          filters.repositoryCompletion !== 'all' ? filters.repositoryCompletion : undefined,
         sortBy: sort?.key || undefined,
         sortDirection: sort?.direction || undefined,
       });
@@ -94,7 +98,16 @@ export const InstitutionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, debouncedSearch, filters.status, filters.category, filters.state, filters.repositoryCompletion, sort]);
+  }, [
+    pagination.page,
+    pagination.pageSize,
+    debouncedSearch,
+    filters.status,
+    filters.category,
+    filters.state,
+    filters.repositoryCompletion,
+    sort,
+  ]);
 
   useEffect(() => {
     fetchInstitutions();
@@ -102,18 +115,23 @@ export const InstitutionsPage = () => {
 
   // Reset to page 1 when filters change (but not search, which is debounced)
   useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   }, [filters.status, filters.category, filters.state, filters.repositoryCompletion]);
 
   // Reset to page 1 when debounced search changes
   useEffect(() => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   }, [debouncedSearch]);
 
   const handleStatusChange = async (institution: Institution, newStatus: InstitutionStatus) => {
     try {
-      await adminService.updateInstitutionStatus(institution.id, newStatus as 'ACTIVE' | 'INACTIVE');
-      toast.success(`${institution.name} has been ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'}`);
+      await adminService.updateInstitutionStatus(
+        institution.id,
+        newStatus as 'ACTIVE' | 'INACTIVE'
+      );
+      toast.success(
+        `${institution.name} has been ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'}`
+      );
       fetchInstitutions();
     } catch {
       toast.error('Failed to update status');
@@ -133,7 +151,10 @@ export const InstitutionsPage = () => {
   };
 
   const getStatusBadge = (status: InstitutionStatus) => {
-    const config: Record<InstitutionStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    const config: Record<
+      InstitutionStatus,
+      { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+    > = {
       ACTIVE: { label: 'Active', variant: 'default' },
       INACTIVE: { label: 'Inactive', variant: 'secondary' },
       PENDING: { label: 'Pending', variant: 'outline' },
@@ -153,15 +174,19 @@ export const InstitutionsPage = () => {
       header: '',
       className: 'w-12',
       headerClassName: 'w-12',
-      cell: (row) => (
+      cell: row => (
         <div className="flex items-center justify-center">
           <div className="h-9 w-9 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-border/50 flex items-center justify-center">
             <img
-              src={row.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`}
+              src={
+                row.logo ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`
+              }
               alt={row.name}
               className="h-9 w-9 object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`;
+              onError={e => {
+                (e.target as HTMLImageElement).src =
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`;
               }}
             />
           </div>
@@ -174,10 +199,12 @@ export const InstitutionsPage = () => {
       accessorKey: 'name',
       sortable: true,
       className: 'min-w-[200px]',
-      cell: (row) => (
+      cell: row => (
         <div className="flex flex-col">
           <span className="text-sm font-medium truncate max-w-[250px]">{row.name}</span>
-          <span className="text-[10px] text-muted-foreground">{row.city || '—'}, {row.state || '—'}</span>
+          <span className="text-[10px] text-muted-foreground">
+            {row.city || '—'}, {row.state || '—'}
+          </span>
         </div>
       ),
     },
@@ -187,7 +214,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'code',
       sortable: true,
       className: 'w-[120px]',
-      cell: (row) => (
+      cell: row => (
         <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{row.code}</code>
       ),
     },
@@ -197,7 +224,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'category',
       sortable: true,
       className: 'w-[130px]',
-      cell: (row) => (
+      cell: row => (
         <Badge variant="outline" className="text-[10px] font-normal">
           {row.category}
         </Badge>
@@ -209,7 +236,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'state',
       sortable: true,
       className: 'w-[120px]',
-      cell: (row) => <span className="text-xs">{row.state}</span>,
+      cell: row => <span className="text-xs">{row.state}</span>,
     },
     {
       id: 'usersCount',
@@ -218,9 +245,7 @@ export const InstitutionsPage = () => {
       sortable: true,
       className: 'w-[80px] text-center',
       headerClassName: 'text-center',
-      cell: (row) => (
-        <span className="text-xs font-medium">{row.usersCount}</span>
-      ),
+      cell: row => <span className="text-xs font-medium">{row.usersCount}</span>,
     },
     {
       id: 'repositoryCompletion',
@@ -228,18 +253,22 @@ export const InstitutionsPage = () => {
       accessorKey: 'repositoryCompletion',
       sortable: true,
       className: 'w-[140px]',
-      cell: (row) => (
+      cell: row => (
         <div className="flex items-center gap-2">
           <Progress
             value={row.repositoryCompletion}
             className={cn(
               'h-1.5 flex-1',
               row.repositoryCompletion < 50 && '[&>div]:bg-red-500',
-              row.repositoryCompletion >= 50 && row.repositoryCompletion < 75 && '[&>div]:bg-amber-500',
+              row.repositoryCompletion >= 50 &&
+                row.repositoryCompletion < 75 &&
+                '[&>div]:bg-amber-500',
               row.repositoryCompletion >= 75 && '[&>div]:bg-emerald-500'
             )}
           />
-          <span className="text-[10px] font-medium w-8 text-right">{row.repositoryCompletion}%</span>
+          <span className="text-[10px] font-medium w-8 text-right">
+            {row.repositoryCompletion}%
+          </span>
         </div>
       ),
     },
@@ -249,24 +278,29 @@ export const InstitutionsPage = () => {
       accessorKey: 'status',
       sortable: true,
       className: 'w-[100px]',
-      cell: (row) => getStatusBadge(row.status),
+      cell: row => getStatusBadge(row.status),
     },
     {
       id: 'actions',
       header: 'Actions',
       className: 'w-[60px] text-center',
       headerClassName: 'text-center',
-      cell: (row) => (
+      cell: row => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={e => e.stopPropagation()}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 navigate(`/admin/institutions/${row.id}`);
               }}
@@ -276,7 +310,7 @@ export const InstitutionsPage = () => {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 navigate(`/admin/institutions/${row.id}/edit`);
               }}
@@ -288,7 +322,7 @@ export const InstitutionsPage = () => {
             {row.status === 'ACTIVE' ? (
               <DropdownMenuItem
                 className="text-xs gap-2 cursor-pointer"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   handleStatusChange(row, 'INACTIVE');
                 }}
@@ -299,7 +333,7 @@ export const InstitutionsPage = () => {
             ) : (
               <DropdownMenuItem
                 className="text-xs gap-2 cursor-pointer"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   handleStatusChange(row, 'ACTIVE');
                 }}
@@ -311,7 +345,7 @@ export const InstitutionsPage = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer text-destructive focus:text-destructive"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 setDeleteDialog({ open: true, institution: row });
               }}
@@ -349,7 +383,11 @@ export const InstitutionsPage = () => {
             <Download className="h-3.5 w-3.5" />
             Export
           </Button>
-          <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => navigate('/admin/institutions/create')}>
+          <Button
+            size="sm"
+            className="gap-2 h-8 text-xs"
+            onClick={() => navigate('/admin/institutions/create')}
+          >
             <Plus className="h-3.5 w-3.5" />
             Add Institution
           </Button>
@@ -359,10 +397,7 @@ export const InstitutionsPage = () => {
       {/* Scrollable content area - takes remaining space */}
       <div className="flex-1 flex flex-col min-h-0 gap-5">
         {/* Filters */}
-        <InstitutionFilters
-          filters={filters}
-          onFilterChange={setFilters}
-        />
+        <InstitutionFilters filters={filters} onFilterChange={setFilters} />
 
         {/* Summary */}
         {!loading && (
@@ -386,7 +421,7 @@ export const InstitutionsPage = () => {
             loading={loading}
             sort={sort}
             onSort={setSort}
-            rowKey={(row) => String(row.id)}
+            rowKey={row => String(row.id)}
             emptyTitle="No institutions found"
             emptyDescription="Try adjusting your search or filter criteria to find institutions."
           />
@@ -396,8 +431,8 @@ export const InstitutionsPage = () => {
         {!loading && pagination.total > 0 && (
           <DataTablePagination
             pagination={pagination}
-            onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-            onPageSizeChange={(pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 }))}
+            onPageChange={page => setPagination(prev => ({ ...prev, page }))}
+            onPageSizeChange={pageSize => setPagination(prev => ({ ...prev, pageSize, page: 1 }))}
           />
         )}
       </div>
@@ -405,14 +440,16 @@ export const InstitutionsPage = () => {
       {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog({ open, institution: open ? deleteDialog.institution : null })}
+        onOpenChange={open =>
+          setDeleteDialog({ open, institution: open ? deleteDialog.institution : null })
+        }
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Institution</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteDialog.institution?.name}</strong>? This action
-              cannot be undone and will remove all associated data.
+              Are you sure you want to delete <strong>{deleteDialog.institution?.name}</strong>?
+              This action cannot be undone and will remove all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

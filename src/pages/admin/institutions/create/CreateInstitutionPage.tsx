@@ -33,7 +33,11 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { adminService } from '@/services/admin.service';
-import type { CreateInstitutionRequest, CreateInstitutionResponse, CreatedUser } from '@/types/institution.types';
+import type {
+  CreateInstitutionRequest,
+  CreateInstitutionResponse,
+  CreatedUser,
+} from '@/types/institution.types';
 import {
   CreateInstitutionFormData,
   createInstitutionSchema,
@@ -183,7 +187,7 @@ export const CreateInstitutionPage = () => {
     if (!result.success) {
       // Trigger form validation for the current step fields
       const fields = Object.keys(result.error.formErrors.fieldErrors);
-      fields.forEach((field) => {
+      fields.forEach(field => {
         form.trigger(`${prefix}.${field}` as keyof CreateInstitutionFormData);
       });
       return false;
@@ -194,12 +198,12 @@ export const CreateInstitutionPage = () => {
   const handleNext = async () => {
     const isValid = await validateCurrentStep();
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 8));
+      setCurrentStep(prev => Math.min(prev + 1, 8));
     }
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async () => {
@@ -218,7 +222,8 @@ export const CreateInstitutionPage = () => {
       toast.success('Institution created successfully!');
       setShowSuccessDialog(true);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to create institution. Please try again.';
+      const message =
+        error instanceof Error ? error.message : 'Failed to create institution. Please try again.';
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -332,18 +337,16 @@ export const CreateInstitutionPage = () => {
                     'relative z-10 flex items-center justify-center h-8 w-8 rounded-full border-2 transition-all',
                     isCompleted && 'bg-primary border-primary text-primary-foreground',
                     isCurrent && 'border-primary bg-primary/10 text-primary',
-                    !isCompleted && !isCurrent && 'border-muted-foreground/30 text-muted-foreground/50'
+                    !isCompleted &&
+                      !isCurrent &&
+                      'border-muted-foreground/30 text-muted-foreground/50'
                   )}
                   onClick={() => {
                     if (isCompleted) setCurrentStep(step.id);
                   }}
                   disabled={!isCompleted && !isCurrent}
                 >
-                  {isCompleted ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    stepIcons[index]
-                  )}
+                  {isCompleted ? <Check className="h-3.5 w-3.5" /> : stepIcons[index]}
                 </button>
 
                 {/* Label */}
@@ -363,7 +366,7 @@ export const CreateInstitutionPage = () => {
 
       {/* Form Content */}
       <Form {...form}>
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="rounded-xl border bg-card p-6 min-h-[380px]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -393,11 +396,7 @@ export const CreateInstitutionPage = () => {
 
             <div className="flex items-center gap-2">
               {currentStep < 8 ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="gap-2 h-9 text-sm"
-                >
+                <Button type="button" onClick={handleNext} className="gap-2 h-9 text-sm">
                   Next
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -435,8 +434,8 @@ export const CreateInstitutionPage = () => {
             </div>
             <DialogTitle className="text-center">Institution Created Successfully!</DialogTitle>
             <DialogDescription className="text-center">
-              The institution has been created. Below are the login credentials for the created accounts.
-              Please share these with the respective users.
+              The institution has been created. Below are the login credentials for the created
+              accounts. Please share these with the respective users.
             </DialogDescription>
           </DialogHeader>
 
@@ -447,7 +446,9 @@ export const CreateInstitutionPage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold">{createdResponse.institution.name}</span>
+                    <span className="text-sm font-semibold">
+                      {createdResponse.institution.name}
+                    </span>
                   </div>
                   <Badge variant="secondary" className="text-[10px]">
                     {createdResponse.institution.code}
@@ -463,7 +464,8 @@ export const CreateInstitutionPage = () => {
               {/* Users Created */}
               <div className="space-y-3">
                 <p className="text-xs font-medium text-muted-foreground">
-                  {createdResponse.usersCreated} user{createdResponse.usersCreated > 1 ? 's' : ''} created
+                  {createdResponse.usersCreated} user{createdResponse.usersCreated > 1 ? 's' : ''}{' '}
+                  created
                 </p>
 
                 {/* Admin User */}

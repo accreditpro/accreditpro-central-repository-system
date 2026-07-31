@@ -67,11 +67,19 @@ const navItems: NavItem[] = [
   { id: 'ncc', label: 'NCC', icon: <Shield className="h-4 w-4" /> },
   { id: 'sports-activities', label: 'Sports Activities', icon: <Trophy className="h-4 w-4" /> },
   { id: 'cultural-activities', label: 'Cultural Activities', icon: <Music className="h-4 w-4" /> },
-  { id: 'extension-activities', label: 'Extension Activities', icon: <HandHeart className="h-4 w-4" /> },
+  {
+    id: 'extension-activities',
+    label: 'Extension Activities',
+    icon: <HandHeart className="h-4 w-4" />,
+  },
   { id: 'community-outreach', label: 'Community Outreach', icon: <Users className="h-4 w-4" /> },
   { id: 'clubs', label: 'Clubs & Societies', icon: <Layers className="h-4 w-4" /> },
   { id: 'student-chapters', label: 'Student Chapters', icon: <BookMarked className="h-4 w-4" /> },
-  { id: 'student-achievements', label: 'Student Achievements', icon: <Award className="h-4 w-4" /> },
+  {
+    id: 'student-achievements',
+    label: 'Student Achievements',
+    icon: <Award className="h-4 w-4" />,
+  },
   { id: 'student-awards', label: 'Student Awards', icon: <Medal className="h-4 w-4" /> },
   { id: 'events', label: 'Events', icon: <Calendar className="h-4 w-4" /> },
   { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
@@ -84,13 +92,15 @@ export default function StudentDevelopmentRepositoryPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
-    const initial: Record<string, Record<string, string | number>[]> = {};
-    studentDevTabConfigs.forEach(tab => {
-      initial[tab.id] = [...tab.sampleData];
-    });
-    return initial;
-  });
+  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(
+    () => {
+      const initial: Record<string, Record<string, string | number>[]> = {};
+      studentDevTabConfigs.forEach(tab => {
+        initial[tab.id] = [...tab.sampleData];
+      });
+      return initial;
+    }
+  );
 
   const activeTabConfig = useMemo(() => {
     return studentDevTabConfigs.find(t => t.id === activeView);
@@ -101,16 +111,16 @@ export default function StudentDevelopmentRepositoryPage() {
     const data = tableData[activeView] || [];
     if (!searchQuery) return data;
     return data.filter(row =>
-      Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      Object.values(row).some(val => String(val).toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [activeTabConfig, tableData, activeView, searchQuery]);
 
   const handleAddNew = () => {
     if (!activeTabConfig) return;
     const emptyRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach(f => { emptyRow[f.key] = ''; });
+    activeTabConfig.fields.forEach(f => {
+      emptyRow[f.key] = '';
+    });
     setEditingRow(emptyRow);
     setIsNewRecord(true);
     setEditDialogOpen(true);
@@ -188,7 +198,7 @@ export default function StudentDevelopmentRepositoryPage() {
           <Input
             placeholder={`Search ${activeTabConfig.label.toLowerCase()}...`}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -217,7 +227,10 @@ export default function StudentDevelopmentRepositoryPage() {
                 <TableBody>
                   {currentData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={visibleFields.length + 1} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={visibleFields.length + 1}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No records found
                       </TableCell>
                     </TableRow>
@@ -225,20 +238,33 @@ export default function StudentDevelopmentRepositoryPage() {
                     currentData.map((row, idx) => (
                       <TableRow key={idx}>
                         {visibleFields.map(field => (
-                          <TableCell key={field.key} className="text-sm whitespace-nowrap max-w-[200px] truncate">
+                          <TableCell
+                            key={field.key}
+                            className="text-sm whitespace-nowrap max-w-[200px] truncate"
+                          >
                             {field.type === 'currency'
                               ? `₹${Number(row[field.key]).toLocaleString('en-IN')}`
                               : field.type === 'percentage'
-                              ? `${row[field.key]}%`
-                              : String(row[field.key] || '-')}
+                                ? `${row[field.key]}%`
+                                : String(row[field.key] || '-')}
                           </TableCell>
                         ))}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleEdit(row)}
+                            >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive"
+                              onClick={() => handleDelete(idx)}
+                            >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -268,22 +294,48 @@ export default function StudentDevelopmentRepositoryPage() {
                   {field.type === 'select' ? (
                     <Select
                       value={String(editingRow?.[field.key] || '')}
-                      onValueChange={(val) => setEditingRow(prev => prev ? { ...prev, [field.key]: val } : null)}
+                      onValueChange={val =>
+                        setEditingRow(prev => (prev ? { ...prev, [field.key]: val } : null))
+                      }
                     >
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder={`Select ${field.label}`} />
                       </SelectTrigger>
                       <SelectContent>
                         {field.options?.map(opt => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
                     <Input
-                      type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                      type={
+                        field.type === 'number' ||
+                        field.type === 'currency' ||
+                        field.type === 'percentage'
+                          ? 'number'
+                          : field.type === 'date'
+                            ? 'date'
+                            : 'text'
+                      }
                       value={String(editingRow?.[field.key] || '')}
-                      onChange={(e) => setEditingRow(prev => prev ? { ...prev, [field.key]: field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? Number(e.target.value) : e.target.value } : null)}
+                      onChange={e =>
+                        setEditingRow(prev =>
+                          prev
+                            ? {
+                                ...prev,
+                                [field.key]:
+                                  field.type === 'number' ||
+                                  field.type === 'currency' ||
+                                  field.type === 'percentage'
+                                    ? Number(e.target.value)
+                                    : e.target.value,
+                              }
+                            : null
+                        )
+                      }
                       placeholder={field.placeholder || `Enter ${field.label}`}
                       className="h-9"
                     />
@@ -292,7 +344,9 @@ export default function StudentDevelopmentRepositoryPage() {
               ))}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleSave}>{isNewRecord ? 'Add Record' : 'Save Changes'}</Button>
             </DialogFooter>
           </DialogContent>
@@ -304,25 +358,36 @@ export default function StudentDevelopmentRepositoryPage() {
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-64'}`}>
+      <aside
+        className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-64'}`}
+      >
         <div className="flex items-center justify-between p-3 border-b">
-          {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">Student Development</span>}
+          {!sidebarCollapsed && (
+            <span className="text-sm font-semibold text-primary">Student Development</span>
+          )}
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {navItems.map(item => (
             <Button
               key={item.id}
               variant={activeView === item.id ? 'secondary' : 'ghost'}
               className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
-              onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+              onClick={() => {
+                setActiveView(item.id);
+                setSearchQuery('');
+              }}
               title={sidebarCollapsed ? item.label : undefined}
             >
               {item.icon}
@@ -333,9 +398,7 @@ export default function StudentDevelopmentRepositoryPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6">
-        {renderContent()}
-      </main>
+      <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
     </div>
   );
 }

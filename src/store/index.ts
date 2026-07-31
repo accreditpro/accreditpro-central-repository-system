@@ -10,7 +10,7 @@ export const store = configureStore({
     theme: themeReducer,
     ui: uiReducer,
   },
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['auth/login/fulfilled'],

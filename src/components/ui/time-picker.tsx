@@ -1,7 +1,13 @@
 import * as React from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TimePickerProps {
   value?: string; // HH:mm format
@@ -30,25 +36,29 @@ function generateTimeOptions(): { value: string; label: string }[] {
 
 const TIME_OPTIONS = generateTimeOptions();
 
-export function TimePicker({ value, onChange, placeholder = 'Select time', className, disabled }: TimePickerProps) {
+export function TimePicker({
+  value,
+  onChange,
+  placeholder = 'Select time',
+  className,
+  disabled,
+}: TimePickerProps) {
   const displayLabel = React.useMemo(() => {
     if (!value) return '';
-    const option = TIME_OPTIONS.find((o) => o.value === value);
+    const option = TIME_OPTIONS.find(o => o.value === value);
     return option?.label || value;
   }, [value]);
 
   return (
-    <Select value={value || ''} onValueChange={(v) => onChange?.(v)} disabled={disabled}>
+    <Select value={value || ''} onValueChange={v => onChange?.(v)} disabled={disabled}>
       <SelectTrigger className={cn('w-full', className)}>
         <div className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          <SelectValue placeholder={placeholder}>
-            {displayLabel || placeholder}
-          </SelectValue>
+          <SelectValue placeholder={placeholder}>{displayLabel || placeholder}</SelectValue>
         </div>
       </SelectTrigger>
       <SelectContent className="max-h-[200px]">
-        {TIME_OPTIONS.map((option) => (
+        {TIME_OPTIONS.map(option => (
           <SelectItem key={option.value} value={option.value} className="text-sm">
             {option.label}
           </SelectItem>

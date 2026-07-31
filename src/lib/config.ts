@@ -24,23 +24,16 @@ export async function loadRuntimeConfig(): Promise<void> {
         runtimeConfig = await response.json();
         console.log('Runtime config loaded successfully');
       } else {
-        console.log(
-          'Config endpoint returned non-JSON response, skipping runtime config'
-        );
+        console.log('Config endpoint returned non-JSON response, skipping runtime config');
       }
     } else {
-      console.log(
-        '🔧 DEBUG: Config fetch failed with status:',
-        response.status
-      );
+      console.log('🔧 DEBUG: Config fetch failed with status:', response.status);
     }
   } catch (error) {
     console.log('Failed to load runtime config, using defaults:', error);
   } finally {
     configLoading = false;
-    console.log(
-      '🔧 DEBUG: Config loading finished, configLoading set to false'
-    );
+    console.log('🔧 DEBUG: Config loading finished, configLoading set to false');
   }
 }
 

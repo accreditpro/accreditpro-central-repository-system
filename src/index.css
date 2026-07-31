@@ -109,5 +109,7 @@
 
 /* Smooth transitions */
 .transition-sidebar {
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  transition:
+    margin-left 0.3s ease,
+    width 0.3s ease;
 }

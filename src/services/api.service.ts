@@ -62,7 +62,7 @@ class ApiService {
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // ── Response Interceptor: handle 401 without destroying state ──
@@ -74,7 +74,7 @@ class ApiService {
     // layer (AuthEventListener in App.tsx) listens for this event and
     // handles logout + redirect gracefully via React Router.
     this.instance.interceptors.response.use(
-      (response) => response,
+      response => response,
       (error: AxiosError<ApiResponse<unknown>>) => {
         if (error.response?.status === 401) {
           const requestUrl = error.config?.url || '';
@@ -158,7 +158,7 @@ class ApiService {
     }
 
     const blob = response.data;
-    
+
     // Check if the response is actually a JSON error message instead of a file
     if (blob.type === 'application/json') {
       try {

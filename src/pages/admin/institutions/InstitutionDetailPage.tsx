@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { adminService } from '@/services/admin.service';
-import type { CreateInstitutionResponse } from '@/types/institution.types';import {
+import type { CreateInstitutionResponse } from '@/types/institution.types';
+import {
   ArrowLeft,
   Building2,
   GraduationCap,
@@ -80,7 +81,9 @@ const UserCard = ({
         </div>
         {user.temporaryPassword && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Temp PW:</span>
+            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+              Temp PW:
+            </span>
             <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">
               {user.temporaryPassword}
             </code>
@@ -119,7 +122,7 @@ export const InstitutionDetailPage = () => {
     setState('loading');
     adminService
       .getInstitutionById(Number(id))
-      .then((data) => {
+      .then(data => {
         setResponse(data);
         setState('success');
       })
@@ -166,7 +169,10 @@ export const InstitutionDetailPage = () => {
 
   const { institution, adminUser, iqacUser, principalUser, academicEntities } = response;
 
-  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  const statusConfig: Record<
+    string,
+    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  > = {
     active: { label: 'Active', variant: 'default' },
     ACTIVE: { label: 'Active', variant: 'default' },
     inactive: { label: 'Inactive', variant: 'secondary' },
@@ -176,7 +182,10 @@ export const InstitutionDetailPage = () => {
     suspended: { label: 'Suspended', variant: 'destructive' },
     SUSPENDED: { label: 'Suspended', variant: 'destructive' },
   };
-  const statusInfo = statusConfig[institution.status] || { label: institution.status, variant: 'outline' as const };
+  const statusInfo = statusConfig[institution.status] || {
+    label: institution.status,
+    variant: 'outline' as const,
+  };
 
   return (
     <motion.div
@@ -212,7 +221,9 @@ export const InstitutionDetailPage = () => {
               <div>
                 <h1 className="text-xl font-bold tracking-tight truncate">{institution.name}</h1>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">{institution.code}</code>
+                  <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">
+                    {institution.code}
+                  </code>
                   <span>·</span>
                   <span>{institution.category}</span>
                 </div>
@@ -305,8 +316,14 @@ export const InstitutionDetailPage = () => {
             <Field label="Pincode" value={institution.pincode} />
             <Field label="Status" value={statusInfo.label} />
             <Field label="Established Year" value={institution.establishedYear} />
-            <Field label="Created At" value={new Date(institution.createdAt).toLocaleDateString()} />
-            <Field label="Updated At" value={new Date(institution.updatedAt).toLocaleDateString()} />
+            <Field
+              label="Created At"
+              value={new Date(institution.createdAt).toLocaleDateString()}
+            />
+            <Field
+              label="Updated At"
+              value={new Date(institution.updatedAt).toLocaleDateString()}
+            />
           </div>
         </CardContent>
       </Card>

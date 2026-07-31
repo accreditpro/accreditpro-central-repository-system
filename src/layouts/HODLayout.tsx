@@ -62,7 +62,9 @@ export default function HODLayout() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <aside className={`flex flex-col border-r bg-card transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+      <aside
+        className={`flex flex-col border-r bg-card transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}
+      >
         {/* Logo */}
         <div className="flex items-center gap-2 p-4 border-b">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground flex-shrink-0">
@@ -79,7 +81,7 @@ export default function HODLayout() {
         {/* Navigation */}
         <ScrollArea className="flex-1 py-2">
           <nav className="space-y-1 px-2">
-            {navItems.map((item) => (
+            {navItems.map(item => (
               <Button
                 key={item.id}
                 variant={activeView === item.id ? 'secondary' : 'ghost'}
@@ -104,11 +106,21 @@ export default function HODLayout() {
 
         {/* Footer */}
         <div className="border-t p-2 space-y-1">
-          <Button variant="ghost" size="sm" className={`w-full justify-start gap-2 ${collapsed ? 'px-2' : 'px-3'}`} onClick={toggleTheme}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`w-full justify-start gap-2 ${collapsed ? 'px-2' : 'px-3'}`}
+            onClick={toggleTheme}
+          >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             {!collapsed && <span className="text-sm">Toggle Theme</span>}
           </Button>
-          <Button variant="ghost" size="sm" className={`w-full justify-start gap-2 ${collapsed ? 'px-2' : 'px-3'}`} onClick={() => setCollapsed(!collapsed)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`w-full justify-start gap-2 ${collapsed ? 'px-2' : 'px-3'}`}
+            onClick={() => setCollapsed(!collapsed)}
+          >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             {!collapsed && <span className="text-sm">Collapse</span>}
           </Button>
@@ -119,17 +131,25 @@ export default function HODLayout() {
           <div className={`flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-8 w-8 flex-shrink-0">
               <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                {user?.firstName?.[0]}
+                {user?.lastName?.[0]}
               </AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs font-medium truncate">
+                  {user?.firstName} {user?.lastName}
+                </p>
                 <p className="text-xs text-muted-foreground truncate">CSE Department</p>
               </div>
             )}
             {!collapsed && (
-              <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 flex-shrink-0"
+                onClick={handleLogout}
+              >
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
             )}

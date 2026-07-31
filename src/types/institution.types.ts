@@ -1,5 +1,6 @@
 export type InstitutionStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
-export type InstitutionCategory = 'Engineering' | 'Medical' | 'Arts & Science' | 'Management' | 'Law' | 'Education' | 'Pharmacy';
+export type InstitutionCategory =
+  'Engineering' | 'Medical' | 'Arts & Science' | 'Management' | 'Law' | 'Education' | 'Pharmacy';
 
 /**
  * Institution as returned by the GET /api/admin/institutions API.

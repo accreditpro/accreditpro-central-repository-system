@@ -41,7 +41,7 @@ class TemplateService {
       params.category = CATEGORY_TO_API[category];
     }
     const response = await apiService.get<Template[]>('/admin/templates', { params });
-    return response.map((t) => ({
+    return response.map(t => ({
       ...t,
       category: categoryFromApi(t.category as string),
     }));
@@ -107,10 +107,7 @@ class TemplateService {
     formData.append('request', JSON.stringify(request));
     formData.append('file', file);
 
-    const response = await apiService.post<Template>(
-      `/admin/templates/${id}/replace`,
-      formData
-    );
+    const response = await apiService.post<Template>(`/admin/templates/${id}/replace`, formData);
 
     return {
       ...response,
@@ -120,7 +117,7 @@ class TemplateService {
 
   async deactivateTemplate(_id: number): Promise<void> {
     // Mock — real API will be integrated later
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
 
   /**

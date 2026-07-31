@@ -13,9 +13,7 @@ import { useCallback } from 'react';
  */
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isLoading, error } = useAppSelector(
-    (state) => state.auth
-  );
+  const { user, isAuthenticated, isLoading, error } = useAppSelector(state => state.auth);
 
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<LoginResponse> => {

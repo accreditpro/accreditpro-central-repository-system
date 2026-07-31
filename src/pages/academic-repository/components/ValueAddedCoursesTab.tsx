@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { academicService } from '@/services/academic.service';
-import {
-  ValueAddedCourseResponse,
-  CreateValueAddedCourseRequest,
-} from '@/types/academic.types';
+import { ValueAddedCourseResponse, CreateValueAddedCourseRequest } from '@/types/academic.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -147,7 +144,11 @@ export const ValueAddedCoursesTab = () => {
   const handleCreate = async () => {
     if (!departmentId) return;
     if (!formData.courseName || !formData.academicYearId) {
-      toast({ title: 'Validation Error', description: 'Course Name and Academic Year are required.', variant: 'destructive' });
+      toast({
+        title: 'Validation Error',
+        description: 'Course Name and Academic Year are required.',
+        variant: 'destructive',
+      });
       return;
     }
     setSaving(true);
@@ -158,7 +159,11 @@ export const ValueAddedCoursesTab = () => {
       resetForm();
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to create value added course.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to create value added course.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -173,7 +178,11 @@ export const ValueAddedCoursesTab = () => {
       toast({ title: 'Success', description: 'Value added course deleted successfully.' });
       fetchRecords();
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to delete value added course.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to delete value added course.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -181,18 +190,30 @@ export const ValueAddedCoursesTab = () => {
   const filteredRecords = useMemo(() => {
     if (!searchQuery.trim()) return records;
     const q = searchQuery.toLowerCase();
-    return records.filter((r) => {
+    return records.filter(r => {
       const searchable = [
         r.courseName,
         r.conductingUnit ?? '',
         String(r.studentsEnrolled),
         String(r.durationHours ?? ''),
-      ].join(' ').toLowerCase();
+      ]
+        .join(' ')
+        .toLowerCase();
       return searchable.includes(q);
     });
   }, [records, searchQuery]);
 
-  const columns = ['#', 'Course Name', 'Conducting Unit', 'Academic Year', 'Duration (Hrs)', 'Students Enrolled', 'Certification', 'Status', 'Actions'];
+  const columns = [
+    '#',
+    'Course Name',
+    'Conducting Unit',
+    'Academic Year',
+    'Duration (Hrs)',
+    'Students Enrolled',
+    'Certification',
+    'Status',
+    'Actions',
+  ];
   const colSpan = columns.length;
 
   return (
@@ -201,10 +222,18 @@ export const ValueAddedCoursesTab = () => {
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-semibold">Value Added Courses</CardTitle>
-            <CardDescription className="text-xs">Manage value added courses and certifications</CardDescription>
+            <CardDescription className="text-xs">
+              Manage value added courses and certifications
+            </CardDescription>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchRecords} disabled={loading}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={fetchRecords}
+              disabled={loading}
+            >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             </Button>
           </div>
@@ -218,18 +247,29 @@ export const ValueAddedCoursesTab = () => {
               <Input
                 placeholder="Search by course name, unit..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
             <div className="flex items-center gap-1.5 order-1 sm:order-2">
-              <Button variant="outline" size="sm" className="text-xs h-8" onClick={downloadTemplate}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8"
+                onClick={downloadTemplate}
+              >
                 <Download className="h-3.5 w-3.5 mr-1" /> Download Template
               </Button>
               <Button variant="outline" size="sm" className="text-xs h-8" disabled>
                 <Upload className="h-3.5 w-3.5 mr-1" /> Upload CSV
               </Button>
-              <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetForm(); }}>
+              <Dialog
+                open={showCreate}
+                onOpenChange={open => {
+                  setShowCreate(open);
+                  if (!open) resetForm();
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm" className="text-xs h-8">
                     <Plus className="h-3.5 w-3.5 mr-1" /> Add Record
@@ -250,7 +290,7 @@ export const ValueAddedCoursesTab = () => {
                       <Input
                         placeholder="e.g. Python Programming"
                         value={formData.courseName}
-                        onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
+                        onChange={e => setFormData({ ...formData, courseName: e.target.value })}
                         className="h-8 text-xs"
                       />
                     </div>
@@ -261,7 +301,7 @@ export const ValueAddedCoursesTab = () => {
                       <Input
                         placeholder="e.g. CSE Department"
                         value={formData.conductingUnit || ''}
-                        onChange={(e) => setFormData({ ...formData, conductingUnit: e.target.value })}
+                        onChange={e => setFormData({ ...formData, conductingUnit: e.target.value })}
                         className="h-8 text-xs"
                       />
                     </div>
@@ -273,7 +313,12 @@ export const ValueAddedCoursesTab = () => {
                         type="number"
                         placeholder="e.g. 1"
                         value={formData.academicYearId || ''}
-                        onChange={(e) => setFormData({ ...formData, academicYearId: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            academicYearId: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -286,7 +331,12 @@ export const ValueAddedCoursesTab = () => {
                         min={0}
                         placeholder="e.g. 30"
                         value={formData.durationHours ?? ''}
-                        onChange={(e) => setFormData({ ...formData, durationHours: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            durationHours: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -299,7 +349,12 @@ export const ValueAddedCoursesTab = () => {
                         min={0}
                         placeholder="e.g. 50"
                         value={formData.studentsEnrolled ?? ''}
-                        onChange={(e) => setFormData({ ...formData, studentsEnrolled: e.target.value ? Number(e.target.value) : 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            studentsEnrolled: e.target.value ? Number(e.target.value) : 0,
+                          })
+                        }
                         className="h-8 text-xs"
                       />
                     </div>
@@ -310,7 +365,12 @@ export const ValueAddedCoursesTab = () => {
                       <select
                         className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.certificationProvided ? 'true' : 'false'}
-                        onChange={(e) => setFormData({ ...formData, certificationProvided: e.target.value === 'true' })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            certificationProvided: e.target.value === 'true',
+                          })
+                        }
                       >
                         <option value="false">No</option>
                         <option value="true">Yes</option>
@@ -319,10 +379,23 @@ export const ValueAddedCoursesTab = () => {
                   </div>
 
                   <DialogFooter className="gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => { setShowCreate(false); resetForm(); }} className="text-xs h-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowCreate(false);
+                        resetForm();
+                      }}
+                      className="text-xs h-8"
+                    >
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleCreate} disabled={saving || !formData.courseName || !formData.academicYearId} className="text-xs h-8">
+                    <Button
+                      size="sm"
+                      onClick={handleCreate}
+                      disabled={saving || !formData.courseName || !formData.academicYearId}
+                      className="text-xs h-8"
+                    >
                       {saving ? 'Saving...' : 'Create'}
                     </Button>
                   </DialogFooter>
@@ -337,8 +410,10 @@ export const ValueAddedCoursesTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -346,7 +421,9 @@ export const ValueAddedCoursesTab = () => {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: colSpan }).map((_, j) => (
-                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -377,8 +454,10 @@ export const ValueAddedCoursesTab = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    {columns.map((col) => (
-                      <TableHead key={col} className="text-[10px] whitespace-nowrap">{col}</TableHead>
+                    {columns.map(col => (
+                      <TableHead key={col} className="text-[10px] whitespace-nowrap">
+                        {col}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -390,23 +469,51 @@ export const ValueAddedCoursesTab = () => {
                       <TableCell className="text-xs">{record.conductingUnit || '—'}</TableCell>
                       <TableCell className="text-xs">{record.academicYearId ?? '—'}</TableCell>
                       <TableCell className="text-xs">{record.durationHours ?? '—'}</TableCell>
-                      <TableCell className="text-xs font-medium">{record.studentsEnrolled}</TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {record.studentsEnrolled}
+                      </TableCell>
                       <TableCell className="text-xs">
-                        <Badge variant="secondary" className={cn('text-[9px]', record.certificationProvided ? 'bg-emerald-500/10 text-emerald-600' : 'bg-gray-500/10 text-gray-600')}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            record.certificationProvided
+                              ? 'bg-emerald-500/10 text-emerald-600'
+                              : 'bg-gray-500/10 text-gray-600'
+                          )}
+                        >
                           {formatBool(record.certificationProvided)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={cn('text-[9px]', workflowStatusColors[record.workflowStatus || ''] || '')}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[9px]',
+                            workflowStatusColors[record.workflowStatus || ''] || ''
+                          )}
+                        >
                           {record.workflowStatus || '—'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Edit (coming soon)" disabled>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            title="Edit (coming soon)"
+                            disabled
+                          >
                             <Pencil className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(record.id)} title="Delete">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(record.id)}
+                            title="Delete"
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>

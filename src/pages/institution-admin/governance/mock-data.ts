@@ -180,13 +180,25 @@ function createCommittee(
         name: 'Committee Constitution / Office Order',
         mandatory: true,
         status: isActive ? 'uploaded' : 'not_uploaded',
-        fileName: isActive ? `constitution_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf` : undefined,
+        fileName: isActive
+          ? `constitution_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`
+          : undefined,
         fileSize: isActive ? 2048 : undefined,
         fileType: isActive ? 'pdf' : undefined,
         uploadedBy: isActive ? 'Admin' : undefined,
         uploadedAt: isActive ? '15-Jan-2026' : undefined,
         versions: isActive
-          ? [{ id: `v1-constitution-${index + 1}`, version: 1, fileName: `constitution_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`, fileSize: 2048, fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '15-Jan-2026' }]
+          ? [
+              {
+                id: `v1-constitution-${index + 1}`,
+                version: 1,
+                fileName: `constitution_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+                fileSize: 2048,
+                fileType: 'pdf',
+                uploadedBy: 'Admin',
+                uploadedAt: '15-Jan-2026',
+              },
+            ]
           : [],
       },
       {
@@ -194,13 +206,25 @@ function createCommittee(
         name: 'Committee Approval Order',
         mandatory: true,
         status: isActive ? 'approved' : 'not_uploaded',
-        fileName: isActive ? `approval_order_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf` : undefined,
+        fileName: isActive
+          ? `approval_order_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`
+          : undefined,
         fileSize: isActive ? 1500 : undefined,
         fileType: isActive ? 'pdf' : undefined,
         uploadedBy: isActive ? 'Admin' : undefined,
         uploadedAt: isActive ? '15-Jan-2026' : undefined,
         versions: isActive
-          ? [{ id: `v1-approval-${index + 1}`, version: 1, fileName: `approval_order_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`, fileSize: 1500, fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '15-Jan-2026' }]
+          ? [
+              {
+                id: `v1-approval-${index + 1}`,
+                version: 1,
+                fileName: `approval_order_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+                fileSize: 1500,
+                fileType: 'pdf',
+                uploadedBy: 'Admin',
+                uploadedAt: '15-Jan-2026',
+              },
+            ]
           : [],
       },
       {
@@ -208,14 +232,28 @@ function createCommittee(
         name: 'Committee Member List',
         mandatory: false,
         status: members.length > 0 ? 'uploaded' : 'not_uploaded',
-        fileName: members.length > 0 ? `member_list_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf` : undefined,
+        fileName:
+          members.length > 0
+            ? `member_list_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`
+            : undefined,
         fileSize: members.length > 0 ? 1000 : undefined,
         fileType: members.length > 0 ? 'pdf' : undefined,
         uploadedBy: members.length > 0 ? 'Admin' : undefined,
         uploadedAt: members.length > 0 ? '20-Jan-2026' : undefined,
-        versions: members.length > 0
-          ? [{ id: `v1-memberlist-${index + 1}`, version: 1, fileName: `member_list_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`, fileSize: 1000, fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '20-Jan-2026' }]
-          : [],
+        versions:
+          members.length > 0
+            ? [
+                {
+                  id: `v1-memberlist-${index + 1}`,
+                  version: 1,
+                  fileName: `member_list_${predefined.name.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+                  fileSize: 1000,
+                  fileType: 'pdf',
+                  uploadedBy: 'Admin',
+                  uploadedAt: '20-Jan-2026',
+                },
+              ]
+            : [],
       },
       {
         id: `doc-nomination-${index + 1}`,
@@ -236,40 +274,75 @@ type CommitteeStatus = 'active' | 'inactive';
 
 export const mockCommittees: Committee[] = [
   // Academic Governance
-  createCommittee(0, 'active', defaultMembers, true),   // Governing Body
-  createCommittee(1, 'active', defaultMembers, true),   // Academic Council
-  createCommittee(2, 'inactive', [], true),              // Board of Studies
-  createCommittee(3, 'active', defaultMembers, true),    // Program Assessment Committee
-  createCommittee(4, 'active', iqacMembers, true),       // Department Academic Committee
-  createCommittee(5, 'active', advisoryMembers, true),  // Department Advisory Committee
+  createCommittee(0, 'active', defaultMembers, true), // Governing Body
+  createCommittee(1, 'active', defaultMembers, true), // Academic Council
+  createCommittee(2, 'inactive', [], true), // Board of Studies
+  createCommittee(3, 'active', defaultMembers, true), // Program Assessment Committee
+  createCommittee(4, 'active', iqacMembers, true), // Department Academic Committee
+  createCommittee(5, 'active', advisoryMembers, true), // Department Advisory Committee
   // Quality Assurance
-  createCommittee(6, 'active', iqacMembers, true),       // IQAC Committee
+  createCommittee(6, 'active', iqacMembers, true), // IQAC Committee
   // Examination
-  createCommittee(7, 'active', examMembers, true),       // Examination Committee
+  createCommittee(7, 'active', examMembers, true), // Examination Committee
   // Research & Innovation
-  createCommittee(8, 'inactive', [], true),              // Research & Development Committee
-  createCommittee(9, 'active', [], true),                // Innovation & IPR Committee
+  createCommittee(8, 'inactive', [], true), // Research & Development Committee
+  createCommittee(9, 'active', [], true), // Innovation & IPR Committee
   // Industry & Placement
-  createCommittee(10, 'active', [], true),               // Industry Interaction Committee
-  createCommittee(11, 'active', [], true),               // Training & Placement Committee
+  createCommittee(10, 'active', [], true), // Industry Interaction Committee
+  createCommittee(11, 'active', [], true), // Training & Placement Committee
   // Student Development
-  createCommittee(12, 'active', [], true),               // Alumni Association Committee
-  createCommittee(13, 'inactive', [], true),             // Library Committee
-  createCommittee(14, 'active', [], true),               // Anti-Ragging Committee
-  createCommittee(15, 'active', [], true),               // Internal Complaints Committee
-  createCommittee(16, 'active', [], true),               // Grievance Redressal Committee
-  createCommittee(17, 'inactive', [], true),             // Green Campus Committee
-  createCommittee(18, 'inactive', [], true),             // Entrepreneurship Development Cell
-  createCommittee(19, 'active', [], true),               // NSS Committee
-  createCommittee(20, 'active', [], true),               // NCC Committee
+  createCommittee(12, 'active', [], true), // Alumni Association Committee
+  createCommittee(13, 'inactive', [], true), // Library Committee
+  createCommittee(14, 'active', [], true), // Anti-Ragging Committee
+  createCommittee(15, 'active', [], true), // Internal Complaints Committee
+  createCommittee(16, 'active', [], true), // Grievance Redressal Committee
+  createCommittee(17, 'inactive', [], true), // Green Campus Committee
+  createCommittee(18, 'inactive', [], true), // Entrepreneurship Development Cell
+  createCommittee(19, 'active', [], true), // NSS Committee
+  createCommittee(20, 'active', [], true), // NCC Committee
 ];
 
 export const auditTrail = [
-  { id: 'audit-1', committeeId: 'committee-1', action: 'Committee Created', performedBy: 'Institution Admin', performedAt: '2025-06-01 10:00', details: 'Governing Body committee created and configured' },
-  { id: 'audit-2', committeeId: 'committee-1', action: 'Members Added', performedBy: 'Institution Admin', performedAt: '2025-06-01 11:30', details: '5 members added to Governing Body committee' },
-  { id: 'audit-3', committeeId: 'committee-8', action: 'Committee Activated', performedBy: 'Institution Admin', performedAt: '2025-06-02 09:00', details: 'Examination Committee activated for academic year 2025-26' },
-  { id: 'audit-4', committeeId: 'committee-3', action: 'Committee Deactivated', performedBy: 'Institution Admin', performedAt: '2025-05-30 14:00', details: 'Board of Studies deactivated for academic year 2025-26' },
-  { id: 'audit-5', committeeId: 'committee-8', action: 'Document Uploaded', performedBy: 'Institution Admin', performedAt: '2025-06-02 09:30', details: 'Constitution document uploaded for Examination Committee' },
+  {
+    id: 'audit-1',
+    committeeId: 'committee-1',
+    action: 'Committee Created',
+    performedBy: 'Institution Admin',
+    performedAt: '2025-06-01 10:00',
+    details: 'Governing Body committee created and configured',
+  },
+  {
+    id: 'audit-2',
+    committeeId: 'committee-1',
+    action: 'Members Added',
+    performedBy: 'Institution Admin',
+    performedAt: '2025-06-01 11:30',
+    details: '5 members added to Governing Body committee',
+  },
+  {
+    id: 'audit-3',
+    committeeId: 'committee-8',
+    action: 'Committee Activated',
+    performedBy: 'Institution Admin',
+    performedAt: '2025-06-02 09:00',
+    details: 'Examination Committee activated for academic year 2025-26',
+  },
+  {
+    id: 'audit-4',
+    committeeId: 'committee-3',
+    action: 'Committee Deactivated',
+    performedBy: 'Institution Admin',
+    performedAt: '2025-05-30 14:00',
+    details: 'Board of Studies deactivated for academic year 2025-26',
+  },
+  {
+    id: 'audit-5',
+    committeeId: 'committee-8',
+    action: 'Document Uploaded',
+    performedBy: 'Institution Admin',
+    performedAt: '2025-06-02 09:30',
+    details: 'Constitution document uploaded for Examination Committee',
+  },
 ];
 
 export const academicYearOptions = ['2025-26', '2024-25', '2023-24', '2022-23'];

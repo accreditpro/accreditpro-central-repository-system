@@ -20,16 +20,12 @@ class MissionVisionService {
    * Fetches the department's mission, vision, core values, PEOs, PSOs, etc.
    * for a given academic year and department.
    */
-  async getMissionVision(
-    params: MissionVisionQueryParams
-  ): Promise<MissionVisionData> {
+  async getMissionVision(params: MissionVisionQueryParams): Promise<MissionVisionData> {
     const query = new URLSearchParams();
     query.set('academicYear', params.academicYear);
     query.set('departmentId', String(params.departmentId));
 
-    return apiService.get<MissionVisionData>(
-      `${this.baseUrl}?${query.toString()}`
-    );
+    return apiService.get<MissionVisionData>(`${this.baseUrl}?${query.toString()}`);
   }
 
   /**
@@ -46,10 +42,7 @@ class MissionVisionService {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
 
-    return apiService.put<MissionVisionData>(
-      `${this.baseUrl}?${query.toString()}`,
-      data
-    );
+    return apiService.put<MissionVisionData>(`${this.baseUrl}?${query.toString()}`, data);
   }
 }
 

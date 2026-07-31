@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, DiversityResponse, UpdateDiversityRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  DiversityResponse,
+  UpdateDiversityRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -73,12 +77,18 @@ const boolToYesNo = (val: boolean | null | undefined): string => {
 
 const getCategoryBadgeStyle = (category: string | null) => {
   switch (category) {
-    case 'General': return 'bg-blue-500/10 text-blue-600';
-    case 'OBC': return 'bg-amber-500/10 text-amber-600';
-    case 'SC': return 'bg-violet-500/10 text-violet-600';
-    case 'ST': return 'bg-red-500/10 text-red-600';
-    case 'EWS': return 'bg-emerald-500/10 text-emerald-600';
-    default: return 'bg-gray-500/10 text-gray-600';
+    case 'General':
+      return 'bg-blue-500/10 text-blue-600';
+    case 'OBC':
+      return 'bg-amber-500/10 text-amber-600';
+    case 'SC':
+      return 'bg-violet-500/10 text-violet-600';
+    case 'ST':
+      return 'bg-red-500/10 text-red-600';
+    case 'EWS':
+      return 'bg-emerald-500/10 text-emerald-600';
+    default:
+      return 'bg-gray-500/10 text-gray-600';
   }
 };
 
@@ -112,8 +122,9 @@ export const StudentDiversityTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         if (result.content.length === 1) {
           setSelectedStudentId(result.content[0].id);
@@ -128,27 +139,30 @@ export const StudentDiversityTab = () => {
 
   // ── Fetch diversity for selected student ──
 
-  const fetchDiversity = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    setDiversity(null);
-    try {
-      const result = await studentService.getDiversity(departmentId, studentId);
-      setDiversity(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
-        setDiversity(null);
-        setError(null);
-      } else {
-        setError(msg);
-        toast.error(msg);
+  const fetchDiversity = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      setDiversity(null);
+      try {
+        const result = await studentService.getDiversity(departmentId, studentId);
+        setDiversity(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
+          setDiversity(null);
+          setError(null);
+        } else {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -170,9 +184,12 @@ export const StudentDiversityTab = () => {
     );
   };
 
-  const filteredDiversity = diversity && searchQuery
-    ? (diversityMatchesSearch(diversity, searchQuery) ? diversity : null)
-    : diversity;
+  const filteredDiversity =
+    diversity && searchQuery
+      ? diversityMatchesSearch(diversity, searchQuery)
+        ? diversity
+        : null
+      : diversity;
 
   // ── Dialog open for Add/Edit ──
 
@@ -206,7 +223,11 @@ export const StudentDiversityTab = () => {
     }
     setSaving(true);
     try {
-      const result = await studentService.updateDiversity(departmentId, selectedStudentId, formData);
+      const result = await studentService.updateDiversity(
+        departmentId,
+        selectedStudentId,
+        formData
+      );
       setDiversity(result);
       toast.success(`Diversity record ${isEditing ? 'updated' : 'created'} successfully`);
       setDialogOpen(false);
@@ -231,15 +252,7 @@ export const StudentDiversityTab = () => {
       'First Generation Learner',
     ];
 
-    const sampleRow = [
-      'REG2025001',
-      'General',
-      'No',
-      'No',
-      'No',
-      'India',
-      'No',
-    ];
+    const sampleRow = ['REG2025001', 'General', 'No', 'No', 'No', 'India', 'No'];
 
     const csvContent = `\ufeff${headers.join(',')}\n${sampleRow.join(',')}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -282,7 +295,7 @@ export const StudentDiversityTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -291,7 +304,7 @@ export const StudentDiversityTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -346,10 +359,21 @@ export const StudentDiversityTab = () => {
                     <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Diversity
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -376,7 +400,7 @@ export const StudentDiversityTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -396,30 +420,51 @@ export const StudentDiversityTab = () => {
                     <TableRow className="bg-muted/40">
                       <TableHead className="text-[10px] font-semibold w-8 text-center">#</TableHead>
                       <TableHead className="text-[10px] font-semibold">Social Category</TableHead>
-                      <TableHead className="text-[10px] font-semibold">Economically Weaker Section</TableHead>
+                      <TableHead className="text-[10px] font-semibold">
+                        Economically Weaker Section
+                      </TableHead>
                       <TableHead className="text-[10px] font-semibold">Minority Status</TableHead>
                       <TableHead className="text-[10px] font-semibold">Differently Abled</TableHead>
                       <TableHead className="text-[10px] font-semibold">Nationality</TableHead>
-                      <TableHead className="text-[10px] font-semibold">First Generation Learner</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold">
+                        First Generation Learner
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -428,7 +473,12 @@ export const StudentDiversityTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchDiversity(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => selectedStudentId && fetchDiversity(selectedStudentId)}
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -455,9 +505,17 @@ export const StudentDiversityTab = () => {
                     {/* Data row */}
                     {!loading && !error && filteredDiversity && (
                       <TableRow className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">1</TableCell>
+                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                          1
+                        </TableCell>
                         <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="secondary" className={cn('text-[9px]', getCategoryBadgeStyle(filteredDiversity.socialCategory))}>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'text-[9px]',
+                              getCategoryBadgeStyle(filteredDiversity.socialCategory)
+                            )}
+                          >
                             {filteredDiversity.socialCategory || '-'}
                           </Badge>
                         </TableCell>
@@ -500,7 +558,9 @@ export const StudentDiversityTab = () => {
                             {boolToYesNo(filteredDiversity.differentlyAbled)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-[10px] p-1.5">{filteredDiversity.nationality || '-'}</TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {filteredDiversity.nationality || '-'}
+                        </TableCell>
                         <TableCell className="text-[10px] p-1.5">
                           <Badge
                             variant="outline"
@@ -515,7 +575,13 @@ export const StudentDiversityTab = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={openEditDialog} title="Edit">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={openEditDialog}
+                            title="Edit"
+                          >
                             <Pencil className="h-3 w-3 text-blue-600" />
                           </Button>
                         </TableCell>
@@ -550,21 +616,30 @@ export const StudentDiversityTab = () => {
                 <Label className="text-xs font-medium">Social Category *</Label>
                 <Select
                   value={formData.socialCategory || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, socialCategory: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, socialCategory: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {SOCIAL_CATEGORY_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {SOCIAL_CATEGORY_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Nationality</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Indian"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Indian"
                   value={formData.nationality || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nationality: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -572,12 +647,18 @@ export const StudentDiversityTab = () => {
                 <Label className="text-xs font-medium">Economically Weaker Section</Label>
                 <Select
                   value={boolToYesNo(formData.economicallyWeakerSection ?? false)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, economicallyWeakerSection: v === 'Yes' }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, economicallyWeakerSection: v === 'Yes' }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -586,12 +667,18 @@ export const StudentDiversityTab = () => {
                 <Label className="text-xs font-medium">Minority Status</Label>
                 <Select
                   value={boolToYesNo(formData.minorityStatus)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, minorityStatus: v === 'Yes' }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, minorityStatus: v === 'Yes' }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -602,12 +689,18 @@ export const StudentDiversityTab = () => {
                 <Label className="text-xs font-medium">Differently Abled</Label>
                 <Select
                   value={boolToYesNo(formData.differentlyAbled)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, differentlyAbled: v === 'Yes' }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, differentlyAbled: v === 'Yes' }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -616,12 +709,18 @@ export const StudentDiversityTab = () => {
                 <Label className="text-xs font-medium">First Generation Learner</Label>
                 <Select
                   value={boolToYesNo(formData.firstGenerationLearner)}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, firstGenerationLearner: v === 'Yes' }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, firstGenerationLearner: v === 'Yes' }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {YES_NO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {YES_NO_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -629,9 +728,20 @@ export const StudentDiversityTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleSave}
-              disabled={saving || !formData.socialCategory}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleSave}
+              disabled={saving || !formData.socialCategory}
+            >
               {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Diversity'}
             </Button>
           </DialogFooter>

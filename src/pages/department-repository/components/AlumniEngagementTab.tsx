@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { alumniService } from '@/services/alumni.service';
-import { AlumniDetailResponse, AlumniEngagementResponse, CreateAlumniEngagementRequest } from '@/types/alumni.types';
+import {
+  AlumniDetailResponse,
+  AlumniEngagementResponse,
+  CreateAlumniEngagementRequest,
+} from '@/types/alumni.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,8 +49,24 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-const ENGAGEMENT_TYPE_OPTIONS = ['Guest Lecture', 'Workshop', 'Seminar', 'Networking Event', 'Webinar', 'Panel Discussion', 'Other'];
-const ROLE_OPTIONS = ['Speaker', 'Mentor', 'Judge', 'Panelist', 'Organizer', 'Facilitator', 'Reviewer'];
+const ENGAGEMENT_TYPE_OPTIONS = [
+  'Guest Lecture',
+  'Workshop',
+  'Seminar',
+  'Networking Event',
+  'Webinar',
+  'Panel Discussion',
+  'Other',
+];
+const ROLE_OPTIONS = [
+  'Speaker',
+  'Mentor',
+  'Judge',
+  'Panelist',
+  'Organizer',
+  'Facilitator',
+  'Reviewer',
+];
 
 const emptyForm = (): CreateAlumniEngagementRequest => ({
   engagementType: undefined,
@@ -78,28 +98,36 @@ export const AlumniEngagementTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setAlumniLoading(true);
-    alumniService.listAlumni(departmentId, { size: 500 })
-      .then((result) => {
+    alumniService
+      .listAlumni(departmentId, { size: 500 })
+      .then(result => {
         setAlumniList(result.content);
         if (result.content.length === 1) setSelectedAlumniId(result.content[0].id);
       })
-      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : 'Failed to load alumni'))
+      .catch((err: unknown) =>
+        toast.error(err instanceof Error ? err.message : 'Failed to load alumni')
+      )
       .finally(() => setAlumniLoading(false));
   }, [departmentId]);
 
-  const fetchRecords = useCallback(async (alumniId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await alumniService.listEngagements(departmentId, alumniId);
-      setRecords(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load engagement records';
-      setError(msg);
-      toast.error(msg);
-    } finally { setLoading(false); }
-  }, [departmentId]);
+  const fetchRecords = useCallback(
+    async (alumniId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await alumniService.listEngagements(departmentId, alumniId);
+        setRecords(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load engagement records';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedAlumniId) fetchRecords(selectedAlumniId);
@@ -116,10 +144,13 @@ export const AlumniEngagementTab = () => {
   };
 
   const filteredRecords = searchQuery
-    ? records.filter((r) => matchesSearch(r, searchQuery))
+    ? records.filter(r => matchesSearch(r, searchQuery))
     : records;
 
-  const openCreateDialog = () => { setFormData(emptyForm()); setCreateDialogOpen(true); };
+  const openCreateDialog = () => {
+    setFormData(emptyForm());
+    setCreateDialogOpen(true);
+  };
 
   const handleCreate = async () => {
     if (!departmentId || !selectedAlumniId) return;
@@ -135,28 +166,49 @@ export const AlumniEngagementTab = () => {
       fetchRecords(selectedAlumniId);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to add engagement record');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownloadTemplate = () => {
-    const headers = ['Alumni ID', 'Engagement Type', 'Activity Name', 'Activity Date', 'Role', 'Contribution Hours'];
-    const sampleRow = ['ALM2020001', 'Guest Lecture', 'AI Workshop for Students', '2024-03-15', 'Speaker', '4.0'];
+    const headers = [
+      'Alumni ID',
+      'Engagement Type',
+      'Activity Name',
+      'Activity Date',
+      'Role',
+      'Contribution Hours',
+    ];
+    const sampleRow = [
+      'ALM2020001',
+      'Guest Lecture',
+      'AI Workshop for Students',
+      '2024-03-15',
+      'Speaker',
+      '4.0',
+    ];
     const csvContent = `\ufeff${headers.join(',')}\n${sampleRow.join(',')}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url; link.download = 'alumni_engagement_template.csv';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    link.href = url;
+    link.download = 'alumni_engagement_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
   if (!departmentId) {
     return (
-      <Card><CardContent className="py-12 text-center">
-        <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-        <p className="text-sm font-medium">Department ID not available</p>
-        <p className="text-xs text-muted-foreground mt-1">Contact your administrator.</p>
-      </CardContent></Card>
+      <Card>
+        <CardContent className="py-12 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+          <p className="text-sm font-medium">Department ID not available</p>
+          <p className="text-xs text-muted-foreground mt-1">Contact your administrator.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -167,13 +219,24 @@ export const AlumniEngagementTab = () => {
           <CardTitle className="text-sm font-semibold">Select Alumni</CardTitle>
         </CardHeader>
         <CardContent>
-          {alumniLoading ? <Skeleton className="h-9 w-full" /> : (
-            <Select value={selectedAlumniId ? String(selectedAlumniId) : ''}
-              onValueChange={(v) => { setSelectedAlumniId(Number(v)); setSearchQuery(''); }}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Choose an alumni..." /></SelectTrigger>
+          {alumniLoading ? (
+            <Skeleton className="h-9 w-full" />
+          ) : (
+            <Select
+              value={selectedAlumniId ? String(selectedAlumniId) : ''}
+              onValueChange={v => {
+                setSelectedAlumniId(Number(v));
+                setSearchQuery('');
+              }}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="Choose an alumni..." />
+              </SelectTrigger>
               <SelectContent>
-                {alumniList.map((a) => (
-                  <SelectItem key={a.id} value={String(a.id)} className="text-xs">{a.alumniName} ({a.alumniId})</SelectItem>
+                {alumniList.map(a => (
+                  <SelectItem key={a.id} value={String(a.id)} className="text-xs">
+                    {a.alumniName} ({a.alumniId})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -182,11 +245,15 @@ export const AlumniEngagementTab = () => {
       </Card>
 
       {!selectedAlumniId ? (
-        <Card><CardContent className="py-12 text-center">
-          <Handshake className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-medium text-muted-foreground">No alumni selected</p>
-          <p className="text-xs text-muted-foreground mt-1">Choose an alumni to view their engagement records.</p>
-        </CardContent></Card>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Handshake className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-medium text-muted-foreground">No alumni selected</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choose an alumni to view their engagement records.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
           <Card className="border-border/50">
@@ -194,9 +261,16 @@ export const AlumniEngagementTab = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold">Alumni Engagement</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">{records.length} record{records.length !== 1 ? 's' : ''}</Badge>
-                  <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={() => selectedAlumniId && fetchRecords(selectedAlumniId)} disabled={loading}>
+                  <Badge variant="outline" className="text-[10px]">
+                    {records.length} record{records.length !== 1 ? 's' : ''}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => selectedAlumniId && fetchRecords(selectedAlumniId)}
+                    disabled={loading}
+                  >
                     <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
                   </Button>
                 </div>
@@ -207,10 +281,21 @@ export const AlumniEngagementTab = () => {
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Engagement
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -223,16 +308,26 @@ export const AlumniEngagementTab = () => {
                 <div>
                   <CardTitle className="text-sm font-semibold">Engagement Records</CardTitle>
                   <CardDescription className="text-xs">
-                    {loading ? 'Loading...' : `${filteredRecords.length} of ${records.length} records`}
+                    {loading
+                      ? 'Loading...'
+                      : `${filteredRecords.length} of ${records.length} records`}
                   </CardDescription>
                 </div>
                 <div className="relative w-64">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input className="h-8 text-xs pl-8 pr-8" placeholder="Search records..." value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)} />
+                  <Input
+                    className="h-8 text-xs pl-8 pr-8"
+                    placeholder="Search records..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
                   {searchQuery && (
-                    <button className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      onClick={() => setSearchQuery('')}><span className="text-[10px]">✕</span></button>
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <span className="text-[10px]">✕</span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -248,58 +343,99 @@ export const AlumniEngagementTab = () => {
                       <TableHead className="text-[10px] font-semibold w-14">Date</TableHead>
                       <TableHead className="text-[10px] font-semibold w-18">Role</TableHead>
                       <TableHead className="text-[10px] font-semibold w-14">Hours</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading && Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={`skel-${i}`}>
-                        {Array.from({ length: 7 }).map((__, j) => (
-                          <TableCell key={j} className={j === 0 ? 'text-center' : ''}>
-                            <Skeleton className={`h-4 ${j === 0 ? 'w-4 mx-auto' : 'w-full'}`} />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                    {loading &&
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={`skel-${i}`}>
+                          {Array.from({ length: 7 }).map((__, j) => (
+                            <TableCell key={j} className={j === 0 ? 'text-center' : ''}>
+                              <Skeleton className={`h-4 ${j === 0 ? 'w-4 mx-auto' : 'w-full'}`} />
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
                     {!loading && error && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8">
-                        <div className="flex flex-col items-center gap-2 text-destructive">
-                          <AlertCircle className="h-8 w-8" /><p className="text-xs font-medium">{error}</p>
-                          <Button variant="outline" size="sm" className="text-xs"
-                            onClick={() => selectedAlumniId && fetchRecords(selectedAlumniId)}>
-                            <RefreshCw className="h-3 w-3 mr-1" /> Retry</Button>
-                        </div>
-                      </TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-2 text-destructive">
+                            <AlertCircle className="h-8 w-8" />
+                            <p className="text-xs font-medium">{error}</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => selectedAlumniId && fetchRecords(selectedAlumniId)}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Retry
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     )}
                     {!loading && !error && filteredRecords.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <Handshake className="h-8 w-8 opacity-40" />
-                          <p className="text-xs">{searchQuery ? 'No records match your search.' : 'No engagement records found.'}</p>
-                        </div>
-                      </TableCell></TableRow>
-                    )}
-                    {!loading && !error && filteredRecords.map((rec, index) => (
-                      <TableRow key={rec.id} className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">{index + 1}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className="text-[9px]">{rec.engagementType || '-'}</Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-medium">{rec.activityName}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{rec.activityDate}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          {rec.role ? <Badge variant="secondary" className="text-[9px]">{rec.role}</Badge> : '-'}
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">
-                          {rec.contributionHours != null ? `${rec.contributionHours.toFixed(1)} hrs` : '-'}
-                        </TableCell>
-                        <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-40 cursor-not-allowed" disabled title="Update API not available yet">
-                            <Pencil className="h-3 w-3" />
-                          </Button>
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Handshake className="h-8 w-8 opacity-40" />
+                            <p className="text-xs">
+                              {searchQuery
+                                ? 'No records match your search.'
+                                : 'No engagement records found.'}
+                            </p>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
+                    {!loading &&
+                      !error &&
+                      filteredRecords.map((rec, index) => (
+                        <TableRow key={rec.id} className="hover:bg-muted/20">
+                          <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge variant="outline" className="text-[9px]">
+                              {rec.engagementType || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-medium">
+                            {rec.activityName}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {rec.activityDate}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {rec.role ? (
+                              <Badge variant="secondary" className="text-[9px]">
+                                {rec.role}
+                              </Badge>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 font-mono">
+                            {rec.contributionHours != null
+                              ? `${rec.contributionHours.toFixed(1)} hrs`
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="text-center p-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-40 cursor-not-allowed"
+                              disabled
+                              title="Update API not available yet"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -312,39 +448,65 @@ export const AlumniEngagementTab = () => {
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm">Add Engagement Record</DialogTitle>
-            <DialogDescription className="text-xs">Required fields marked with *.</DialogDescription>
+            <DialogDescription className="text-xs">
+              Required fields marked with *.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Engagement Type</Label>
-                <Select value={formData.engagementType || ''}
-                  onValueChange={(v) => setFormData(p => ({ ...p, engagementType: v || undefined }))}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                <Select
+                  value={formData.engagementType || ''}
+                  onValueChange={v => setFormData(p => ({ ...p, engagementType: v || undefined }))}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ENGAGEMENT_TYPE_OPTIONS.map((o) => (<SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>))}
+                    {ENGAGEMENT_TYPE_OPTIONS.map(o => (
+                      <SelectItem key={o} value={o} className="text-xs">
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Activity Name *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. AI Workshop" value={formData.activityName}
-                  onChange={(e) => setFormData(p => ({ ...p, activityName: e.target.value }))} />
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. AI Workshop"
+                  value={formData.activityName}
+                  onChange={e => setFormData(p => ({ ...p, activityName: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Activity Date *</Label>
-                <Input className="h-9 text-xs" type="date" value={formData.activityDate}
-                  onChange={(e) => setFormData(p => ({ ...p, activityDate: e.target.value }))} />
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
+                  value={formData.activityDate}
+                  onChange={e => setFormData(p => ({ ...p, activityDate: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Role</Label>
-                <Select value={formData.role || ''}
-                  onValueChange={(v) => setFormData(p => ({ ...p, role: v || undefined }))}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select role" /></SelectTrigger>
+                <Select
+                  value={formData.role || ''}
+                  onValueChange={v => setFormData(p => ({ ...p, role: v || undefined }))}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ROLE_OPTIONS.map((o) => (<SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>))}
+                    {ROLE_OPTIONS.map(o => (
+                      <SelectItem key={o} value={o} className="text-xs">
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -352,16 +514,38 @@ export const AlumniEngagementTab = () => {
             <div className="grid grid-cols-1 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Contribution Hours</Label>
-                <Input className="h-9 text-xs" type="number" step="0.5" min="0" placeholder="e.g. 4.0"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  placeholder="e.g. 4.0"
                   value={formData.contributionHours ?? ''}
-                  onChange={(e) => setFormData(p => ({ ...p, contributionHours: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(p => ({
+                      ...p,
+                      contributionHours: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.activityName || !formData.activityDate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={saving || !formData.activityName || !formData.activityDate}
+            >
               {saving ? 'Adding...' : 'Add Engagement'}
             </Button>
           </DialogFooter>

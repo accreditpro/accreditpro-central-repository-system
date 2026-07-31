@@ -17,21 +17,23 @@ interface FolderCardProps {
 }
 
 export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
-  const completionColor = metrics.completionPercentage >= 100
-    ? 'text-emerald-600 dark:text-emerald-400'
-    : metrics.completionPercentage >= 75
-      ? 'text-amber-600 dark:text-amber-400'
-      : metrics.completionPercentage >= 50
-        ? 'text-orange-600 dark:text-orange-400'
-        : 'text-red-600 dark:text-red-400';
+  const completionColor =
+    metrics.completionPercentage >= 100
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : metrics.completionPercentage >= 75
+        ? 'text-amber-600 dark:text-amber-400'
+        : metrics.completionPercentage >= 50
+          ? 'text-orange-600 dark:text-orange-400'
+          : 'text-red-600 dark:text-red-400';
 
-  const progressColor = metrics.completionPercentage >= 100
-    ? '[&>div]:bg-emerald-500'
-    : metrics.completionPercentage >= 75
-      ? '[&>div]:bg-amber-500'
-      : metrics.completionPercentage >= 50
-        ? '[&>div]:bg-orange-500'
-        : '[&>div]:bg-red-500';
+  const progressColor =
+    metrics.completionPercentage >= 100
+      ? '[&>div]:bg-emerald-500'
+      : metrics.completionPercentage >= 75
+        ? '[&>div]:bg-amber-500'
+        : metrics.completionPercentage >= 50
+          ? '[&>div]:bg-orange-500'
+          : '[&>div]:bg-red-500';
 
   return (
     <Card
@@ -48,11 +50,15 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold truncate">{folder.name}</h3>
               {folder.description && (
-                <p className="text-[11px] text-muted-foreground line-clamp-1">{folder.description}</p>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">
+                  {folder.description}
+                </p>
               )}
             </div>
           </div>
-          <span className="text-sm shrink-0 ml-1">{getCompletionEmoji(metrics.completionPercentage)}</span>
+          <span className="text-sm shrink-0 ml-1">
+            {getCompletionEmoji(metrics.completionPercentage)}
+          </span>
         </div>
 
         {/* Metrics Grid */}
@@ -76,7 +82,10 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
 
         {/* Progress Bar with percentage */}
         <div className="flex items-center gap-2">
-          <Progress value={metrics.completionPercentage} className={`h-1.5 flex-1 ${progressColor}`} />
+          <Progress
+            value={metrics.completionPercentage}
+            className={`h-1.5 flex-1 ${progressColor}`}
+          />
           <span className={`text-xs font-semibold shrink-0 ${completionColor}`}>
             {metrics.completionPercentage}%
           </span>
@@ -90,9 +99,7 @@ export function FolderCard({ folder, metrics, onClick }: FolderCardProps) {
           >
             {getCompletionStatusText(metrics.completionPercentage)}
           </Badge>
-          <span className="text-[10px] text-muted-foreground">
-            {metrics.totalDocuments} docs
-          </span>
+          <span className="text-[10px] text-muted-foreground">{metrics.totalDocuments} docs</span>
         </div>
       </CardContent>
     </Card>

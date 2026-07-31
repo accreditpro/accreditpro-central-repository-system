@@ -20,7 +20,7 @@ import {
   MoocResponse,
   CreateMoocRequest,
   UpdateMoocRequest,
-  MoocListParams
+  MoocListParams,
 } from '@/types/academic.types';
 
 /**
@@ -48,7 +48,9 @@ class AcademicService {
     if (params.size !== undefined) query.set('size', String(params.size));
 
     const qs = query.toString();
-    const url = qs ? `${this.baseUrl(departmentId)}/curricula?${qs}` : `${this.baseUrl(departmentId)}/curricula`;
+    const url = qs
+      ? `${this.baseUrl(departmentId)}/curricula?${qs}`
+      : `${this.baseUrl(departmentId)}/curricula`;
     return apiService.get<PaginatedData<CurriculumResponse>>(url);
   }
 
@@ -83,7 +85,10 @@ class AcademicService {
     id: number,
     data: UpdateCurriculumRequest
   ): Promise<CurriculumResponse> {
-    return apiService.put<CurriculumResponse>(`${this.baseUrl(departmentId)}/curricula/${id}`, data);
+    return apiService.put<CurriculumResponse>(
+      `${this.baseUrl(departmentId)}/curricula/${id}`,
+      data
+    );
   }
 
   // ── Section 5.5: DELETE Curriculum ──
@@ -111,7 +116,9 @@ class AcademicService {
     if (params.type) query.set('type', params.type);
 
     const qs = query.toString();
-    const url = qs ? `${this.baseUrl(departmentId)}/courses?${qs}` : `${this.baseUrl(departmentId)}/courses`;
+    const url = qs
+      ? `${this.baseUrl(departmentId)}/courses?${qs}`
+      : `${this.baseUrl(departmentId)}/courses`;
     return apiService.get<PaginatedData<CourseResponse>>(url);
   }
 
@@ -129,10 +136,7 @@ class AcademicService {
   /**
    * Create a new course record.
    */
-  async createCourse(
-    departmentId: number,
-    data: CreateCourseRequest
-  ): Promise<CourseResponse> {
+  async createCourse(departmentId: number, data: CreateCourseRequest): Promise<CourseResponse> {
     return apiService.post<CourseResponse>(`${this.baseUrl(departmentId)}/courses`, data);
   }
 
@@ -172,7 +176,9 @@ class AcademicService {
     if (params.size !== undefined) query.set('size', String(params.size));
 
     const qs = query.toString();
-    const url = qs ? `${this.baseUrl(departmentId)}/calendars?${qs}` : `${this.baseUrl(departmentId)}/calendars`;
+    const url = qs
+      ? `${this.baseUrl(departmentId)}/calendars?${qs}`
+      : `${this.baseUrl(departmentId)}/calendars`;
     return apiService.get<PaginatedData<AcademicCalendarResponse>>(url);
   }
 
@@ -182,7 +188,9 @@ class AcademicService {
    * Fetch a single academic calendar by its ID.
    */
   async getCalendar(departmentId: number, id: number): Promise<AcademicCalendarResponse> {
-    return apiService.get<AcademicCalendarResponse>(`${this.baseUrl(departmentId)}/calendars/${id}`);
+    return apiService.get<AcademicCalendarResponse>(
+      `${this.baseUrl(departmentId)}/calendars/${id}`
+    );
   }
 
   // ── Section 5.13: CREATE Academic Calendar ──
@@ -194,7 +202,10 @@ class AcademicService {
     departmentId: number,
     data: CreateAcademicCalendarRequest
   ): Promise<AcademicCalendarResponse> {
-    return apiService.post<AcademicCalendarResponse>(`${this.baseUrl(departmentId)}/calendars`, data);
+    return apiService.post<AcademicCalendarResponse>(
+      `${this.baseUrl(departmentId)}/calendars`,
+      data
+    );
   }
 
   // ── Section 5.14: UPDATE Academic Calendar ──
@@ -207,7 +218,10 @@ class AcademicService {
     id: number,
     data: UpdateAcademicCalendarRequest
   ): Promise<AcademicCalendarResponse> {
-    return apiService.put<AcademicCalendarResponse>(`${this.baseUrl(departmentId)}/calendars/${id}`, data);
+    return apiService.put<AcademicCalendarResponse>(
+      `${this.baseUrl(departmentId)}/calendars/${id}`,
+      data
+    );
   }
 
   // ── Section 5.15: DELETE Academic Calendar ──
@@ -233,7 +247,9 @@ class AcademicService {
     if (params.size !== undefined) query.set('size', String(params.size));
 
     const qs = query.toString();
-    const url = qs ? `${this.baseUrl(departmentId)}/value-added-courses?${qs}` : `${this.baseUrl(departmentId)}/value-added-courses`;
+    const url = qs
+      ? `${this.baseUrl(departmentId)}/value-added-courses?${qs}`
+      : `${this.baseUrl(departmentId)}/value-added-courses`;
     return apiService.get<PaginatedData<ValueAddedCourseResponse>>(url);
   }
 
@@ -242,11 +258,10 @@ class AcademicService {
   /**
    * Fetch a single value added course by its ID.
    */
-  async getValueAddedCourse(
-    departmentId: number,
-    id: number
-  ): Promise<ValueAddedCourseResponse> {
-    return apiService.get<ValueAddedCourseResponse>(`${this.baseUrl(departmentId)}/value-added-courses/${id}`);
+  async getValueAddedCourse(departmentId: number, id: number): Promise<ValueAddedCourseResponse> {
+    return apiService.get<ValueAddedCourseResponse>(
+      `${this.baseUrl(departmentId)}/value-added-courses/${id}`
+    );
   }
 
   // ── Section 5.18: CREATE Value Added Course ──
@@ -258,7 +273,10 @@ class AcademicService {
     departmentId: number,
     data: CreateValueAddedCourseRequest
   ): Promise<ValueAddedCourseResponse> {
-    return apiService.post<ValueAddedCourseResponse>(`${this.baseUrl(departmentId)}/value-added-courses`, data);
+    return apiService.post<ValueAddedCourseResponse>(
+      `${this.baseUrl(departmentId)}/value-added-courses`,
+      data
+    );
   }
 
   // ── Section 5.19: UPDATE Value Added Course ──
@@ -271,7 +289,10 @@ class AcademicService {
     id: number,
     data: UpdateValueAddedCourseRequest
   ): Promise<ValueAddedCourseResponse> {
-    return apiService.put<ValueAddedCourseResponse>(`${this.baseUrl(departmentId)}/value-added-courses/${id}`, data);
+    return apiService.put<ValueAddedCourseResponse>(
+      `${this.baseUrl(departmentId)}/value-added-courses/${id}`,
+      data
+    );
   }
 
   // ── Section 5.20: DELETE Value Added Course ──
@@ -297,7 +318,9 @@ class AcademicService {
     if (params.size !== undefined) query.set('size', String(params.size));
 
     const qs = query.toString();
-    const url = qs ? `${this.baseUrl(departmentId)}/moocs?${qs}` : `${this.baseUrl(departmentId)}/moocs`;
+    const url = qs
+      ? `${this.baseUrl(departmentId)}/moocs?${qs}`
+      : `${this.baseUrl(departmentId)}/moocs`;
     return apiService.get<PaginatedData<MoocResponse>>(url);
   }
 
@@ -315,10 +338,7 @@ class AcademicService {
   /**
    * Create a new MOOC record.
    */
-  async createMooc(
-    departmentId: number,
-    data: CreateMoocRequest
-  ): Promise<MoocResponse> {
+  async createMooc(departmentId: number, data: CreateMoocRequest): Promise<MoocResponse> {
     return apiService.post<MoocResponse>(`${this.baseUrl(departmentId)}/moocs`, data);
   }
 
@@ -343,7 +363,6 @@ class AcademicService {
   async deleteMooc(departmentId: number, id: number): Promise<void> {
     await apiService.delete<void>(`${this.baseUrl(departmentId)}/moocs/${id}`);
   }
-
 }
 
 export const academicService = new AcademicService();

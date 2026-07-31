@@ -56,7 +56,11 @@ const getIcon = (iconName?: string) => {
   return iconMap[iconName] || FileText;
 };
 
-export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: RepositoryDashboardProps) => {
+export const RepositoryDashboard = ({
+  onNavigate,
+  academicYear,
+  departmentId,
+}: RepositoryDashboardProps) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +98,7 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
           <Skeleton className="h-4 w-96 mt-2" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <Card key={i} className="border-border/50">
               <CardContent className="p-4">
                 <Skeleton className="h-3 w-24 mb-3" />
@@ -111,7 +115,7 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4].map(i => (
                 <div key={i} className="p-4 rounded-xl border border-border/50">
                   <Skeleton className="h-4 w-24 mb-3" />
                   <Skeleton className="h-3 w-full mb-2" />
@@ -134,9 +138,7 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
       <div className="space-y-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-xl font-bold tracking-tight">Department Repository Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Academic Year: {academicYear}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Academic Year: {academicYear}</p>
         </motion.div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -190,7 +192,8 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                         {kpi.label}
                       </p>
                       <p className="text-xl font-bold tracking-tight">
-                        {kpi.value}{kpi.suffix || ''}
+                        {kpi.value}
+                        {kpi.suffix || ''}
                       </p>
                       <div className="flex items-center gap-1">
                         {kpi.trendPositive ? (
@@ -198,13 +201,24 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                         ) : (
                           <TrendingDown className="h-3 w-3 text-red-500" />
                         )}
-                        <span className={cn('text-[10px] font-medium', kpi.trendPositive ? 'text-emerald-500' : 'text-red-500')}>
-                          {kpi.trendPositive ? '+' : ''}{kpi.trend}
+                        <span
+                          className={cn(
+                            'text-[10px] font-medium',
+                            kpi.trendPositive ? 'text-emerald-500' : 'text-red-500'
+                          )}
+                        >
+                          {kpi.trendPositive ? '+' : ''}
+                          {kpi.trend}
                         </span>
                         <span className="text-[10px] text-muted-foreground">{kpi.trendLabel}</span>
                       </div>
                     </div>
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', kpi.color)}>
+                    <div
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-xl',
+                        kpi.color
+                      )}
+                    >
                       <Icon className="h-4 w-4" />
                     </div>
                   </div>
@@ -243,7 +257,9 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Program Offerings</p>
-                  <p className="text-xs font-semibold">{data.departmentInfo.programOfferingsCount} programs</p>
+                  <p className="text-xs font-semibold">
+                    {data.departmentInfo.programOfferingsCount} programs
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -252,7 +268,9 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Specializations</p>
-                  <p className="text-xs font-semibold">{data.departmentInfo.specializations.join(', ')}</p>
+                  <p className="text-xs font-semibold">
+                    {data.departmentInfo.specializations.join(', ')}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -289,16 +307,21 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base font-semibold">Repository Health</CardTitle>
-                <CardDescription>Data completeness and verification status across all repositories</CardDescription>
+                <CardDescription>
+                  Data completeness and verification status across all repositories
+                </CardDescription>
               </div>
-              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary font-semibold">
+              <Badge
+                variant="secondary"
+                className="text-xs bg-primary/10 text-primary font-semibold"
+              >
                 Overall Readiness: {data.repositoryHealth.overallReadiness}%
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {data.repositoryHealth.repositories.map((repo) => {
+              {data.repositoryHealth.repositories.map(repo => {
                 const Icon = getIcon(repo.icon);
                 return (
                   <div
@@ -307,12 +330,19 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                     onClick={() => onNavigate(repo.repositoryType as RepositoryModule)}
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', repo.color.replace('text-', 'bg-').replace('600', '500/10'))}>
+                      <div
+                        className={cn(
+                          'flex h-8 w-8 items-center justify-center rounded-lg',
+                          repo.color.replace('text-', 'bg-').replace('600', '500/10')
+                        )}
+                      >
                         <Icon className={cn('h-4 w-4', repo.color)} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold">{repo.label}</p>
-                        <p className="text-[10px] text-muted-foreground">Readiness: {repo.readiness}%</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Readiness: {repo.readiness}%
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -320,11 +350,15 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                         { label: 'Data Completeness', value: repo.dataCompleteness },
                         { label: 'Evidence', value: repo.evidenceCompleteness },
                         { label: 'Verification', value: repo.verificationPercent },
-                      ].map((item) => (
+                      ].map(item => (
                         <div key={item.label} className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground w-24">{item.label}</span>
+                          <span className="text-[10px] text-muted-foreground w-24">
+                            {item.label}
+                          </span>
                           <Progress value={item.value} className="h-1.5 flex-1" />
-                          <span className="text-[10px] font-medium w-8 text-right">{item.value}%</span>
+                          <span className="text-[10px] font-medium w-8 text-right">
+                            {item.value}%
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -350,7 +384,7 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
               <CardDescription>Navigate to repository modules</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {data.repositoryWorkspaces.map((workspace) => {
+              {data.repositoryWorkspaces.map(workspace => {
                 const Icon = getIcon(workspace.icon);
                 return (
                   <Button
@@ -360,12 +394,19 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                     onClick={() => onNavigate(workspace.repositoryType as RepositoryModule)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', workspace.color.replace('text-', 'bg-').replace('600', '500/10'))}>
+                      <div
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg',
+                          workspace.color.replace('text-', 'bg-').replace('600', '500/10')
+                        )}
+                      >
                         <Icon className={cn('h-4 w-4', workspace.color)} />
                       </div>
                       <div className="text-left">
                         <span className="text-sm font-medium block">{workspace.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{workspace.description.slice(0, 50)}...</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {workspace.description.slice(0, 50)}...
+                        </span>
                       </div>
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -389,12 +430,14 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                   <CardTitle className="text-base font-semibold">Recent Uploads</CardTitle>
                   <CardDescription>Latest CSV uploads across all repositories</CardDescription>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">{data.recentUploads.totalCount} total</Badge>
+                <Badge variant="secondary" className="text-[10px]">
+                  {data.recentUploads.totalCount} total
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {data.recentUploads.uploads.map((upload) => (
+                {data.recentUploads.uploads.map(upload => (
                   <div
                     key={upload.id}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50"
@@ -405,10 +448,16 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{upload.fileName}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">{upload.repository}</Badge>
-                        <span className="text-[11px] text-muted-foreground">{upload.recordsCount} records</span>
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                          {upload.repository}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground">
+                          {upload.recordsCount} records
+                        </span>
                         <span className="text-[11px] text-muted-foreground">•</span>
-                        <span className="text-[11px] text-muted-foreground">{upload.uploadedDate}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {upload.uploadedDate}
+                        </span>
                       </div>
                     </div>
                     <Badge
@@ -417,7 +466,7 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
                         'text-[10px] shrink-0',
                         upload.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
                         upload.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                        upload.status === 'rejected' && 'bg-red-500/10 text-red-600',
+                        upload.status === 'rejected' && 'bg-red-500/10 text-red-600'
                       )}
                     >
                       {upload.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
@@ -441,22 +490,36 @@ export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId }: 
         <Card className="border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Readiness Analytics</CardTitle>
-            <CardDescription>
-              Formula: {data.readinessAnalytics.formula}
-            </CardDescription>
+            <CardDescription>Formula: {data.readinessAnalytics.formula}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {data.readinessAnalytics.analytics.map((item) => (
-                <div key={item.repositoryType} className="p-4 rounded-xl border border-border/50 text-center">
+              {data.readinessAnalytics.analytics.map(item => (
+                <div
+                  key={item.repositoryType}
+                  className="p-4 rounded-xl border border-border/50 text-center"
+                >
                   <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
                     {item.label} Readiness
                   </p>
                   <div className="relative inline-flex items-center justify-center">
                     <svg className="w-16 h-16 -rotate-90">
-                      <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/30" />
                       <circle
-                        cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4"
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="text-muted/30"
+                      />
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
                         strokeDasharray={`${(item.readiness / 100) * 176} 176`}
                         className={item.color}
                         strokeLinecap="round"

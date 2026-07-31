@@ -11,13 +11,8 @@ function getSlugFromPathname(pathname: string) {
     .replace(/^\/+/, '');
 }
 
-function ensureMetaTag(
-  attribute: 'name' | 'property',
-  value: string,
-) {
-  let tag = document.head.querySelector(
-    `meta[${attribute}="${value}"]`,
-  ) as HTMLMetaElement | null;
+function ensureMetaTag(attribute: 'name' | 'property', value: string) {
+  let tag = document.head.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement | null;
 
   if (!tag) {
     tag = document.createElement('meta');
@@ -119,7 +114,7 @@ const BlogPostPage = () => {
       document.documentElement.lang = seoMeta.lang;
     }
 
-    const articleTagEntries = (seoMeta.tags ?? []).map((tag) => {
+    const articleTagEntries = (seoMeta.tags ?? []).map(tag => {
       const metaTag = document.createElement('meta');
       metaTag.setAttribute('property', 'article:tag');
       metaTag.content = tag;
@@ -130,8 +125,8 @@ const BlogPostPage = () => {
     return () => {
       document.title = previousTitle;
       document.documentElement.lang = previousLang;
-      articleTagEntries.forEach((tag) => tag.remove());
-      previousValues.forEach((entry) => {
+      articleTagEntries.forEach(tag => tag.remove());
+      previousValues.forEach(entry => {
         if (!entry) {
           return;
         }

@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
   Shield,
@@ -60,7 +66,7 @@ export const RoleManagementPage = () => {
           <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <Card key={i}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -71,7 +77,7 @@ export const RoleManagementPage = () => {
               <CardContent>
                 <Skeleton className="h-3 w-20 mb-3" />
                 <div className="flex flex-wrap gap-1.5">
-                  {[1, 2, 3, 4, 5].map((j) => (
+                  {[1, 2, 3, 4, 5].map(j => (
                     <Skeleton key={j} className="h-6 w-24 rounded-full" />
                   ))}
                 </div>
@@ -139,7 +145,7 @@ export const RoleManagementPage = () => {
               <CardContent>
                 <p className="text-xs text-muted-foreground mb-2">Permissions</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {role.permissions.map((perm) => (
+                  {role.permissions.map(perm => (
                     <Badge key={perm} variant="outline" className="text-xs font-normal">
                       {perm}
                     </Badge>
@@ -182,13 +188,13 @@ export const RepositoryMonitoringPage = () => {
           <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <Card key={i}>
               <CardHeader className="pb-2">
                 <Skeleton className="h-5 w-36" />
               </CardHeader>
               <CardContent className="space-y-3">
-                {[1, 2, 3, 4].map((j) => (
+                {[1, 2, 3, 4].map(j => (
                   <div key={j} className="space-y-1">
                     <Skeleton className="h-3 w-24" />
                     <Skeleton className="h-2 w-full" />
@@ -204,7 +210,7 @@ export const RepositoryMonitoringPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map(i => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
@@ -220,7 +226,9 @@ export const RepositoryMonitoringPage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Repository Monitoring</h1>
-          <p className="text-muted-foreground">Track institutional repository progress across all departments</p>
+          <p className="text-muted-foreground">
+            Track institutional repository progress across all departments
+          </p>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -229,7 +237,13 @@ export const RepositoryMonitoringPage = () => {
             <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
               We couldn't fetch the repository metrics. Please check your connection and try again.
             </p>
-            <Button variant="outline" onClick={() => { metricsQuery.refetch(); readinessQuery.refetch(); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                metricsQuery.refetch();
+                readinessQuery.refetch();
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -246,7 +260,9 @@ export const RepositoryMonitoringPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Repository Monitoring</h1>
-        <p className="text-muted-foreground">Track institutional repository progress across all departments</p>
+        <p className="text-muted-foreground">
+          Track institutional repository progress across all departments
+        </p>
       </div>
 
       {/* Repository Summary Cards */}
@@ -290,7 +306,9 @@ export const RepositoryMonitoringPage = () => {
                 <Separator />
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Readiness</span>
-                  <span className={`text-lg font-bold ${repo.readinessScore >= 85 ? 'text-green-600' : repo.readinessScore >= 75 ? 'text-amber-600' : 'text-red-600'}`}>
+                  <span
+                    className={`text-lg font-bold ${repo.readinessScore >= 85 ? 'text-green-600' : repo.readinessScore >= 75 ? 'text-amber-600' : 'text-red-600'}`}
+                  >
                     {repo.readinessScore}%
                   </span>
                 </div>
@@ -323,26 +341,49 @@ export const RepositoryMonitoringPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {deptReadiness.map((dept) => (
+                {deptReadiness.map(dept => (
                   <tr key={dept.department} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="py-3 px-3 font-medium">{dept.department}</td>
                     <td className="text-center py-3 px-3">
-                      <span className={`text-xs font-medium ${dept.academic >= 90 ? 'text-green-600' : 'text-amber-600'}`}>{dept.academic}%</span>
+                      <span
+                        className={`text-xs font-medium ${dept.academic >= 90 ? 'text-green-600' : 'text-amber-600'}`}
+                      >
+                        {dept.academic}%
+                      </span>
                     </td>
                     <td className="text-center py-3 px-3">
-                      <span className={`text-xs font-medium ${dept.faculty >= 90 ? 'text-green-600' : 'text-amber-600'}`}>{dept.faculty}%</span>
+                      <span
+                        className={`text-xs font-medium ${dept.faculty >= 90 ? 'text-green-600' : 'text-amber-600'}`}
+                      >
+                        {dept.faculty}%
+                      </span>
                     </td>
                     <td className="text-center py-3 px-3">
-                      <span className={`text-xs font-medium ${dept.student >= 90 ? 'text-green-600' : 'text-amber-600'}`}>{dept.student}%</span>
+                      <span
+                        className={`text-xs font-medium ${dept.student >= 90 ? 'text-green-600' : 'text-amber-600'}`}
+                      >
+                        {dept.student}%
+                      </span>
                     </td>
                     <td className="text-center py-3 px-3">
-                      <span className={`text-xs font-medium ${dept.research >= 80 ? 'text-green-600' : 'text-amber-600'}`}>{dept.research}%</span>
+                      <span
+                        className={`text-xs font-medium ${dept.research >= 80 ? 'text-green-600' : 'text-amber-600'}`}
+                      >
+                        {dept.research}%
+                      </span>
                     </td>
                     <td className="text-center py-3 px-3">
-                      <span className={`text-xs font-medium ${dept.evidence >= 80 ? 'text-green-600' : 'text-amber-600'}`}>{dept.evidence}%</span>
+                      <span
+                        className={`text-xs font-medium ${dept.evidence >= 80 ? 'text-green-600' : 'text-amber-600'}`}
+                      >
+                        {dept.evidence}%
+                      </span>
                     </td>
                     <td className="text-center py-3 px-3">
-                      <Badge variant={dept.overall >= 85 ? 'default' : 'secondary'} className="text-xs font-bold">
+                      <Badge
+                        variant={dept.overall >= 85 ? 'default' : 'secondary'}
+                        className="text-xs font-bold"
+                      >
                         {dept.overall}%
                       </Badge>
                     </td>
@@ -379,7 +420,8 @@ export const ReadinessDashboardPage = () => {
     enabled: isAuthenticated,
   });
 
-  const isLoading = strengthsQuery.isLoading || overallQuery.isLoading || improvementsQuery.isLoading;
+  const isLoading =
+    strengthsQuery.isLoading || overallQuery.isLoading || improvementsQuery.isLoading;
   const error = strengthsQuery.error || overallQuery.error || improvementsQuery.error;
 
   // ── Loading state ──
@@ -398,7 +440,7 @@ export const ReadinessDashboardPage = () => {
               <div className="flex-1 space-y-4">
                 <Skeleton className="h-6 w-48" />
                 <div className="grid grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => (
+                  {[1, 2, 3].map(i => (
                     <div key={i} className="space-y-2">
                       <Skeleton className="h-3 w-24" />
                       <Skeleton className="h-2 w-full" />
@@ -411,7 +453,7 @@ export const ReadinessDashboardPage = () => {
         </Card>
         {/* Readiness cards skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <Card key={i} className="text-center">
               <CardContent className="p-6">
                 <Skeleton className="h-20 w-20 mx-auto rounded-full mb-3" />
@@ -429,13 +471,13 @@ export const ReadinessDashboardPage = () => {
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-3">
                 <Skeleton className="h-5 w-20" />
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3].map(i => (
                   <Skeleton key={i} className="h-6 w-full" />
                 ))}
               </div>
               <div className="space-y-3">
                 <Skeleton className="h-5 w-28" />
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3].map(i => (
                   <Skeleton key={i} className="h-6 w-full" />
                 ))}
               </div>
@@ -452,7 +494,9 @@ export const ReadinessDashboardPage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Readiness Dashboard</h1>
-          <p className="text-muted-foreground">Institution health monitoring and accreditation readiness</p>
+          <p className="text-muted-foreground">
+            Institution health monitoring and accreditation readiness
+          </p>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -461,7 +505,14 @@ export const ReadinessDashboardPage = () => {
             <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
               We couldn't fetch the readiness dashboard. Please check your connection and try again.
             </p>
-            <Button variant="outline" onClick={() => { strengthsQuery.refetch(); overallQuery.refetch(); improvementsQuery.refetch(); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                strengthsQuery.refetch();
+                overallQuery.refetch();
+                improvementsQuery.refetch();
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -486,9 +537,12 @@ export const ReadinessDashboardPage = () => {
   // Map improvement severity to badge classes
   const severityBadge = (severity: string): string => {
     switch (severity.toLowerCase()) {
-      case 'critical': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-      case 'warning': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      default: return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'critical':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      case 'warning':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      default:
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
     }
   };
 
@@ -496,7 +550,9 @@ export const ReadinessDashboardPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Readiness Dashboard</h1>
-        <p className="text-muted-foreground">Institution health monitoring and accreditation readiness</p>
+        <p className="text-muted-foreground">
+          Institution health monitoring and accreditation readiness
+        </p>
       </div>
 
       {/* Overall Readiness Score */}
@@ -505,9 +561,22 @@ export const ReadinessDashboardPage = () => {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative">
               <svg className="w-32 h-32" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/30" />
                 <circle
-                  cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8"
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  className="text-muted/30"
+                />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="8"
                   className="text-primary"
                   strokeDasharray={`${overall.overallReadiness * 3.14} 314`}
                   strokeLinecap="round"
@@ -562,9 +631,22 @@ export const ReadinessDashboardPage = () => {
               <CardContent className="p-6">
                 <div className="relative mx-auto w-20 h-20 mb-3">
                   <svg className="w-20 h-20" viewBox="0 0 80 80">
-                    <circle cx="40" cy="40" r="32" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
                     <circle
-                      cx="40" cy="40" r="32" fill="none" stroke="currentColor" strokeWidth="6"
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="6"
+                      className="text-muted/30"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="6"
                       className={categoryColors[card.label] ?? 'text-primary'}
                       strokeDasharray={`${card.value * 2.01} 201`}
                       strokeLinecap="round"
@@ -602,7 +684,7 @@ export const ReadinessDashboardPage = () => {
                 <p className="text-sm text-muted-foreground">No strengths data available.</p>
               ) : (
                 <ul className="space-y-2 text-sm">
-                  {strengths.map((item) => (
+                  {strengths.map(item => (
                     <li key={item.metric} className="flex items-center gap-2">
                       <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
                         {item.score}%
@@ -623,7 +705,7 @@ export const ReadinessDashboardPage = () => {
                 <p className="text-sm text-muted-foreground">No improvements data available.</p>
               ) : (
                 <ul className="space-y-2 text-sm">
-                  {improvements.map((item) => (
+                  {improvements.map(item => (
                     <li key={item.metric} className="flex items-center gap-2">
                       <Badge className={`text-xs ${severityBadge(item.severity)}`}>
                         {item.score}%
@@ -652,10 +734,7 @@ export const ActivityLogsPage = () => {
   const institutionId = user?.institutionId;
 
   // Build query params
-  const queryParams =
-    institutionId !== undefined
-      ? { institutionId, page, pageSize }
-      : null;
+  const queryParams = institutionId !== undefined ? { institutionId, page, pageSize } : null;
 
   // Fetch activity logs
   const {
@@ -673,7 +752,7 @@ export const ActivityLogsPage = () => {
 
   // Client-side filters (API only supports pagination, not search or module)
   const lowerSearch = search.toLowerCase();
-  const filteredLogs = allLogs.filter((log) => {
+  const filteredLogs = allLogs.filter(log => {
     const matchesSearch =
       !search ||
       log.userName.toLowerCase().includes(lowerSearch) ||
@@ -683,7 +762,7 @@ export const ActivityLogsPage = () => {
   });
 
   // Extract unique modules from the current page's data
-  const modules = [...new Set(allLogs.map((l) => l.module))].sort();
+  const modules = [...new Set(allLogs.map(l => l.module))].sort();
 
   const pagination: PaginationConfig = paginatedData
     ? {
@@ -716,7 +795,7 @@ export const ActivityLogsPage = () => {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                    {[1, 2, 3, 4, 5, 6].map(i => (
                       <th key={i} className="py-3 px-4">
                         <Skeleton className="h-4 w-20" />
                       </th>
@@ -783,13 +862,13 @@ export const ActivityLogsPage = () => {
               <Input
                 placeholder="Search by user or action..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select
               value={moduleFilter}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setModuleFilter(v);
                 setPage(1);
               }}
@@ -799,7 +878,7 @@ export const ActivityLogsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Modules</SelectItem>
-                {modules.map((m) => (
+                {modules.map(m => (
                   <SelectItem key={m} value={m}>
                     {m}
                   </SelectItem>
@@ -841,7 +920,7 @@ export const ActivityLogsPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log) => (
+                  filteredLogs.map(log => (
                     <tr key={log.id} className="border-t hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4 font-medium">{log.userName}</td>
                       <td className="py-3 px-4">
@@ -871,7 +950,7 @@ export const ActivityLogsPage = () => {
         <DataTablePagination
           pagination={pagination}
           onPageChange={setPage}
-          onPageSizeChange={(size) => {
+          onPageSizeChange={size => {
             setPageSize(size);
             setPage(1);
           }}
@@ -889,7 +968,11 @@ export const SettingsPage = () => {
 
   // ── Local form state ──
   const [profileForm, setProfileForm] = useState({ name: '', email: '', mobile: '' });
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [inAppNotifications, setInAppNotifications] = useState(true);
 
@@ -966,10 +1049,7 @@ export const SettingsPage = () => {
     });
   };
 
-  const handleNotificationChange = (
-    type: 'email' | 'inApp',
-    value: boolean
-  ) => {
+  const handleNotificationChange = (type: 'email' | 'inApp', value: boolean) => {
     if (type === 'email') {
       setEmailNotifications(value);
       updateNotificationsMutation.mutate({
@@ -993,14 +1073,14 @@ export const SettingsPage = () => {
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-72" />
         </div>
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-5 w-36" />
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((j) => (
+                {[1, 2, 3].map(j => (
                   <div key={j} className="space-y-2">
                     <Skeleton className="h-3 w-16" />
                     <Skeleton className="h-9 w-full" />
@@ -1061,7 +1141,7 @@ export const SettingsPage = () => {
               <Label>Name</Label>
               <Input
                 value={profileForm.name}
-                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -1069,22 +1149,18 @@ export const SettingsPage = () => {
               <Input
                 type="email"
                 value={profileForm.email}
-                onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>Mobile</Label>
               <Input
                 value={profileForm.mobile}
-                onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
+                onChange={e => setProfileForm({ ...profileForm, mobile: e.target.value })}
               />
             </div>
           </div>
-          <Button
-            size="sm"
-            onClick={handleSaveProfile}
-            disabled={updateProfileMutation.isPending}
-          >
+          <Button size="sm" onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
             {updateProfileMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1112,7 +1188,7 @@ export const SettingsPage = () => {
               <Input
                 type="password"
                 value={passwordForm.currentPassword}
-                onChange={(e) =>
+                onChange={e =>
                   setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
                 }
               />
@@ -1122,9 +1198,7 @@ export const SettingsPage = () => {
               <Input
                 type="password"
                 value={passwordForm.newPassword}
-                onChange={(e) =>
-                  setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-                }
+                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -1132,7 +1206,7 @@ export const SettingsPage = () => {
               <Input
                 type="password"
                 value={passwordForm.confirmPassword}
-                onChange={(e) =>
+                onChange={e =>
                   setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
                 }
               />
@@ -1173,7 +1247,7 @@ export const SettingsPage = () => {
             </div>
             <Switch
               checked={emailNotifications}
-              onCheckedChange={(v) => handleNotificationChange('email', v)}
+              onCheckedChange={v => handleNotificationChange('email', v)}
               disabled={updateNotificationsMutation.isPending}
             />
           </div>
@@ -1187,7 +1261,7 @@ export const SettingsPage = () => {
             </div>
             <Switch
               checked={inAppNotifications}
-              onCheckedChange={(v) => handleNotificationChange('inApp', v)}
+              onCheckedChange={v => handleNotificationChange('inApp', v)}
               disabled={updateNotificationsMutation.isPending}
             />
           </div>

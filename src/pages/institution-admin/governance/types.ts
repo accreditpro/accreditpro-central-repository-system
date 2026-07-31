@@ -100,27 +100,141 @@ export const COMMITTEE_CATEGORIES: { value: CommitteeCategory; label: string }[]
 ];
 
 export const PREDEFINED_COMMITTEES = [
-  { name: 'Governing Body', category: 'Academic Governance' as CommitteeCategory, description: 'The Governing Body is the highest decision-making body of the institution responsible for overall governance, strategic direction, and policy formulation.' },
-  { name: 'Academic Council', category: 'Academic Governance' as CommitteeCategory, description: 'The Academic Council is the principal academic body responsible for maintaining academic standards, curriculum design, and academic regulations.' },
-  { name: 'Board of Studies (BoS)', category: 'Academic Governance' as CommitteeCategory, description: 'Board of Studies reviews and recommends curriculum, syllabi, and academic policies for each program offered by the institution.' },
-  { name: 'Program Assessment Committee', category: 'Academic Governance' as CommitteeCategory, description: 'Program Assessment Committee oversees the evaluation of program outcomes, student performance assessment, and continuous improvement of academic programs.' },
-  { name: 'Department Academic Committee', category: 'Academic Governance' as CommitteeCategory, description: 'Department Academic Committee oversees academic activities, course delivery, and academic performance within the department.' },
-  { name: 'Department Advisory Committee', category: 'Academic Governance' as CommitteeCategory, description: 'Department Advisory Committee provides strategic guidance to the department on academic and industry-related matters.' },
-  { name: 'IQAC Committee', category: 'Quality Assurance' as CommitteeCategory, description: 'Internal Quality Assurance Cell ensures continuous improvement of academic and administrative performance through quality benchmarks.' },
-  { name: 'Examination Committee', category: 'Examination' as CommitteeCategory, description: 'Examination Committee oversees the conduct of examinations, evaluation processes, and result declaration.' },
-  { name: 'Research & Development Committee', category: 'Research & Innovation' as CommitteeCategory, description: 'Research & Development Committee promotes research culture, reviews research proposals, and monitors research output.' },
-  { name: 'Innovation & IPR Committee', category: 'Research & Innovation' as CommitteeCategory, description: 'Innovation & IPR Committee fosters innovation, manages intellectual property rights, and promotes patent filings.' },
-  { name: 'Industry Interaction Committee', category: 'Industry & Placement' as CommitteeCategory, description: 'Industry Interaction Committee bridges academia and industry through collaborations, guest lectures, and industrial visits.' },
-  { name: 'Training & Placement Committee', category: 'Industry & Placement' as CommitteeCategory, description: 'Training & Placement Committee manages student training, career development, and placement activities.' },
-  { name: 'Alumni Association Committee', category: 'Student Development' as CommitteeCategory, description: 'Alumni Association Committee engages alumni for institutional development, mentorship, and networking.' },
-  { name: 'Library Committee', category: 'Student Development' as CommitteeCategory, description: 'Library Committee oversees library resources, digital repositories, and reading culture enhancement.' },
-  { name: 'Anti-Ragging Committee', category: 'Student Development' as CommitteeCategory, description: 'Anti-Ragging Committee prevents and addresses ragging incidents on campus as per regulatory guidelines.' },
-  { name: 'Internal Complaints Committee (ICC/POSH)', category: 'Student Development' as CommitteeCategory, description: 'Internal Complaints Committee addresses complaints related to sexual harassment and ensures a safe campus environment.' },
-  { name: 'Grievance Redressal Committee', category: 'Student Development' as CommitteeCategory, description: 'Grievance Redressal Committee addresses student and staff grievances and ensures timely resolution.' },
-  { name: 'Green Campus Committee', category: 'Student Development' as CommitteeCategory, description: 'Green Campus Committee promotes environmental sustainability, green initiatives, and eco-friendly practices.' },
-  { name: 'Entrepreneurship Development Cell', category: 'Student Development' as CommitteeCategory, description: 'Entrepreneurship Development Cell fosters entrepreneurial mindset and supports startup initiatives.' },
-  { name: 'NSS Committee', category: 'Student Development' as CommitteeCategory, description: 'National Service Scheme Committee coordinates community service activities and social outreach programs.' },
-  { name: 'NCC Committee', category: 'Student Development' as CommitteeCategory, description: 'National Cadet Corps Committee manages NCC training, camps, and related activities.' },
+  {
+    name: 'Governing Body',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'The Governing Body is the highest decision-making body of the institution responsible for overall governance, strategic direction, and policy formulation.',
+  },
+  {
+    name: 'Academic Council',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'The Academic Council is the principal academic body responsible for maintaining academic standards, curriculum design, and academic regulations.',
+  },
+  {
+    name: 'Board of Studies (BoS)',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'Board of Studies reviews and recommends curriculum, syllabi, and academic policies for each program offered by the institution.',
+  },
+  {
+    name: 'Program Assessment Committee',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'Program Assessment Committee oversees the evaluation of program outcomes, student performance assessment, and continuous improvement of academic programs.',
+  },
+  {
+    name: 'Department Academic Committee',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'Department Academic Committee oversees academic activities, course delivery, and academic performance within the department.',
+  },
+  {
+    name: 'Department Advisory Committee',
+    category: 'Academic Governance' as CommitteeCategory,
+    description:
+      'Department Advisory Committee provides strategic guidance to the department on academic and industry-related matters.',
+  },
+  {
+    name: 'IQAC Committee',
+    category: 'Quality Assurance' as CommitteeCategory,
+    description:
+      'Internal Quality Assurance Cell ensures continuous improvement of academic and administrative performance through quality benchmarks.',
+  },
+  {
+    name: 'Examination Committee',
+    category: 'Examination' as CommitteeCategory,
+    description:
+      'Examination Committee oversees the conduct of examinations, evaluation processes, and result declaration.',
+  },
+  {
+    name: 'Research & Development Committee',
+    category: 'Research & Innovation' as CommitteeCategory,
+    description:
+      'Research & Development Committee promotes research culture, reviews research proposals, and monitors research output.',
+  },
+  {
+    name: 'Innovation & IPR Committee',
+    category: 'Research & Innovation' as CommitteeCategory,
+    description:
+      'Innovation & IPR Committee fosters innovation, manages intellectual property rights, and promotes patent filings.',
+  },
+  {
+    name: 'Industry Interaction Committee',
+    category: 'Industry & Placement' as CommitteeCategory,
+    description:
+      'Industry Interaction Committee bridges academia and industry through collaborations, guest lectures, and industrial visits.',
+  },
+  {
+    name: 'Training & Placement Committee',
+    category: 'Industry & Placement' as CommitteeCategory,
+    description:
+      'Training & Placement Committee manages student training, career development, and placement activities.',
+  },
+  {
+    name: 'Alumni Association Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Alumni Association Committee engages alumni for institutional development, mentorship, and networking.',
+  },
+  {
+    name: 'Library Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Library Committee oversees library resources, digital repositories, and reading culture enhancement.',
+  },
+  {
+    name: 'Anti-Ragging Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Anti-Ragging Committee prevents and addresses ragging incidents on campus as per regulatory guidelines.',
+  },
+  {
+    name: 'Internal Complaints Committee (ICC/POSH)',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Internal Complaints Committee addresses complaints related to sexual harassment and ensures a safe campus environment.',
+  },
+  {
+    name: 'Grievance Redressal Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Grievance Redressal Committee addresses student and staff grievances and ensures timely resolution.',
+  },
+  {
+    name: 'Green Campus Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Green Campus Committee promotes environmental sustainability, green initiatives, and eco-friendly practices.',
+  },
+  {
+    name: 'Entrepreneurship Development Cell',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'Entrepreneurship Development Cell fosters entrepreneurial mindset and supports startup initiatives.',
+  },
+  {
+    name: 'NSS Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'National Service Scheme Committee coordinates community service activities and social outreach programs.',
+  },
+  {
+    name: 'NCC Committee',
+    category: 'Student Development' as CommitteeCategory,
+    description:
+      'National Cadet Corps Committee manages NCC training, camps, and related activities.',
+  },
 ];
 
-export const CSV_TEMPLATE_HEADERS = ['Employee ID', 'Employee Name', 'Designation', 'Department', 'Committee Role', 'Member Type', 'Email', 'Mobile'];
+export const CSV_TEMPLATE_HEADERS = [
+  'Employee ID',
+  'Employee Name',
+  'Designation',
+  'Department',
+  'Committee Role',
+  'Member Type',
+  'Email',
+  'Mobile',
+];

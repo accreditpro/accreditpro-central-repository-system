@@ -40,7 +40,14 @@ const ACCEPTED_TYPES = [
 
 const ACCEPT_EXTENSIONS = '.pdf,.docx,.doc,.png,.jpg,.jpeg,.gif,.webp';
 
-export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext, onPrev, completionPercentage }: Step2Props) {
+export default function Step2_UploadCourseFile({
+  data,
+  onUpdate,
+  onSave,
+  onNext,
+  onPrev,
+  completionPercentage,
+}: Step2Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
@@ -62,25 +69,85 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
           'Analyze and interpret results from ML models',
         ],
         units: [
-          { id: 'u1', title: 'Introduction to Machine Learning', topics: ['What is ML?', 'Types of ML', 'Applications', 'History & Trends'], hours: 8 },
-          { id: 'u2', title: 'Supervised Learning', topics: ['Linear Regression', 'Logistic Regression', 'Decision Trees', 'SVM'], hours: 12 },
-          { id: 'u3', title: 'Unsupervised Learning', topics: ['K-Means', 'Hierarchical Clustering', 'PCA', 'Anomaly Detection'], hours: 10 },
-          { id: 'u4', title: 'Neural Networks & Deep Learning', topics: ['Perceptron', 'Multi-layer NN', 'Backpropagation', 'CNN Basics'], hours: 12 },
-          { id: 'u5', title: 'Model Evaluation & Deployment', topics: ['Cross-validation', 'Metrics', 'Overfitting/Underfitting', 'MLOps Basics'], hours: 8 },
+          {
+            id: 'u1',
+            title: 'Introduction to Machine Learning',
+            topics: ['What is ML?', 'Types of ML', 'Applications', 'History & Trends'],
+            hours: 8,
+          },
+          {
+            id: 'u2',
+            title: 'Supervised Learning',
+            topics: ['Linear Regression', 'Logistic Regression', 'Decision Trees', 'SVM'],
+            hours: 12,
+          },
+          {
+            id: 'u3',
+            title: 'Unsupervised Learning',
+            topics: ['K-Means', 'Hierarchical Clustering', 'PCA', 'Anomaly Detection'],
+            hours: 10,
+          },
+          {
+            id: 'u4',
+            title: 'Neural Networks & Deep Learning',
+            topics: ['Perceptron', 'Multi-layer NN', 'Backpropagation', 'CNN Basics'],
+            hours: 12,
+          },
+          {
+            id: 'u5',
+            title: 'Model Evaluation & Deployment',
+            topics: ['Cross-validation', 'Metrics', 'Overfitting/Underfitting', 'MLOps Basics'],
+            hours: 8,
+          },
         ],
         topics: [
-          'Supervised Learning', 'Unsupervised Learning', 'Regression', 'Classification', 'Clustering',
-          'Neural Networks', 'Deep Learning', 'Model Evaluation', 'Feature Engineering', 'Ensemble Methods',
+          'Supervised Learning',
+          'Unsupervised Learning',
+          'Regression',
+          'Classification',
+          'Clustering',
+          'Neural Networks',
+          'Deep Learning',
+          'Model Evaluation',
+          'Feature Engineering',
+          'Ensemble Methods',
         ],
         textBooks: [
-          { id: 'b1', title: 'Pattern Recognition and Machine Learning', author: 'Christopher Bishop', edition: '1st', publisher: 'Springer' },
-          { id: 'b2', title: 'The Elements of Statistical Learning', author: 'Hastie, Tibshirani, Friedman', edition: '2nd', publisher: 'Springer' },
+          {
+            id: 'b1',
+            title: 'Pattern Recognition and Machine Learning',
+            author: 'Christopher Bishop',
+            edition: '1st',
+            publisher: 'Springer',
+          },
+          {
+            id: 'b2',
+            title: 'The Elements of Statistical Learning',
+            author: 'Hastie, Tibshirani, Friedman',
+            edition: '2nd',
+            publisher: 'Springer',
+          },
         ],
         referenceBooks: [
-          { id: 'r1', title: 'Machine Learning: A Probabilistic Perspective', author: 'Kevin Murphy', publisher: 'MIT Press' },
-          { id: 'r2', title: 'Hands-On Machine Learning with Scikit-Learn', author: 'Aurélien Géron', edition: '2nd', publisher: 'O\'Reilly' },
+          {
+            id: 'r1',
+            title: 'Machine Learning: A Probabilistic Perspective',
+            author: 'Kevin Murphy',
+            publisher: 'MIT Press',
+          },
+          {
+            id: 'r2',
+            title: 'Hands-On Machine Learning with Scikit-Learn',
+            author: 'Aurélien Géron',
+            edition: '2nd',
+            publisher: "O'Reilly",
+          },
         ],
-        preRequisites: ['Programming in Python', 'Basic Probability & Statistics', 'Linear Algebra'],
+        preRequisites: [
+          'Programming in Python',
+          'Basic Probability & Statistics',
+          'Linear Algebra',
+        ],
       };
       onUpdate(mockData);
       setIsUploading(false);
@@ -147,9 +214,13 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
             <Upload className="h-5 w-5 text-indigo-600" />
             Upload Course File
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Upload the course syllabus — AI will extract and populate the data</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Upload the course syllabus — AI will extract and populate the data
+          </p>
         </div>
-        <Badge variant="outline" className="text-xs">{completionPercentage}% Complete</Badge>
+        <Badge variant="outline" className="text-xs">
+          {completionPercentage}% Complete
+        </Badge>
       </div>
       <Separator />
 
@@ -176,7 +247,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
               isDragging
                 ? 'border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/10 scale-[1.01]'
                 : 'border-border/40 hover:border-indigo-400/40 hover:bg-indigo-500/[0.02] hover:shadow-md',
-              isUploading && 'pointer-events-none opacity-60',
+              isUploading && 'pointer-events-none opacity-60'
             )}
           >
             {/* Animated background glow on drag */}
@@ -214,7 +285,9 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                   <Loader2 className="h-10 w-10 text-indigo-600 animate-spin relative" />
                 </div>
                 <p className="text-sm font-semibold text-indigo-600">Analyzing Course File...</p>
-                <p className="text-xs text-muted-foreground">Extracting objectives, units, topics, and references</p>
+                <p className="text-xs text-muted-foreground">
+                  Extracting objectives, units, topics, and references
+                </p>
               </div>
             ) : (
               /* Default State */
@@ -229,8 +302,8 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                 <p className="text-sm font-semibold text-foreground/80">
                   <span className="text-indigo-600 hover:text-indigo-700 cursor-pointer underline decoration-indigo-300/50 underline-offset-2">
                     Click to upload
-                  </span>
-                  {' '}or drag and drop
+                  </span>{' '}
+                  or drag and drop
                 </p>
                 <p className="text-xs text-muted-foreground mt-1.5 mb-4">
                   Supported files up to 25MB each
@@ -238,7 +311,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
 
                 {/* Format badges */}
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {ACCEPTED_TYPES.map((fmt) => {
+                  {ACCEPTED_TYPES.map(fmt => {
                     const Icon = fmt.icon;
                     return (
                       <span
@@ -246,7 +319,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                         className={cn(
                           'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold border',
                           fmt.color,
-                          'border-current/20',
+                          'border-current/20'
                         )}
                       >
                         <Icon className="h-3 w-3" />
@@ -268,8 +341,9 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
               <div>
                 <p className="text-xs font-semibold">AI-Powered Syllabus Parsing</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Upload your course syllabus (PDF, DOCX, or image) and our AI engine will automatically extract course
-                  objectives, unit structure, topics, textbooks, and prerequisites — ready for OBE workflow.
+                  Upload your course syllabus (PDF, DOCX, or image) and our AI engine will
+                  automatically extract course objectives, unit structure, topics, textbooks, and
+                  prerequisites — ready for OBE workflow.
                 </p>
               </div>
             </CardContent>
@@ -291,10 +365,17 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{data.fileName}</p>
-                    <p className="text-[10px] text-muted-foreground">Uploaded successfully • AI extraction complete</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Uploaded successfully • AI extraction complete
+                    </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={handleRemove}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={handleRemove}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </CardContent>
@@ -332,13 +413,17 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {data.units.map((unit) => (
+                    {data.units.map(unit => (
                       <div key={unit.id} className="p-2 rounded-lg bg-muted/30">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-medium">{unit.title}</p>
-                          <Badge variant="outline" className="text-[9px]">{unit.hours} hrs</Badge>
+                          <Badge variant="outline" className="text-[9px]">
+                            {unit.hours} hrs
+                          </Badge>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{unit.topics.join(', ')}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {unit.topics.join(', ')}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -355,7 +440,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {data.textBooks.map((book) => (
+                    {data.textBooks.map(book => (
                       <div key={book.id} className="text-xs text-muted-foreground">
                         <span className="font-medium">{book.title}</span> — {book.author}
                         {book.edition && <span> ({book.edition} ed.)</span>}
@@ -375,7 +460,7 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {data.referenceBooks.map((book) => (
+                    {data.referenceBooks.map(book => (
                       <div key={book.id} className="text-xs text-muted-foreground">
                         <span className="font-medium">{book.title}</span> — {book.author}
                       </div>
@@ -395,7 +480,13 @@ export default function Step2_UploadCourseFile({ data, onUpdate, onSave, onNext,
           Previous: Course Details
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onSave} className="gap-2" disabled={!data?.fileName}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSave}
+            className="gap-2"
+            disabled={!data?.fileName}
+          >
             <Save className="h-3.5 w-3.5" />
             Save Draft
           </Button>

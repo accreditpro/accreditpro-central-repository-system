@@ -50,13 +50,14 @@ export const AuthLayout = () => {
                 Accreditation Journey
               </h2>
               <p className="text-base text-white/60 max-w-sm leading-relaxed">
-                The modern platform for higher education institutions to manage accreditation processes with confidence and clarity.
+                The modern platform for higher education institutions to manage accreditation
+                processes with confidence and clarity.
               </p>
             </div>
 
             {/* Feature List */}
             <div className="space-y-3">
-              {features.map((feature) => (
+              {features.map(feature => (
                 <div key={feature} className="flex items-center gap-3">
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />

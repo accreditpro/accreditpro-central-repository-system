@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, StudentAchievementResponse, CreateAchievementRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  StudentAchievementResponse,
+  CreateAchievementRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +52,15 @@ import { toast } from 'sonner';
 // ── Select options ──
 
 const ACADEMIC_YEAR_OPTIONS = ['2025-26', '2024-25', '2023-24', '2022-23', '2021-22'];
-const ACHIEVEMENT_TYPE_OPTIONS = ['Hackathon', 'Sports', 'Cultural', 'Paper Presentation', 'Project Competition', 'Olympiad', 'Other'];
+const ACHIEVEMENT_TYPE_OPTIONS = [
+  'Hackathon',
+  'Sports',
+  'Cultural',
+  'Paper Presentation',
+  'Project Competition',
+  'Olympiad',
+  'Other',
+];
 const LEVEL_OPTIONS = ['International', 'National', 'State', 'University', 'College'];
 
 // ── Empty form ──
@@ -94,8 +106,9 @@ export const StudentAchievementTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         if (result.content.length === 1) {
           setSelectedStudentId(result.content[0].id);
@@ -110,21 +123,24 @@ export const StudentAchievementTab = () => {
 
   // ── Fetch achievements for selected student ──
 
-  const fetchAchievements = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studentService.listAchievements(departmentId, studentId);
-      setAchievements(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load achievements';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchAchievements = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await studentService.listAchievements(departmentId, studentId);
+        setAchievements(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load achievements';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -147,7 +163,7 @@ export const StudentAchievementTab = () => {
   };
 
   const filteredAchievements = searchQuery
-    ? achievements.filter((a) => achievementMatchesSearch(a, searchQuery))
+    ? achievements.filter(a => achievementMatchesSearch(a, searchQuery))
     : achievements;
 
   // ── Create ──
@@ -223,12 +239,18 @@ export const StudentAchievementTab = () => {
 
   const getLevelBadgeStyle = (level: string | null) => {
     switch (level) {
-      case 'International': return 'bg-violet-500/10 text-violet-600';
-      case 'National': return 'bg-blue-500/10 text-blue-600';
-      case 'State': return 'bg-emerald-500/10 text-emerald-600';
-      case 'University': return 'bg-amber-500/10 text-amber-600';
-      case 'College': return 'bg-gray-500/10 text-gray-600';
-      default: return 'bg-gray-500/10 text-gray-600';
+      case 'International':
+        return 'bg-violet-500/10 text-violet-600';
+      case 'National':
+        return 'bg-blue-500/10 text-blue-600';
+      case 'State':
+        return 'bg-emerald-500/10 text-emerald-600';
+      case 'University':
+        return 'bg-amber-500/10 text-amber-600';
+      case 'College':
+        return 'bg-gray-500/10 text-gray-600';
+      default:
+        return 'bg-gray-500/10 text-gray-600';
     }
   };
 
@@ -261,7 +283,7 @@ export const StudentAchievementTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -270,7 +292,7 @@ export const StudentAchievementTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -319,10 +341,21 @@ export const StudentAchievementTab = () => {
                 <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Achievement
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -347,7 +380,7 @@ export const StudentAchievementTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -373,26 +406,45 @@ export const StudentAchievementTab = () => {
                       <TableHead className="text-[10px] font-semibold">Date</TableHead>
                       <TableHead className="text-[10px] font-semibold">Academic Year</TableHead>
                       <TableHead className="text-[10px] font-semibold">Organizing Body</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-28" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -401,7 +453,14 @@ export const StudentAchievementTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchAchievements(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() =>
+                                selectedStudentId && fetchAchievements(selectedStudentId)
+                              }
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -426,29 +485,54 @@ export const StudentAchievementTab = () => {
                     )}
 
                     {/* Data rows */}
-                    {!loading && !error && filteredAchievements.map((a, index) => (
-                      <TableRow key={a.id} className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">{index + 1}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="outline" className="text-[9px]">{a.achievementType || '-'}</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs p-1.5 font-medium">{a.achievementName}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">
-                          <Badge variant="secondary" className={cn('text-[9px]', getLevelBadgeStyle(a.level))}>
-                            {a.level || '-'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] p-1.5">{a.awardPosition || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{a.achievementDate || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{getAcademicYearLabel(a.academicYearId)}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 truncate max-w-[120px]">{a.organizingBody || '-'}</TableCell>
-                        <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-40 cursor-not-allowed" disabled title="Update API not available yet">
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {!loading &&
+                      !error &&
+                      filteredAchievements.map((a, index) => (
+                        <TableRow key={a.id} className="hover:bg-muted/20">
+                          <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge variant="outline" className="text-[9px]">
+                              {a.achievementType || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs p-1.5 font-medium">
+                            {a.achievementName}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            <Badge
+                              variant="secondary"
+                              className={cn('text-[9px]', getLevelBadgeStyle(a.level))}
+                            >
+                              {a.level || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {a.awardPosition || '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {a.achievementDate || '-'}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5">
+                            {getAcademicYearLabel(a.academicYearId)}
+                          </TableCell>
+                          <TableCell className="text-[10px] p-1.5 truncate max-w-[120px]">
+                            {a.organizingBody || '-'}
+                          </TableCell>
+                          <TableCell className="text-center p-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-40 cursor-not-allowed"
+                              disabled
+                              title="Update API not available yet"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -465,7 +549,8 @@ export const StudentAchievementTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Add Achievement Record</DialogTitle>
             <DialogDescription className="text-xs">
-              Fill in the details to add a new achievement record. Required fields are marked with *.
+              Fill in the details to add a new achievement record. Required fields are marked with
+              *.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-3">
@@ -474,21 +559,32 @@ export const StudentAchievementTab = () => {
                 <Label className="text-xs font-medium">Achievement Type</Label>
                 <Select
                   value={formData.achievementType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, achievementType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, achievementType: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ACHIEVEMENT_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {ACHIEVEMENT_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Achievement Name *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Smart India Hackathon Winner"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Smart India Hackathon Winner"
                   value={formData.achievementName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, achievementName: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, achievementName: e.target.value }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -496,40 +592,58 @@ export const StudentAchievementTab = () => {
                 <Label className="text-xs font-medium">Level</Label>
                 <Select
                   value={formData.level || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, level: v || undefined }))}
+                  onValueChange={v => setFormData(prev => ({ ...prev, level: v || undefined }))}
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select level" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {LEVEL_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {LEVEL_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Award / Position</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. 1st Prize"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. 1st Prize"
                   value={formData.awardPosition || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, awardPosition: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, awardPosition: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Date *</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.achievementDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, achievementDate: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, achievementDate: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -538,16 +652,30 @@ export const StudentAchievementTab = () => {
             <div className="grid grid-cols-1 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Organizing Body</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Government of India"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Government of India"
                   value={formData.organizingBody || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, organizingBody: e.target.value }))}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.achievementName || !formData.achievementDate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={saving || !formData.achievementName || !formData.achievementDate}
+            >
               {saving ? 'Adding...' : 'Add Achievement'}
             </Button>
           </DialogFooter>

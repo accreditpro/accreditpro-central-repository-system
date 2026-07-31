@@ -12,17 +12,13 @@ interface RouteLoadingSpinnerProps {
   message?: string;
 }
 
-export const RouteLoadingSpinner = ({
-  message = 'Loading…',
-}: RouteLoadingSpinnerProps) => (
+export const RouteLoadingSpinner = ({ message = 'Loading…' }: RouteLoadingSpinnerProps) => (
   <div className="flex min-h-screen items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-3">
       <div className="relative h-8 w-8">
         <div className="absolute inset-0 animate-spin rounded-full border-4 border-muted border-t-primary" />
       </div>
-      <p className="text-sm font-medium text-muted-foreground animate-pulse">
-        {message}
-      </p>
+      <p className="text-sm font-medium text-muted-foreground animate-pulse">{message}</p>
     </div>
   </div>
 );

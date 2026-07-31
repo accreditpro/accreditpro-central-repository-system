@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { researchService } from '@/services/research.service';
-import { SponsoredProjectResponse, CreateSponsoredProjectRequest, PaginatedData } from '@/types/research.types';
+import {
+  SponsoredProjectResponse,
+  CreateSponsoredProjectRequest,
+  PaginatedData,
+} from '@/types/research.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,26 +108,29 @@ export const ResearchSponsoredProjectTab = () => {
 
   // ── Fetch projects from API ──
 
-  const fetchProjects = useCallback(async (currentPage: number, search?: string) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await researchService.listSponsoredProjects(departmentId, {
-        page: currentPage,
-        size: PAGE_SIZE,
-        search: search || undefined,
-      });
-      setData(result);
-      setTotalPages(result.totalPages);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load sponsored projects';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+  const fetchProjects = useCallback(
+    async (currentPage: number, search?: string) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await researchService.listSponsoredProjects(departmentId, {
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: search || undefined,
+        });
+        setData(result);
+        setTotalPages(result.totalPages);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load sponsored projects';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     fetchProjects(page, submittedSearch);
@@ -155,7 +162,13 @@ export const ResearchSponsoredProjectTab = () => {
 
   const handleCreate = async () => {
     if (!departmentId) return;
-    if (!formData.projectTitle || !formData.sponsorOrganization || !formData.principalInvestigator || !formData.projectValue || !formData.startDate) {
+    if (
+      !formData.projectTitle ||
+      !formData.sponsorOrganization ||
+      !formData.principalInvestigator ||
+      !formData.projectValue ||
+      !formData.startDate
+    ) {
       toast.error('Project Title, Sponsor, PI, Project Value, and Start Date are required');
       return;
     }
@@ -334,10 +347,21 @@ export const ResearchSponsoredProjectTab = () => {
             <Button size="sm" className="text-xs h-8" onClick={openCreateDialog}>
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Project
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleDownloadTemplate}
+            >
               <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              disabled
+              title="Upload CSV API not available yet"
+            >
               <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
             </Button>
           </div>
@@ -364,7 +388,7 @@ export const ResearchSponsoredProjectTab = () => {
                 className="h-8 text-xs pl-8 pr-8"
                 placeholder="Search projects..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
               {searchQuery && (
@@ -391,26 +415,45 @@ export const ResearchSponsoredProjectTab = () => {
                   <TableHead className="text-[10px] font-semibold w-14">Start</TableHead>
                   <TableHead className="text-[10px] font-semibold w-14">End</TableHead>
                   <TableHead className="text-[10px] font-semibold w-12">Status</TableHead>
-                  <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                  <TableHead className="text-[10px] font-semibold text-center w-16">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {/* Loading skeleton */}
-                {loading && (
+                {loading &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skel-${i}`}>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-18" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center">
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-18" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-10" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12 mx-auto" />
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
 
                 {/* Error state */}
                 {!loading && error && (
@@ -419,7 +462,12 @@ export const ResearchSponsoredProjectTab = () => {
                       <div className="flex flex-col items-center gap-2 text-destructive">
                         <AlertCircle className="h-8 w-8" />
                         <p className="text-xs font-medium">{error}</p>
-                        <Button variant="outline" size="sm" className="text-xs" onClick={() => fetchProjects(page, submittedSearch)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => fetchProjects(page, submittedSearch)}
+                        >
                           <RefreshCw className="h-3 w-3 mr-1" /> Retry
                         </Button>
                       </div>
@@ -444,40 +492,72 @@ export const ResearchSponsoredProjectTab = () => {
                 )}
 
                 {/* Data rows */}
-                {!loading && !error && data?.content.map((project, index) => (
-                  <TableRow key={project.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
-                      {data.page * data.size + index + 1}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-medium truncate max-w-[160px]" title={project.projectTitle}>
-                      {project.projectTitle}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[80px]" title={project.sponsorOrganization}>
-                      {project.sponsorOrganization}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 truncate max-w-[100px]" title={project.principalInvestigator}>
-                      {project.principalInvestigator}
-                    </TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{formatAmount(project.projectValue)}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{project.startDate}</TableCell>
-                    <TableCell className="text-[10px] p-1.5 font-mono">{project.endDate || '-'}</TableCell>
-                    <TableCell className="text-[10px] p-1.5">
-                      <Badge variant="secondary" className={cn('text-[9px]', getStatusBadge(project.projectStatus))}>
-                        {project.projectStatus || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center p-1.5">
-                      <div className="flex items-center justify-center gap-0">
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditDialog(project)} title="Edit">
-                          <Pencil className="h-3 w-3 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openDeleteDialog(project)} title="Delete">
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {!loading &&
+                  !error &&
+                  data?.content.map((project, index) => (
+                    <TableRow key={project.id} className="hover:bg-muted/20">
+                      <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                        {data.page * data.size + index + 1}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 font-medium truncate max-w-[160px]"
+                        title={project.projectTitle}
+                      >
+                        {project.projectTitle}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[80px]"
+                        title={project.sponsorOrganization}
+                      >
+                        {project.sponsorOrganization}
+                      </TableCell>
+                      <TableCell
+                        className="text-[10px] p-1.5 truncate max-w-[100px]"
+                        title={project.principalInvestigator}
+                      >
+                        {project.principalInvestigator}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {formatAmount(project.projectValue)}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {project.startDate}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5 font-mono">
+                        {project.endDate || '-'}
+                      </TableCell>
+                      <TableCell className="text-[10px] p-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn('text-[9px]', getStatusBadge(project.projectStatus))}
+                        >
+                          {project.projectStatus || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center p-1.5">
+                        <div className="flex items-center justify-center gap-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openEditDialog(project)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => openDeleteDialog(project)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -490,7 +570,10 @@ export const ResearchSponsoredProjectTab = () => {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => handlePageChange(Math.max(0, page - 1))}
-                      className={cn(page === 0 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page === 0 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                   {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
@@ -501,7 +584,11 @@ export const ResearchSponsoredProjectTab = () => {
                     else pageNum = page - 2 + i;
                     return (
                       <PaginationItem key={pageNum}>
-                        <PaginationLink onClick={() => handlePageChange(pageNum)} isActive={pageNum === page} className="cursor-pointer">
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNum)}
+                          isActive={pageNum === page}
+                          className="cursor-pointer"
+                        >
                           {pageNum + 1}
                         </PaginationLink>
                       </PaginationItem>
@@ -510,7 +597,10 @@ export const ResearchSponsoredProjectTab = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
-                      className={cn(page >= totalPages - 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                      className={cn(
+                        page >= totalPages - 1 && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
                     />
                   </PaginationItem>
                 </PaginationContent>
@@ -534,50 +624,82 @@ export const ResearchSponsoredProjectTab = () => {
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Project Title *</Label>
-              <Input className="h-9 text-xs" placeholder="e.g. IoT-based Smart Agriculture"
+              <Input
+                className="h-9 text-xs"
+                placeholder="e.g. IoT-based Smart Agriculture"
                 value={formData.projectTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, projectTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Sponsor Organization *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. ICAR"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. ICAR"
                   value={formData.sponsorOrganization}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sponsorOrganization: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, sponsorOrganization: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Principal Investigator *</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Amit Singh"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Amit Singh"
                   value={formData.principalInvestigator}
-                  onChange={(e) => setFormData(prev => ({ ...prev, principalInvestigator: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, principalInvestigator: e.target.value }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Co-Investigators</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Dr. Rajesh Kumar"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Dr. Rajesh Kumar"
                   value={formData.coInvestigators || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coInvestigators: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, coInvestigators: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Project Value (INR) *</Label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.01" placeholder="e.g. 2500000"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 2500000"
                   value={formData.projectValue || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, projectValue: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, projectValue: Number(e.target.value) }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Start Date *</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">End Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.endDate || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -585,28 +707,55 @@ export const ResearchSponsoredProjectTab = () => {
                 <Label className="text-xs font-medium">Project Status</Label>
                 <Select
                   value={formData.projectStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, projectStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, projectStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PROJECT_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {PROJECT_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Project Outcome</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Prototype developed"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Prototype developed"
                   value={formData.projectOutcome || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, projectOutcome: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, projectOutcome: e.target.value }))}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleCreate}
-              disabled={saving || !formData.projectTitle || !formData.sponsorOrganization || !formData.principalInvestigator || !formData.projectValue || !formData.startDate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleCreate}
+              disabled={
+                saving ||
+                !formData.projectTitle ||
+                !formData.sponsorOrganization ||
+                !formData.principalInvestigator ||
+                !formData.projectValue ||
+                !formData.startDate
+              }
+            >
               {saving ? 'Creating...' : 'Create Project'}
             </Button>
           </DialogFooter>
@@ -625,50 +774,77 @@ export const ResearchSponsoredProjectTab = () => {
           <div className="grid gap-3 py-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium">Project Title</Label>
-              <Input className="h-9 text-xs"
+              <Input
+                className="h-9 text-xs"
                 value={formData.projectTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectTitle: e.target.value }))} />
+                onChange={e => setFormData(prev => ({ ...prev, projectTitle: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Sponsor Organization</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.sponsorOrganization}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sponsorOrganization: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, sponsorOrganization: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">PI</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.principalInvestigator}
-                  onChange={(e) => setFormData(prev => ({ ...prev, principalInvestigator: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, principalInvestigator: e.target.value }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Co-Investigators</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.coInvestigators || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coInvestigators: e.target.value }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, coInvestigators: e.target.value }))
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Project Value</Label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.01"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   value={formData.projectValue || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, projectValue: Number(e.target.value) }))} />
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, projectValue: Number(e.target.value) }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Start Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">End Date</Label>
-                <Input className="h-9 text-xs" type="date"
+                <Input
+                  className="h-9 text-xs"
+                  type="date"
                   value={formData.endDate || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -676,26 +852,41 @@ export const ResearchSponsoredProjectTab = () => {
                 <Label className="text-xs font-medium">Status</Label>
                 <Select
                   value={formData.projectStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, projectStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, projectStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PROJECT_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {PROJECT_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Outcome</Label>
-                <Input className="h-9 text-xs"
+                <Input
+                  className="h-9 text-xs"
                   value={formData.projectOutcome || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, projectOutcome: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, projectOutcome: e.target.value }))}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button size="sm" className="text-xs" onClick={handleUpdate} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -711,12 +902,27 @@ export const ResearchSponsoredProjectTab = () => {
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Sponsored Project</DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to delete <strong>&ldquo;{selectedProject?.projectTitle}&rdquo;</strong>? This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <strong>&ldquo;{selectedProject?.projectTitle}&rdquo;</strong>? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" size="sm" className="text-xs" onClick={handleDelete} disabled={deleting}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="text-xs"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>

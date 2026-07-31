@@ -27,13 +27,21 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const colorMap: Record<string, { bg: string; text: string; chart: string }> = {
   Building2: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', chart: '#3b82f6' },
-  CheckCircle2: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', chart: '#10b981' },
+  CheckCircle2: {
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    chart: '#10b981',
+  },
   Users: { bg: 'bg-violet-500/10', text: 'text-violet-600 dark:text-violet-400', chart: '#8b5cf6' },
   FileText: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', chart: '#f59e0b' },
   Database: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', chart: '#06b6d4' },
   Clock: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', chart: '#f97316' },
   AlertTriangle: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', chart: '#ef4444' },
-  PieChart: { bg: 'bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400', chart: '#6366f1' },
+  PieChart: {
+    bg: 'bg-indigo-500/10',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    chart: '#6366f1',
+  },
 };
 
 interface StatCardsProps {
@@ -43,7 +51,7 @@ interface StatCardsProps {
 export const StatCards = ({ data }: StatCardsProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {data.map((card) => {
+      {data.map(card => {
         const Icon = iconMap[card.icon] || Building2;
         const colors = colorMap[card.icon] || colorMap.Building2;
         const isPositive = card.change >= 0;

@@ -5,9 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -142,14 +161,29 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   const [editingProgram, setEditingProgram] = useState<AddOnProgramRecord | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<AddOnProgramRecord[]>([]);
-  const [uploadStats, setUploadStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
+  const [uploadStats, setUploadStats] = useState<{
+    total: number;
+    valid: number;
+    invalid: number;
+  } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Per-program evidence state
-  const [programEvidenceMap, setProgramEvidenceMap] = useState<Record<string, ProgramEvidenceMap>>({});
-  const [previewDialog, setPreviewDialog] = useState<{ open: boolean; programId: string; docType: EvidenceDocType; fileName: string } | null>(null);
-  const [uploadDialog, setUploadDialog] = useState<{ open: boolean; programId: string; docType: EvidenceDocType } | null>(null);
+  const [programEvidenceMap, setProgramEvidenceMap] = useState<Record<string, ProgramEvidenceMap>>(
+    {}
+  );
+  const [previewDialog, setPreviewDialog] = useState<{
+    open: boolean;
+    programId: string;
+    docType: EvidenceDocType;
+    fileName: string;
+  } | null>(null);
+  const [uploadDialog, setUploadDialog] = useState<{
+    open: boolean;
+    programId: string;
+    docType: EvidenceDocType;
+  } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -247,21 +281,17 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
   // Filtered programs for selected year/semester
   const filteredPrograms = useMemo(() => {
-    let filtered = programs.filter(
-      (p) => p.year === selectedYear && p.semester === selectedSemester
-    );
+    let filtered = programs.filter(p => p.year === selectedYear && p.semester === selectedSemester);
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (p) =>
-          p.topic.toLowerCase().includes(q) ||
-          p.coordinator.toLowerCase().includes(q)
+        p => p.topic.toLowerCase().includes(q) || p.coordinator.toLowerCase().includes(q)
       );
     }
 
     if (filterCertification && filterCertification !== 'all') {
-      filtered = filtered.filter((p) => p.certificationProvided === filterCertification);
+      filtered = filtered.filter(p => p.certificationProvided === filterCertification);
     }
 
     return filtered;
@@ -291,18 +321,21 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     };
   }, []);
 
-  const validateFile = useCallback((file: File, docType: EvidenceDocType): string | null => {
-    const allowed = getAllowedTypes(docType);
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!allowed.extensions.includes(ext)) {
-      return `Invalid file type "${ext}". Allowed: ${allowed.label}`;
-    }
-    // Max 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      return 'File size exceeds 10 MB limit.';
-    }
-    return null;
-  }, [getAllowedTypes]);
+  const validateFile = useCallback(
+    (file: File, docType: EvidenceDocType): string | null => {
+      const allowed = getAllowedTypes(docType);
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!allowed.extensions.includes(ext)) {
+        return `Invalid file type "${ext}". Allowed: ${allowed.label}`;
+      }
+      // Max 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        return 'File size exceeds 10 MB limit.';
+      }
+      return null;
+    },
+    [getAllowedTypes]
+  );
 
   // Evidence handlers for per-program documents
   const handleUploadEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
@@ -324,37 +357,43 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     setDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    setUploadError(null);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+      setUploadError(null);
 
-    const file = e.dataTransfer.files?.[0];
-    if (!file || !uploadDialog) return;
+      const file = e.dataTransfer.files?.[0];
+      if (!file || !uploadDialog) return;
 
-    const error = validateFile(file, uploadDialog.docType);
-    if (error) {
-      setUploadError(error);
-      setSelectedFile(null);
-      return;
-    }
-    setSelectedFile(file);
-  }, [uploadDialog, validateFile]);
+      const error = validateFile(file, uploadDialog.docType);
+      if (error) {
+        setUploadError(error);
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+    },
+    [uploadDialog, validateFile]
+  );
 
-  const handleDropZoneFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !uploadDialog) return;
-    setUploadError(null);
+  const handleDropZoneFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !uploadDialog) return;
+      setUploadError(null);
 
-    const error = validateFile(file, uploadDialog.docType);
-    if (error) {
-      setUploadError(error);
-      setSelectedFile(null);
-      return;
-    }
-    setSelectedFile(file);
-  }, [uploadDialog, validateFile]);
+      const error = validateFile(file, uploadDialog.docType);
+      if (error) {
+        setUploadError(error);
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+    },
+    [uploadDialog, validateFile]
+  );
 
   const handleConfirmUpload = useCallback(async () => {
     if (!selectedFile || !uploadDialog) return;
@@ -368,12 +407,17 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
         semester: mapLabelToSemester(selectedSemester),
         sectionName: 'addon-programs',
         recordId: programId,
-        documentType: docType
+        documentType: docType,
       };
-      
-      await academicRepositoryService.uploadEvidenceDocument(departmentId, 1, selectedFile, payload);
+
+      await academicRepositoryService.uploadEvidenceDocument(
+        departmentId,
+        1,
+        selectedFile,
+        payload
+      );
       await loadEvidence();
-      
+
       setUploadDialog(null);
       setSelectedFile(null);
       setUploadError(null);
@@ -381,38 +425,56 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
       console.error('Failed to upload evidence:', err);
       setUploadError('Failed to upload evidence');
     }
-  }, [selectedFile, uploadDialog, academicYear, selectedYear, selectedSemester, departmentId, loadEvidence]);
+  }, [
+    selectedFile,
+    uploadDialog,
+    academicYear,
+    selectedYear,
+    selectedSemester,
+    departmentId,
+    loadEvidence,
+  ]);
 
-  const handlePreviewEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
-    const ev = programEvidenceMap[programId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      setPreviewDialog({ open: true, programId, docType, fileName: ev.fileName });
-    }
-  }, [programEvidenceMap]);
-
-  const handleDownloadEvidence = useCallback(async (programId: string, docType: EvidenceDocType) => {
-    const ev = programEvidenceMap[programId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.id) {
-      try {
-        const res = await academicRepositoryService.downloadEvidenceDocument(ev.id);
-        if (res?.downloadUrl) {
-          await apiService.download(res.downloadUrl, ev.fileName || 'document');
-        }
-      } catch (err) {
-        console.error('Failed to download evidence:', err);
+  const handlePreviewEvidence = useCallback(
+    (programId: string, docType: EvidenceDocType) => {
+      const ev = programEvidenceMap[programId]?.[docType];
+      if (ev?.status === 'uploaded' && ev.fileName) {
+        setPreviewDialog({ open: true, programId, docType, fileName: ev.fileName });
       }
-    }
-  }, [programEvidenceMap]);
+    },
+    [programEvidenceMap]
+  );
+
+  const handleDownloadEvidence = useCallback(
+    async (programId: string, docType: EvidenceDocType) => {
+      const ev = programEvidenceMap[programId]?.[docType];
+      if (ev?.status === 'uploaded' && ev.id) {
+        try {
+          const res = await academicRepositoryService.downloadEvidenceDocument(ev.id);
+          if (res?.downloadUrl) {
+            await apiService.download(res.downloadUrl, ev.fileName || 'document');
+          }
+        } catch (err) {
+          console.error('Failed to download evidence:', err);
+        }
+      }
+    },
+    [programEvidenceMap]
+  );
 
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
-    const header = 'Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
+    const header =
+      'Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
     let rows: string[] = [];
     if (filteredPrograms && filteredPrograms.length > 0) {
-      rows = filteredPrograms.map(p => `"${department}","${p.year}","${p.semester}","${p.topic}","${p.fromDate}","${p.toDate}","${p.timeFrom}","${p.timeTo}","${p.coordinator}","${p.duration}","${p.studentsEnrolled}","${p.studentsParticipated}","${p.certificationProvided}","${p.certificatesIssued}"`);
+      rows = filteredPrograms.map(
+        p =>
+          `"${department}","${p.year}","${p.semester}","${p.topic}","${p.fromDate}","${p.toDate}","${p.timeFrom}","${p.timeTo}","${p.coordinator}","${p.duration}","${p.studentsEnrolled}","${p.studentsParticipated}","${p.certificationProvided}","${p.certificatesIssued}"`
+      );
     } else {
       rows = [
-        `"${department}","${selectedYear}","${selectedSemester}","Python for Data Science","2025-01-15","2025-01-20","09:00","12:00","Dr. Anita Sharma","30 Hours","120","115","Yes","110"`
+        `"${department}","${selectedYear}","${selectedSemester}","Python for Data Science","2025-01-15","2025-01-20","09:00","12:00","Dr. Anita Sharma","30 Hours","120","115","Yes","110"`,
       ];
     }
     const csv = [header, ...rows].join('\n');
@@ -432,9 +494,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).filter((line) => line.trim());
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
         const headers = parseCSVLine(lines[0]);
 
         const parsed: AddOnProgramRecord[] = [];
@@ -466,7 +528,10 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           if (!row['Coordinator']) {
             errors.push('Coordinator is mandatory');
           }
-          if (row['Certification Provided'] && !['Yes', 'No'].includes(row['Certification Provided'])) {
+          if (
+            row['Certification Provided'] &&
+            !['Yes', 'No'].includes(row['Certification Provided'])
+          ) {
             errors.push('Certification Provided must be Yes or No');
           }
 
@@ -490,7 +555,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
             duration: row['Duration'] || '',
             studentsEnrolled: row['Students Enrolled'] || '0',
             studentsParticipated: row['Students Participated'] || '0',
-            certificationProvided: (row['Certification Provided'] === 'Yes' ? 'Yes' : 'No'),
+            certificationProvided: row['Certification Provided'] === 'Yes' ? 'Yes' : 'No',
             certificatesIssued: row['Certificates Issued'] || '0',
             validationStatus: errors.length > 0 ? 'invalid' : 'valid',
             errors: errors.length > 0 ? errors : undefined,
@@ -517,8 +582,8 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
   // Import uploaded programs (only valid ones)
   const handleImportUploaded = useCallback(async () => {
-    const validRecords = uploadPreview.filter((p) => p.validationStatus === 'valid');
-    
+    const validRecords = uploadPreview.filter(p => p.validationStatus === 'valid');
+
     if (validRecords.length > 0) {
       const programsByGroup: Record<string, typeof validRecords> = {};
       validRecords.forEach(c => {
@@ -547,8 +612,8 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               studentsEnrolled: parseInt(c.studentsEnrolled) || 0,
               studentsParticipated: parseInt(c.studentsParticipated) || 0,
               certificationProvided: c.certificationProvided === 'Yes',
-              certificatesIssued: parseInt(c.certificatesIssued) || 0
-            }))
+              certificatesIssued: parseInt(c.certificatesIssued) || 0,
+            })),
           };
           await academicRepositoryService.bulkSaveAddOnPrograms(departmentId, payload);
         }
@@ -574,7 +639,8 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
   // Add program manually
   const handleAddProgram = useCallback(async () => {
-    if (!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator) return;
+    if (!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator)
+      return;
 
     try {
       const programData: ApiAddOnProgram = {
@@ -591,11 +657,19 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
         studentsEnrolled: parseInt(newProgram.studentsEnrolled) || 0,
         studentsParticipated: parseInt(newProgram.studentsParticipated) || 0,
         certificationProvided: newProgram.certificationProvided === 'Yes',
-        certificatesIssued: parseInt(newProgram.certificatesIssued) || 0
+        certificatesIssued: parseInt(newProgram.certificatesIssued) || 0,
       };
 
-      if (editingProgram && !editingProgram.id.toString().startsWith('program-') && !editingProgram.id.toString().startsWith('upload-')) {
-        await academicRepositoryService.updateAddOnProgram(editingProgram.id, departmentId, programData);
+      if (
+        editingProgram &&
+        !editingProgram.id.toString().startsWith('program-') &&
+        !editingProgram.id.toString().startsWith('upload-')
+      ) {
+        await academicRepositoryService.updateAddOnProgram(
+          editingProgram.id,
+          departmentId,
+          programData
+        );
       } else if (!editingProgram) {
         await academicRepositoryService.createAddOnProgram(departmentId, programData);
       } else {
@@ -607,18 +681,39 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           semester: selectedSemester,
           ...newProgram,
         };
-        setPrograms((prev) => prev.map((p) => (p.id === editingProgram.id ? program : p)));
+        setPrograms(prev => prev.map(p => (p.id === editingProgram.id ? program : p)));
       }
 
       await loadPrograms();
 
-      setNewProgram({ topic: '', fromDate: '', toDate: '', timeFrom: '', timeTo: '', coordinator: '', duration: '', studentsEnrolled: '', studentsParticipated: '', certificationProvided: 'Yes', certificatesIssued: '' });
+      setNewProgram({
+        topic: '',
+        fromDate: '',
+        toDate: '',
+        timeFrom: '',
+        timeTo: '',
+        coordinator: '',
+        duration: '',
+        studentsEnrolled: '',
+        studentsParticipated: '',
+        certificationProvided: 'Yes',
+        certificatesIssued: '',
+      });
       setShowAddDialog(false);
       setEditingProgram(null);
     } catch (err) {
       console.error('Failed to save program:', err);
     }
-  }, [newProgram, department, selectedYear, selectedSemester, editingProgram, academicYear, departmentId, loadPrograms]);
+  }, [
+    newProgram,
+    department,
+    selectedYear,
+    selectedSemester,
+    editingProgram,
+    academicYear,
+    departmentId,
+    loadPrograms,
+  ]);
 
   // Edit program
   const handleEditProgram = useCallback((program: AddOnProgramRecord) => {
@@ -640,27 +735,32 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   }, []);
 
   // Delete program
-  const handleDeleteProgram = useCallback(async (id: string) => {
-    if (!id.startsWith('program-') && !id.startsWith('upload-')) {
-      try {
-        await academicRepositoryService.deleteAddOnProgram(id, departmentId);
-        await loadPrograms();
-      } catch (err) {
-        console.error('Failed to delete program:', err);
+  const handleDeleteProgram = useCallback(
+    async (id: string) => {
+      if (!id.startsWith('program-') && !id.startsWith('upload-')) {
+        try {
+          await academicRepositoryService.deleteAddOnProgram(id, departmentId);
+          await loadPrograms();
+        } catch (err) {
+          console.error('Failed to delete program:', err);
+        }
+      } else {
+        setPrograms(prev => prev.filter(p => p.id !== id));
       }
-    } else {
-      setPrograms((prev) => prev.filter((p) => p.id !== id));
-    }
-  }, [departmentId, loadPrograms]);
+    },
+    [departmentId, loadPrograms]
+  );
 
   // Save Programs
   const handleSavePrograms = useCallback(async () => {
     const yearSemPrograms = programs.filter(
-      (p) => p.year === selectedYear && p.semester === selectedSemester
+      p => p.year === selectedYear && p.semester === selectedSemester
     );
-    
-    const unsavedPrograms = yearSemPrograms.filter(p => p.id.startsWith('program-') || p.id.startsWith('upload-'));
-    
+
+    const unsavedPrograms = yearSemPrograms.filter(
+      p => p.id.startsWith('program-') || p.id.startsWith('upload-')
+    );
+
     if (unsavedPrograms.length > 0) {
       try {
         const payload = {
@@ -678,8 +778,8 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
             studentsEnrolled: parseInt(p.studentsEnrolled) || 0,
             studentsParticipated: parseInt(p.studentsParticipated) || 0,
             certificationProvided: p.certificationProvided === 'Yes',
-            certificatesIssued: parseInt(p.certificatesIssued) || 0
-          }))
+            certificatesIssued: parseInt(p.certificatesIssued) || 0,
+          })),
         };
         await academicRepositoryService.bulkSaveAddOnPrograms(departmentId, payload);
         await loadPrograms();
@@ -695,7 +795,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   }, [programs, selectedYear, selectedSemester, academicYear, departmentId, loadPrograms]);
 
   const totalProgramsForYearSem = programs.filter(
-    (p) => p.year === selectedYear && p.semester === selectedSemester
+    p => p.year === selectedYear && p.semester === selectedSemester
   ).length;
 
   const availableSemesters = SEMESTERS_MAP[selectedYear] || [];
@@ -723,29 +823,37 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Department
+              </span>
             </div>
             <p className="text-sm font-semibold text-white truncate">{department}</p>
           </div>
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-4 w-4 text-purple-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Academic Year</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Academic Year
+              </span>
             </div>
             <p className="text-sm font-semibold text-purple-300 truncate">{academicYear}</p>
           </div>
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Year</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Year
+              </span>
             </div>
             <Select value={selectedYear} onValueChange={handleYearChange}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-emerald-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {YEARS_OF_STUDY.map((y) => (
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                {YEARS_OF_STUDY.map(y => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -753,15 +861,19 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Semester</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                Semester
+              </span>
             </div>
             <Select value={selectedSemester} onValueChange={setSelectedSemester}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-amber-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {availableSemesters.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {availableSemesters.map(s => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -790,7 +902,28 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                 Upload CSV
               </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={() => { setEditingProgram(null); setNewProgram({ topic: '', fromDate: '', toDate: '', timeFrom: '', timeTo: '', coordinator: '', duration: '', studentsEnrolled: '', studentsParticipated: '', certificationProvided: 'Yes', certificatesIssued: '' }); setShowAddDialog(true); }} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingProgram(null);
+                setNewProgram({
+                  topic: '',
+                  fromDate: '',
+                  toDate: '',
+                  timeFrom: '',
+                  timeTo: '',
+                  coordinator: '',
+                  duration: '',
+                  studentsEnrolled: '',
+                  studentsParticipated: '',
+                  certificationProvided: 'Yes',
+                  certificatesIssued: '',
+                });
+                setShowAddDialog(true);
+              }}
+              className="gap-2"
+            >
               <Plus className="h-3.5 w-3.5" />
               Add Program
             </Button>
@@ -821,7 +954,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <div>
-                  <p className="text-sm font-semibold text-green-700">Programs Saved Successfully</p>
+                  <p className="text-sm font-semibold text-green-700">
+                    Programs Saved Successfully
+                  </p>
                   <p className="text-xs text-green-600 mt-0.5">
                     Total Programs: {totalProgramsForYearSem} • {selectedYear} / {selectedSemester}
                   </p>
@@ -839,7 +974,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           <Input
             placeholder="Search by topic or coordinator..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-9 h-9 text-sm"
           />
         </div>
@@ -881,46 +1016,100 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               <Table className="min-w-[1200px]">
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
+                    <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">
+                      #
+                    </TableHead>
                     <TableHead className="text-xs font-semibold whitespace-nowrap">Topic</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap">From Date</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap">To Date</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">
+                      From Date
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">
+                      To Date
+                    </TableHead>
                     <TableHead className="text-xs font-semibold whitespace-nowrap">Time</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap">Coordinator</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Duration</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Enrolled</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Participated</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Cert.</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Issued</TableHead>
-                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">Actions</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">
+                      Coordinator
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      Duration
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      Enrolled
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      Participated
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      Cert.
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">
+                      Issued
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPrograms.map((program, idx) => (
                     <TableRow key={program.id} className="hover:bg-muted/20">
-                      <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
-                      <TableCell className="text-sm font-medium whitespace-nowrap">{program.topic}</TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">{program.fromDate}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium whitespace-nowrap">
+                        {program.topic}
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {program.fromDate}
+                      </TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{program.toDate}</TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">{program.timeFrom} - {program.timeTo}</TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">{program.coordinator}</TableCell>
-                      <TableCell className="text-xs text-center whitespace-nowrap">{program.duration}</TableCell>
-                      <TableCell className="text-xs text-center font-medium whitespace-nowrap">{program.studentsEnrolled}</TableCell>
-                      <TableCell className="text-xs text-center font-medium whitespace-nowrap">{program.studentsParticipated}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {program.timeFrom} - {program.timeTo}
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {program.coordinator}
+                      </TableCell>
+                      <TableCell className="text-xs text-center whitespace-nowrap">
+                        {program.duration}
+                      </TableCell>
+                      <TableCell className="text-xs text-center font-medium whitespace-nowrap">
+                        {program.studentsEnrolled}
+                      </TableCell>
+                      <TableCell className="text-xs text-center font-medium whitespace-nowrap">
+                        {program.studentsParticipated}
+                      </TableCell>
                       <TableCell className="text-center whitespace-nowrap">
-                        <Badge variant="outline" className={cn('text-[10px]',
-                          program.certificationProvided === 'Yes' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-gray-500/10 text-gray-600 border-gray-500/20'
-                        )}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px]',
+                            program.certificationProvided === 'Yes'
+                              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                              : 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+                          )}
+                        >
                           {program.certificationProvided}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-center font-semibold whitespace-nowrap">{program.certificatesIssued}</TableCell>
+                      <TableCell className="text-xs text-center font-semibold whitespace-nowrap">
+                        {program.certificatesIssued}
+                      </TableCell>
                       <TableCell className="text-right sticky right-0 bg-background z-10">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditProgram(program)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleEditProgram(program)}
+                          >
                             <Edit2 className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteProgram(program.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteProgram(program.id)}
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -942,32 +1131,55 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               <FileText className="h-4 w-4 text-emerald-600" />
               Program Evidence — {selectedYear} / {selectedSemester}
             </CardTitle>
-            <Badge variant="secondary" className="text-[10px]">{filteredPrograms.length} programs</Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              {filteredPrograms.length} programs
+            </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Upload evidence documents for each program: Geo-tagged Photos, Registered Students List, Attended Students List
+            Upload evidence documents for each program: Geo-tagged Photos, Registered Students List,
+            Attended Students List
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredPrograms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <FileText className="h-10 w-10 text-muted-foreground/30 mb-2" />
-              <p className="text-xs text-muted-foreground">No programs to show evidence for. Add programs first.</p>
+              <p className="text-xs text-muted-foreground">
+                No programs to show evidence for. Add programs first.
+              </p>
             </div>
           ) : (
-            filteredPrograms.map((program) => {
+            filteredPrograms.map(program => {
               const programEvidence = programEvidenceMap[program.id] || {
                 geoTaggedPhotos: { status: 'not-uploaded' },
                 registeredStudentsList: { status: 'not-uploaded' },
                 attendedStudentsList: { status: 'not-uploaded' },
               };
               const evidenceItems = [
-                { key: 'geoTaggedPhotos' as const, label: 'Geo-tagged Photos of Session', icon: '📸', data: programEvidence.geoTaggedPhotos },
-                { key: 'registeredStudentsList' as const, label: 'Registered Students List', icon: '📋', data: programEvidence.registeredStudentsList },
-                { key: 'attendedStudentsList' as const, label: 'Attended Students List', icon: '✅', data: programEvidence.attendedStudentsList },
+                {
+                  key: 'geoTaggedPhotos' as const,
+                  label: 'Geo-tagged Photos of Session',
+                  icon: '📸',
+                  data: programEvidence.geoTaggedPhotos,
+                },
+                {
+                  key: 'registeredStudentsList' as const,
+                  label: 'Registered Students List',
+                  icon: '📋',
+                  data: programEvidence.registeredStudentsList,
+                },
+                {
+                  key: 'attendedStudentsList' as const,
+                  label: 'Attended Students List',
+                  icon: '✅',
+                  data: programEvidence.attendedStudentsList,
+                },
               ];
               return (
-                <div key={program.id} className="rounded-lg border border-border/60 overflow-hidden">
+                <div
+                  key={program.id}
+                  className="rounded-lg border border-border/60 overflow-hidden"
+                >
                   {/* Program Header */}
                   <div className="bg-muted/30 px-4 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -978,21 +1190,25 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {evidenceItems.filter((ei) => ei.data.status === 'uploaded').length === 3 ? (
+                      {evidenceItems.filter(ei => ei.data.status === 'uploaded').length === 3 ? (
                         <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px]">
                           <CheckCircle2 className="h-3 w-3 mr-1" /> All Uploaded
                         </Badge>
                       ) : (
                         <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                          {evidenceItems.filter((ei) => ei.data.status === 'uploaded').length}/3 Uploaded
+                          {evidenceItems.filter(ei => ei.data.status === 'uploaded').length}/3
+                          Uploaded
                         </Badge>
                       )}
                     </div>
                   </div>
                   {/* Evidence Documents */}
                   <div className="divide-y divide-border/40">
-                    {evidenceItems.map((item) => (
-                      <div key={item.key} className="px-4 py-2.5 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                    {evidenceItems.map(item => (
+                      <div
+                        key={item.key}
+                        className="px-4 py-2.5 flex items-center justify-between hover:bg-muted/10 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
                           <span className="text-sm">{item.icon}</span>
                           <div>
@@ -1002,7 +1218,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                                 {item.data.fileName} • Uploaded {item.data.uploadedAt || ''}
                               </p>
                             ) : (
-                              <p className="text-[10px] text-muted-foreground mt-0.5">Not uploaded yet</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Not uploaded yet
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1067,7 +1285,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               'NAAC Evidence (1.3.2)',
               'Certificate Templates',
               'Feedback Forms',
-            ].map((item) => (
+            ].map(item => (
               <Badge key={item} variant="outline" className="text-[10px] bg-background">
                 {item}
               </Badge>
@@ -1077,10 +1295,20 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
       </Card>
 
       {/* Add/Edit Program Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingProgram(null); } }}>
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={open => {
+          if (!open) {
+            setShowAddDialog(false);
+            setEditingProgram(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base">{editingProgram ? 'Edit Program' : 'Add Program'}</DialogTitle>
+            <DialogTitle className="text-base">
+              {editingProgram ? 'Edit Program' : 'Add Program'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -1107,7 +1335,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                 <Label className="text-xs">Topic *</Label>
                 <Input
                   value={newProgram.topic}
-                  onChange={(e) => setNewProgram({ ...newProgram, topic: e.target.value })}
+                  onChange={e => setNewProgram({ ...newProgram, topic: e.target.value })}
                   placeholder="e.g., Python for Data Science"
                   className="mt-1 h-9 text-sm"
                 />
@@ -1118,7 +1346,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <div className="mt-1">
                     <DatePicker
                       value={newProgram.fromDate}
-                      onChange={(v) => setNewProgram({ ...newProgram, fromDate: v })}
+                      onChange={v => setNewProgram({ ...newProgram, fromDate: v })}
                       placeholder="Select start date"
                       className="h-9 text-sm"
                     />
@@ -1129,7 +1357,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <div className="mt-1">
                     <DatePicker
                       value={newProgram.toDate}
-                      onChange={(v) => setNewProgram({ ...newProgram, toDate: v })}
+                      onChange={v => setNewProgram({ ...newProgram, toDate: v })}
                       placeholder="Select end date"
                       className="h-9 text-sm"
                     />
@@ -1142,7 +1370,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <div className="mt-1">
                     <TimePicker
                       value={newProgram.timeFrom}
-                      onChange={(v) => setNewProgram({ ...newProgram, timeFrom: v })}
+                      onChange={v => setNewProgram({ ...newProgram, timeFrom: v })}
                       placeholder="Start time"
                       className="h-9 text-sm"
                     />
@@ -1153,7 +1381,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <div className="mt-1">
                     <TimePicker
                       value={newProgram.timeTo}
-                      onChange={(v) => setNewProgram({ ...newProgram, timeTo: v })}
+                      onChange={v => setNewProgram({ ...newProgram, timeTo: v })}
                       placeholder="End time"
                       className="h-9 text-sm"
                     />
@@ -1165,7 +1393,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <Label className="text-xs">Coordinator *</Label>
                   <Input
                     value={newProgram.coordinator}
-                    onChange={(e) => setNewProgram({ ...newProgram, coordinator: e.target.value })}
+                    onChange={e => setNewProgram({ ...newProgram, coordinator: e.target.value })}
                     placeholder="e.g., Dr. Anita Sharma"
                     className="mt-1 h-9 text-sm"
                   />
@@ -1174,7 +1402,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <Label className="text-xs">Duration</Label>
                   <Input
                     value={newProgram.duration}
-                    onChange={(e) => setNewProgram({ ...newProgram, duration: e.target.value })}
+                    onChange={e => setNewProgram({ ...newProgram, duration: e.target.value })}
                     placeholder="e.g., 30 Hours"
                     className="mt-1 h-9 text-sm"
                   />
@@ -1187,7 +1415,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                     type="number"
                     min="0"
                     value={newProgram.studentsEnrolled}
-                    onChange={(e) => setNewProgram({ ...newProgram, studentsEnrolled: e.target.value })}
+                    onChange={e =>
+                      setNewProgram({ ...newProgram, studentsEnrolled: e.target.value })
+                    }
                     className="mt-1 h-9 text-sm"
                   />
                 </div>
@@ -1197,7 +1427,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                     type="number"
                     min="0"
                     value={newProgram.studentsParticipated}
-                    onChange={(e) => setNewProgram({ ...newProgram, studentsParticipated: e.target.value })}
+                    onChange={e =>
+                      setNewProgram({ ...newProgram, studentsParticipated: e.target.value })
+                    }
                     className="mt-1 h-9 text-sm"
                   />
                 </div>
@@ -1205,8 +1437,15 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Certification Provided</Label>
-                  <Select value={newProgram.certificationProvided} onValueChange={(v) => setNewProgram({ ...newProgram, certificationProvided: v as 'Yes' | 'No' })}>
-                    <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={newProgram.certificationProvided}
+                    onValueChange={v =>
+                      setNewProgram({ ...newProgram, certificationProvided: v as 'Yes' | 'No' })
+                    }
+                  >
+                    <SelectTrigger className="mt-1 h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Yes">Yes</SelectItem>
                       <SelectItem value="No">No</SelectItem>
@@ -1219,7 +1458,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                     type="number"
                     min="0"
                     value={newProgram.certificatesIssued}
-                    onChange={(e) => setNewProgram({ ...newProgram, certificatesIssued: e.target.value })}
+                    onChange={e =>
+                      setNewProgram({ ...newProgram, certificatesIssued: e.target.value })
+                    }
                     className="mt-1 h-9 text-sm"
                   />
                 </div>
@@ -1227,13 +1468,25 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingProgram(null); }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowAddDialog(false);
+                setEditingProgram(null);
+              }}
+            >
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleAddProgram}
-              disabled={!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator}
+              disabled={
+                !newProgram.topic ||
+                !newProgram.fromDate ||
+                !newProgram.toDate ||
+                !newProgram.coordinator
+              }
             >
               {editingProgram ? 'Update Program' : 'Add Program'}
             </Button>
@@ -1277,7 +1530,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
+                  <p className="text-sm text-green-700 font-medium">
+                    CSV Uploaded Successfully — All records are valid
+                  </p>
                 </div>
               )}
 
@@ -1302,24 +1557,34 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                       <TableRow
                         key={program.id}
                         className={cn(
-                          program.validationStatus === 'invalid' && 'bg-red-500/5 border-l-2 border-l-red-500'
+                          program.validationStatus === 'invalid' &&
+                            'bg-red-500/5 border-l-2 border-l-red-500'
                         )}
                       >
                         <TableCell className="text-xs">{idx + 1}</TableCell>
-                        <TableCell className="text-xs font-medium max-w-[150px] truncate">{program.topic}</TableCell>
+                        <TableCell className="text-xs font-medium max-w-[150px] truncate">
+                          {program.topic}
+                        </TableCell>
                         <TableCell className="text-xs">{program.fromDate}</TableCell>
                         <TableCell className="text-xs">{program.toDate}</TableCell>
                         <TableCell className="text-xs">{program.coordinator}</TableCell>
                         <TableCell className="text-xs text-center">{program.duration}</TableCell>
-                        <TableCell className="text-xs text-center">{program.studentsEnrolled}</TableCell>
-                        <TableCell className="text-xs text-center">{program.certificationProvided}</TableCell>
+                        <TableCell className="text-xs text-center">
+                          {program.studentsEnrolled}
+                        </TableCell>
+                        <TableCell className="text-xs text-center">
+                          {program.certificationProvided}
+                        </TableCell>
                         <TableCell className="text-center">
                           {program.validationStatus === 'valid' ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              <span className="text-[9px] text-red-600 max-w-[200px] truncate" title={program.errors?.join(', ')}>
+                              <span
+                                className="text-[9px] text-red-600 max-w-[200px] truncate"
+                                title={program.errors?.join(', ')}
+                              >
                                 {program.errors?.[0]}
                               </span>
                             </div>
@@ -1337,7 +1602,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
                   <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2">
                     {uploadPreview
-                      .filter((p) => p.validationStatus === 'invalid')
+                      .filter(p => p.validationStatus === 'invalid')
                       .map((p, idx) => (
                         <div key={idx} className="flex items-start gap-2">
                           <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
@@ -1368,12 +1633,19 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
       {/* Evidence Upload Dialog with Drag & Drop */}
       {uploadDialog && (
-        <Dialog open={uploadDialog.open} onOpenChange={(open) => { if (!open) { setUploadDialog(null); setSelectedFile(null); setUploadError(null); } }}>
+        <Dialog
+          open={uploadDialog.open}
+          onOpenChange={open => {
+            if (!open) {
+              setUploadDialog(null);
+              setSelectedFile(null);
+              setUploadError(null);
+            }
+          }}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-sm font-semibold">
-                Upload Evidence Document
-              </DialogTitle>
+              <DialogTitle className="text-sm font-semibold">Upload Evidence Document</DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {uploadDialog.docType === 'geoTaggedPhotos' && 'Geo-tagged Photos of Session'}
                 {uploadDialog.docType === 'registeredStudentsList' && 'Registered Students List'}
@@ -1410,18 +1682,28 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                       variant="ghost"
                       size="sm"
                       className="text-[10px] text-muted-foreground h-6"
-                      onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedFile(null);
+                      }}
                     >
                       Change file
                     </Button>
                   </>
                 ) : (
                   <>
-                    <div className={cn(
-                      'h-12 w-12 rounded-full flex items-center justify-center transition-colors',
-                      dragOver ? 'bg-emerald-100' : 'bg-muted/50'
-                    )}>
-                      <Upload className={cn('h-6 w-6', dragOver ? 'text-emerald-600' : 'text-muted-foreground')} />
+                    <div
+                      className={cn(
+                        'h-12 w-12 rounded-full flex items-center justify-center transition-colors',
+                        dragOver ? 'bg-emerald-100' : 'bg-muted/50'
+                      )}
+                    >
+                      <Upload
+                        className={cn(
+                          'h-6 w-6',
+                          dragOver ? 'text-emerald-600' : 'text-muted-foreground'
+                        )}
+                      />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">
@@ -1448,8 +1730,12 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   Accepted File Types
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {getAllowedTypes(uploadDialog.docType).extensions.map((ext) => (
-                    <Badge key={ext} variant="outline" className="text-[9px] font-mono bg-background">
+                  {getAllowedTypes(uploadDialog.docType).extensions.map(ext => (
+                    <Badge
+                      key={ext}
+                      variant="outline"
+                      className="text-[9px] font-mono bg-background"
+                    >
                       {ext}
                     </Badge>
                   ))}
@@ -1469,7 +1755,15 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               )}
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setUploadDialog(null); setSelectedFile(null); setUploadError(null); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setUploadDialog(null);
+                  setSelectedFile(null);
+                  setUploadError(null);
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -1487,7 +1781,12 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
       {/* Evidence Preview Dialog */}
       {previewDialog && (
-        <Dialog open={previewDialog.open} onOpenChange={(open) => { if (!open) setPreviewDialog(null); }}>
+        <Dialog
+          open={previewDialog.open}
+          onOpenChange={open => {
+            if (!open) setPreviewDialog(null);
+          }}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-sm font-semibold">Document Preview</DialogTitle>
@@ -1501,7 +1800,10 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   {previewDialog.docType === 'registeredStudentsList' && 'Registered Students List'}
                   {previewDialog.docType === 'attendedStudentsList' && 'Attended Students List'}
                 </p>
-                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                >
                   Uploaded Successfully
                 </Badge>
               </div>
@@ -1509,10 +1811,14 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                 <Button variant="outline" size="sm" onClick={() => setPreviewDialog(null)}>
                   Close
                 </Button>
-                <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" onClick={() => {
-                  handleDownloadEvidence(previewDialog.programId, previewDialog.docType);
-                  setPreviewDialog(null);
-                }}>
+                <Button
+                  size="sm"
+                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => {
+                    handleDownloadEvidence(previewDialog.programId, previewDialog.docType);
+                    setPreviewDialog(null);
+                  }}
+                >
                   <DownloadCloud className="h-3.5 w-3.5" /> Download
                 </Button>
               </div>

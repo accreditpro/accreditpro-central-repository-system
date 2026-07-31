@@ -79,21 +79,21 @@ export function ExaminationRepositoryPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
-    const initial: Record<string, Record<string, string | number>[]> = {};
-    examTabConfigs.forEach((tab) => {
-      initial[tab.id] = [...tab.sampleData];
-    });
-    return initial;
-  });
+  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(
+    () => {
+      const initial: Record<string, Record<string, string | number>[]> = {};
+      examTabConfigs.forEach(tab => {
+        initial[tab.id] = [...tab.sampleData];
+      });
+      return initial;
+    }
+  );
 
-  const activeTabConfig = examTabConfigs.find((t) => t.id === activeTab);
+  const activeTabConfig = examTabConfigs.find(t => t.id === activeTab);
   const currentData = tableData[activeTab] || [];
 
-  const filteredData = currentData.filter((row) =>
-    Object.values(row).some((val) =>
-      String(val).toLowerCase().includes(searchQuery.toLowerCase())
-    )
+  const filteredData = currentData.filter(row =>
+    Object.values(row).some(val => String(val).toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleEdit = (row: Record<string, string | number>, index: number) => {
@@ -104,7 +104,7 @@ export function ExaminationRepositoryPage() {
 
   const handleSaveEdit = () => {
     if (editingRow && editingIndex >= 0) {
-      setTableData((prev) => {
+      setTableData(prev => {
         const updated = { ...prev };
         const rows = [...(updated[activeTab] || [])];
         rows[editingIndex] = editingRow;
@@ -118,7 +118,7 @@ export function ExaminationRepositoryPage() {
   };
 
   const handleDelete = (index: number) => {
-    setTableData((prev) => {
+    setTableData(prev => {
       const updated = { ...prev };
       const rows = [...(updated[activeTab] || [])];
       rows.splice(index, 1);
@@ -130,7 +130,7 @@ export function ExaminationRepositoryPage() {
   const handleAddNew = () => {
     if (!activeTabConfig) return;
     const newRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach((field) => {
+    activeTabConfig.fields.forEach(field => {
       newRow[field.key] = '';
     });
     setEditingRow(newRow);
@@ -140,7 +140,7 @@ export function ExaminationRepositoryPage() {
 
   const handleSaveNew = () => {
     if (editingRow && editingIndex === -1) {
-      setTableData((prev) => {
+      setTableData(prev => {
         const updated = { ...prev };
         const rows = [...(updated[activeTab] || [])];
         rows.push(editingRow);
@@ -155,17 +155,27 @@ export function ExaminationRepositoryPage() {
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, view: 'dashboard' as ViewType },
-    { id: 'mission-vision', label: 'Mission & Vision', icon: Bookmark, view: 'mission-vision' as ViewType },
-    ...examTabConfigs.map((tab) => ({
+    {
+      id: 'mission-vision',
+      label: 'Mission & Vision',
+      icon: Bookmark,
+      view: 'mission-vision' as ViewType,
+    },
+    ...examTabConfigs.map(tab => ({
       id: tab.id,
       label: tab.label,
       icon: iconMap[tab.icon] || FileText,
       view: 'repository' as ViewType,
     })),
-    { id: 'documents', label: 'Supporting Documents', icon: FileText, view: 'documents' as ViewType },
+    {
+      id: 'documents',
+      label: 'Supporting Documents',
+      icon: FileText,
+      view: 'documents' as ViewType,
+    },
   ];
 
-  const handleSidebarClick = (item: typeof sidebarItems[0]) => {
+  const handleSidebarClick = (item: (typeof sidebarItems)[0]) => {
     if (item.view === 'dashboard' || item.view === 'documents' || item.view === 'mission-vision') {
       setActiveView(item.view);
     } else {
@@ -184,8 +194,9 @@ export function ExaminationRepositoryPage() {
         <div className="p-6 rounded-lg border bg-card">
           <h3 className="text-lg font-semibold mb-3 text-primary">Vision</h3>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            To establish a transparent, efficient, and technology-driven examination system that ensures fair evaluation,
-            timely results, and continuous improvement in academic standards aligned with national accreditation frameworks.
+            To establish a transparent, efficient, and technology-driven examination system that
+            ensures fair evaluation, timely results, and continuous improvement in academic
+            standards aligned with national accreditation frameworks.
           </p>
         </div>
         <div className="p-6 rounded-lg border bg-card">
@@ -204,15 +215,21 @@ export function ExaminationRepositoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-md bg-muted/50">
             <h4 className="font-medium text-sm mb-1">Academic Integrity</h4>
-            <p className="text-xs text-muted-foreground">Zero tolerance for malpractice with robust invigilation and monitoring</p>
+            <p className="text-xs text-muted-foreground">
+              Zero tolerance for malpractice with robust invigilation and monitoring
+            </p>
           </div>
           <div className="p-4 rounded-md bg-muted/50">
             <h4 className="font-medium text-sm mb-1">Timely Results</h4>
-            <p className="text-xs text-muted-foreground">Results published within 15 days of exam completion</p>
+            <p className="text-xs text-muted-foreground">
+              Results published within 15 days of exam completion
+            </p>
           </div>
           <div className="p-4 rounded-md bg-muted/50">
             <h4 className="font-medium text-sm mb-1">OBE Alignment</h4>
-            <p className="text-xs text-muted-foreground">All assessments mapped to Course Outcomes for attainment calculation</p>
+            <p className="text-xs text-muted-foreground">
+              All assessments mapped to Course Outcomes for attainment calculation
+            </p>
           </div>
         </div>
       </div>
@@ -255,7 +272,7 @@ export function ExaminationRepositoryPage() {
             <Input
               placeholder="Search records..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -267,7 +284,7 @@ export function ExaminationRepositoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {activeTabConfig.fields.slice(0, 8).map((field) => (
+                  {activeTabConfig.fields.slice(0, 8).map(field => (
                     <TableHead key={field.key} className="whitespace-nowrap text-xs">
                       {field.label}
                     </TableHead>
@@ -288,13 +305,16 @@ export function ExaminationRepositoryPage() {
                 ) : (
                   filteredData.map((row, idx) => (
                     <TableRow key={idx}>
-                      {activeTabConfig.fields.slice(0, 8).map((field) => (
-                        <TableCell key={field.key} className="text-xs whitespace-nowrap max-w-[200px] truncate">
+                      {activeTabConfig.fields.slice(0, 8).map(field => (
+                        <TableCell
+                          key={field.key}
+                          className="text-xs whitespace-nowrap max-w-[200px] truncate"
+                        >
                           {field.type === 'percentage'
                             ? `${row[field.key]}%`
                             : field.type === 'currency'
-                            ? `₹${Number(row[field.key]).toLocaleString()}`
-                            : String(row[field.key] || '-')}
+                              ? `₹${Number(row[field.key]).toLocaleString()}`
+                              : String(row[field.key] || '-')}
                         </TableCell>
                       ))}
                       <TableCell>
@@ -346,17 +366,23 @@ export function ExaminationRepositoryPage() {
             className="h-7 w-7 shrink-0"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-0.5">
-            {sidebarItems.map((item) => {
+            {sidebarItems.map(item => {
               const isActive =
                 (item.view === 'dashboard' && activeView === 'dashboard') ||
                 (item.view === 'documents' && activeView === 'documents') ||
                 (item.view === 'mission-vision' && activeView === 'mission-vision') ||
-                (item.view === 'repository' && activeView === 'repository' && activeTab === item.id);
+                (item.view === 'repository' &&
+                  activeView === 'repository' &&
+                  activeTab === item.id);
 
               const Icon = item.icon;
 
@@ -391,7 +417,7 @@ export function ExaminationRepositoryPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
-            {activeTabConfig?.fields.map((field) => (
+            {activeTabConfig?.fields.map(field => (
               <div key={field.key} className="space-y-1.5">
                 <Label className="text-xs">
                   {field.label}
@@ -400,15 +426,15 @@ export function ExaminationRepositoryPage() {
                 {field.type === 'select' ? (
                   <Select
                     value={String(editingRow?.[field.key] || '')}
-                    onValueChange={(val) =>
-                      setEditingRow((prev) => (prev ? { ...prev, [field.key]: val } : prev))
+                    onValueChange={val =>
+                      setEditingRow(prev => (prev ? { ...prev, [field.key]: val } : prev))
                     }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder={`Select ${field.label}`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {field.options?.map((opt) => (
+                      {field.options?.map(opt => (
                         <SelectItem key={opt} value={opt}>
                           {opt}
                         </SelectItem>
@@ -417,15 +443,25 @@ export function ExaminationRepositoryPage() {
                   </Select>
                 ) : (
                   <Input
-                    type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                    type={
+                      field.type === 'number' ||
+                      field.type === 'currency' ||
+                      field.type === 'percentage'
+                        ? 'number'
+                        : field.type === 'date'
+                          ? 'date'
+                          : 'text'
+                    }
                     value={String(editingRow?.[field.key] || '')}
-                    onChange={(e) =>
-                      setEditingRow((prev) =>
+                    onChange={e =>
+                      setEditingRow(prev =>
                         prev
                           ? {
                               ...prev,
                               [field.key]:
-                                field.type === 'number' || field.type === 'currency' || field.type === 'percentage'
+                                field.type === 'number' ||
+                                field.type === 'currency' ||
+                                field.type === 'percentage'
                                   ? Number(e.target.value)
                                   : e.target.value,
                             }

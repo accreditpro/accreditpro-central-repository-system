@@ -106,20 +106,34 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
             return (
               <div key={step.id} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center">
-                  <div className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-medium transition-all',
-                    isCompleted && 'bg-primary border-primary text-primary-foreground',
-                    isActive && 'border-primary text-primary',
-                    !isActive && !isCompleted && 'border-muted-foreground/30 text-muted-foreground/50'
-                  )}>
+                  <div
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-medium transition-all',
+                      isCompleted && 'bg-primary border-primary text-primary-foreground',
+                      isActive && 'border-primary text-primary',
+                      !isActive &&
+                        !isCompleted &&
+                        'border-muted-foreground/30 text-muted-foreground/50'
+                    )}
+                  >
                     {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : index + 1}
                   </div>
-                  <span className={cn('text-[9px] mt-1 font-medium', isActive ? 'text-primary' : 'text-muted-foreground')}>
+                  <span
+                    className={cn(
+                      'text-[9px] mt-1 font-medium',
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  >
                     {step.label}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={cn('flex-1 h-0.5 mx-1.5 rounded-full', isCompleted ? 'bg-primary' : 'bg-muted-foreground/20')} />
+                  <div
+                    className={cn(
+                      'flex-1 h-0.5 mx-1.5 rounded-full',
+                      isCompleted ? 'bg-primary' : 'bg-muted-foreground/20'
+                    )}
+                  />
                 )}
               </div>
             );
@@ -143,18 +157,34 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
                     <Download className="h-4 w-4 text-indigo-500" />
                     <span className="text-xs text-muted-foreground flex-1">
-                      Need the template? <a href={tabConfig.templateFile} download className="text-indigo-600 font-medium hover:underline">Download CSV Template</a>
+                      Need the template?{' '}
+                      <a
+                        href={tabConfig.templateFile}
+                        download
+                        className="text-indigo-600 font-medium hover:underline"
+                      >
+                        Download CSV Template
+                      </a>
                     </span>
                   </div>
                 )}
                 <div
                   className={cn(
                     'border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
-                    isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    isDragOver
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
                   )}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                  onDragOver={e => {
+                    e.preventDefault();
+                    setIsDragOver(true);
+                  }}
                   onDragLeave={() => setIsDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileUpload(); }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    handleFileUpload();
+                  }}
                   onClick={handleFileUpload}
                 >
                   <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
@@ -192,12 +222,21 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                       {mockColumnMappings.map((mapping, i) => (
                         <TableRow key={i}>
                           <TableCell className="text-xs font-mono">{mapping.csvColumn}</TableCell>
-                          <TableCell className="text-xs font-medium">{mapping.mappedField}</TableCell>
+                          <TableCell className="text-xs font-medium">
+                            {mapping.mappedField}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1.5">
                               <div className="w-12 h-1.5 rounded-full bg-muted overflow-hidden">
                                 <div
-                                  className={cn('h-full rounded-full', mapping.confidence >= 90 ? 'bg-emerald-500' : mapping.confidence >= 70 ? 'bg-amber-500' : 'bg-red-500')}
+                                  className={cn(
+                                    'h-full rounded-full',
+                                    mapping.confidence >= 90
+                                      ? 'bg-emerald-500'
+                                      : mapping.confidence >= 70
+                                        ? 'bg-amber-500'
+                                        : 'bg-red-500'
+                                  )}
                                   style={{ width: `${mapping.confidence}%` }}
                                 />
                               </div>
@@ -205,7 +244,15 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className={cn('text-[9px]', mapping.status === 'auto' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600')}>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'text-[9px]',
+                                mapping.status === 'auto'
+                                  ? 'bg-emerald-500/10 text-emerald-600'
+                                  : 'bg-amber-500/10 text-amber-600'
+                              )}
+                            >
                               {mapping.status}
                             </Badge>
                           </TableCell>
@@ -232,7 +279,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                   <>
                     <RefreshCw className="h-10 w-10 text-primary animate-spin mb-3" />
                     <p className="text-sm font-medium">Validating data...</p>
-                    <p className="text-xs text-muted-foreground mt-1">Checking required fields, data types, and integrity</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Checking required fields, data types, and integrity
+                    </p>
                     <Progress value={60} className="max-w-[200px] h-1.5 mt-3" />
                   </>
                 ) : (
@@ -266,13 +315,19 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                   <div className="flex items-center gap-1.5 text-xs text-red-600 font-medium">
                     <AlertTriangle className="h-3.5 w-3.5" /> 2 errors found
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Row 15: Credits - Expected numeric value</p>
-                  <p className="text-[11px] text-muted-foreground">Row 28: Course Code - Required field is empty</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Row 15: Credits - Expected numeric value
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Row 28: Course Code - Required field is empty
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                   <Eye className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">38 valid records ready for submission</span>
+                  <span className="text-xs text-muted-foreground">
+                    38 valid records ready for submission
+                  </span>
                 </div>
 
                 <div className="flex justify-between pt-2">
@@ -289,7 +344,11 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
             {/* Submit Step */}
             {currentStep === 'submit' && (
               <div className="flex flex-col items-center justify-center py-8">
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200 }}
+                >
                   <CheckCircle2 className="h-14 w-14 text-emerald-500 mb-3" />
                 </motion.div>
                 <p className="text-base font-semibold">Submitted Successfully!</p>
@@ -297,8 +356,12 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig }: CSVUploadDialogPro
                   38 records submitted for verification. You&apos;ll be notified once approved.
                 </p>
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm" onClick={handleClose}>Close</Button>
-                  <Button size="sm" onClick={handleReset}>Upload Another</Button>
+                  <Button variant="outline" size="sm" onClick={handleClose}>
+                    Close
+                  </Button>
+                  <Button size="sm" onClick={handleReset}>
+                    Upload Another
+                  </Button>
                 </div>
               </div>
             )}

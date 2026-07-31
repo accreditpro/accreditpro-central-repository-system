@@ -79,12 +79,17 @@ export interface ApiAddOnProgram {
 class AcademicRepositoryService {
   private readonly baseUrl = '/v1/academic-repository';
 
-  async getDashboardSummary(academicYear: string, departmentId: number): Promise<AcademicRepositorySummary> {
+  async getDashboardSummary(
+    academicYear: string,
+    departmentId: number
+  ): Promise<AcademicRepositorySummary> {
     const query = new URLSearchParams();
     query.set('academicYear', academicYear);
     query.set('departmentId', String(departmentId));
 
-    return apiService.get<AcademicRepositorySummary>(`${this.baseUrl}/dashboard/summary?${query.toString()}`);
+    return apiService.get<AcademicRepositorySummary>(
+      `${this.baseUrl}/dashboard/summary?${query.toString()}`
+    );
   }
 
   async getCalendarEvents(academicYear: string, departmentId: number): Promise<any> {
@@ -101,7 +106,11 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/academic-calendar?${query.toString()}`, data);
   }
 
-  async updateCalendarEvent(id: number | string, departmentId: number, data: ApiCalendarEvent): Promise<any> {
+  async updateCalendarEvent(
+    id: number | string,
+    departmentId: number,
+    data: ApiCalendarEvent
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.put<any>(`${this.baseUrl}/academic-calendar/${id}?${query.toString()}`, data);
@@ -113,7 +122,10 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/academic-calendar/${id}?${query.toString()}`);
   }
 
-  async bulkSaveCalendarEvents(departmentId: number, data: { academicYear: string; yearOfStudy: string; semester: string; events: any[] }): Promise<any> {
+  async bulkSaveCalendarEvents(
+    departmentId: number,
+    data: { academicYear: string; yearOfStudy: string; semester: string; events: any[] }
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.post<any>(`${this.baseUrl}/academic-calendar/bulk?${query.toString()}`, data);
@@ -135,10 +147,17 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/value-added-courses?${query.toString()}`, data);
   }
 
-  async updateValueAddedCourse(id: number | string, departmentId: number, data: ApiValueAddedCourse): Promise<any> {
+  async updateValueAddedCourse(
+    id: number | string,
+    departmentId: number,
+    data: ApiValueAddedCourse
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
-    return apiService.put<any>(`${this.baseUrl}/value-added-courses/${id}?${query.toString()}`, data);
+    return apiService.put<any>(
+      `${this.baseUrl}/value-added-courses/${id}?${query.toString()}`,
+      data
+    );
   }
 
   async deleteValueAddedCourse(id: number | string, departmentId: number): Promise<any> {
@@ -147,10 +166,16 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/value-added-courses/${id}?${query.toString()}`);
   }
 
-  async bulkSaveValueAddedCourses(departmentId: number, data: { academicYear: string; yearOfStudy: string; semester: string; courses: any[] }): Promise<any> {
+  async bulkSaveValueAddedCourses(
+    departmentId: number,
+    data: { academicYear: string; yearOfStudy: string; semester: string; courses: any[] }
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
-    return apiService.post<any>(`${this.baseUrl}/value-added-courses/bulk?${query.toString()}`, data);
+    return apiService.post<any>(
+      `${this.baseUrl}/value-added-courses/bulk?${query.toString()}`,
+      data
+    );
   }
 
   // --- Timetable APIs ---
@@ -169,7 +194,11 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/timetable?${query.toString()}`, data);
   }
 
-  async updateTimetableEntry(id: number | string, departmentId: number, data: ApiTimetableEntry): Promise<any> {
+  async updateTimetableEntry(
+    id: number | string,
+    departmentId: number,
+    data: ApiTimetableEntry
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.put<any>(`${this.baseUrl}/timetable/${id}?${query.toString()}`, data);
@@ -181,7 +210,16 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/timetable/${id}?${query.toString()}`);
   }
 
-  async bulkSaveTimetable(departmentId: number, data: { academicYear: string; yearOfStudy: string; semester: string; section: string; entries: any[] }): Promise<any> {
+  async bulkSaveTimetable(
+    departmentId: number,
+    data: {
+      academicYear: string;
+      yearOfStudy: string;
+      semester: string;
+      section: string;
+      entries: any[];
+    }
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.post<any>(`${this.baseUrl}/timetable/bulk?${query.toString()}`, data);
@@ -203,7 +241,11 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/addon-programs?${query.toString()}`, data);
   }
 
-  async updateAddOnProgram(id: number | string, departmentId: number, data: ApiAddOnProgram): Promise<any> {
+  async updateAddOnProgram(
+    id: number | string,
+    departmentId: number,
+    data: ApiAddOnProgram
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.put<any>(`${this.baseUrl}/addon-programs/${id}?${query.toString()}`, data);
@@ -215,7 +257,10 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/addon-programs/${id}?${query.toString()}`);
   }
 
-  async bulkSaveAddOnPrograms(departmentId: number, data: { academicYear: string; yearOfStudy: string; semester: string; programs: any[] }): Promise<any> {
+  async bulkSaveAddOnPrograms(
+    departmentId: number,
+    data: { academicYear: string; yearOfStudy: string; semester: string; programs: any[] }
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.post<any>(`${this.baseUrl}/addon-programs/bulk?${query.toString()}`, data);
@@ -223,7 +268,11 @@ class AcademicRepositoryService {
 
   // --- Evidence APIs ---
 
-  async getEvidenceDocuments(academicYear: string, departmentId: number, params?: any): Promise<any> {
+  async getEvidenceDocuments(
+    academicYear: string,
+    departmentId: number,
+    params?: any
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('academicYear', academicYear);
     query.set('departmentId', String(departmentId));
@@ -235,11 +284,16 @@ class AcademicRepositoryService {
     return apiService.get<any>(`${this.baseUrl}/evidence?${query.toString()}`);
   }
 
-  async uploadEvidenceDocument(departmentId: number, uploadedBy: number, file: File, data: any): Promise<any> {
+  async uploadEvidenceDocument(
+    departmentId: number,
+    uploadedBy: number,
+    file: File,
+    data: any
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     query.set('uploadedBy', String(uploadedBy));
-    
+
     const formData = new FormData();
     formData.append('file', file);
     Object.entries(data).forEach(([key, value]) => {
@@ -259,12 +313,20 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/evidence/${id}?${query.toString()}`);
   }
 
-  async verifyEvidenceDocument(id: number | string, verifiedBy: number, status: string, notes?: string): Promise<any> {
+  async verifyEvidenceDocument(
+    id: number | string,
+    verifiedBy: number,
+    status: string,
+    notes?: string
+  ): Promise<any> {
     const query = new URLSearchParams();
     query.set('verifiedBy', String(verifiedBy));
     const payload: any = { verificationStatus: status };
     if (notes) payload.verificationNotes = notes;
-    return apiService.put<any>(`${this.baseUrl}/evidence/${id}/verify?${query.toString()}`, payload);
+    return apiService.put<any>(
+      `${this.baseUrl}/evidence/${id}/verify?${query.toString()}`,
+      payload
+    );
   }
 }
 

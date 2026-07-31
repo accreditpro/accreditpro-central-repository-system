@@ -36,7 +36,10 @@ const workflowStatusLabels: Record<string, { label: string; color: string }> = {
   validated: { label: 'Validated', color: 'bg-indigo-500/10 text-indigo-600' },
   evidence_pending: { label: 'Evidence Pending', color: 'bg-amber-500/10 text-amber-600' },
   hod_review: { label: 'Under HOD Review', color: 'bg-orange-500/10 text-orange-600' },
-  iqac_verification: { label: 'Under IQAC Verification', color: 'bg-purple-500/10 text-purple-600' },
+  iqac_verification: {
+    label: 'Under IQAC Verification',
+    color: 'bg-purple-500/10 text-purple-600',
+  },
   approved: { label: 'Approved', color: 'bg-emerald-500/10 text-emerald-600' },
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
@@ -47,7 +50,8 @@ export const UploadHistoryView = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredHistory = uploadHistory.filter(record => {
-    const matchesSearch = record.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      record.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       record.tab.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRepo = repoFilter === 'all' || record.repository === repoFilter;
     const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
@@ -66,21 +70,50 @@ export const UploadHistoryView = () => {
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Total Uploads', value: uploadHistory.length, icon: Upload, color: 'text-indigo-600 bg-indigo-500/10' },
-          { label: 'Approved', value: uploadHistory.filter(u => u.status === 'approved').length, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
-          { label: 'Pending', value: uploadHistory.filter(u => u.status === 'pending').length, icon: Clock, color: 'text-amber-600 bg-amber-500/10' },
-          { label: 'Rejected', value: uploadHistory.filter(u => u.status === 'rejected').length, icon: XCircle, color: 'text-red-600 bg-red-500/10' },
-        ].map((stat) => {
+          {
+            label: 'Total Uploads',
+            value: uploadHistory.length,
+            icon: Upload,
+            color: 'text-indigo-600 bg-indigo-500/10',
+          },
+          {
+            label: 'Approved',
+            value: uploadHistory.filter(u => u.status === 'approved').length,
+            icon: CheckCircle2,
+            color: 'text-emerald-600 bg-emerald-500/10',
+          },
+          {
+            label: 'Pending',
+            value: uploadHistory.filter(u => u.status === 'pending').length,
+            icon: Clock,
+            color: 'text-amber-600 bg-amber-500/10',
+          },
+          {
+            label: 'Rejected',
+            value: uploadHistory.filter(u => u.status === 'rejected').length,
+            icon: XCircle,
+            color: 'text-red-600 bg-red-500/10',
+          },
+        ].map(stat => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label} className="border-border/50">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                    <p className={cn('text-xl font-bold mt-1', stat.color.split(' ')[0])}>{stat.value}</p>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                      {stat.label}
+                    </p>
+                    <p className={cn('text-xl font-bold mt-1', stat.color.split(' ')[0])}>
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={cn('h-9 w-9 rounded-xl flex items-center justify-center', stat.color.split(' ')[1])}>
+                  <div
+                    className={cn(
+                      'h-9 w-9 rounded-xl flex items-center justify-center',
+                      stat.color.split(' ')[1]
+                    )}
+                  >
                     <Icon className={cn('h-4 w-4', stat.color.split(' ')[0])} />
                   </div>
                 </div>
@@ -94,7 +127,9 @@ export const UploadHistoryView = () => {
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold">All Uploads</CardTitle>
-          <CardDescription className="text-xs">Complete history of CSV data uploads</CardDescription>
+          <CardDescription className="text-xs">
+            Complete history of CSV data uploads
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -103,7 +138,7 @@ export const UploadHistoryView = () => {
               <Input
                 placeholder="Search uploads..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
@@ -147,21 +182,28 @@ export const UploadHistoryView = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredHistory.map((record) => {
-                  const wfStatus = workflowStatusLabels[record.workflowStatus] || workflowStatusLabels.draft;
+                {filteredHistory.map(record => {
+                  const wfStatus =
+                    workflowStatusLabels[record.workflowStatus] || workflowStatusLabels.draft;
                   return (
                     <TableRow key={record.id} className="hover:bg-muted/20">
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                          <span className="text-xs font-medium truncate max-w-[180px]">{record.fileName}</span>
+                          <span className="text-xs font-medium truncate max-w-[180px]">
+                            {record.fileName}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[9px] capitalize">{record.repository}</Badge>
+                        <Badge variant="outline" className="text-[9px] capitalize">
+                          {record.repository}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{record.tab}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {record.uploadedAt}
+                      </TableCell>
                       <TableCell className="text-xs font-medium">{record.recordsCount}</TableCell>
                       <TableCell className="text-xs">
                         <span className="text-emerald-600">{record.validRecords}</span>

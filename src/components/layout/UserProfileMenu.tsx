@@ -33,12 +33,10 @@ export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-8 gap-2 px-2 hover:bg-accent"
-        >
+        <Button variant="ghost" className="h-8 gap-2 px-2 hover:bg-accent">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-[10px] font-semibold text-primary-foreground">
-            {user.firstName[0]}{user.lastName[0]}
+            {user.firstName[0]}
+            {user.lastName[0]}
           </div>
           <span className="hidden sm:inline-block text-sm font-medium max-w-[100px] truncate">
             {user.firstName}
@@ -51,10 +49,13 @@ export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-sm font-semibold text-primary-foreground">
-                {user.firstName[0]}{user.lastName[0]}
+                {user.firstName[0]}
+                {user.lastName[0]}
               </div>
               <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
+                <p className="text-sm font-medium">
+                  {user.firstName} {user.lastName}
+                </p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
             </div>

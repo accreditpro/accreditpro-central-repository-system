@@ -36,18 +36,82 @@ interface Document {
 
 const sampleDocuments: Record<string, Document[]> = {
   'placement-reports': [
-    { id: '1', name: 'Annual_Placement_Report_2023-24.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-06-30', size: '4.8 MB', status: 'Verified' },
-    { id: '2', name: 'Placement_Statistics_Summary_2023-24.xlsx', type: 'Excel', uploadedBy: 'TPO Office', uploadDate: '2024-07-15', size: '1.2 MB', status: 'Verified' },
-    { id: '3', name: 'Department_Wise_Placement_2023-24.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-07-01', size: '2.5 MB', status: 'Verified' },
+    {
+      id: '1',
+      name: 'Annual_Placement_Report_2023-24.pdf',
+      type: 'PDF',
+      uploadedBy: 'Vikram Mehta',
+      uploadDate: '2024-06-30',
+      size: '4.8 MB',
+      status: 'Verified',
+    },
+    {
+      id: '2',
+      name: 'Placement_Statistics_Summary_2023-24.xlsx',
+      type: 'Excel',
+      uploadedBy: 'TPO Office',
+      uploadDate: '2024-07-15',
+      size: '1.2 MB',
+      status: 'Verified',
+    },
+    {
+      id: '3',
+      name: 'Department_Wise_Placement_2023-24.pdf',
+      type: 'PDF',
+      uploadedBy: 'Vikram Mehta',
+      uploadDate: '2024-07-01',
+      size: '2.5 MB',
+      status: 'Verified',
+    },
   ],
   'mou-agreements': [
-    { id: '1', name: 'MoU_TCS_Campus_Recruitment_2024.pdf', type: 'PDF', uploadedBy: 'TPO Office', uploadDate: '2024-03-15', size: '1.8 MB', status: 'Verified' },
-    { id: '2', name: 'MoU_Infosys_InStep_Program.pdf', type: 'PDF', uploadedBy: 'TPO Office', uploadDate: '2024-04-01', size: '2.1 MB', status: 'Verified' },
-    { id: '3', name: 'Agreement_Deloitte_Hiring_2024.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-05-20', size: '1.5 MB', status: 'Under Review' },
+    {
+      id: '1',
+      name: 'MoU_TCS_Campus_Recruitment_2024.pdf',
+      type: 'PDF',
+      uploadedBy: 'TPO Office',
+      uploadDate: '2024-03-15',
+      size: '1.8 MB',
+      status: 'Verified',
+    },
+    {
+      id: '2',
+      name: 'MoU_Infosys_InStep_Program.pdf',
+      type: 'PDF',
+      uploadedBy: 'TPO Office',
+      uploadDate: '2024-04-01',
+      size: '2.1 MB',
+      status: 'Verified',
+    },
+    {
+      id: '3',
+      name: 'Agreement_Deloitte_Hiring_2024.pdf',
+      type: 'PDF',
+      uploadedBy: 'Vikram Mehta',
+      uploadDate: '2024-05-20',
+      size: '1.5 MB',
+      status: 'Under Review',
+    },
   ],
   'offer-letters': [
-    { id: '1', name: 'Offer_Google_DivyaSharma_CS.pdf', type: 'PDF', uploadedBy: 'Student', uploadDate: '2024-10-10', size: '890 KB', status: 'Verified' },
-    { id: '2', name: 'Offer_Deloitte_MeeraPatel_EC.pdf', type: 'PDF', uploadedBy: 'Student', uploadDate: '2024-11-25', size: '750 KB', status: 'Verified' },
+    {
+      id: '1',
+      name: 'Offer_Google_DivyaSharma_CS.pdf',
+      type: 'PDF',
+      uploadedBy: 'Student',
+      uploadDate: '2024-10-10',
+      size: '890 KB',
+      status: 'Verified',
+    },
+    {
+      id: '2',
+      name: 'Offer_Deloitte_MeeraPatel_EC.pdf',
+      type: 'PDF',
+      uploadedBy: 'Student',
+      uploadDate: '2024-11-25',
+      size: '750 KB',
+      status: 'Verified',
+    },
   ],
 };
 
@@ -55,17 +119,21 @@ export function TPODocumentsView() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const currentDocs = selectedCategory ? (sampleDocuments[selectedCategory] || []) : [];
+  const currentDocs = selectedCategory ? sampleDocuments[selectedCategory] || [] : [];
   const filteredDocs = currentDocs.filter(doc =>
     doc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Verified': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case 'Pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'Under Review': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      default: return '';
+      case 'Verified':
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'Pending':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'Under Review':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      default:
+        return '';
     }
   };
 
@@ -75,7 +143,9 @@ export function TPODocumentsView() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Supporting Documents</h3>
-            <p className="text-sm text-muted-foreground">Manage placement and training documents organized by category</p>
+            <p className="text-sm text-muted-foreground">
+              Manage placement and training documents organized by category
+            </p>
           </div>
           <Button size="sm" className="gap-2">
             <Upload className="h-4 w-4" />
@@ -84,7 +154,7 @@ export function TPODocumentsView() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tpoDocumentCategories.map((category) => (
+          {tpoDocumentCategories.map(category => (
             <Card
               key={category.id}
               className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
@@ -99,7 +169,9 @@ export function TPODocumentsView() {
                     <p className="font-medium text-sm">{category.label}</p>
                     <p className="text-xs text-muted-foreground mt-1">{category.count} documents</p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">{category.count}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {category.count}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -114,7 +186,14 @@ export function TPODocumentsView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); setSearchQuery(''); }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setSelectedCategory(null);
+            setSearchQuery('');
+          }}
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
@@ -130,7 +209,7 @@ export function TPODocumentsView() {
           <Input
             placeholder="Search documents..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -164,7 +243,7 @@ export function TPODocumentsView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocs.map((doc) => (
+                {filteredDocs.map(doc => (
                   <TableRow key={doc.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -173,7 +252,9 @@ export function TPODocumentsView() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">{doc.type}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {doc.type}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -189,7 +270,9 @@ export function TPODocumentsView() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{doc.size}</TableCell>
                     <TableCell>
-                      <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>{doc.status}</Badge>
+                      <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>
+                        {doc.status}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

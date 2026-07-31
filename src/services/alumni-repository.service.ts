@@ -88,7 +88,13 @@ export async function uploadAlumniDetailsCsv(
 export async function getEmploymentRecords(
   academicYear: string,
   departmentId: number,
-  extra?: { alumniId?: string; industrySector?: string; employmentType?: string; page?: number; size?: number }
+  extra?: {
+    alumniId?: string;
+    industrySector?: string;
+    employmentType?: string;
+    page?: number;
+    size?: number;
+  }
 ): Promise<any> {
   const query = qs({ academicYear, departmentId, size: 500, ...extra });
   return apiService.get<any>(`${BASE}/employment?${query}`);
@@ -604,16 +610,26 @@ export async function uploadEventCsv(
 
 export function getSectionName(tabId: string): string {
   switch (tabId) {
-    case 'alumni-details': return 'details';
-    case 'employment-career': return 'employment';
-    case 'higher-education': return 'higher-education';
-    case 'alumni-engagement': return 'engagement';
-    case 'alumni-contributions': return 'contributions';
-    case 'alumni-mentorship': return 'mentorship';
-    case 'alumni-achievements': return 'achievements';
-    case 'alumni-chapters': return 'chapters';
-    case 'alumni-events': return 'events';
-    default: return tabId.replace('alumni-', '');
+    case 'alumni-details':
+      return 'details';
+    case 'employment-career':
+      return 'employment';
+    case 'higher-education':
+      return 'higher-education';
+    case 'alumni-engagement':
+      return 'engagement';
+    case 'alumni-contributions':
+      return 'contributions';
+    case 'alumni-mentorship':
+      return 'mentorship';
+    case 'alumni-achievements':
+      return 'achievements';
+    case 'alumni-chapters':
+      return 'chapters';
+    case 'alumni-events':
+      return 'events';
+    default:
+      return tabId.replace('alumni-', '');
   }
 }
 

@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { studentService } from '@/services/student.service';
-import { StudentProfileResponse, AdmissionResponse, UpdateAdmissionRequest } from '@/types/student.types';
+import {
+  StudentProfileResponse,
+  AdmissionResponse,
+  UpdateAdmissionRequest,
+} from '@/types/student.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -105,8 +109,9 @@ export const StudentAdmissionTab = () => {
   useEffect(() => {
     if (!departmentId) return;
     setStudentsLoading(true);
-    studentService.listProfiles(departmentId, { size: 500 })
-      .then((result) => {
+    studentService
+      .listProfiles(departmentId, { size: 500 })
+      .then(result => {
         setStudents(result.content);
         // Auto-select first student if only one
         if (result.content.length === 1) {
@@ -122,28 +127,31 @@ export const StudentAdmissionTab = () => {
 
   // ── Fetch admission for selected student ──
 
-  const fetchAdmission = useCallback(async (studentId: number) => {
-    if (!departmentId) return;
-    setLoading(true);
-    setError(null);
-    setAdmission(null);
-    try {
-      const result = await studentService.getAdmission(departmentId, studentId);
-      setAdmission(result);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      // 404 means no admission record yet — that's fine
-      if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
-        setAdmission(null);
-        setError(null);
-      } else {
-        setError(msg);
-        toast.error(msg);
+  const fetchAdmission = useCallback(
+    async (studentId: number) => {
+      if (!departmentId) return;
+      setLoading(true);
+      setError(null);
+      setAdmission(null);
+      try {
+        const result = await studentService.getAdmission(departmentId, studentId);
+        setAdmission(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        // 404 means no admission record yet — that's fine
+        if (msg.includes('404') || msg.includes('not found') || msg.includes('Not Found')) {
+          setAdmission(null);
+          setError(null);
+        } else {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentId]);
+    },
+    [departmentId]
+  );
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -166,9 +174,12 @@ export const StudentAdmissionTab = () => {
     );
   };
 
-  const filteredAdmission = admission && searchQuery
-    ? (admissionMatchesSearch(admission, searchQuery) ? admission : null)
-    : admission;
+  const filteredAdmission =
+    admission && searchQuery
+      ? admissionMatchesSearch(admission, searchQuery)
+        ? admission
+        : null
+      : admission;
 
   // ── Dialog open for Add/Edit ──
 
@@ -204,7 +215,11 @@ export const StudentAdmissionTab = () => {
     }
     setSaving(true);
     try {
-      const result = await studentService.updateAdmission(departmentId, selectedStudentId, formData);
+      const result = await studentService.updateAdmission(
+        departmentId,
+        selectedStudentId,
+        formData
+      );
       setAdmission(result);
       toast.success(`Admission record ${isEditing ? 'updated' : 'created'} successfully`);
       setDialogOpen(false);
@@ -284,7 +299,7 @@ export const StudentAdmissionTab = () => {
           ) : (
             <Select
               value={selectedStudentId ? String(selectedStudentId) : ''}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 setSelectedStudentId(Number(v));
                 setSearchQuery('');
               }}
@@ -293,7 +308,7 @@ export const StudentAdmissionTab = () => {
                 <SelectValue placeholder="Choose a student..." />
               </SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
+                {students.map(s => (
                   <SelectItem key={s.id} value={String(s.id)} className="text-xs">
                     {s.studentName} ({s.rollNumber})
                   </SelectItem>
@@ -348,10 +363,21 @@ export const StudentAdmissionTab = () => {
                     <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Admission
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={handleDownloadTemplate}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" disabled title="Upload CSV API not available yet">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  disabled
+                  title="Upload CSV API not available yet"
+                >
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
                 </Button>
               </div>
@@ -378,7 +404,7 @@ export const StudentAdmissionTab = () => {
                     className="h-8 text-xs pl-8 pr-8"
                     placeholder="Search records..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
                     <button
@@ -399,33 +425,56 @@ export const StudentAdmissionTab = () => {
                       <TableHead className="text-[10px] font-semibold w-8 text-center">#</TableHead>
                       <TableHead className="text-[10px] font-semibold">Academic Year</TableHead>
                       <TableHead className="text-[10px] font-semibold">Admission Type</TableHead>
-                      <TableHead className="text-[10px] font-semibold">Admission Category</TableHead>
+                      <TableHead className="text-[10px] font-semibold">
+                        Admission Category
+                      </TableHead>
                       <TableHead className="text-[10px] font-semibold">Admission Rank</TableHead>
                       <TableHead className="text-[10px] font-semibold">Admission Quota</TableHead>
                       <TableHead className="text-[10px] font-semibold">State of Origin</TableHead>
                       <TableHead className="text-[10px] font-semibold">Country</TableHead>
                       <TableHead className="text-[10px] font-semibold">Admission Status</TableHead>
-                      <TableHead className="text-[10px] font-semibold text-center w-16">Actions</TableHead>
+                      <TableHead className="text-[10px] font-semibold text-center w-16">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {/* Loading skeleton */}
-                    {loading && (
+                    {loading &&
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={`skel-${i}`}>
-                          <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                          <TableCell className="text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-14" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-16" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-12 mx-auto" />
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
 
                     {/* Error state */}
                     {!loading && error && (
@@ -434,7 +483,12 @@ export const StudentAdmissionTab = () => {
                           <div className="flex flex-col items-center gap-2 text-destructive">
                             <AlertCircle className="h-8 w-8" />
                             <p className="text-xs font-medium">{error}</p>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => selectedStudentId && fetchAdmission(selectedStudentId)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => selectedStudentId && fetchAdmission(selectedStudentId)}
+                            >
                               <RefreshCw className="h-3 w-3 mr-1" /> Retry
                             </Button>
                           </div>
@@ -461,7 +515,9 @@ export const StudentAdmissionTab = () => {
                     {/* Data row */}
                     {!loading && !error && filteredAdmission && (
                       <TableRow className="hover:bg-muted/20">
-                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">1</TableCell>
+                        <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">
+                          1
+                        </TableCell>
                         <TableCell className="text-[10px] p-1.5">
                           {filteredAdmission.academicYearId
                             ? getAcademicYearLabel(filteredAdmission.academicYearId)
@@ -472,11 +528,21 @@ export const StudentAdmissionTab = () => {
                             {filteredAdmission.admissionType || '-'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-[10px] p-1.5">{filteredAdmission.admissionCategory || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5 font-mono">{filteredAdmission.admissionRank ?? '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{filteredAdmission.admissionQuota || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{filteredAdmission.stateOfOrigin || '-'}</TableCell>
-                        <TableCell className="text-[10px] p-1.5">{filteredAdmission.country || '-'}</TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {filteredAdmission.admissionCategory || '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5 font-mono">
+                          {filteredAdmission.admissionRank ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {filteredAdmission.admissionQuota || '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {filteredAdmission.stateOfOrigin || '-'}
+                        </TableCell>
+                        <TableCell className="text-[10px] p-1.5">
+                          {filteredAdmission.country || '-'}
+                        </TableCell>
                         <TableCell className="text-[10px] p-1.5">
                           <Badge
                             variant="secondary"
@@ -491,7 +557,13 @@ export const StudentAdmissionTab = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center p-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={openEditDialog} title="Edit">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={openEditDialog}
+                            title="Edit"
+                          >
                             <Pencil className="h-3 w-3 text-blue-600" />
                           </Button>
                         </TableCell>
@@ -526,12 +598,18 @@ export const StudentAdmissionTab = () => {
                 <Label className="text-xs font-medium">Admission Year</Label>
                 <Select
                   value={formData.academicYearId ? String(formData.academicYearId) : ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, academicYearId: v ? Number(v) : undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_YEAR_OPTIONS.map((year, idx) => (
-                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">{year}</SelectItem>
+                      <SelectItem key={idx + 1} value={String(idx + 1)} className="text-xs">
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -540,12 +618,18 @@ export const StudentAdmissionTab = () => {
                 <Label className="text-xs font-medium">Admission Type *</Label>
                 <Select
                   value={formData.admissionType || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, admissionType: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, admissionType: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ADMISSION_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {ADMISSION_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -556,21 +640,36 @@ export const StudentAdmissionTab = () => {
                 <Label className="text-xs font-medium">Admission Category *</Label>
                 <Select
                   value={formData.admissionCategory || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, admissionCategory: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, admissionCategory: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ADMISSION_CATEGORY_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {ADMISSION_CATEGORY_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Admission Rank</Label>
-                <Input className="h-9 text-xs" type="number" placeholder="e.g. 1500"
+                <Input
+                  className="h-9 text-xs"
+                  type="number"
+                  placeholder="e.g. 1500"
                   value={formData.admissionRank ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, admissionRank: e.target.value ? Number(e.target.value) : undefined }))} />
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      admissionRank: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -578,40 +677,58 @@ export const StudentAdmissionTab = () => {
                 <Label className="text-xs font-medium">Admission Quota</Label>
                 <Select
                   value={formData.admissionQuota || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, admissionQuota: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, admissionQuota: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select quota" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select quota" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ADMISSION_QUOTA_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {ADMISSION_QUOTA_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">State of Origin</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Telangana"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. Telangana"
                   value={formData.stateOfOrigin || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stateOfOrigin: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, stateOfOrigin: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Country</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. India"
+                <Input
+                  className="h-9 text-xs"
+                  placeholder="e.g. India"
                   value={formData.country || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))} />
+                  onChange={e => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-medium">Admission Status *</Label>
                 <Select
                   value={formData.admissionStatus || ''}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, admissionStatus: v || undefined }))}
+                  onValueChange={v =>
+                    setFormData(prev => ({ ...prev, admissionStatus: v || undefined }))
+                  }
                 >
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ADMISSION_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    {ADMISSION_STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -619,9 +736,25 @@ export const StudentAdmissionTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" className="text-xs" onClick={handleSave}
-              disabled={saving || !formData.admissionType || !formData.admissionCategory || !formData.admissionStatus}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={handleSave}
+              disabled={
+                saving ||
+                !formData.admissionType ||
+                !formData.admissionCategory ||
+                !formData.admissionStatus
+              }
+            >
               {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Admission'}
             </Button>
           </DialogFooter>
