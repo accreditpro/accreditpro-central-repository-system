@@ -53,7 +53,11 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Dashboard',
     href: '/app/dashboard',
     icon: 'LayoutDashboard',
-    roles: [UserRole.INSTITUTION_ADMIN, UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
+    roles: [
+      UserRole.INSTITUTION_ADMIN,
+      UserRole.IQAC_COORDINATOR,
+      UserRole.PRINCIPAL,
+    ],
   },
   {
     title: 'Institution Profile',
@@ -68,15 +72,21 @@ export const appNavigationConfig: NavItem[] = [
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
-    title: 'User Management',
-    href: '/app/users',
-    icon: 'Users',
-    roles: [UserRole.INSTITUTION_ADMIN],
-  },
-  {
     title: 'Governance & Committees',
     href: '/app/governance',
     icon: 'Shield',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'Assessment & OBE',
+    href: '/app/assessment-and-obe',
+    icon: 'ClipboardCheck',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'User Management',
+    href: '/app/users',
+    icon: 'Users',
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
@@ -110,6 +120,12 @@ export const appNavigationConfig: NavItem[] = [
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
+    title: 'Settings',
+    href: '/app/settings',
+    icon: 'Settings',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
     title: 'Department Repository',
     href: '/app/department-repository',
     icon: 'Database',
@@ -119,35 +135,41 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Documents',
     href: '/app/documents',
     icon: 'FileText',
-    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
+    roles: [
+      UserRole.IQAC_COORDINATOR,
+      UserRole.PRINCIPAL,
+    ],
   },
   {
     title: 'Accreditation',
     href: '/app/accreditation',
     icon: 'Award',
-    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
+    roles: [
+      UserRole.IQAC_COORDINATOR,
+      UserRole.PRINCIPAL,
+    ],
   },
   {
     title: 'Reports',
     href: '/app/reports',
     icon: 'BarChart3',
-    roles: [UserRole.IQAC_COORDINATOR, UserRole.PRINCIPAL],
-  },
-  {
-    title: 'Settings',
-    href: '/app/settings',
-    icon: 'Settings',
-    roles: [UserRole.INSTITUTION_ADMIN],
+    roles: [
+      UserRole.IQAC_COORDINATOR,
+      UserRole.PRINCIPAL,
+    ],
   },
 ];
 
 // Combined config for backward compatibility
-export const navigationConfig: NavItem[] = [...adminNavigationConfig, ...appNavigationConfig];
+export const navigationConfig: NavItem[] = [
+  ...adminNavigationConfig,
+  ...appNavigationConfig,
+];
 
 // Helper to get navigation based on user role
 export const getNavigationForRole = (role: UserRole): NavItem[] => {
   if (role === UserRole.SUPER_ADMIN) {
     return adminNavigationConfig;
   }
-  return appNavigationConfig.filter(item => item.roles.includes(role));
+  return appNavigationConfig.filter((item) => item.roles.includes(role));
 };

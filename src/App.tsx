@@ -39,13 +39,14 @@ import { ExaminationRepositoryPage } from '@/pages/examination-repository/Examin
 import HODDashboardPage from '@/pages/hod-dashboard/HODDashboardPage';
 import PrincipalDashboardPage from '@/pages/principal-dashboard/PrincipalDashboardPage';
 import SupportingDocumentsPage from '@/pages/institution-admin/supporting-documents/SupportingDocumentsPage';
+import { AssessmentAndOBEPage } from '@/pages/institution-admin/assessment-and-obe/AssessmentAndOBEPage';
 
 // Institution Admin Pages
 import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashboard';
 import { InstitutionProfilePage } from '@/pages/institution-admin/InstitutionProfilePage';
 import { AcademicStructurePage } from '@/pages/institution-admin/AcademicStructurePage';
 import { UserManagementPage } from '@/pages/institution-admin/UserManagementPage';
-import { GovernancePage } from '@/pages/institution-admin/governance/GovernancePage';
+import { GovernancePage } from '@/pages/institution-admin/governance/GovernancePage'
 import {
   RoleManagementPage,
   RepositoryMonitoringPage,
@@ -149,9 +150,7 @@ const AppRoutes = () => {
       <Route
         path="/app/infrastructure-repository"
         element={
-          <ProtectedRoute
-            allowedRoles={[UserRole.INFRASTRUCTURE_COORDINATOR, UserRole.DEPARTMENT_COORDINATOR]}
-          >
+          <ProtectedRoute allowedRoles={[UserRole.INFRASTRUCTURE_COORDINATOR, UserRole.DEPARTMENT_COORDINATOR]}>
             <InfrastructureCoordinatorLayout />
           </ProtectedRoute>
         }
@@ -278,6 +277,7 @@ const AppRoutes = () => {
         />
         <Route path="supporting-documents" element={<SupportingDocumentsPage />} />
         <Route path="supporting-documents/academic" element={<SupportingDocumentsPage />} />
+        <Route path="assessment-and-obe" element={<AssessmentAndOBEPage />} />
         <Route path="profile" element={<PlaceholderPage title="Profile" />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
@@ -287,10 +287,7 @@ const AppRoutes = () => {
       <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
       <Route path="/reports" element={<Navigate to="/app/reports" replace />} />
       <Route path="/institutions" element={<Navigate to="/admin/institutions" replace />} />
-      <Route
-        path="/departments"
-        element={<Navigate to="/app/academic-structure/departments" replace />}
-      />
+      <Route path="/departments" element={<Navigate to="/app/academic-structure/departments" replace />} />
       <Route path="/accreditation" element={<Navigate to="/app/accreditation" replace />} />
       <Route path="/users" element={<Navigate to="/app/users" replace />} />
       <Route path="/settings" element={<Navigate to="/app/settings" replace />} />

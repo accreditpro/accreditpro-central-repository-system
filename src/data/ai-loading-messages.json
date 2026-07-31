@@ -1,0 +1,338 @@
+{
+  "course-analysis": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Understanding the Course",
+        "subtitle": "Analyzing the syllabus, credits, objectives, and learning outcomes to understand the overall structure of the course.",
+        "icon": "brain"
+      },
+      {
+        "title": "Reading Course Units",
+        "subtitle": "Identifying all units, topics, and subtopics to ensure complete syllabus coverage.",
+        "icon": "book-open"
+      },
+      {
+        "title": "Identifying Core Concepts",
+        "subtitle": "Extracting the fundamental concepts and technical skills expected from students.",
+        "icon": "lightbulb"
+      },
+      {
+        "title": "Analyzing Reference Materials",
+        "subtitle": "Reviewing textbooks and reference books to understand the depth of the curriculum.",
+        "icon": "library"
+      },
+      {
+        "title": "Recognizing Practical Skills",
+        "subtitle": "Identifying laboratory work, programming exercises, projects, and practical competencies.",
+        "icon": "flask-conical"
+      },
+      {
+        "title": "Preparing Bloom's Analysis",
+        "subtitle": "Understanding the cognitive complexity required for each topic using Bloom's Taxonomy.",
+        "icon": "layers"
+      },
+      {
+        "title": "Building Course Knowledge",
+        "subtitle": "Creating a structured knowledge representation for accurate AI recommendations.",
+        "icon": "database"
+      },
+      {
+        "title": "Supporting Outcome Based Education",
+        "subtitle": "Every analyzed topic contributes to generating measurable Course Outcomes aligned with OBE principles.",
+        "icon": "graduation-cap"
+      },
+      {
+        "title": "Preparing for NBA Accreditation",
+        "subtitle": "Accurate course analysis is the foundation for CO generation, mapping, and attainment calculations.",
+        "icon": "award"
+      },
+      {
+        "title": "Final Validation",
+        "subtitle": "Performing consistency checks before generating Course Outcomes.",
+        "icon": "shield-check"
+      }
+    ]
+  },
+  "course-outcomes": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Generating Course Outcomes",
+        "subtitle": "Creating measurable Course Outcomes aligned with the syllabus.",
+        "icon": "target"
+      },
+      {
+        "title": "Applying Bloom's Taxonomy",
+        "subtitle": "Selecting appropriate cognitive levels such as Apply, Analyze, Evaluate, and Create.",
+        "icon": "layers"
+      },
+      {
+        "title": "Choosing Action Verbs",
+        "subtitle": "Selecting measurable action verbs recommended for Outcome Based Education.",
+        "icon": "pen-tool"
+      },
+      {
+        "title": "Ensuring Measurability",
+        "subtitle": "Each Course Outcome should be specific, measurable, achievable, relevant, and assessable.",
+        "icon": "check-circle"
+      },
+      {
+        "title": "Verifying Curriculum Alignment",
+        "subtitle": "Ensuring every Course Outcome directly reflects the syllabus content.",
+        "icon": "book-check"
+      },
+      {
+        "title": "Supporting Assessments",
+        "subtitle": "Well-written Course Outcomes make assessment design and attainment calculation more reliable.",
+        "icon": "clipboard-list"
+      },
+      {
+        "title": "Preparing for CO-PO Mapping",
+        "subtitle": "Strong Course Outcomes improve the quality of Program Outcome mapping.",
+        "icon": "network"
+      },
+      {
+        "title": "NBA Best Practice",
+        "subtitle": "NBA recommends measurable Course Outcomes aligned with Bloom's Taxonomy.",
+        "icon": "award"
+      },
+      {
+        "title": "Academic Quality Check",
+        "subtitle": "Validating outcome clarity, consistency, and educational intent.",
+        "icon": "shield"
+      },
+      {
+        "title": "Almost Ready",
+        "subtitle": "Preparing the final set of Course Outcomes for review.",
+        "icon": "sparkles"
+      }
+    ]
+  },
+  "co-po-mapping": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Analyzing Program Outcomes",
+        "subtitle": "Reviewing the NBA Program Outcomes applicable to this course.",
+        "icon": "network"
+      },
+      {
+        "title": "Comparing Learning Objectives",
+        "subtitle": "Matching Course Outcomes with Program Outcomes based on educational intent.",
+        "icon": "git-compare"
+      },
+      {
+        "title": "Evaluating Bloom's Levels",
+        "subtitle": "Using Bloom's Taxonomy to estimate the strength of each CO-PO relationship.",
+        "icon": "layers"
+      },
+      {
+        "title": "Assessing Knowledge Coverage",
+        "subtitle": "Checking how strongly each Course Outcome contributes to graduate attributes.",
+        "icon": "search"
+      },
+      {
+        "title": "Assigning Mapping Strength",
+        "subtitle": "Recommending mapping levels between 0 and 3 using academic best practices.",
+        "icon": "bar-chart"
+      },
+      {
+        "title": "Maintaining Consistency",
+        "subtitle": "Applying uniform mapping logic across all Course Outcomes.",
+        "icon": "equal"
+      },
+      {
+        "title": "Supporting Outcome Attainment",
+        "subtitle": "Reliable CO-PO mappings improve the accuracy of attainment calculations.",
+        "icon": "trending-up"
+      },
+      {
+        "title": "Preparing NBA Evidence",
+        "subtitle": "CO-PO mapping serves as key evidence during NBA accreditation reviews.",
+        "icon": "file-check"
+      },
+      {
+        "title": "Validating Recommendations",
+        "subtitle": "Reviewing all suggested mappings for academic consistency.",
+        "icon": "shield-check"
+      },
+      {
+        "title": "Finalizing Mapping",
+        "subtitle": "Preparing the complete CO-PO matrix for the next stage.",
+        "icon": "check-circle"
+      }
+    ]
+  },
+  "gap-analysis": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Analyzing Coverage",
+        "subtitle": "Evaluating how effectively the course contributes to all Program Outcomes.",
+        "icon": "activity"
+      },
+      {
+        "title": "Finding Weak Program Outcomes",
+        "subtitle": "Identifying Program Outcomes with limited contribution.",
+        "icon": "alert-circle"
+      },
+      {
+        "title": "Detecting Missing Outcomes",
+        "subtitle": "Checking whether any Program Outcome is not addressed by the course.",
+        "icon": "search-x"
+      },
+      {
+        "title": "Measuring Curriculum Balance",
+        "subtitle": "Ensuring contributions are distributed appropriately across outcomes.",
+        "icon": "scale"
+      },
+      {
+        "title": "Supporting Continuous Improvement",
+        "subtitle": "Gap analysis is an essential part of Outcome Based Education.",
+        "icon": "refresh-cw"
+      },
+      {
+        "title": "Improving Teaching Strategies",
+        "subtitle": "Identifying opportunities for better learning activities and assessments.",
+        "icon": "users"
+      },
+      {
+        "title": "Preparing Improvement Suggestions",
+        "subtitle": "Generating recommendations to strengthen weak Program Outcomes.",
+        "icon": "lightbulb"
+      },
+      {
+        "title": "NBA Quality Process",
+        "subtitle": "Gap analysis demonstrates continuous quality improvement during accreditation.",
+        "icon": "award"
+      },
+      {
+        "title": "Reviewing Evidence",
+        "subtitle": "Verifying all observations before preparing recommendations.",
+        "icon": "clipboard-check"
+      },
+      {
+        "title": "Final Validation",
+        "subtitle": "Preparing the improvement report for the next stage.",
+        "icon": "shield-check"
+      }
+    ]
+  },
+  "revised-co-po-mapping": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Reviewing Existing Mapping",
+        "subtitle": "Evaluating the current CO-PO matrix before suggesting improvements.",
+        "icon": "table"
+      },
+      {
+        "title": "Analyzing Gap Findings",
+        "subtitle": "Using the gap analysis results to identify meaningful improvements.",
+        "icon": "search"
+      },
+      {
+        "title": "Strengthening Weak Outcomes",
+        "subtitle": "Recommending academically justified enhancements to weak mappings.",
+        "icon": "trending-up"
+      },
+      {
+        "title": "Preserving Strong Mapping",
+        "subtitle": "Existing strong mappings are retained unless improvements are necessary.",
+        "icon": "shield"
+      },
+      {
+        "title": "Maintaining Academic Integrity",
+        "subtitle": "Only evidence-based recommendations are generated.",
+        "icon": "check-circle"
+      },
+      {
+        "title": "Supporting Continuous Improvement",
+        "subtitle": "The revised mapping helps improve Outcome Based Education implementation.",
+        "icon": "refresh-cw"
+      },
+      {
+        "title": "Preparing Better Coverage",
+        "subtitle": "Improving Program Outcome coverage wherever appropriate.",
+        "icon": "network"
+      },
+      {
+        "title": "NBA Recommendation",
+        "subtitle": "Continuous refinement of CO-PO mapping strengthens accreditation readiness.",
+        "icon": "award"
+      },
+      {
+        "title": "Validating Changes",
+        "subtitle": "Reviewing all recommended mapping updates before completion.",
+        "icon": "shield-check"
+      },
+      {
+        "title": "Finalizing Revised Matrix",
+        "subtitle": "Preparing the updated CO-PO mapping for review.",
+        "icon": "sparkles"
+      }
+    ]
+  },
+  "co-pso-mapping": {
+    "duration": 7000,
+    "loop": true,
+    "messages": [
+      {
+        "title": "Analyzing Program Specific Outcomes",
+        "subtitle": "Reviewing the specialized outcomes defined for the program.",
+        "icon": "git-branch"
+      },
+      {
+        "title": "Comparing Course Outcomes",
+        "subtitle": "Matching Course Outcomes with Program Specific Outcomes.",
+        "icon": "network"
+      },
+      {
+        "title": "Evaluating Specialized Skills",
+        "subtitle": "Assessing how the course develops discipline-specific competencies.",
+        "icon": "briefcase"
+      },
+      {
+        "title": "Supporting Program Vision",
+        "subtitle": "PSOs reflect the unique goals and strengths of the academic program.",
+        "icon": "compass"
+      },
+      {
+        "title": "Building Strong Alignment",
+        "subtitle": "Ensuring Course Outcomes contribute meaningfully to Program Specific Outcomes.",
+        "icon": "link"
+      },
+      {
+        "title": "Preparing Department Evidence",
+        "subtitle": "CO-PSO mapping demonstrates specialization beyond general Program Outcomes.",
+        "icon": "building"
+      },
+      {
+        "title": "Improving Curriculum Quality",
+        "subtitle": "Strong CO-PSO mapping helps departments evaluate curriculum effectiveness.",
+        "icon": "trending-up"
+      },
+      {
+        "title": "Supporting Accreditation",
+        "subtitle": "PSO attainment is an important indicator during NBA program evaluation.",
+        "icon": "award"
+      },
+      {
+        "title": "Validating Recommendations",
+        "subtitle": "Reviewing the generated mappings for consistency and completeness.",
+        "icon": "shield-check"
+      },
+      {
+        "title": "Finalizing CO-PSO Matrix",
+        "subtitle": "Preparing the final mapping for approval and attainment calculation.",
+        "icon": "check-circle"
+      }
+    ]
+  }
+}

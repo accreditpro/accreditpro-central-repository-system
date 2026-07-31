@@ -26,9 +26,15 @@ import {
   Calendar,
   Activity,
   ClipboardList,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -46,6 +52,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar,
   Activity,
   ClipboardList,
+  ClipboardCheck,
   Shield,
 };
 
@@ -57,12 +64,10 @@ interface SidebarProps {
 export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const { sidebarCollapsed } = useAppSelector(state => state.ui);
+  const { sidebarCollapsed } = useAppSelector((state) => state.ui);
   const location = useLocation();
   const navItems = user ? getNavigationForRole(user.role) : [];
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    'Academic Structure': true,
-  });
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'Academic Structure': true });
 
   const collapsed = !mobile && sidebarCollapsed;
 
@@ -71,7 +76,7 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
   };
 
   const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+    setExpandedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
   };
 
   // Group navigation items
@@ -110,8 +115,7 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
 
   const renderNavLink = (item: NavItem, indented = false) => {
     const Icon = iconMap[item.icon] || LayoutDashboard;
-    const isActive =
-      location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+    const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
 
     if (collapsed) {
       return (
@@ -165,12 +169,10 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo Section */}
-      <div
-        className={cn(
-          'flex items-center border-b border-border/50 h-16 shrink-0',
-          collapsed ? 'justify-center px-2' : 'justify-between px-4'
-        )}
-      >
+      <div className={cn(
+        'flex items-center border-b border-border/50 h-16 shrink-0',
+        collapsed ? 'justify-center px-2' : 'justify-between px-4'
+      )}>
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
             <Shield className="h-4 w-4 text-primary-foreground" />
@@ -227,12 +229,11 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
             if ('type' in entry && entry.type === 'group') {
               const isExpanded = expandedGroups[entry.name] ?? false;
               const hasActiveChild = entry.items.some(
-                item =>
-                  location.pathname === item.href || location.pathname.startsWith(item.href + '/')
+                (item) => location.pathname === item.href || location.pathname.startsWith(item.href + '/')
               );
 
               if (collapsed) {
-                return entry.items.map(item => renderNavLink(item));
+                return entry.items.map((item) => renderNavLink(item));
               }
 
               return (
@@ -266,7 +267,7 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden space-y-1"
                       >
-                        {entry.items.map(item => renderNavLink(item, true))}
+                        {entry.items.map((item) => renderNavLink(item, true))}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -288,13 +289,10 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
         >
           <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
-              {user?.firstName?.[0]}
-              {user?.lastName?.[0]}
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
+              <p className="text-xs font-medium truncate">{user?.firstName} {user?.lastName}</p>
               <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>

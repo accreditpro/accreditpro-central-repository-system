@@ -48,6 +48,16 @@ import {
 import { tpoTabConfigs } from './tpo-configs';
 import { TPODashboard } from './components/TPODashboard';
 import { TPODocumentsView } from './components/TPODocumentsView';
+import { RecruitersView } from './components/RecruitersView';
+import { TPOSectionView } from './components/TPOSectionView';
+import {
+  RECRUITER_EVIDENCE_SECTIONS,
+  PLACEMENT_OFFER_EVIDENCE_SECTIONS,
+  INTERNSHIP_EVIDENCE_SECTIONS,
+  HIGHER_EDUCATION_EVIDENCE_SECTIONS,
+  ENTREPRENEURSHIP_EVIDENCE_SECTIONS,
+  TRAINING_ACTIVITIES_EVIDENCE_SECTIONS,
+} from './components/TPOEvidenceDialog';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
@@ -63,21 +73,9 @@ const navItems: NavItem[] = [
   { id: 'placement-offers', label: 'Placement Offers', icon: <Briefcase className="h-4 w-4" /> },
   { id: 'internships', label: 'Internships', icon: <UserCheck className="h-4 w-4" /> },
   { id: 'higher-education', label: 'Higher Education', icon: <BookOpen className="h-4 w-4" /> },
-  {
-    id: 'entrepreneurship-startups',
-    label: 'Entrepreneurship & Startups',
-    icon: <Rocket className="h-4 w-4" />,
-  },
-  {
-    id: 'training-activities',
-    label: 'Training Activities',
-    icon: <Presentation className="h-4 w-4" />,
-  },
-  {
-    id: 'placement-statistics',
-    label: 'Placement Statistics',
-    icon: <BarChart3 className="h-4 w-4" />,
-  },
+  { id: 'entrepreneurship-startups', label: 'Entrepreneurship & Startups', icon: <Rocket className="h-4 w-4" /> },
+  { id: 'training-activities', label: 'Training Activities', icon: <Presentation className="h-4 w-4" /> },
+  { id: 'placement-statistics', label: 'Placement Statistics', icon: <BarChart3 className="h-4 w-4" /> },
   { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
@@ -88,15 +86,13 @@ export default function TPORepositoryPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(
-    () => {
-      const initial: Record<string, Record<string, string | number>[]> = {};
-      tpoTabConfigs.forEach(tab => {
-        initial[tab.id] = [...tab.sampleData];
-      });
-      return initial;
-    }
-  );
+  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
+    const initial: Record<string, Record<string, string | number>[]> = {};
+    tpoTabConfigs.forEach(tab => {
+      initial[tab.id] = [...tab.sampleData];
+    });
+    return initial;
+  });
 
   const activeTabConfig = useMemo(() => {
     return tpoTabConfigs.find(t => t.id === activeView);
@@ -107,16 +103,16 @@ export default function TPORepositoryPage() {
     const data = tableData[activeView] || [];
     if (!searchQuery) return data;
     return data.filter(row =>
-      Object.values(row).some(val => String(val).toLowerCase().includes(searchQuery.toLowerCase()))
+      Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
   }, [activeTabConfig, tableData, activeView, searchQuery]);
 
   const handleAddNew = () => {
     if (!activeTabConfig) return;
     const emptyRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach(f => {
-      emptyRow[f.key] = '';
-    });
+    activeTabConfig.fields.forEach(f => { emptyRow[f.key] = ''; });
     setEditingRow(emptyRow);
     setIsNewRecord(true);
     setEditDialogOpen(true);
@@ -156,9 +152,106 @@ export default function TPORepositoryPage() {
     setEditingRow(null);
   };
 
+  const handleRecruitersDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, recruiters: data }));
+  };
+
+  const handlePlacementOffersDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'placement-offers': data }));
+  };
+
+  const handleInternshipsDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, internships: data }));
+  };
+
+  const handleHigherEducationDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'higher-education': data }));
+  };
+
+  const handleEntrepreneurshipDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'entrepreneurship-startups': data }));
+  };
+
+  const handleTrainingActivitiesDataChange = (data: Record<string, string | number>[]) => {
+    setTableData(prev => ({ ...prev, 'training-activities': data }));
+  };
+
   const renderContent = () => {
     if (activeView === 'dashboard') return <TPODashboard />;
     if (activeView === 'documents') return <TPODocumentsView />;
+    if (activeView === 'recruiters') {
+      return (
+        <RecruitersView
+          initialData={tableData['recruiters'] || []}
+          onDataChange={handleRecruitersDataChange}
+        />
+      );
+    }
+
+    if (activeView === 'training-activities' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['training-activities'] || []}
+          onDataChange={handleTrainingActivitiesDataChange}
+          getRecordTitle={(row) => String(row.programName || 'Training')}
+          getRecordId={(_, index) => `training-${index}`}
+          evidenceSectionConfigs={TRAINING_ACTIVITIES_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'placement-offers' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['placement-offers'] || []}
+          onDataChange={handlePlacementOffersDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
+          getRecordId={(_, index) => `placement-offer-${index}`}
+          evidenceSectionConfigs={PLACEMENT_OFFER_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'internships' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['internships'] || []}
+          onDataChange={handleInternshipsDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
+          getRecordId={(_, index) => `internship-${index}`}
+          evidenceSectionConfigs={INTERNSHIP_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'higher-education' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['higher-education'] || []}
+          onDataChange={handleHigherEducationDataChange}
+          getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.university || ''}`}
+          getRecordId={(_, index) => `higher-ed-${index}`}
+          evidenceSectionConfigs={HIGHER_EDUCATION_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'entrepreneurship-startups' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          initialData={tableData['entrepreneurship-startups'] || []}
+          onDataChange={handleEntrepreneurshipDataChange}
+          getRecordTitle={(row) => `${row.startupName || 'Unknown'} - ${row.founderName || ''}`}
+          getRecordId={(_, index) => `startup-${index}`}
+          evidenceSectionConfigs={ENTREPRENEURSHIP_EVIDENCE_SECTIONS}
+        />
+      );
+    }
 
     if (!activeTabConfig) return null;
 
@@ -194,7 +287,7 @@ export default function TPORepositoryPage() {
           <Input
             placeholder={`Search ${activeTabConfig.label.toLowerCase()}...`}
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -223,10 +316,7 @@ export default function TPORepositoryPage() {
                 <TableBody>
                   {currentData.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={visibleFields.length + 1}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={visibleFields.length + 1} className="text-center py-8 text-muted-foreground">
                         No records found
                       </TableCell>
                     </TableRow>
@@ -234,33 +324,20 @@ export default function TPORepositoryPage() {
                     currentData.map((row, idx) => (
                       <TableRow key={idx}>
                         {visibleFields.map(field => (
-                          <TableCell
-                            key={field.key}
-                            className="text-sm whitespace-nowrap max-w-[200px] truncate"
-                          >
+                          <TableCell key={field.key} className="text-sm whitespace-nowrap max-w-[200px] truncate">
                             {field.type === 'currency'
                               ? `₹${Number(row[field.key]).toLocaleString('en-IN')}`
                               : field.type === 'percentage'
-                                ? `${row[field.key]}%`
-                                : String(row[field.key] || '-')}
+                              ? `${row[field.key]}%`
+                              : String(row[field.key] || '-')}
                           </TableCell>
                         ))}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEdit(row)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => handleDelete(idx)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -290,48 +367,22 @@ export default function TPORepositoryPage() {
                   {field.type === 'select' ? (
                     <Select
                       value={String(editingRow?.[field.key] || '')}
-                      onValueChange={val =>
-                        setEditingRow(prev => (prev ? { ...prev, [field.key]: val } : null))
-                      }
+                      onValueChange={(val) => setEditingRow(prev => prev ? { ...prev, [field.key]: val } : null)}
                     >
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder={`Select ${field.label}`} />
                       </SelectTrigger>
                       <SelectContent>
                         {field.options?.map(opt => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
                     <Input
-                      type={
-                        field.type === 'number' ||
-                        field.type === 'currency' ||
-                        field.type === 'percentage'
-                          ? 'number'
-                          : field.type === 'date'
-                            ? 'date'
-                            : 'text'
-                      }
+                      type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                       value={String(editingRow?.[field.key] || '')}
-                      onChange={e =>
-                        setEditingRow(prev =>
-                          prev
-                            ? {
-                                ...prev,
-                                [field.key]:
-                                  field.type === 'number' ||
-                                  field.type === 'currency' ||
-                                  field.type === 'percentage'
-                                    ? Number(e.target.value)
-                                    : e.target.value,
-                              }
-                            : null
-                        )
-                      }
+                      onChange={(e) => setEditingRow(prev => prev ? { ...prev, [field.key]: field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? Number(e.target.value) : e.target.value } : null)}
                       placeholder={field.placeholder || `Enter ${field.label}`}
                       className="h-9"
                     />
@@ -340,9 +391,7 @@ export default function TPORepositoryPage() {
               ))}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSave}>{isNewRecord ? 'Add Record' : 'Save Changes'}</Button>
             </DialogFooter>
           </DialogContent>
@@ -354,36 +403,25 @@ export default function TPORepositoryPage() {
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <aside
-        className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}
-      >
+      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}>
         <div className="flex items-center justify-between p-3 border-b">
-          {!sidebarCollapsed && (
-            <span className="text-sm font-semibold text-primary">TPO Repository</span>
-          )}
+          {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">TPO Repository</span>}
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navItems.map(item => (
+          {navItems.map((item) => (
             <Button
               key={item.id}
               variant={activeView === item.id ? 'secondary' : 'ghost'}
               className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
-              onClick={() => {
-                setActiveView(item.id);
-                setSearchQuery('');
-              }}
+              onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
               title={sidebarCollapsed ? item.label : undefined}
             >
               {item.icon}
@@ -394,7 +432,9 @@ export default function TPORepositoryPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
+      <main className="flex-1 overflow-y-auto p-6">
+        {renderContent()}
+      </main>
     </div>
   );
 }

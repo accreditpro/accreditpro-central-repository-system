@@ -46,7 +46,7 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
       // apiService.post already unwraps ApiResponse<LoginResponseData>
-      const data = await apiService.post<LoginResponseData>('/auth/login', credentials);
+      const data = await apiService.post<LoginResponseData>('/v1/auth/login', credentials);
 
       // Extract user (without token fields) and tokens separately
       const { accessToken, refreshToken, tokenType, ...userFields } = data;
@@ -85,7 +85,7 @@ class AuthService {
   async getCurrentUser(): Promise<User> {
     let data: ApiResponse<User>;
     try {
-      data = await apiService.raw<User>('/auth/me');
+      data = await apiService.raw<User>('/v1/auth/me');
     } catch (error) {
       // ONLY if we get an explicit 401, token is truly expired/invalid
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -117,7 +117,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await apiService.post<null>('/auth/logout');
+      await apiService.post<null>('/v1/auth/logout');
     } catch {
       // Even if backend call fails, clear local session
     } finally {

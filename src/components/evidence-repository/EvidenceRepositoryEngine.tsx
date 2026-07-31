@@ -1,22 +1,28 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Search,
   FolderOpen,
   FileText,
   Upload,
   CheckCircle2,
-  Clock,
-  AlertTriangle,
   ArrowLeft,
-  Filter,
   Building2,
   GraduationCap,
+  FolderClosed,
+  AlertCircle,
 } from 'lucide-react';
 import {
   RepositorySection,
@@ -27,7 +33,6 @@ import {
   calculateFolderMetrics,
   calculateSectionMetrics,
   isFolderVisible,
-  getCompletionEmoji,
 } from './types';
 import { FolderCard } from './FolderCard';
 import { DocumentTable } from './DocumentTable';
@@ -73,10 +78,10 @@ export function EvidenceRepositoryEngine({
     );
   }, [visibleFolders, searchQuery]);
 
-  const filters: { label: string; value: FilterType }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Mandatory', value: 'mandatory' },
-    { label: 'Optional', value: 'optional' },
+  const filterOptions: { label: string; value: FilterType }[] = [
+    { label: 'All Documents', value: 'all' },
+    { label: 'Mandatory Only', value: 'mandatory' },
+    { label: 'Optional Only', value: 'optional' },
     { label: 'Uploaded', value: 'uploaded' },
     { label: 'Pending', value: 'pending' },
     { label: 'Approved', value: 'approved' },
@@ -106,47 +111,42 @@ export function EvidenceRepositoryEngine({
         </div>
 
         {/* Folder Header */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <FolderOpen className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold">{selectedFolder.name}</h2>
-                  {selectedFolder.description && (
-                    <p className="text-sm text-muted-foreground">{selectedFolder.description}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="text-center">
-                  <p className="text-lg font-bold">
-                    {calculateFolderMetrics(selectedFolder).requiredDocuments}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Required</p>
-                </div>
-                <Separator orientation="vertical" className="h-8" />
-                <div className="text-center">
-                  <p className="text-lg font-bold">
-                    {calculateFolderMetrics(selectedFolder).uploadedDocuments}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Uploaded</p>
-                </div>
-                <Separator orientation="vertical" className="h-8" />
-                <div className="text-center">
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    {calculateFolderMetrics(selectedFolder).completionPercentage}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">Completion</p>
-                </div>
-              </div>
+        <div className="flex items-center justify-between px-4 py-3 bg-muted/10 rounded-lg border border-border/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 shrink-0">
+              <FolderOpen className="h-4 w-4 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold truncate">{selectedFolder.name}</h2>
+              {selectedFolder.description && (
+                <p className="text-[10px] text-muted-foreground truncate">{selectedFolder.description}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs shrink-0">
+            <div className="flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Req:</span>
+              <span className="font-semibold">{calculateFolderMetrics(selectedFolder).requiredDocuments}</span>
+            </div>
+            <Separator orientation="vertical" className="h-5" />
+            <div className="flex items-center gap-1.5">
+              <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Up:</span>
+              <span className="font-semibold">{calculateFolderMetrics(selectedFolder).uploadedDocuments}</span>
+            </div>
+            <Separator orientation="vertical" className="h-5" />
+            <span className={cn(
+              'text-sm font-bold',
+              calculateFolderMetrics(selectedFolder).completionPercentage >= 100 ? 'text-emerald-600' :
+              calculateFolderMetrics(selectedFolder).completionPercentage >= 75 ? 'text-amber-600' : 'text-red-600'
+            )}>
+              {calculateFolderMetrics(selectedFolder).completionPercentage}%
+            </span>
+          </div>
+        </div>
 
-        {/* Search & Filters */}
+        {/* Search & Filter */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -154,23 +154,21 @@ export function EvidenceRepositoryEngine({
               placeholder="Search documents..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
-          <div className="flex items-center gap-1 flex-wrap">
-            <Filter className="h-4 w-4 text-muted-foreground mr-1" />
-            {filters.map(f => (
-              <Button
-                key={f.value}
-                variant={activeFilter === f.value ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setActiveFilter(f.value)}
-              >
-                {f.label}
-              </Button>
-            ))}
-          </div>
+          <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
+            <SelectTrigger className="h-9 text-xs w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filterOptions.map((f) => (
+                <SelectItem key={f.value} value={f.value} className="text-xs">
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Document Table */}
@@ -206,93 +204,50 @@ export function EvidenceRepositoryEngine({
         </Tabs>
       )}
 
-      {/* Section Summary Card */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">{section.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage and track all supporting documents
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold">
-                  <span
-                    className={
-                      sectionMetrics.overallCompletion >= 100
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : sectionMetrics.overallCompletion >= 75
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-red-600 dark:text-red-400'
-                    }
-                  >
-                    {sectionMetrics.overallCompletion}%
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground">Overall Completion</p>
-              </div>
-              <Separator orientation="vertical" className="h-10" />
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5">
-                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{sectionMetrics.totalFolders}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Folders</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">
-                      {sectionMetrics.totalMandatoryDocuments}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Mandatory</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5">
-                    <Upload className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{sectionMetrics.totalUploaded}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Uploaded</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">{sectionMetrics.totalPending}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Pending</p>
-                </div>
-              </div>
-            </div>
+      {/* Section Summary Bar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/10 rounded-lg border border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+            <FolderClosed className="h-4 w-4 text-primary" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h2 className="text-sm font-semibold">{section.name}</h2>
+            <p className="text-[10px] text-muted-foreground">
+              {sectionMetrics.totalFolders} folders · {sectionMetrics.totalMandatoryDocuments} mandatory · {sectionMetrics.totalUploaded} uploaded
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <span>{sectionMetrics.totalUploaded} uploaded</span>
+          </div>
+          <Separator orientation="vertical" className="h-5" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+            <span>{sectionMetrics.totalPending} pending</span>
+          </div>
+          <Separator orientation="vertical" className="h-5" />
+          <div className="text-right">
+            <span className={cn(
+              'text-sm font-bold',
+              sectionMetrics.overallCompletion >= 100 ? 'text-emerald-600' : sectionMetrics.overallCompletion >= 75 ? 'text-amber-600' : 'text-red-600'
+            )}>
+              {sectionMetrics.overallCompletion}%
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Search */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search folders, documents, or frameworks..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          <span>{sectionMetrics.totalUploaded} uploaded</span>
-          <AlertTriangle className="h-4 w-4 text-amber-500 ml-2" />
-          <span>{sectionMetrics.totalPending} pending</span>
-        </div>
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search folders or documents..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-9 h-9"
+        />
       </div>
 
       {/* Folder Cards Grid */}
@@ -315,24 +270,12 @@ export function EvidenceRepositoryEngine({
           <FolderOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
           <h3 className="text-lg font-medium text-muted-foreground">No folders found</h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            {searchQuery
-              ? 'Try a different search term'
-              : 'No folders are configured for this section'}
+            {searchQuery ? 'Try a different search term' : 'No folders are configured for this section'}
           </p>
         </div>
       )}
 
-      {/* Completion Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
-        <span className="flex items-center gap-1">{getCompletionEmoji(100)} Complete (100%)</span>
-        <span className="flex items-center gap-1">
-          {getCompletionEmoji(80)} In Progress (75-99%)
-        </span>
-        <span className="flex items-center gap-1">
-          {getCompletionEmoji(60)} Needs Attention (50-74%)
-        </span>
-        <span className="flex items-center gap-1">{getCompletionEmoji(30)} Critical (&lt;50%)</span>
-      </div>
+
     </div>
   );
 }

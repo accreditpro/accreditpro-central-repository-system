@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,32 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -48,34 +25,27 @@ import {
   FileText,
   TrendingUp,
   Eye,
+  Pencil,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  Briefcase,
+  ClipboardCheck,
+  Shield,
+  Upload,
+  UploadCloud,
+  Info,
+  Check,
+  X,
+  Image,
+  Download,
+  AlertCircle,
+  File,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  institutionAdminService,
-  AcademicYearApiResponse,
-  CreateAcademicYearRequest,
-  ProgramApiResponse,
-  CreateProgramRequest,
-  DepartmentApiResponse,
-  CreateDepartmentRequest,
-  SpecializationApiResponse,
-  CreateSpecializationRequest,
-  RegulationApiResponse,
-  CreateRegulationRequest,
-  ProgramOfferingApiResponse,
-  CreateProgramOfferingRequest,
-  CreateProgramOfferingResponse,
-  ProgramIntakeApiResponse,
-  CreateProgramIntakeRequest,
-  CreateProgramIntakeResponse,
-} from '@/services/institution-admin.service';
-import { AcademicStructureSummary } from '@/types/institution-admin.types';
-import { Skeleton } from '@/components/ui/skeleton';
-
 import {
   masterPrograms,
   departments,
@@ -97,99 +67,45 @@ import {
 
 // Dashboard Tab
 const DashboardTab = () => {
-  const { isAuthenticated } = useAuth();
+  const activePrograms = masterPrograms.filter((p) => p.status === 'active').length;
+  const activeDepts = departments.filter((d) => d.status === 'active').length;
+  const activeSpecs = specializations.filter((s) => s.status === 'active').length;
+  const activeRegulations = academicRegulations.filter((r) => r.status === 'active').length;
+  const activeOfferings = programOfferings.filter((o) => o.status === 'active').length;
+  const totalIntake = programIntakes
+    .filter((i) => i.academicYear === '2025-26')
+    .reduce((sum, i) => sum + i.sanctionedIntake, 0);
 
-  const {
-    data: summary,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<AcademicStructureSummary>({
-    queryKey: ['academicStructureSummary'],
-    queryFn: () => institutionAdminService.getAcademicStructureSummary(),
-    enabled: isAuthenticated,
-  });
+  const cards = [
+    { label: 'Academic Years', value: academicYears.length, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
+    { label: 'Programs', value: activePrograms, icon: GraduationCap, color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' },
+    { label: 'Departments', value: activeDepts, icon: Building2, color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30' },
+    { label: 'Specializations', value: activeSpecs, icon: Layers, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
+    { label: 'Regulations', value: activeRegulations, icon: BookOpen, color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30' },
+    { label: 'Program Offerings', value: activeOfferings, icon: Combine, color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30' },
+    { label: 'Total Intake (2025-26)', value: totalIntake, icon: Users, color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30' },
+  ];
 
-  const cards = summary
-    ? [
-        {
-          label: 'Academic Years',
-          value: summary.academicYears,
-          icon: Calendar,
-          color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
-        },
-        {
-          label: 'Programs',
-          value: summary.programs,
-          icon: GraduationCap,
-          color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30',
-        },
-        {
-          label: 'Departments',
-          value: summary.departments,
-          icon: Building2,
-          color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30',
-        },
-        {
-          label: 'Specializations',
-          value: summary.specializations,
-          icon: Layers,
-          color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30',
-        },
-        {
-          label: 'Regulations',
-          value: summary.regulations,
-          icon: BookOpen,
-          color: 'text-rose-600 bg-rose-100 dark:bg-rose-900/30',
-        },
-        {
-          label: 'Program Offering',
-          value: summary.programOfferings,
-          icon: Combine,
-          color: 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30',
-        },
-        {
-          label: 'Total Intake (Current Year)',
-          value: summary.totalIntakeCurrentYear,
-          icon: Users,
-          color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30',
-        },
-      ]
-    : [];
+  // Program Distribution
+  const programDist = masterPrograms
+    .filter((p) => p.status === 'active')
+    .map((p) => ({
+      name: p.name,
+      departments: departments.filter((d) => d.program === p.name && d.status === 'active').length,
+    }));
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {[...Array(7)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4 text-center">
-                <Skeleton className="h-8 w-8 mx-auto rounded-lg mb-2" />
-                <Skeleton className="h-8 w-16 mx-auto mb-2" />
-                <Skeleton className="h-4 w-24 mx-auto" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load academic summary.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  // Department Distribution
+  const deptDist = departments
+    .filter((d) => d.status === 'active')
+    .map((d) => ({
+      name: d.code,
+      offerings: programOfferings.filter((o) => o.departmentId === d.id).length,
+    }));
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {cards.map(card => (
+        {cards.map((card) => (
           <Card key={card.label} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
               <div className={`inline-flex p-2 rounded-lg ${card.color} mb-2`}>
@@ -212,21 +128,17 @@ const DashboardTab = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {summary?.programDistribution.map(p => (
-                <div key={p.programName} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{p.programName}</span>
+              {programDist.map((p) => (
+                <div key={p.name} className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{p.name}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full"
-                        style={{
-                          width: `${(p.departmentCount / (summary.departments || 1)) * 100}%`,
-                        }}
+                        style={{ width: `${(p.departments / 12) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground w-8">
-                      {p.departmentCount} depts
-                    </span>
+                    <span className="text-xs text-muted-foreground w-8">{p.departments} depts</span>
                   </div>
                 </div>
               ))}
@@ -238,31 +150,25 @@ const DashboardTab = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Intake Trend
+              Intake Trend (2025-26)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {summary?.intakeTrend && summary.intakeTrend.length > 0 ? (
-                summary.intakeTrend.map(t => (
-                  <div key={t.year} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{t.year}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{
-                            width: `${(t.count / (summary.totalIntakeCurrentYear || 1)) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground w-12">{t.count}</span>
+              {deptDist.filter((d) => d.offerings > 0).map((d) => (
+                <div key={d.name} className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{d.name}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full"
+                        style={{ width: `${(d.offerings / 8) * 100}%` }}
+                      />
                     </div>
+                    <span className="text-xs text-muted-foreground w-12">{d.offerings} offerings</span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No intake trend data available.</p>
-              )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -273,157 +179,113 @@ const DashboardTab = () => {
 
 // Academic Years Tab
 const AcademicYearsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [years, setYears] = useState<AcademicYear[]>(academicYears);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingYear, setEditingYear] = useState<AcademicYear | null>(null);
+  const [deletingYear, setDeletingYear] = useState<AcademicYear | null>(null);
 
-  // ── Form state ──
+  // Add/Edit form state
   const [formYear, setFormYear] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
   const [formEndDate, setFormEndDate] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('INACTIVE');
+  const [formInstitutionType, setFormInstitutionType] = useState('');
 
-  // ── Query: fetch all academic years ──
-  const {
-    data: apiYears,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<AcademicYearApiResponse[]>({
-    queryKey: ['academicYears'],
-    queryFn: () => institutionAdminService.getAcademicYears(),
-    enabled: isAuthenticated,
-  });
-
-  // Map API response to the local AcademicYear shape
-  const years: AcademicYear[] = (apiYears ?? []).map(y => ({
-    id: String(y.id),
-    year: y.year,
-    startDate: y.startDate,
-    endDate: y.endDate,
-    status: y.status === 'ACTIVE' ? 'active' : 'inactive',
-  }));
-
-  // ── Mutation: activate academic year ──
-  const activateMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.activateAcademicYear(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
-      toast.success('Active academic year updated');
-    },
-    onError: () => {
-      toast.error('Failed to activate academic year');
-    },
-  });
-
-  // ── Mutation: create academic year ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateAcademicYearRequest) =>
-      institutionAdminService.createAcademicYear(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
-      setShowAddDialog(false);
-      // Reset form
-      setFormYear('');
-      setFormStartDate('');
-      setFormEndDate('');
-      setFormStatus('INACTIVE');
-      toast.success('Academic year added');
-    },
-    onError: () => {
-      toast.error('Failed to add academic year');
-    },
-  });
-
-  // ── Mutation: delete academic year ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteAcademicYear(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['academicYears'] });
-      toast.success('Academic year deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete academic year');
-    },
-  });
-
-  const handleSetActive = (id: string) => {
-    const year = apiYears?.find(y => String(y.id) === id);
-    if (year) {
-      activateMutation.mutate(year.id);
-    }
+  // Check if an academic year has associated persisted data
+  const hasPersistedData = (yearId: string): boolean => {
+    const associatedOfferings = programOfferings.filter((o) => o.academicYearId === yearId);
+    const associatedIntakes = programIntakes.filter((i) => i.academicYearId === yearId);
+    const associatedRegulations = academicRegulations.filter((r) => r.academicYearIntroduced === years.find((y) => y.id === yearId)?.year);
+    return associatedOfferings.length > 0 || associatedIntakes.length > 0 || associatedRegulations.length > 0;
   };
 
-  const handleDelete = (id: string) => {
-    const year = apiYears?.find(y => String(y.id) === id);
-    if (year) {
-      deleteMutation.mutate(year.id);
-    }
+  // Reset add form
+  const resetAddForm = () => {
+    setFormYear('');
+    setFormStartDate('');
+    setFormEndDate('');
+    setFormInstitutionType('');
   };
 
-  const handleCreate = () => {
-    if (!formYear || !formStartDate || !formEndDate) {
+  // Handle add
+  const handleAdd = () => {
+    if (!formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
       toast.error('Please fill in all required fields');
       return;
     }
-    createMutation.mutate({
-      year: formYear,
+    const newYear: AcademicYear = {
+      id: String(Date.now()),
+      year: formYear.trim(),
       startDate: formStartDate,
       endDate: formEndDate,
-      status: formStatus,
-    });
+      institutionType: formInstitutionType,
+      status: 'inactive',
+    };
+    setYears((prev) => [...prev, newYear]);
+    setShowAddDialog(false);
+    resetAddForm();
+    toast.success('Academic year added');
   };
 
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <div className="grid gap-3">
-          {[1, 2, 3].map(i => (
-            <Card key={i}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-9 w-9 rounded-lg" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-3 w-40" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-24" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Open edit dialog
+  const openEdit = (year: AcademicYear) => {
+    setEditingYear(year);
+    setFormYear(year.year);
+    setFormStartDate(year.startDate);
+    setFormEndDate(year.endDate);
+    setFormInstitutionType(year.institutionType);
+    setShowEditDialog(true);
+  };
 
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load academic years.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
+  // Handle edit
+  const handleEdit = () => {
+    if (!editingYear || !formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setYears((prev) =>
+      prev.map((y) =>
+        y.id === editingYear.id
+          ? { ...y, year: formYear.trim(), startDate: formStartDate, endDate: formEndDate, institutionType: formInstitutionType }
+          : y
+      )
     );
-  }
+    setShowEditDialog(false);
+    setEditingYear(null);
+    resetAddForm();
+    toast.success('Academic year updated');
+  };
+
+  // Open delete confirmation
+  const openDelete = (year: AcademicYear) => {
+    setDeletingYear(year);
+    setShowDeleteDialog(true);
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    if (!deletingYear) return;
+    if (hasPersistedData(deletingYear.id)) {
+      toast.error('Cannot delete: this academic year has associated data (program offerings, intakes, or regulations)');
+      setShowDeleteDialog(false);
+      setDeletingYear(null);
+      return;
+    }
+    setYears((prev) => prev.filter((y) => y.id !== deletingYear.id));
+    setShowDeleteDialog(false);
+    setDeletingYear(null);
+    toast.success('Academic year deleted');
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Academic Years</h3>
-          <p className="text-xs text-muted-foreground">
-            Only one academic year can be active at a time. Cannot delete if repository data exists.
-          </p>
+          <p className="text-xs text-muted-foreground">Manage academic years. Cannot delete if associated data exists (offerings, intakes, regulations).</p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetAddForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -440,7 +302,7 @@ const AcademicYearsTab = () => {
                 <Input
                   placeholder="e.g., 2026-27"
                   value={formYear}
-                  onChange={e => setFormYear(e.target.value)}
+                  onChange={(e) => setFormYear(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -448,7 +310,7 @@ const AcademicYearsTab = () => {
                 <Input
                   type="date"
                   value={formStartDate}
-                  onChange={e => setFormStartDate(e.target.value)}
+                  onChange={(e) => setFormStartDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -456,287 +318,188 @@ const AcademicYearsTab = () => {
                 <Input
                   type="date"
                   value={formEndDate}
-                  onChange={e => setFormEndDate(e.target.value)}
+                  onChange={(e) => setFormEndDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
+                <Label>Institution Type *</Label>
+                <Select value={formInstitutionType} onValueChange={setFormInstitutionType}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="Autonomous" className="text-xs">Autonomous</SelectItem>
+                    <SelectItem value="Affiliated" className="text-xs">Affiliated</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="Deemed to be University" className="text-xs">Deemed to be University</SelectItem>
+                    <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                    <SelectItem value="Private" className="text-xs">Private</SelectItem>
+                    <SelectItem value="Aided" className="text-xs">Aided</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  setFormYear('');
-                  setFormStartDate('');
-                  setFormEndDate('');
-                  setFormStatus('INACTIVE');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add'}
-              </Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetAddForm(); }}>Cancel</Button>
+              <Button onClick={handleAdd}>Add</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-3">
-        {years.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              No academic years found. Click "Add Academic Year" to create one.
-            </CardContent>
-          </Card>
-        ) : (
-          years.map(year => (
-            <Card
-              key={year.id}
-              className={year.status === 'active' ? 'border-primary/50 bg-primary/5' : ''}
-            >
+        {years.map((year) => {
+          const isCurrent = year.status === 'active';
+          const persisted = hasPersistedData(year.id);
+          return (
+            <Card key={year.id} className={isCurrent ? 'border-primary/50 bg-primary/5' : ''}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      year.status === 'active' ? 'bg-primary/10' : 'bg-muted'
-                    }`}
-                  >
-                    <Calendar
-                      className={`h-4 w-4 ${
-                        year.status === 'active' ? 'text-primary' : 'text-muted-foreground'
-                      }`}
-                    />
+                  <div className={`p-2 rounded-lg ${isCurrent ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Calendar className={`h-4 w-4 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="font-semibold">{year.year}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{year.year}</p>
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/5">
+                        {year.institutionType}
+                      </Badge>
+                      {isCurrent && (
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(year.startDate).toLocaleDateString()} —{' '}
-                      {new Date(year.endDate).toLocaleDateString()}
+                      {new Date(year.startDate).toLocaleDateString()} - {new Date(year.endDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Academic Year</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete <strong>{year.year}</strong>? This action
-                          cannot be undone. Years with existing repository data cannot be deleted.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(year.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  {year.status === 'active' ? (
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </Badge>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSetActive(year.id)}
-                      disabled={activateMutation.isPending}
-                    >
-                      {activateMutation.isPending ? 'Activating…' : 'Set Active'}
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => openEdit(year)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-8 w-8 ${persisted ? 'text-muted-foreground/40 cursor-not-allowed' : 'text-destructive hover:text-destructive'}`}
+                    disabled={persisted}
+                    onClick={() => !persisted && openDelete(year)}
+                    title={persisted ? 'Cannot delete: has associated data' : 'Delete academic year'}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+          );
+        })}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { setShowEditDialog(open); if (!open) { setEditingYear(null); resetAddForm(); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Academic Year</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Academic Year *</Label>
+              <Input
+                placeholder="e.g., 2026-27"
+                value={formYear}
+                onChange={(e) => setFormYear(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Start Date *</Label>
+              <Input
+                type="date"
+                value={formStartDate}
+                onChange={(e) => setFormStartDate(e.target.value)}
+              />
+            </div>              <div className="space-y-2">
+                <Label>End Date *</Label>
+                <Input
+                  type="date"
+                  value={formEndDate}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Institution Type *</Label>
+                <Select value={formInstitutionType} onValueChange={setFormInstitutionType}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Autonomous" className="text-xs">Autonomous</SelectItem>
+                    <SelectItem value="Affiliated" className="text-xs">Affiliated</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="Deemed to be University" className="text-xs">Deemed to be University</SelectItem>
+                    <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                    <SelectItem value="Private" className="text-xs">Private</SelectItem>
+                    <SelectItem value="Aided" className="text-xs">Aided</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowEditDialog(false); setEditingYear(null); resetAddForm(); }}>Cancel</Button>
+              <Button onClick={handleEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => { setShowDeleteDialog(open); if (!open) setDeletingYear(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Academic Year</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-4">
+            Are you sure you want to delete <strong>{deletingYear?.year}</strong>?
+            {deletingYear && hasPersistedData(deletingYear.id) && (
+              <span className="block mt-2 text-destructive">
+                This academic year has associated data (program offerings, intakes, or regulations) and cannot be deleted.
+              </span>
+            )}
+            {deletingYear && !hasPersistedData(deletingYear.id) && (
+              <span className="block mt-2">This action cannot be undone.</span>
+            )}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeletingYear(null); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingYear ? hasPersistedData(deletingYear.id) : true}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 // Programs Tab
 const ProgramsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [programs, setPrograms] = useState<Program[]>(masterPrograms);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  // ── Form state ──
-  const [formCode, setFormCode] = useState('');
-  const [formName, setFormName] = useState('');
-  const [formLevel, setFormLevel] = useState<'UG' | 'PG' | 'Doctoral'>('UG');
-  const [formDuration, setFormDuration] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-
-  // ── Query: fetch all programs ──
-  const {
-    data: apiPrograms,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<ProgramApiResponse[]>({
-    queryKey: ['programs'],
-    queryFn: () => institutionAdminService.getPrograms(),
-    enabled: isAuthenticated,
-  });
-
-  // Map API response to the local Program shape
-  const programs: Program[] = (apiPrograms ?? []).map(p => ({
-    id: String(p.id),
-    programCode: p.programCode,
-    name: p.name,
-    level: p.level,
-    duration: p.durationYears,
-    status: p.status === 'ACTIVE' ? 'active' : 'inactive',
-    enabled: p.status === 'ACTIVE',
-    isCustom: p.isCustom,
-  }));
-
-  // ── Mutation: toggle program status ──
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
-      institutionAdminService.toggleProgramStatus(id, { status: newStatus }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programs'] });
-      toast.success('Program status updated');
-    },
-    onError: () => {
-      toast.error('Failed to update program status');
-    },
-  });
-
-  // ── Mutation: create program ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateProgramRequest) => institutionAdminService.createProgram(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programs'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Custom program added');
-    },
-    onError: () => {
-      toast.error('Failed to add program');
-    },
-  });
-
-  // ── Mutation: delete program ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteProgram(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programs'] });
-      toast.success('Program deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete program');
-    },
-  });
-
-  const resetForm = () => {
-    setFormCode('');
-    setFormName('');
-    setFormLevel('UG');
-    setFormDuration('');
-    setFormStatus('ACTIVE');
-  };
-
-  const handleToggle = (id: string) => {
-    const apiProgram = apiPrograms?.find(p => String(p.id) === id);
-    if (apiProgram) {
-      const newStatus = apiProgram.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      toggleMutation.mutate({ id: apiProgram.id, newStatus });
-    }
-  };
-
-  const handleCreate = () => {
-    if (!formCode || !formName || !formDuration) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    createMutation.mutate({
-      programCode: formCode,
-      name: formName,
-      level: formLevel,
-      duration: Number(formDuration),
-      isCustom: true,
-      status: formStatus,
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    const apiProgram = apiPrograms?.find(p => String(p.id) === id);
-    if (apiProgram) {
-      deleteMutation.mutate(apiProgram.id);
-    }
-  };
-
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-9 w-40" />
-        </div>
-        <div className="rounded-lg border">
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-5 w-10" />
-                <Skeleton className="h-4 w-16 ml-auto" />
-                <Skeleton className="h-6 w-10" />
-                <Skeleton className="h-6 w-8" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  const toggleProgram = (id: string) => {
+    setPrograms((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled, status: p.enabled ? 'inactive' : 'active' } : p))
     );
-  }
-
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load programs.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+    toast.success('Program status updated');
+  };
 
   return (
     <div className="space-y-4">
@@ -756,29 +519,16 @@ const ProgramsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Program Code *</Label>
-                <Input
-                  placeholder="e.g., BSC"
-                  value={formCode}
-                  onChange={e => setFormCode(e.target.value)}
-                />
+                <Input placeholder="e.g., BSC" />
               </div>
               <div className="space-y-2">
                 <Label>Program Name *</Label>
-                <Input
-                  placeholder="e.g., B.Sc"
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                />
+                <Input placeholder="e.g., B.Sc" />
               </div>
               <div className="space-y-2">
                 <Label>Program Level *</Label>
-                <Select
-                  value={formLevel}
-                  onValueChange={(v: 'UG' | 'PG' | 'Doctoral') => setFormLevel(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
+                <Select>
+                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UG">UG</SelectItem>
                     <SelectItem value="PG">PG</SelectItem>
@@ -788,42 +538,22 @@ const ProgramsTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Duration (Years) *</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g., 4"
-                  value={formDuration}
-                  onChange={e => setFormDuration(e.target.value)}
-                />
+                <Input type="number" placeholder="e.g., 3" />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select defaultValue="active">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add Program'}
-              </Button>
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+              <Button onClick={() => { setShowAddDialog(false); toast.success('Custom program added'); }}>Add Program</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -842,76 +572,27 @@ const ProgramsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {programs.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                  No programs found. Click "Add Custom Program" to create one.
+            {programs.map((program) => (
+              <tr key={program.id} className="border-t hover:bg-muted/30">
+                <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
+                <td className="py-3 px-4 font-medium">
+                  {program.name}
+                  {program.isCustom && <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>}
+                </td>
+                <td className="py-3 px-4">
+                  <Badge variant="secondary">{program.level}</Badge>
+                </td>
+                <td className="py-3 px-4 text-center">{program.duration} Years</td>
+                <td className="py-3 px-4 text-center">
+                  <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
+                    {program.status === 'active' ? 'Active' : 'Inactive'}
+                  </Badge>
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <Switch checked={program.enabled} onCheckedChange={() => toggleProgram(program.id)} className="scale-75" />
                 </td>
               </tr>
-            ) : (
-              programs.map(program => (
-                <tr key={program.id} className="border-t hover:bg-muted/30">
-                  <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
-                  <td className="py-3 px-4 font-medium">
-                    {program.name}
-                    {program.isCustom && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        Custom
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <Badge variant="secondary">{program.level}</Badge>
-                  </td>
-                  <td className="py-3 px-4 text-center">{program.duration} Years</td>
-                  <td className="py-3 px-4 text-center">
-                    <Badge variant={program.status === 'active' ? 'default' : 'secondary'}>
-                      {program.status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Switch
-                        checked={program.enabled}
-                        onCheckedChange={() => handleToggle(program.id)}
-                        disabled={toggleMutation.isPending}
-                        className="scale-75"
-                      />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Program</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete <strong>{program.name}</strong>? This
-                              action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(program.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
@@ -921,171 +602,21 @@ const ProgramsTab = () => {
 
 // Departments Tab
 const DepartmentsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [depts, setDepts] = useState<Department[]>(departments);
   const [search, setSearch] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  // ── Form state ──
-  const [formName, setFormName] = useState('');
-  const [formCode, setFormCode] = useState('');
-  const [formProgramId, setFormProgramId] = useState('');
-  const [formEstYear, setFormEstYear] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-
-  // ── Query: fetch all departments ──
-  const {
-    data: apiDepartments,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<DepartmentApiResponse[]>({
-    queryKey: ['departments'],
-    queryFn: () => institutionAdminService.getDepartments(),
-    enabled: isAuthenticated,
-  });
-
-  // ── Query: fetch programs for dropdown ──
-  const { data: apiProgramsForDept } = useQuery<ProgramApiResponse[]>({
-    queryKey: ['programs'],
-    queryFn: () => institutionAdminService.getPrograms(),
-    enabled: showAddDialog,
-  });
-
-  // Map API response to local Department shape
-  const depts: Department[] = (apiDepartments ?? []).map(d => ({
-    id: String(d.id),
-    name: d.name,
-    code: d.code,
-    program: d.program,
-    programId: String(d.programId),
-    coordinator: d.coordinator ?? '',
-    repositoryCompletion: d.repositoryCompletion ?? 0,
-    establishedYear: d.establishedYear ?? undefined,
-    status: d.status === 'ACTIVE' ? 'active' : 'inactive',
-    enabled: d.status === 'ACTIVE',
-  }));
-
-  // Search filter
-  const filtered = depts.filter(
-    d =>
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = depts.filter((d) =>
+    d.name.toLowerCase().includes(search.toLowerCase()) ||
+    d.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── Mutation: toggle department status ──
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
-      institutionAdminService.toggleDepartmentStatus(id, { status: newStatus }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-      toast.success('Department status updated');
-    },
-    onError: () => {
-      toast.error('Failed to update department status');
-    },
-  });
-
-  // ── Mutation: create department ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateDepartmentRequest) => institutionAdminService.createDepartment(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Department added');
-    },
-    onError: () => {
-      toast.error('Failed to add department');
-    },
-  });
-
-  // ── Mutation: delete department ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteDepartment(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-      toast.success('Department deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete department');
-    },
-  });
-
-  const resetForm = () => {
-    setFormName('');
-    setFormCode('');
-    setFormProgramId('');
-    setFormEstYear('');
-    setFormStatus('ACTIVE');
-  };
-
-  const handleToggle = (id: string) => {
-    const apiDept = apiDepartments?.find(d => String(d.id) === id);
-    if (apiDept) {
-      const newStatus = apiDept.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      toggleMutation.mutate({ id: apiDept.id, newStatus });
-    }
-  };
-
-  const handleCreate = () => {
-    if (!formCode || !formName || !formProgramId) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    createMutation.mutate({
-      name: formName,
-      code: formCode,
-      programId: Number(formProgramId),
-      establishedYear: formEstYear ? Number(formEstYear) : undefined,
-      status: formStatus,
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    const apiDept = apiDepartments?.find(d => String(d.id) === id);
-    if (apiDept) {
-      deleteMutation.mutate(apiDept.id);
-    }
-  };
-
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-9 w-60" />
-          <Skeleton className="h-9 w-44" />
-        </div>
-        <div className="rounded-lg border">
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-12 ml-auto" />
-                <Skeleton className="h-5 w-14" />
-                <Skeleton className="h-6 w-8" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  const toggleDept = (id: string) => {
+    setDepts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, enabled: !d.enabled, status: d.enabled ? 'inactive' : 'active' } : d))
     );
-  }
-
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load departments.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+    toast.success('Department status updated');
+  };
 
   return (
     <div className="space-y-4">
@@ -1095,7 +626,7 @@ const DepartmentsTab = () => {
           <Input
             placeholder="Search departments..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -1113,75 +644,41 @@ const DepartmentsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Department Code *</Label>
-                <Input
-                  placeholder="e.g., AERO"
-                  value={formCode}
-                  onChange={e => setFormCode(e.target.value)}
-                />
+                <Input placeholder="e.g., AERO" />
               </div>
               <div className="space-y-2">
                 <Label>Department Name *</Label>
-                <Input
-                  placeholder="e.g., Aerospace Engineering"
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                />
+                <Input placeholder="e.g., Aerospace Engineering" />
               </div>
               <div className="space-y-2">
                 <Label>Program *</Label>
-                <Select value={formProgramId} onValueChange={setFormProgramId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select program" />
-                  </SelectTrigger>
+                <Select>
+                  <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
                   <SelectContent>
-                    {(apiProgramsForDept ?? [])
-                      .filter(p => p.status === 'ACTIVE')
-                      .map(p => (
-                        <SelectItem key={p.id} value={String(p.id)}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
+                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Established Year</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g., 2020"
-                  value={formEstYear}
-                  onChange={e => setFormEstYear(e.target.value)}
-                />
+                <Input type="number" placeholder="e.g., 2020" />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select defaultValue="active">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add Department'}
-              </Button>
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+              <Button onClick={() => { setShowAddDialog(false); toast.success('Department added'); }}>Add Department</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1200,69 +697,22 @@ const DepartmentsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                  {search
-                    ? 'No departments match your search.'
-                    : 'No departments found. Click "Add Custom Department" to create one.'}
+            {filtered.map((dept) => (
+              <tr key={dept.id} className="border-t hover:bg-muted/30">
+                <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
+                <td className="py-3 px-4 font-medium">{dept.name}</td>
+                <td className="py-3 px-4">{dept.program}</td>
+                <td className="py-3 px-4 text-center">{dept.establishedYear || '-'}</td>
+                <td className="py-3 px-4 text-center">
+                  <Badge variant={dept.status === 'active' ? 'default' : 'secondary'}>
+                    {dept.status}
+                  </Badge>
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <Switch checked={dept.enabled} onCheckedChange={() => toggleDept(dept.id)} className="scale-75" />
                 </td>
               </tr>
-            ) : (
-              filtered.map(dept => (
-                <tr key={dept.id} className="border-t hover:bg-muted/30">
-                  <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
-                  <td className="py-3 px-4 font-medium">{dept.name}</td>
-                  <td className="py-3 px-4">{dept.program}</td>
-                  <td className="py-3 px-4 text-center">{dept.establishedYear || '-'}</td>
-                  <td className="py-3 px-4 text-center">
-                    <Badge variant={dept.status === 'active' ? 'default' : 'secondary'}>
-                      {dept.status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Switch
-                        checked={dept.enabled}
-                        onCheckedChange={() => handleToggle(dept.id)}
-                        disabled={toggleMutation.isPending}
-                        className="scale-75"
-                      />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Department</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete <strong>{dept.name}</strong>? This
-                              action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(dept.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
@@ -1272,163 +722,19 @@ const DepartmentsTab = () => {
 
 // Specializations Tab
 const SpecializationsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [specs, setSpecs] = useState<Specialization[]>(specializations);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  // ── Form state ──
-  const [formName, setFormName] = useState('');
-  const [formDeptId, setFormDeptId] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-
-  // ── Query: fetch all specializations ──
-  const {
-    data: apiSpecs,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<SpecializationApiResponse[]>({
-    queryKey: ['specializations'],
-    queryFn: () => institutionAdminService.getSpecializations(),
-    enabled: isAuthenticated,
-  });
-
-  // ── Query: fetch departments for dropdown ──
-  const { data: apiDeptsForSpec } = useQuery<DepartmentApiResponse[]>({
-    queryKey: ['departments'],
-    queryFn: () => institutionAdminService.getDepartments(),
-    enabled: showAddDialog,
-  });
-
-  // Map API response to local Specialization shape
-  const specs: Specialization[] = (apiSpecs ?? []).map(s => ({
-    id: String(s.id),
-    name: s.name,
-    departmentId: String(s.departmentId),
-    departmentName: s.departmentName,
-    status: s.status === 'ACTIVE' ? 'active' : 'inactive',
-    enabled: s.status === 'ACTIVE',
-  }));
-
-  // Group by department name
   const grouped = specs.reduce<Record<string, Specialization[]>>((acc, s) => {
     if (!acc[s.departmentName]) acc[s.departmentName] = [];
     acc[s.departmentName].push(s);
     return acc;
   }, {});
 
-  // ── Mutation: toggle status ──
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
-      institutionAdminService.toggleSpecializationStatus(id, { status: newStatus }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
-      toast.success('Specialization status updated');
-    },
-    onError: () => {
-      toast.error('Failed to update specialization');
-    },
-  });
-
-  // ── Mutation: create specialization ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateSpecializationRequest) =>
-      institutionAdminService.createSpecialization(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Specialization added');
-    },
-    onError: () => {
-      toast.error('Failed to add specialization');
-    },
-  });
-
-  // ── Mutation: delete specialization ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteSpecialization(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
-      toast.success('Specialization deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete specialization');
-    },
-  });
-
-  const resetForm = () => {
-    setFormName('');
-    setFormDeptId('');
-    setFormStatus('ACTIVE');
+  const toggleSpec = (id: string) => {
+    setSpecs((prev) => prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled, status: s.enabled ? 'inactive' : 'active' } : s)));
+    toast.success('Specialization updated');
   };
-
-  const handleToggle = (id: string) => {
-    const apiSpec = apiSpecs?.find(s => String(s.id) === id);
-    if (apiSpec) {
-      const newStatus = apiSpec.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      toggleMutation.mutate({ id: apiSpec.id, newStatus });
-    }
-  };
-
-  const handleCreate = () => {
-    if (!formName || !formDeptId) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    createMutation.mutate({
-      name: formName,
-      departmentId: Number(formDeptId),
-      status: formStatus,
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    const apiSpec = apiSpecs?.find(s => String(s.id) === id);
-    if (apiSpec) {
-      deleteMutation.mutate(apiSpec.id);
-    }
-  };
-
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-52" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <div className="grid gap-4">
-          {[1, 2].map(i => (
-            <Card key={i}>
-              <CardHeader className="py-3 px-4">
-                <Skeleton className="h-5 w-48" />
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map(j => (
-                    <Skeleton key={j} className="h-10 rounded-lg" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load specializations.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -1448,716 +754,997 @@ const SpecializationsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Specialization Name *</Label>
-                <Input
-                  placeholder="e.g., Machine Learning"
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                />
+                <Input placeholder="e.g., Machine Learning" />
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
-                <Select value={formDeptId} onValueChange={setFormDeptId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
+                <Select>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
                   <SelectContent>
-                    {(apiDeptsForSpec ?? [])
-                      .filter(d => d.status === 'ACTIVE')
-                      .map(d => (
-                        <SelectItem key={d.id} value={String(d.id)}>
-                          {d.code} — {d.name}
-                        </SelectItem>
-                      ))}
+                    {departments.filter((d) => d.status === 'active').map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.code} - {d.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select defaultValue="active">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add'}
-              </Button>
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+              <Button onClick={() => { setShowAddDialog(false); toast.success('Specialization added'); }}>Add</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-4">
-        {Object.keys(grouped).length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              No specializations found. Click "Add Specialization" to create one.
+        {Object.entries(grouped).map(([dept, items]) => (
+          <Card key={dept}>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                {dept}
+                <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {items.map((spec) => (
+                  <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{spec.name}</span>
+                      <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
+                        {spec.status}
+                      </Badge>
+                    </div>
+                    <Switch checked={spec.enabled} onCheckedChange={() => toggleSpec(spec.id)} className="scale-75" />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          Object.entries(grouped).map(([dept, items]) => (
-            <Card key={dept}>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  {dept}
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {items.length} specializations
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {items.map(spec => (
-                    <div
-                      key={spec.id}
-                      className="flex items-center justify-between p-2 rounded-lg border bg-muted/30"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{spec.name}</span>
-                        <Badge
-                          variant={spec.status === 'active' ? 'default' : 'secondary'}
-                          className="text-xs scale-90"
-                        >
-                          {spec.status === 'active' ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Switch
-                          checked={spec.enabled}
-                          onCheckedChange={() => handleToggle(spec.id)}
-                          disabled={toggleMutation.isPending}
-                          className="scale-75"
-                        />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                              disabled={deleteMutation.isPending}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Specialization</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete <strong>{spec.name}</strong>? This
-                                action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(spec.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );
 };
 
-// Academic Regulations Tab
+// ============================================================
+// ACADEMIC REGULATIONS - MULTI-STEP FORM WIZARD
+// ============================================================
+
+const emptyRegulationForm = (): AcademicRegulation => ({
+  id: `REG-${String(Date.now()).slice(-3)}`,
+  regulationCode: '',
+  regulationName: '',
+  program: '',
+  programId: '',
+  academicYearIntroduced: '',
+  effectiveFromBatch: '',
+  effectiveToBatch: '',
+  duration: 4,
+  status: 'active',
+  creditStructure: {
+    totalCredits: 160,
+    coreCredits: 0,
+    professionalElectiveCredits: 0,
+    openElectiveCredits: 0,
+    laboratoryCredits: 0,
+    projectCredits: 0,
+    internshipCredits: 0,
+  },
+  evaluationScheme: {
+    internalMarks: 40,
+    externalMarks: 60,
+    passingMarks: 50,
+    gradingSystem: 'CGPA Based',
+    cgpaScale: 10,
+    maxPercentage: 100,
+  },
+  internshipRequirements: {
+    internshipMandatory: true,
+    internshipDuration: '8 weeks',
+    industryTrainingMandatory: false,
+  },
+  projectRequirements: {
+    miniProjectMandatory: true,
+    majorProjectMandatory: true,
+    capstoneProjectMandatory: false,
+  },
+  approvals: {
+    approvedBy: '',
+    approvalDate: '',
+    bosApproval: '',
+    academicCouncilApproval: '',
+  },
+  documents: [],
+});
+
+const REGULATION_STEPS = [
+  { id: 'basic-info', label: 'Basic Information', icon: BookOpen, description: 'Regulation code, name, program & duration' },
+  { id: 'credit-structure', label: 'Credit Structure', icon: Layers, description: 'Total, core, elective & lab credits' },
+  { id: 'evaluation', label: 'Evaluation Scheme', icon: ClipboardCheck, description: 'Marks distribution & grading system' },
+  { id: 'internship', label: 'Internship Requirements', icon: Briefcase, description: 'Internship mandatory, duration & training' },
+  { id: 'project', label: 'Project Requirements', icon: GraduationCap, description: 'Mini, major & capstone projects' },
+  { id: 'approvals', label: 'Approvals', icon: Shield, description: 'Approving bodies & reference numbers' },
+  { id: 'documents', label: 'Documents', icon: FileText, description: 'Upload evidence & supporting docs' },
+];
+
 const AcademicRegulationsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [regs, setRegs] = useState<AcademicRegulation[]>(academicRegulations);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [viewReg, setViewReg] = useState<RegulationApiResponse | null>(null);
+  const [viewReg, setViewReg] = useState<AcademicRegulation | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [form, setForm] = useState<AcademicRegulation>(emptyRegulationForm());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; type: string; size: number }>>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
-  // ── Form state ──
-  const [formCode, setFormCode] = useState('');
-  const [formName, setFormName] = useState('');
-  const [formProgramId, setFormProgramId] = useState('');
-  const [formAcademicYearIntroduced, setFormAcademicYearIntroduced] = useState('');
-  const [formEffFromBatch, setFormEffFromBatch] = useState('');
-  const [formEffToBatch, setFormEffToBatch] = useState('');
-  const [formDuration, setFormDuration] = useState('');
-  const [formTotalCredits, setFormTotalCredits] = useState('');
-  const [formCoreCredits, setFormCoreCredits] = useState('');
-  const [formProfElectiveCredits, setFormProfElectiveCredits] = useState('');
-  const [formOpenElectiveCredits, setFormOpenElectiveCredits] = useState('');
-  const [formLabCredits, setFormLabCredits] = useState('');
-  const [formProjectCredits, setFormProjectCredits] = useState('');
-  const [formInternshipCredits, setFormInternshipCredits] = useState('');
-  const [formInternalMarks, setFormInternalMarks] = useState('');
-  const [formExternalMarks, setFormExternalMarks] = useState('');
-  const [formPassingMarks, setFormPassingMarks] = useState('');
-  const [formGradingSystem, setFormGradingSystem] = useState('');
-  const [formCgpaScale, setFormCgpaScale] = useState('');
-  const [formInternshipMandatory, setFormInternshipMandatory] = useState(false);
-  const [formInternshipDuration, setFormInternshipDuration] = useState('');
-  const [formIndustryTraining, setFormIndustryTraining] = useState(false);
-  const [formMiniProject, setFormMiniProject] = useState(false);
-  const [formMajorProject, setFormMajorProject] = useState(false);
-  const [formCapstoneProject, setFormCapstoneProject] = useState(false);
-  const [formApprovedBy, setFormApprovedBy] = useState('');
-  const [formApprovalDate, setFormApprovalDate] = useState('');
-  const [formBosApproval, setFormBosApproval] = useState('');
-  const [formAcademicCouncilApproval, setFormAcademicCouncilApproval] = useState('');
-  const [formDocuments, setFormDocuments] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+  const ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
+  const ACCEPTED_MIME_TYPES = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'application/zip',
+  ];
 
-  // ── Query: fetch all regulations ──
-  const {
-    data: apiRegulations,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<RegulationApiResponse[]>({
-    queryKey: ['regulations'],
-    queryFn: () => institutionAdminService.getRegulations(),
-    enabled: isAuthenticated,
-  });
-
-  // ── Query: fetch programs for dropdown ──
-  const { data: apiProgramsForReg } = useQuery<ProgramApiResponse[]>({
-    queryKey: ['programs'],
-    queryFn: () => institutionAdminService.getPrograms(),
-    enabled: showAddDialog,
-  });
-
-  // ── Query: fetch academic years for dropdown ──
-  const { data: apiAcademicYearsForReg } = useQuery<AcademicYearApiResponse[]>({
-    queryKey: ['academicYears'],
-    queryFn: () => institutionAdminService.getAcademicYears(),
-    enabled: showAddDialog,
-  });
-
-  // ── Mutation: toggle regulation status ──
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, newStatus }: { id: number; newStatus: string }) =>
-      institutionAdminService.toggleRegulationStatus(id, { status: newStatus }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['regulations'] });
-      toast.success('Regulation status updated');
-    },
-    onError: () => {
-      toast.error('Failed to update regulation status');
-    },
-  });
-
-  // ── Mutation: create regulation ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateRegulationRequest) => institutionAdminService.createRegulation(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['regulations'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Regulation added successfully');
-    },
-    onError: () => {
-      toast.error('Failed to add regulation');
-    },
-  });
-
-  const resetForm = () => {
-    setFormCode('');
-    setFormName('');
-    setFormProgramId('');
-    setFormAcademicYearIntroduced('');
-    setFormEffFromBatch('');
-    setFormEffToBatch('');
-    setFormDuration('');
-    setFormTotalCredits('');
-    setFormCoreCredits('');
-    setFormProfElectiveCredits('');
-    setFormOpenElectiveCredits('');
-    setFormLabCredits('');
-    setFormProjectCredits('');
-    setFormInternshipCredits('');
-    setFormInternalMarks('');
-    setFormExternalMarks('');
-    setFormPassingMarks('');
-    setFormGradingSystem('');
-    setFormCgpaScale('');
-    setFormInternshipMandatory(false);
-    setFormInternshipDuration('');
-    setFormIndustryTraining(false);
-    setFormMiniProject(false);
-    setFormMajorProject(false);
-    setFormCapstoneProject(false);
-    setFormApprovedBy('');
-    setFormApprovalDate('');
-    setFormBosApproval('');
-    setFormAcademicCouncilApproval('');
-    setFormDocuments('');
-    setFormStatus('ACTIVE');
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return Image;
+    if (type.includes('pdf')) return BookOpen;
+    if (type.includes('word') || type.includes('document')) return FileText;
+    if (type.includes('spreadsheet') || type.includes('excel')) return File;
+    if (type.includes('presentation') || type.includes('powerpoint')) return File;
+    return File;
   };
 
-  const handleToggle = (id: string) => {
-    const apiReg = apiRegulations?.find(r => String(r.id) === id);
-    if (apiReg) {
-      const newStatus = apiReg.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      toggleMutation.mutate({ id: apiReg.id, newStatus });
-    }
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const handleCreate = () => {
-    if (
-      !formCode ||
-      !formName ||
-      !formProgramId ||
-      !formAcademicYearIntroduced ||
-      !formEffFromBatch ||
-      !formDuration
-    ) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    createMutation.mutate({
-      regulationCode: formCode,
-      regulationName: formName,
-      programId: Number(formProgramId),
-      academicYearIntroduced: formAcademicYearIntroduced,
-      effectiveFromBatch: formEffFromBatch,
-      effectiveToBatch: formEffToBatch,
-      duration: Number(formDuration),
-      totalCredits: formTotalCredits ? Number(formTotalCredits) : 0,
-      coreCredits: formCoreCredits ? Number(formCoreCredits) : 0,
-      professionalElectiveCredits: formProfElectiveCredits ? Number(formProfElectiveCredits) : 0,
-      openElectiveCredits: formOpenElectiveCredits ? Number(formOpenElectiveCredits) : 0,
-      laboratoryCredits: formLabCredits ? Number(formLabCredits) : 0,
-      projectCredits: formProjectCredits ? Number(formProjectCredits) : 0,
-      internshipCredits: formInternshipCredits ? Number(formInternshipCredits) : 0,
-      internalMarks: formInternalMarks ? Number(formInternalMarks) : 0,
-      externalMarks: formExternalMarks ? Number(formExternalMarks) : 0,
-      passingMarks: formPassingMarks ? Number(formPassingMarks) : 0,
-      gradingSystem: formGradingSystem || '',
-      cgpaScale: formCgpaScale ? Number(formCgpaScale) : 0,
-      internshipMandatory: formInternshipMandatory,
-      internshipDuration: formInternshipDuration || '',
-      industryTrainingMandatory: formIndustryTraining,
-      miniProjectMandatory: formMiniProject,
-      majorProjectMandatory: formMajorProject,
-      capstoneProjectMandatory: formCapstoneProject,
-      approvedBy: formApprovedBy || '',
-      approvalDate: formApprovalDate || '',
-      bosApproval: formBosApproval || '',
-      academicCouncilApproval: formAcademicCouncilApproval || '',
-      documents: formDocuments || '',
-      status: formStatus,
+  const isValidFile = (file: File): boolean => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    const acceptedExts = ACCEPTED_FILE_TYPES.split(',');
+    return acceptedExts.includes(ext) || ACCEPTED_MIME_TYPES.includes(file.type);
+  };
+
+  const handleFileDrop = (files: FileList) => {
+    const newFiles: Array<{ name: string; type: string; size: number }> = [];
+    let hasInvalid = false;
+
+    Array.from(files).forEach((file) => {
+      if (isValidFile(file) && !form.documents.includes(file.name)) {
+        newFiles.push({ name: file.name, type: file.type, size: file.size });
+      } else if (!isValidFile(file)) {
+        hasInvalid = true;
+      }
     });
+
+    if (hasInvalid) {
+      toast.error('Some files were skipped due to unsupported format');
+    }
+
+    if (newFiles.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setForm((prev) => ({
+        ...prev,
+        documents: [...prev.documents, ...newFiles.map((f) => f.name)],
+      }));
+    }
   };
 
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <div className="rounded-lg border">
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-12 ml-auto" />
-                <Skeleton className="h-5 w-14" />
-                <Skeleton className="h-6 w-8" />
+  const handleRemoveFile = (fileName: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.name !== fileName));
+    setForm((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((d) => d !== fileName),
+    }));
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (dragCounterRef.current === 1) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setDragActive(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileDrop(e.dataTransfer.files);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileDrop(e.target.files);
+    }
+    e.target.value = '';
+  };
+
+  // Check if a regulation code or name already exists (excluding the current editing record)
+  const checkDuplicate = (): string | null => {
+    const code = form.regulationCode.trim().toLowerCase();
+    const name = form.regulationName.trim().toLowerCase();
+    if (!code && !name) return null;
+    const duplicate = regs.find((r) => {
+      if (editingId && r.id === editingId) return false; // skip current record when editing
+      const rCode = r.regulationCode.toLowerCase();
+      const rName = r.regulationName.toLowerCase();
+      return rCode === code || rName === name;
+    });
+    if (duplicate) {
+      if (duplicate.regulationCode.toLowerCase() === code) return 'regulationCode';
+      if (duplicate.regulationName.toLowerCase() === name) return 'regulationName';
+    }
+    return null;
+  };
+
+  // Step validation
+  const validateStep = (step: number): boolean => {
+    const e: Record<string, string> = {};
+    switch (step) {
+      case 0: // Basic Info
+        if (!form.regulationCode.trim()) e.regulationCode = 'Required';
+        else {
+          const dupField = checkDuplicate();
+          if (dupField === 'regulationCode') e.regulationCode = `Regulation code "${form.regulationCode}" already exists`;
+          if (dupField === 'regulationName') e.regulationName = `Regulation name "${form.regulationName}" already exists`;
+        }
+        if (!form.regulationName.trim()) e.regulationName = 'Required';
+        else {
+          const dupField = checkDuplicate();
+          if (dupField === 'regulationName') e.regulationName = `Regulation name "${form.regulationName}" already exists`;
+        }
+        if (!form.programId) e.programId = 'Required';
+        if (!form.academicYearIntroduced) e.academicYearIntroduced = 'Required';
+        if (!form.effectiveFromBatch.trim()) e.effectiveFromBatch = 'Required';
+        if (!form.duration) e.duration = 'Required';
+        break;
+      case 1: // Credit Structure
+        if (!form.creditStructure.totalCredits) e.totalCredits = 'Required';
+        break;
+      case 2: // Evaluation Scheme
+        if (!form.evaluationScheme.internalMarks) e.internalMarks = 'Required';
+        if (!form.evaluationScheme.externalMarks) e.externalMarks = 'Required';
+        if (!form.evaluationScheme.passingMarks) e.passingMarks = 'Required';
+        if (!form.evaluationScheme.gradingSystem.trim()) e.gradingSystem = 'Required';
+        break;
+      case 3: // Internship (no required fields - defaults exist)
+        break;
+      case 4: // Project (no required fields - defaults exist)
+        break;
+      case 5: // Approvals
+        if (!form.approvals.approvedBy.trim()) e.approvedBy = 'Required';
+        if (!form.approvals.approvalDate) e.approvalDate = 'Required';
+        if (!form.approvals.bosApproval.trim()) e.bosApproval = 'Required';
+        if (!form.approvals.academicCouncilApproval.trim()) e.academicCouncilApproval = 'Required';
+        break;
+      case 6: // Documents (no required fields)
+        break;
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // Update nested field helper
+  const updateField = (section: string, field: string, value: any) => {
+    setForm((prev) => {
+      if (section === 'root') {
+        return { ...prev, [field]: value };
+      }
+      return {
+        ...prev,
+        [section]: { ...(prev as any)[section], [field]: value },
+      };
+    });
+    // Clear error for the field
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, REGULATION_STEPS.length - 1));
+    }
+  };
+
+  const handlePrev = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const openAddDialog = () => {
+    setForm(emptyRegulationForm());
+    setEditingId(null);
+    setCurrentStep(0);
+    setErrors({});
+    setUploadedFiles([]);
+    setShowAddDialog(true);
+  };
+
+  const openEditDialog = (reg: AcademicRegulation) => {
+    setForm(JSON.parse(JSON.stringify(reg)));
+    setEditingId(reg.id);
+    setCurrentStep(0);
+    setErrors({});
+    // Restore uploaded files from existing documents
+    setUploadedFiles(reg.documents.map((d) => ({ name: d, type: 'application/octet-stream', size: 0 })));
+    setShowAddDialog(true);
+  };
+
+  const handleSave = () => {
+    // Validate all steps before saving
+    for (let i = 0; i < REGULATION_STEPS.length; i++) {
+      if (!validateStep(i)) {
+        setCurrentStep(i);
+        toast.error(`Please fix errors in ${REGULATION_STEPS[i].label}`);
+        return;
+      }
+    }
+
+    // Resolve program name from id
+    const program = masterPrograms.find((p) => p.id === form.programId);
+    const finalReg = {
+      ...form,
+      id: editingId || `REG-${String(Date.now()).slice(-3)}`,
+      program: program?.name || form.program,
+    };
+
+    setRegs((prev) => {
+      const idx = prev.findIndex((r) => r.id === finalReg.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = finalReg;
+        return updated;
+      }
+      return [finalReg, ...prev];
+    });
+
+    setShowAddDialog(false);
+    setEditingId(null);
+    toast.success(editingId ? 'Regulation updated' : 'Regulation added');
+  };
+
+  const handleDelete = (id: string) => {
+    setRegs((prev) => prev.filter((r) => r.id !== id));
+    setDeleteConfirm(null);
+    toast.success('Regulation deleted');
+  };
+
+
+  // Render current step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Basic Information
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation Code <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.regulationCode}
+                  onChange={(e) => updateField('root', 'regulationCode', e.target.value)}
+                  className={`h-9 text-sm ${errors.regulationCode ? 'border-red-500' : ''}`}
+                  placeholder="e.g., R24"
+                />
+                {errors.regulationCode && <p className="text-[10px] text-red-500">{errors.regulationCode}</p>}
               </div>
-            ))}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation Name <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.regulationName}
+                  onChange={(e) => updateField('root', 'regulationName', e.target.value)}
+                  className={`h-9 text-sm ${errors.regulationName ? 'border-red-500' : ''}`}
+                  placeholder="e.g., Regulation 2024"
+                />
+                {errors.regulationName && <p className="text-[10px] text-red-500">{errors.regulationName}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Program <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.programId}
+                  onValueChange={(v) => updateField('root', 'programId', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.programId ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.programId && <p className="text-[10px] text-red-500">{errors.programId}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Year Introduced <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.academicYearIntroduced}
+                  onValueChange={(v) => updateField('root', 'academicYearIntroduced', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.academicYearIntroduced ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((y) => (
+                      <SelectItem key={y.id} value={y.year} className="text-xs">{y.year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.academicYearIntroduced && <p className="text-[10px] text-red-500">{errors.academicYearIntroduced}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Effective From Batch <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.effectiveFromBatch}
+                  onChange={(e) => updateField('root', 'effectiveFromBatch', e.target.value)}
+                  className={`h-9 text-sm ${errors.effectiveFromBatch ? 'border-red-500' : ''}`}
+                  placeholder="e.g., 2024"
+                />
+                {errors.effectiveFromBatch && <p className="text-[10px] text-red-500">{errors.effectiveFromBatch}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Effective To Batch</Label>
+                <Input
+                  value={form.effectiveToBatch}
+                  onChange={(e) => updateField('root', 'effectiveToBatch', e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g., 2027"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Duration (Years) <span className="text-red-500">*</span></Label>
+                <Input
+                  type="number"
+                  value={form.duration}
+                  onChange={(e) => updateField('root', 'duration', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.duration ? 'border-red-500' : ''}`}
+                  min={1}
+                  max={8}
+                />
+                {errors.duration && <p className="text-[10px] text-red-500">{errors.duration}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(v: 'active' | 'inactive') => updateField('root', 'status', v)}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  }
+        );
 
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load regulations.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+      case 1: // Credit Structure
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Total Credits <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.creditStructure.totalCredits}
+                  onChange={(e) => updateField('creditStructure', 'totalCredits', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.totalCredits ? 'border-red-500' : ''}`} />
+                {errors.totalCredits && <p className="text-[10px] text-red-500">{errors.totalCredits}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Core Credits</Label>
+                <Input type="number" value={form.creditStructure.coreCredits}
+                  onChange={(e) => updateField('creditStructure', 'coreCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Professional Elective Credits</Label>
+                <Input type="number" value={form.creditStructure.professionalElectiveCredits}
+                  onChange={(e) => updateField('creditStructure', 'professionalElectiveCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Open Elective Credits</Label>
+                <Input type="number" value={form.creditStructure.openElectiveCredits}
+                  onChange={(e) => updateField('creditStructure', 'openElectiveCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Laboratory Credits</Label>
+                <Input type="number" value={form.creditStructure.laboratoryCredits}
+                  onChange={(e) => updateField('creditStructure', 'laboratoryCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Project Credits</Label>
+                <Input type="number" value={form.creditStructure.projectCredits}
+                  onChange={(e) => updateField('creditStructure', 'projectCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Internship Credits</Label>
+                <Input type="number" value={form.creditStructure.internshipCredits}
+                  onChange={(e) => updateField('creditStructure', 'internshipCredits', parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm" />
+              </div>
+            </div>
+            {/* Credit breakdown summary */}
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Sum of sub-credits:</span>
+                <span className="font-semibold text-indigo-600">
+                  {form.creditStructure.coreCredits +
+                    form.creditStructure.professionalElectiveCredits +
+                    form.creditStructure.openElectiveCredits +
+                    form.creditStructure.laboratoryCredits +
+                    form.creditStructure.projectCredits +
+                    form.creditStructure.internshipCredits}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
 
-  const activePrograms = (apiProgramsForReg ?? []).filter(p => p.status === 'ACTIVE');
-  const activeAcademicYears = apiAcademicYearsForReg ?? [];
+      case 2: // Evaluation Scheme
+        const isCGPA = form.evaluationScheme.gradingSystem === 'CGPA Based';
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Internal Marks <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.internalMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'internalMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.internalMarks ? 'border-red-500' : ''}`} />
+                {errors.internalMarks && <p className="text-[10px] text-red-500">{errors.internalMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">External Marks <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.externalMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'externalMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.externalMarks ? 'border-red-500' : ''}`} />
+                {errors.externalMarks && <p className="text-[10px] text-red-500">{errors.externalMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Passing Marks (%) <span className="text-red-500">*</span></Label>
+                <Input type="number" value={form.evaluationScheme.passingMarks}
+                  onChange={(e) => updateField('evaluationScheme', 'passingMarks', parseInt(e.target.value) || 0)}
+                  className={`h-9 text-sm ${errors.passingMarks ? 'border-red-500' : ''}`} />
+                {errors.passingMarks && <p className="text-[10px] text-red-500">{errors.passingMarks}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Grading System <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.evaluationScheme.gradingSystem}
+                  onValueChange={(v) => updateField('evaluationScheme', 'gradingSystem', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.gradingSystem ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select grading system" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CGPA Based" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-3.5 w-3.5" />
+                        CGPA Based
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Percentage Based" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        Percentage Based
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.gradingSystem && <p className="text-[10px] text-red-500">{errors.gradingSystem}</p>}
+              </div>
+              {isCGPA ? (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">CGPA Scale</Label>
+                  <div className="relative">
+                    <Input type="number" value={form.evaluationScheme.cgpaScale}
+                      onChange={(e) => updateField('evaluationScheme', 'cgpaScale', parseInt(e.target.value) || 0)}
+                      className="h-9 text-sm pr-8" min={0} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                      CGPA
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">Maximum CGPA value for the grading scale</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Max Percentage</Label>
+                  <div className="relative">
+                    <Input type="number" value={form.evaluationScheme.maxPercentage}
+                      onChange={(e) => updateField('evaluationScheme', 'maxPercentage', parseInt(e.target.value) || 0)}
+                      className="h-9 text-sm pr-8" min={0} max={100} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">Maximum percentage (typically 100)</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 3: // Internship Requirements
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <Label className="text-xs font-medium">Internship Mandatory</Label>
+                    <p className="text-[10px] text-muted-foreground">Is internship required for graduation?</p>
+                  </div>
+                  <Switch
+                    checked={form.internshipRequirements.internshipMandatory}
+                    onCheckedChange={(v) => updateField('internshipRequirements', 'internshipMandatory', v)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Internship Duration</Label>
+                  <Select
+                    value={form.internshipRequirements.internshipDuration}
+                    onValueChange={(v) => updateField('internshipRequirements', 'internshipDuration', v)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="4 weeks" className="text-xs">4 Weeks</SelectItem>
+                      <SelectItem value="6 weeks" className="text-xs">6 Weeks</SelectItem>
+                      <SelectItem value="8 weeks" className="text-xs">8 Weeks</SelectItem>
+                      <SelectItem value="12 weeks" className="text-xs">12 Weeks</SelectItem>
+                      <SelectItem value="6 months" className="text-xs">6 Months</SelectItem>
+                      <SelectItem value="1 year" className="text-xs">1 Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <Label className="text-xs font-medium">Industry Training Mandatory</Label>
+                    <p className="text-[10px] text-muted-foreground">Is industry training required?</p>
+                  </div>
+                  <Switch
+                    checked={form.internshipRequirements.industryTrainingMandatory}
+                    onCheckedChange={(v) => updateField('internshipRequirements', 'industryTrainingMandatory', v)}
+                  />
+                </div>
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">Internship Credits</p>
+                      <p className="text-[9px] text-amber-600/70 dark:text-amber-500/70">
+                        Internship credits ({form.creditStructure.internshipCredits}) are set in the Credit Structure step.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4: // Project Requirements
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Mini Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a mini project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.miniProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'miniProjectMandatory', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Major Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a major/final year project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.majorProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'majorProjectMandatory', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <Label className="text-xs font-medium">Capstone Project Mandatory</Label>
+                  <p className="text-[10px] text-muted-foreground">Students must complete a capstone project</p>
+                </div>
+                <Switch
+                  checked={form.projectRequirements.capstoneProjectMandatory}
+                  onCheckedChange={(v) => updateField('projectRequirements', 'capstoneProjectMandatory', v)}
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400">Project Credits</p>
+                  <p className="text-[9px] text-indigo-600/70 dark:text-indigo-500/70">
+                    Project credits ({form.creditStructure.projectCredits}) are configured in the Credit Structure step.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 5: // Approvals
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Approved By <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.approvals.approvedBy}
+                  onValueChange={(v) => updateField('approvals', 'approvedBy', v)}
+                >
+                  <SelectTrigger className={`h-9 text-sm ${errors.approvedBy ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select approving body" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academic Council" className="text-xs">Academic Council</SelectItem>
+                    <SelectItem value="Board of Studies" className="text-xs">Board of Studies</SelectItem>
+                    <SelectItem value="Governing Body" className="text-xs">Governing Body</SelectItem>
+                    <SelectItem value="University" className="text-xs">University</SelectItem>
+                    <SelectItem value="IQAC" className="text-xs">IQAC</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.approvedBy && <p className="text-[10px] text-red-500">{errors.approvedBy}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Approval Date <span className="text-red-500">*</span></Label>
+                <DatePicker
+                  value={form.approvals.approvalDate}
+                  onChange={(date) => updateField('approvals', 'approvalDate', date)}
+                  placeholder="Select approval date"
+                  className={`h-9 text-sm w-full ${errors.approvalDate ? 'border-red-500' : ''}`}
+                />
+                {errors.approvalDate && <p className="text-[10px] text-red-500">{errors.approvalDate}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">BoS Approval Reference <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.approvals.bosApproval}
+                  onChange={(e) => updateField('approvals', 'bosApproval', e.target.value)}
+                  className={`h-9 text-sm ${errors.bosApproval ? 'border-red-500' : ''}`}
+                  placeholder="e.g., BoS/2024/02"
+                />
+                {errors.bosApproval && <p className="text-[10px] text-red-500">{errors.bosApproval}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Council Reference <span className="text-red-500">*</span></Label>
+                <Input
+                  value={form.approvals.academicCouncilApproval}
+                  onChange={(e) => updateField('approvals', 'academicCouncilApproval', e.target.value)}
+                  className={`h-9 text-sm ${errors.academicCouncilApproval ? 'border-red-500' : ''}`}
+                  placeholder="e.g., AC/2024/03"
+                />
+                {errors.academicCouncilApproval && <p className="text-[10px] text-red-500">{errors.academicCouncilApproval}</p>}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 6: // Documents / Evidence - Drag & Drop Upload
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Supporting Documents & Evidence</Label>
+              <p className="text-[10px] text-muted-foreground">
+                Upload regulation documents, BoS Minutes, Academic Council approvals, and other supporting evidence.
+              </p>
+            </div>
+
+            {/* Drag & Drop Zone */}
+            <div
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={handleKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-label="Upload supporting documents. Click or drag and drop files here."
+              className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer outline-none
+                ${dragActive
+                  ? 'border-primary bg-primary/5 scale-[1.01] shadow-lg ring-2 ring-primary/20'
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary/40'
+                }
+                ${form.documents.length > 0 ? 'py-6' : 'py-12'}
+                px-6`}
+            >
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPTED_FILE_TYPES}
+                onChange={handleFileBrowse}
+                className="hidden"
+              />
+
+              {/* Upload icon & text */}
+              <div className={`flex flex-col items-center gap-2 transition-all ${form.documents.length > 0 ? 'scale-90' : ''}`}>
+                <div className={`p-3 rounded-full transition-all duration-200
+                  ${dragActive
+                    ? 'bg-primary/20 text-primary scale-110'
+                    : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {dragActive ? (
+                    <UploadCloud className="h-8 w-8" />
+                  ) : (
+                    <Upload className="h-8 w-8" />
+                  )}
+                </div>
+                <div className="text-center">
+                  {dragActive ? (
+                    <p className="text-sm font-semibold text-primary">Drop files here</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium">
+                        <span className="text-primary">Click to browse</span> or drag & drop
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        DOC, DOCX, PDF, PNG, JPG, JPEG, GIF, SVG, XLSX, PPT, TXT, ZIP
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">
+                    Uploaded Documents ({uploadedFiles.length})
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatFileSize(uploadedFiles.reduce((sum, f) => sum + f.size, 0))} total
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {uploadedFiles.map((file) => {
+                    const FileIcon = getFileIcon(file.type);
+                    const ext = file.name.split('.').pop()?.toUpperCase() || '';
+                    return (
+                      <div
+                        key={file.name}
+                        className="group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:shadow-sm transition-all"
+                      >
+                        {/* File type icon with extension badge */}
+                        <div className="relative">
+                          <div className="w-9 h-9 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                            <FileIcon className="h-4 w-4" />
+                          </div>
+                          <span className="absolute -bottom-1.5 -right-1.5 text-[7px] font-bold bg-primary/10 text-primary px-1 py-0 rounded">
+                            {ext}
+                          </span>
+                        </div>
+
+                        {/* File details */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{file.name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {file.size > 0 ? formatFileSize(file.size) : 'Document'}
+                          </p>
+                        </div>
+
+                        {/* Remove button */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemoveFile(file.name); }}
+                          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                          title="Remove file"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state hint */}
+            {uploadedFiles.length === 0 && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">Supported Formats</p>
+                  <p className="text-[9px] text-amber-600/70 dark:text-amber-500/70 mt-0.5">
+                    Upload documents such as Regulation Book (PDF/DOCX), Academic Council Approval, 
+                    Board of Studies Minutes, Credit Structure Document, and other supporting evidence.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Academic Regulations</h3>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Regulation
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add Academic Regulation</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Basic Information</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Regulation Code *</Label>
-                    <Input
-                      placeholder="e.g., R24"
-                      value={formCode}
-                      onChange={e => setFormCode(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regulation Name *</Label>
-                    <Input
-                      placeholder="e.g., Regulation 2024"
-                      value={formName}
-                      onChange={e => setFormName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Program *</Label>
-                    <Select value={formProgramId} onValueChange={setFormProgramId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activePrograms.map(p => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Academic Year Introduced *</Label>
-                    <Select
-                      value={formAcademicYearIntroduced}
-                      onValueChange={setFormAcademicYearIntroduced}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activeAcademicYears.map(y => (
-                          <SelectItem key={y.id} value={y.year}>
-                            {y.year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Effective From Batch *</Label>
-                    <Input
-                      placeholder="e.g., 2024"
-                      value={formEffFromBatch}
-                      onChange={e => setFormEffFromBatch(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Effective To Batch</Label>
-                    <Input
-                      placeholder="e.g., 2027"
-                      value={formEffToBatch}
-                      onChange={e => setFormEffToBatch(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Duration (Years) *</Label>
-                    <Input
-                      type="number"
-                      placeholder="e.g., 4"
-                      value={formDuration}
-                      onChange={e => setFormDuration(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={formStatus}
-                      onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ACTIVE">Active</SelectItem>
-                        <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Total Credits</Label>
-                    <Input
-                      type="number"
-                      value={formTotalCredits}
-                      onChange={e => setFormTotalCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Core Credits</Label>
-                    <Input
-                      type="number"
-                      value={formCoreCredits}
-                      onChange={e => setFormCoreCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Professional Elective Credits</Label>
-                    <Input
-                      type="number"
-                      value={formProfElectiveCredits}
-                      onChange={e => setFormProfElectiveCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Open Elective Credits</Label>
-                    <Input
-                      type="number"
-                      value={formOpenElectiveCredits}
-                      onChange={e => setFormOpenElectiveCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Laboratory Credits</Label>
-                    <Input
-                      type="number"
-                      value={formLabCredits}
-                      onChange={e => setFormLabCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Project Credits</Label>
-                    <Input
-                      type="number"
-                      value={formProjectCredits}
-                      onChange={e => setFormProjectCredits(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Internship Credits</Label>
-                    <Input
-                      type="number"
-                      value={formInternshipCredits}
-                      onChange={e => setFormInternshipCredits(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Internal Marks</Label>
-                    <Input
-                      type="number"
-                      value={formInternalMarks}
-                      onChange={e => setFormInternalMarks(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>External Marks</Label>
-                    <Input
-                      type="number"
-                      value={formExternalMarks}
-                      onChange={e => setFormExternalMarks(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passing Marks</Label>
-                    <Input
-                      type="number"
-                      value={formPassingMarks}
-                      onChange={e => setFormPassingMarks(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Grading System</Label>
-                    <Input
-                      placeholder="e.g., CGPA Based"
-                      value={formGradingSystem}
-                      onChange={e => setFormGradingSystem(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CGPA Scale</Label>
-                    <Input
-                      type="number"
-                      value={formCgpaScale}
-                      onChange={e => setFormCgpaScale(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Mandatory Requirements</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="flex items-center justify-between p-2 rounded-lg border">
-                    <Label className="text-xs">Internship Mandatory</Label>
-                    <Switch
-                      checked={formInternshipMandatory}
-                      onCheckedChange={setFormInternshipMandatory}
-                      className="scale-75"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg border">
-                    <Label className="text-xs">Industry Training</Label>
-                    <Switch
-                      checked={formIndustryTraining}
-                      onCheckedChange={setFormIndustryTraining}
-                      className="scale-75"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg border">
-                    <Label className="text-xs">Mini Project</Label>
-                    <Switch
-                      checked={formMiniProject}
-                      onCheckedChange={setFormMiniProject}
-                      className="scale-75"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg border">
-                    <Label className="text-xs">Major Project</Label>
-                    <Switch
-                      checked={formMajorProject}
-                      onCheckedChange={setFormMajorProject}
-                      className="scale-75"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg border">
-                    <Label className="text-xs">Capstone Project</Label>
-                    <Switch
-                      checked={formCapstoneProject}
-                      onCheckedChange={setFormCapstoneProject}
-                      className="scale-75"
-                    />
-                  </div>
-                </div>
-                {formInternshipMandatory && (
-                  <div className="mt-3">
-                    <Label>Internship Duration</Label>
-                    <Input
-                      placeholder="e.g., 8 weeks"
-                      value={formInternshipDuration}
-                      onChange={e => setFormInternshipDuration(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Approvals</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Approved By</Label>
-                    <Input
-                      placeholder="e.g., Academic Council"
-                      value={formApprovedBy}
-                      onChange={e => setFormApprovedBy(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Approval Date</Label>
-                    <Input
-                      type="date"
-                      value={formApprovalDate}
-                      onChange={e => setFormApprovalDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>BoS Approval</Label>
-                    <Input
-                      placeholder="e.g., Approved - BoS/2024/02"
-                      value={formBosApproval}
-                      onChange={e => setFormBosApproval(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Academic Council Approval</Label>
-                    <Input
-                      placeholder="e.g., Approved - AC/2024/03"
-                      value={formAcademicCouncilApproval}
-                      onChange={e => setFormAcademicCouncilApproval(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-semibold mb-3">Documents</h4>
-                <div className="space-y-2">
-                  <Label>Document References</Label>
-                  <Input
-                    placeholder="Comma-separated document names"
-                    value={formDocuments}
-                    onChange={e => setFormDocuments(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter comma-separated document names
-                  </p>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add Regulation'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Regulation
+        </Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -2174,144 +1761,186 @@ const AcademicRegulationsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {!apiRegulations || apiRegulations.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                  No regulations found. Click "Add Regulation" to create one.
+            {regs.map((reg) => (
+              <tr key={reg.id} className="border-t hover:bg-muted/30">
+                <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
+                <td className="py-3 px-4">{reg.regulationName}</td>
+                <td className="py-3 px-4">{reg.program}</td>
+                <td className="py-3 px-4 text-center text-xs">{reg.effectiveFromBatch} - {reg.effectiveToBatch}</td>
+                <td className="py-3 px-4 text-center">{reg.creditStructure.totalCredits}</td>
+                <td className="py-3 px-4 text-center">
+                  <Badge variant={reg.status === 'active' ? 'default' : 'secondary'}>{reg.status}</Badge>
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewReg(reg)} title="View details">
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditDialog(reg)} title="Edit regulation">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirm(reg.id)} title="Delete regulation">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
-            ) : (
-              apiRegulations.map(reg => (
-                <tr key={reg.id} className="border-t hover:bg-muted/30">
-                  <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
-                  <td className="py-3 px-4">{reg.regulationName}</td>
-                  <td className="py-3 px-4">{reg.programName}</td>
-                  <td className="py-3 px-4 text-center text-xs">
-                    {reg.effectiveFromBatch}
-                    {reg.effectiveToBatch ? ` - ${reg.effectiveToBatch}` : ''}
-                  </td>
-                  <td className="py-3 px-4 text-center">{reg.totalCredits}</td>
-                  <td className="py-3 px-4 text-center">
-                    <Badge variant={reg.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                      {reg.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Switch
-                        checked={reg.status === 'ACTIVE'}
-                        onCheckedChange={() => handleToggle(String(reg.id))}
-                        disabled={toggleMutation.isPending}
-                        className="scale-75"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => setViewReg(reg)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Regulation</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete this regulation? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Multi-Step Add/Edit Wizard Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingId(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh]">
+          <DialogHeader className="pb-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">
+                {editingId ? `Edit Regulation: ${form.regulationCode || form.regulationName || 'New'}` : 'Add Academic Regulation'}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-1 px-1 py-3 overflow-x-auto">
+            {REGULATION_STEPS.map((step, idx) => {
+              const StepIcon = step.icon;
+              const isActive = currentStep === idx;
+              const isCompleted = idx < currentStep;
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => { if (idx < currentStep || validateStep(currentStep)) setCurrentStep(idx); }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all
+                    ${isActive
+                      ? 'bg-primary/10 text-primary font-semibold shadow-sm'
+                      : isCompleted
+                        ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30'
+                        : 'text-muted-foreground/50'
+                    }`}
+                >
+                  <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold
+                    ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground/50'}`}
+                  >
+                    {isCompleted ? <Check className="h-3 w-3" /> : idx + 1}
+                  </span>
+                  <span className="hidden sm:inline">{step.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Current Step Title & Description */}
+          <div className="px-1">
+            <div className="flex items-center gap-2">
+              {(() => {
+                const Icon = REGULATION_STEPS[currentStep].icon;
+                return <Icon className="h-4 w-4 text-primary" />;
+              })()}
+              <div>
+                <h4 className="text-sm font-semibold">{REGULATION_STEPS[currentStep].label}</h4>
+                <p className="text-[10px] text-muted-foreground">{REGULATION_STEPS[currentStep].description}</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Scrollable form content */}
+          <div className="overflow-y-auto px-1" style={{ maxHeight: '50vh' }}>
+            {renderStepContent()}
+          </div>
+
+          <Separator />
+
+          {/* Navigation Footer */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs gap-1"
+              onClick={handlePrev}
+              disabled={currentStep === 0}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingId(null); }}>
+                Cancel
+              </Button>
+              {currentStep === REGULATION_STEPS.length - 1 ? (
+                <Button size="sm" className="h-8 text-xs gap-1" onClick={handleSave}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {editingId ? 'Update Regulation' : 'Create Regulation'}
+                </Button>
+              ) : (
+                <Button size="sm" className="h-8 text-xs gap-1" onClick={handleNext}>
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* View Regulation Dialog */}
       <Dialog open={!!viewReg} onOpenChange={() => setViewReg(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {viewReg?.regulationCode} - {viewReg?.regulationName}
-            </DialogTitle>
+            <DialogTitle>{viewReg?.regulationCode} - {viewReg?.regulationName}</DialogTitle>
           </DialogHeader>
           {viewReg && (
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Program</Label>
-                  <p className="text-sm font-medium">{viewReg.programName}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Duration</Label>
-                  <p className="text-sm font-medium">{viewReg.duration} Years</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Effective Batch</Label>
-                  <p className="text-sm font-medium">
-                    {viewReg.effectiveFromBatch}
-                    {viewReg.effectiveToBatch ? ` - ${viewReg.effectiveToBatch}` : ''}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Status</Label>
-                  <Badge variant={viewReg.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                    {viewReg.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
+                <div><Label className="text-xs text-muted-foreground">Program</Label><p className="text-sm font-medium">{viewReg.program}</p></div>
+                <div><Label className="text-xs text-muted-foreground">Duration</Label><p className="text-sm font-medium">{viewReg.duration} Years</p></div>
+                <div><Label className="text-xs text-muted-foreground">Effective Batch</Label><p className="text-sm font-medium">{viewReg.effectiveFromBatch} - {viewReg.effectiveToBatch}</p></div>
+                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant={viewReg.status === 'active' ? 'default' : 'secondary'}>{viewReg.status}</Badge></div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Credit Structure</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Total Credits</p>
-                    <p className="text-lg font-bold">{viewReg.totalCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Core</p>
-                    <p className="text-lg font-bold">{viewReg.coreCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Prof. Elective</p>
-                    <p className="text-lg font-bold">{viewReg.professionalElectiveCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Open Elective</p>
-                    <p className="text-lg font-bold">{viewReg.openElectiveCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Laboratory</p>
-                    <p className="text-lg font-bold">{viewReg.laboratoryCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Project</p>
-                    <p className="text-lg font-bold">{viewReg.projectCredits}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Internship</p>
-                    <p className="text-lg font-bold">{viewReg.internshipCredits}</p>
-                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Total Credits</p><p className="text-lg font-bold">{viewReg.creditStructure.totalCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Core</p><p className="text-lg font-bold">{viewReg.creditStructure.coreCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Prof. Elective</p><p className="text-lg font-bold">{viewReg.creditStructure.professionalElectiveCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Open Elective</p><p className="text-lg font-bold">{viewReg.creditStructure.openElectiveCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Laboratory</p><p className="text-lg font-bold">{viewReg.creditStructure.laboratoryCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Project</p><p className="text-lg font-bold">{viewReg.creditStructure.projectCredits}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internship</p><p className="text-lg font-bold">{viewReg.creditStructure.internshipCredits}</p></div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Evaluation Scheme</h4>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Internal</p>
-                    <p className="text-lg font-bold">{viewReg.internalMarks}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">External</p>
-                    <p className="text-lg font-bold">{viewReg.externalMarks}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Passing</p>
-                    <p className="text-lg font-bold">{viewReg.passingMarks}%</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Grading</p>
-                    <p className="text-sm font-bold">{viewReg.gradingSystem}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">CGPA Scale</p>
-                    <p className="text-lg font-bold">{viewReg.cgpaScale}</p>
-                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Internal</p><p className="text-lg font-bold">{viewReg.evaluationScheme.internalMarks}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">External</p><p className="text-lg font-bold">{viewReg.evaluationScheme.externalMarks}</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Passing</p><p className="text-lg font-bold">{viewReg.evaluationScheme.passingMarks}%</p></div>
+                  <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Grading</p><p className="text-sm font-bold">{viewReg.evaluationScheme.gradingSystem}</p></div>
+                  {viewReg.evaluationScheme.gradingSystem === 'CGPA Based' ? (
+                    <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">CGPA Scale</p><p className="text-lg font-bold">{viewReg.evaluationScheme.cgpaScale}</p></div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Max Percentage</p><p className="text-lg font-bold">{viewReg.evaluationScheme.maxPercentage}%</p></div>
+                  )}
                 </div>
               </div>
               <Separator />
@@ -2319,47 +1948,17 @@ const AcademicRegulationsTab = () => {
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Internship Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Internship Mandatory</span>
-                      <Badge variant={viewReg.internshipMandatory ? 'default' : 'secondary'}>
-                        {viewReg.internshipMandatory ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                    {viewReg.internshipDuration && (
-                      <div className="flex justify-between text-sm">
-                        <span>Duration</span>
-                        <span className="font-medium">{viewReg.internshipDuration}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span>Industry Training</span>
-                      <Badge variant={viewReg.industryTrainingMandatory ? 'default' : 'secondary'}>
-                        {viewReg.industryTrainingMandatory ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
+                    <div className="flex justify-between text-sm"><span>Internship Mandatory</span><Badge variant={viewReg.internshipRequirements.internshipMandatory ? 'default' : 'secondary'}>{viewReg.internshipRequirements.internshipMandatory ? 'Yes' : 'No'}</Badge></div>
+                    {viewReg.internshipRequirements.internshipDuration && <div className="flex justify-between text-sm"><span>Duration</span><span className="font-medium">{viewReg.internshipRequirements.internshipDuration}</span></div>}
+                    <div className="flex justify-between text-sm"><span>Industry Training</span><Badge variant={viewReg.internshipRequirements.industryTrainingMandatory ? 'default' : 'secondary'}>{viewReg.internshipRequirements.industryTrainingMandatory ? 'Yes' : 'No'}</Badge></div>
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Project Requirements</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Mini Project</span>
-                      <Badge variant={viewReg.miniProjectMandatory ? 'default' : 'secondary'}>
-                        {viewReg.miniProjectMandatory ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Major Project</span>
-                      <Badge variant={viewReg.majorProjectMandatory ? 'default' : 'secondary'}>
-                        {viewReg.majorProjectMandatory ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Capstone Project</span>
-                      <Badge variant={viewReg.capstoneProjectMandatory ? 'default' : 'secondary'}>
-                        {viewReg.capstoneProjectMandatory ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
+                    <div className="flex justify-between text-sm"><span>Mini Project</span><Badge variant={viewReg.projectRequirements.miniProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.miniProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Major Project</span><Badge variant={viewReg.projectRequirements.majorProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.majorProjectMandatory ? 'Yes' : 'No'}</Badge></div>
+                    <div className="flex justify-between text-sm"><span>Capstone Project</span><Badge variant={viewReg.projectRequirements.capstoneProjectMandatory ? 'default' : 'secondary'}>{viewReg.projectRequirements.capstoneProjectMandatory ? 'Yes' : 'No'}</Badge></div>
                   </div>
                 </div>
               </div>
@@ -2367,38 +1966,22 @@ const AcademicRegulationsTab = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-3">Approvals</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Approved By</Label>
-                    <p className="text-sm font-medium">{viewReg.approvedBy || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Approval Date</Label>
-                    <p className="text-sm font-medium">{viewReg.approvalDate || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">BoS Approval</Label>
-                    <p className="text-sm font-medium">{viewReg.bosApproval || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Academic Council</Label>
-                    <p className="text-sm font-medium">{viewReg.academicCouncilApproval || '-'}</p>
-                  </div>
+                  <div><Label className="text-xs text-muted-foreground">Approved By</Label><p className="text-sm font-medium">{viewReg.approvals.approvedBy}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Approval Date</Label><p className="text-sm font-medium">{viewReg.approvals.approvalDate}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">BoS Approval</Label><p className="text-sm font-medium">{viewReg.approvals.bosApproval}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Academic Council</Label><p className="text-sm font-medium">{viewReg.approvals.academicCouncilApproval}</p></div>
                 </div>
               </div>
               <Separator />
               <div>
                 <h4 className="text-sm font-semibold mb-3">Documents</h4>
                 <div className="flex flex-wrap gap-2">
-                  {viewReg.documents ? (
-                    viewReg.documents.split(',').map((doc, i) => (
-                      <Badge key={i} variant="outline" className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        {doc.trim()}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No documents attached</p>
-                  )}
+                  {viewReg.documents.map((doc) => (
+                    <Badge key={doc} variant="outline" className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      {doc}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2409,366 +1992,187 @@ const AcademicRegulationsTab = () => {
   );
 };
 
-// Program Offerings Tab
+// ============================================================
+// PROGRAM OFFERINGS TAB
+// ============================================================
+
+/** Generate the offering name: Program + Department + Specialization + Academic Year + Regulation */
+const generateOfferingName = (
+  programName: string,
+  deptCode: string,
+  specName: string,
+  acYear: string,
+  regCode: string
+): string => {
+  const parts = [programName, deptCode];
+  if (specName && specName !== 'None') parts.push(getShortSpecName(specName));
+  parts.push(acYear, regCode);
+  return parts.join(' ');
+};
+
+/** Shorten specialization names for display */
+function getShortSpecName(name: string): string {
+  const map: Record<string, string> = {
+    'Artificial Intelligence': 'AI',
+    'Data Science': 'DS',
+    'Cyber Security': 'CS',
+    'Internet of Things': 'IoT',
+    'Cloud Computing': 'CC',
+    'Machine Learning': 'ML',
+    'VLSI': 'VLSI',
+    'Embedded Systems': 'ES',
+    'Communication Systems': 'CS',
+    'Robotics': 'Robotics',
+    'Thermal Engineering': 'Thermal',
+  };
+  return map[name] || name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 4);
+}
+
 const ProgramOfferingsTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [offerings, setOfferings] = useState<ProgramOffering[]>(programOfferings);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [filterYearId, setFilterYearId] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
 
-  // ── Form state ──
-  const [formAcademicYearId, setFormAcademicYearId] = useState('');
-  const [formProgramId, setFormProgramId] = useState('');
-  const [formDepartmentId, setFormDepartmentId] = useState('');
-  const [formSpecializationId, setFormSpecializationId] = useState('');
-  const [formRegulationId, setFormRegulationId] = useState('');
-  const [formDuration, setFormDuration] = useState('');
-  const [formGeneratedName, setFormGeneratedName] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-
-  // ── Determine the academicYearId to pass as a query param ──
-  const filterAcademicYearId = filterYearId === 'all' ? undefined : Number(filterYearId);
-
-  // ── Query: fetch all program offerings ──
-  const {
-    data: apiOfferings,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<ProgramOfferingApiResponse[]>({
-    queryKey: ['programOfferings', filterAcademicYearId],
-    queryFn: () =>
-      institutionAdminService.getProgramOfferings({
-        academicYearId: filterAcademicYearId,
-      }),
-    enabled: isAuthenticated,
+  // Form state for add/edit
+  const [offeringForm, setOfferingForm] = useState({
+    academicYearId: '',
+    programId: '',
+    departmentId: '',
+    specializationId: '',
+    regulationId: '',
+    duration: 4,
   });
+  const [editingOfferingId, setEditingOfferingId] = useState<string | null>(null);
+  const [deleteConfirmOffering, setDeleteConfirmOffering] = useState<string | null>(null);
+  const [viewOffering, setViewOffering] = useState<ProgramOffering | null>(null);
 
-  // ── Queries for dropdown data (only when dialog is open) ──
-  const { data: apiYearsForOffering } = useQuery<AcademicYearApiResponse[]>({
-    queryKey: ['academicYears'],
-    queryFn: () => institutionAdminService.getAcademicYears(),
-    enabled: showAddDialog,
-  });
+  const filtered = filterYear === 'all'
+    ? offerings
+    : offerings.filter((o) => o.academicYear === filterYear);
 
-  const { data: apiProgramsForOffering } = useQuery<ProgramApiResponse[]>({
-    queryKey: ['programs'],
-    queryFn: () => institutionAdminService.getPrograms(),
-    enabled: showAddDialog,
-  });
+  // Resolve IDs to display names for the generated name preview
+  const selectedYear = academicYears.find((y) => y.id === offeringForm.academicYearId);
+  const selectedProgram = masterPrograms.find((p) => p.id === offeringForm.programId);
+  const selectedDept = departments.find((d) => d.id === offeringForm.departmentId);
+  const selectedSpec = specializations.find((s) => s.id === offeringForm.specializationId);
+  const selectedReg = academicRegulations.find((r) => r.id === offeringForm.regulationId);
 
-  const { data: apiDeptsForOffering } = useQuery<DepartmentApiResponse[]>({
-    queryKey: ['departments'],
-    queryFn: () => institutionAdminService.getDepartments(),
-    enabled: showAddDialog,
-  });
+  const previewName = generateOfferingName(
+    selectedProgram?.name || '',
+    selectedDept?.code || '',
+    selectedSpec?.name || '',
+    selectedYear?.year || '',
+    selectedReg?.regulationCode || ''
+  );
 
-  const { data: apiSpecsForOffering } = useQuery<SpecializationApiResponse[]>({
-    queryKey: ['specializations'],
-    queryFn: () => institutionAdminService.getSpecializations(),
-    enabled: showAddDialog,
-  });
-
-  const { data: apiRegsForOffering } = useQuery<RegulationApiResponse[]>({
-    queryKey: ['regulations'],
-    queryFn: () => institutionAdminService.getRegulations(),
-    enabled: showAddDialog,
-  });
-
-  // ── Mutation: create program offering ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateProgramOfferingRequest) =>
-      institutionAdminService.createProgramOffering(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programOfferings'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Program offering created successfully');
-    },
-    onError: () => {
-      toast.error('Failed to create program offering');
-    },
-  });
-
-  // ── Mutation: delete program offering ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteProgramOffering(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programOfferings'] });
-      toast.success('Program offering deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete program offering');
-    },
-  });
-
-  const resetForm = () => {
-    setFormAcademicYearId('');
-    setFormProgramId('');
-    setFormDepartmentId('');
-    setFormSpecializationId('');
-    setFormRegulationId('');
-    setFormDuration('');
-    setFormGeneratedName('');
-    setFormStatus('ACTIVE');
+  const openAddDialog = () => {
+    setOfferingForm({ academicYearId: '', programId: '', departmentId: '', specializationId: '', regulationId: '', duration: 4 });
+    setEditingOfferingId(null);
+    setShowAddDialog(true);
   };
 
-  const handleCreate = () => {
-    if (
-      !formAcademicYearId ||
-      !formProgramId ||
-      !formDepartmentId ||
-      !formRegulationId ||
-      !formDuration
-    ) {
+  const openEditDialog = (offering: ProgramOffering) => {
+    setOfferingForm({
+      academicYearId: offering.academicYearId,
+      programId: offering.programId,
+      departmentId: offering.departmentId,
+      specializationId: offering.specializationId,
+      regulationId: offering.regulationId,
+      duration: offering.duration,
+    });
+    setEditingOfferingId(offering.id);
+    setShowAddDialog(true);
+  };
+
+  const handleSaveOffering = () => {
+    const { academicYearId, programId, departmentId, specializationId, regulationId, duration } = offeringForm;
+    if (!academicYearId || !programId || !departmentId || !regulationId) {
       toast.error('Please fill in all required fields');
       return;
     }
-    createMutation.mutate({
-      academicYearId: Number(formAcademicYearId),
-      programId: Number(formProgramId),
-      departmentId: Number(formDepartmentId),
-      specializationId: formSpecializationId ? Number(formSpecializationId) : 0,
-      regulationId: Number(formRegulationId),
-      duration: Number(formDuration),
-      generatedName: formGeneratedName || autoName,
-      status: formStatus,
-    });
-  };
 
-  const handleDelete = (id: string) => {
-    const offering = apiOfferings?.find(o => String(o.id) === id);
-    if (offering) {
-      deleteMutation.mutate(offering.id);
+    const year = academicYears.find((y) => y.id === academicYearId);
+    const prog = masterPrograms.find((p) => p.id === programId);
+    const dept = departments.find((d) => d.id === departmentId);
+    const spec = specializations.find((s) => s.id === specializationId);
+    const reg = academicRegulations.find((r) => r.id === regulationId);
+
+    if (!year || !prog || !dept || !reg) return;
+
+    const newName = generateOfferingName(prog.name, dept.code, spec?.name || '', year.year, reg.regulationCode);
+
+    // Check duplicate
+    const exists = offerings.find((o) =>
+      o.generatedName === newName && (editingOfferingId ? o.id !== editingOfferingId : true)
+    );
+    if (exists) {
+      toast.error('A program offering with this combination already exists');
+      return;
     }
+
+    const offering: ProgramOffering = {
+      id: editingOfferingId || `OFF-${String(Date.now()).slice(-3)}`,
+      academicYear: year.year,
+      academicYearId,
+      program: prog.name,
+      programId,
+      department: dept.code,
+      departmentId,
+      specialization: spec?.name || '',
+      specializationId,
+      regulation: reg.regulationCode,
+      regulationId,
+      duration,
+      status: 'active' as const,
+      generatedName: newName,
+    };
+
+    setOfferings((prev) => {
+      const idx = prev.findIndex((o) => o.id === offering.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = offering;
+        return updated;
+      }
+      return [offering, ...prev];
+    });
+
+    setShowAddDialog(false);
+    setEditingOfferingId(null);
+    toast.success(editingOfferingId ? 'Offering updated' : 'Offering created');
   };
 
-  // Auto-generate name when program, department, specialization, and regulation are selected
-  const selectedProgram = apiProgramsForOffering?.find(p => String(p.id) === formProgramId);
-  const selectedDept = apiDeptsForOffering?.find(d => String(d.id) === formDepartmentId);
-  const selectedSpec = apiSpecsForOffering?.find(s => String(s.id) === formSpecializationId);
-  const selectedReg = apiRegsForOffering?.find(r => String(r.id) === formRegulationId);
-  const autoName = [
-    selectedProgram?.name,
-    selectedDept?.code,
-    selectedSpec?.name,
-    selectedReg?.regulationCode,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <div className="rounded-lg border">
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-8 ml-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load program offerings.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  const handleDeleteOffering = (id: string) => {
+    setOfferings((prev) => prev.filter((o) => o.id !== id));
+    setDeleteConfirmOffering(null);
+    toast.success('Offering deleted');
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Program Offerings</h3>
-          <Select value={filterYearId} onValueChange={setFilterYearId}>
+          <Select value={filterYear} onValueChange={setFilterYear}>
             <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Filter year" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {(apiYearsForOffering ?? []).map(y => (
-                <SelectItem key={y.id} value={String(y.id)}>
-                  {y.year}
-                </SelectItem>
+              {academicYears.map((y) => (
+                <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Offering
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Program Offering</DialogTitle>
-            </DialogHeader>
-            <p className="text-xs text-muted-foreground mb-4">
-              A Program Offering combines: Program + Department + Specialization + Regulation
-            </p>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Academic Year *</Label>
-                <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiYearsForOffering ?? []).map(y => (
-                      <SelectItem key={y.id} value={String(y.id)}>
-                        {y.year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Program *</Label>
-                <Select value={formProgramId} onValueChange={setFormProgramId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiProgramsForOffering ?? [])
-                      .filter(p => p.status === 'ACTIVE')
-                      .map(p => (
-                        <SelectItem key={p.id} value={String(p.id)}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Department *</Label>
-                <Select value={formDepartmentId} onValueChange={setFormDepartmentId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiDeptsForOffering ?? [])
-                      .filter(d => d.status === 'ACTIVE')
-                      .map(d => (
-                        <SelectItem key={d.id} value={String(d.id)}>
-                          {d.code} - {d.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Specialization</Label>
-                <Select value={formSpecializationId} onValueChange={setFormSpecializationId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiSpecsForOffering ?? [])
-                      .filter(s => s.status === 'ACTIVE')
-                      .map(s => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Regulation *</Label>
-                <Select value={formRegulationId} onValueChange={setFormRegulationId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiRegsForOffering ?? [])
-                      .filter(r => r.status === 'ACTIVE')
-                      .map(r => (
-                        <SelectItem key={r.id} value={String(r.id)}>
-                          {r.regulationCode} - {r.regulationName}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (Years) *</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g., 4"
-                  value={formDuration}
-                  onChange={e => setFormDuration(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Generated Name</Label>
-                <Input
-                  placeholder="Auto-generated or specify manually"
-                  value={formGeneratedName || autoName}
-                  onChange={e => setFormGeneratedName(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Auto-generated: <strong>{autoName}</strong>
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating…' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Offering
+        </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        No duplicate program offerings allowed. Only active masters can be selected.
+        Generated name format: Program + Department + Specialization + Academic Year + Regulation
       </p>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -2787,380 +2191,459 @@ const ProgramOfferingsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {!apiOfferings || apiOfferings.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                  No program offerings found. Click "Create Offering" to create one.
+                <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
+                  No program offerings found
                 </td>
               </tr>
             ) : (
-              apiOfferings.map(offering => {
-                const academicYear = apiYearsForOffering?.find(
-                  y => y.id === offering.academicYearId
-                );
-                return (
-                  <tr key={offering.id} className="border-t hover:bg-muted/30">
-                    <td className="py-3 px-4 font-semibold text-primary">
-                      {offering.generatedName}
-                    </td>
-                    <td className="py-3 px-4">{academicYear?.year ?? offering.academicYearId}</td>
-                    <td className="py-3 px-4">{offering.program}</td>
-                    <td className="py-3 px-4">{offering.department}</td>
-                    <td className="py-3 px-4">{offering.specialization || '-'}</td>
-                    <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
-                    <td className="py-3 px-4 text-center">{offering.durationYears}Y</td>
-                    <td className="py-3 px-4 text-center">
-                      <Badge variant={offering.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {offering.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Program Offering</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete{' '}
-                              <strong>{offering.generatedName}</strong>? This action cannot be
-                              undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(String(offering.id))}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </td>
-                  </tr>
-                );
-              })
+              filtered.map((offering) => (
+                <tr key={offering.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
+                  <td className="py-3 px-4">{offering.academicYear}</td>
+                  <td className="py-3 px-4">{offering.program}</td>
+                  <td className="py-3 px-4">{offering.department}</td>
+                  <td className="py-3 px-4">{offering.specialization || '-'}</td>
+                  <td className="py-3 px-4 font-mono text-xs">{offering.regulation}</td>
+                  <td className="py-3 px-4 text-center">{offering.duration}Y</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={offering.status === 'active' ? 'default' : 'secondary'}>{offering.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewOffering(offering)} title="View details">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditDialog(offering)} title="Edit offering">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirmOffering(offering.id)} title="Delete offering">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Add/Edit Offering Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingOfferingId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{editingOfferingId ? 'Edit Program Offering' : 'Create Program Offering'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Academic Year *</Label>
+                <Select
+                  value={offeringForm.academicYearId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, academicYearId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((y) => (
+                      <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Program *</Label>
+                <Select
+                  value={offeringForm.programId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, programId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Department *</Label>
+                <Select
+                  value={offeringForm.departmentId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, departmentId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.filter((d) => d.status === 'active').map((d) => (
+                      <SelectItem key={d.id} value={d.id} className="text-xs">{d.code} - {d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Specialization</Label>
+                <Select
+                  value={offeringForm.specializationId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, specializationId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specializations.filter((s) => s.status === 'active').map((s) => (
+                      <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Regulation *</Label>
+                <Select
+                  value={offeringForm.regulationId}
+                  onValueChange={(v) => setOfferingForm((f) => ({ ...f, regulationId: v }))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicRegulations.filter((r) => r.status === 'active').map((r) => (
+                      <SelectItem key={r.id} value={r.id} className="text-xs">{r.regulationCode} - {r.regulationName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Duration (Years) *</Label>
+                <Input type="number" value={offeringForm.duration}
+                  onChange={(e) => setOfferingForm((f) => ({ ...f, duration: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" min={1} max={8} />
+              </div>
+            </div>
+
+            {/* Generated Name Preview */}
+            {previewName && (
+              <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                <div className="flex items-center gap-2">
+                  <Combine className="h-4 w-4 text-indigo-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-medium text-indigo-700 dark:text-indigo-400">Generated Name Preview</p>
+                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-300">{previewName}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingOfferingId(null); }}>Cancel</Button>
+            <Button size="sm" className="h-8 text-xs" onClick={handleSaveOffering}>
+              {editingOfferingId ? 'Update Offering' : 'Create Offering'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Offering Dialog */}
+      <Dialog open={!!viewOffering} onOpenChange={() => setViewOffering(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{viewOffering?.generatedName}</DialogTitle>
+          </DialogHeader>
+          {viewOffering && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Program</p>
+                  <p className="text-sm font-semibold">{viewOffering.program}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Academic Year</p>
+                  <p className="text-sm font-semibold">{viewOffering.academicYear}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Department</p>
+                  <p className="text-sm font-semibold">{viewOffering.department}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Specialization</p>
+                  <p className="text-sm font-semibold">{viewOffering.specialization || '-'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Regulation</p>
+                  <p className="text-sm font-semibold">{viewOffering.regulation}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Duration</p>
+                  <p className="text-sm font-semibold">{viewOffering.duration} Years</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-[10px] text-muted-foreground">Status</p>
+                  <Badge variant={viewOffering.status === 'active' ? 'default' : 'secondary'}>{viewOffering.status}</Badge>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirmOffering} onOpenChange={() => setDeleteConfirmOffering(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Program Offering</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete this program offering? Associated intake records may be affected.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOffering(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirmOffering && handleDeleteOffering(deleteConfirmOffering)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}; // Program Intake Tab
+};
+
+// ============================================================
+// PROGRAM INTAKE TAB
+// ============================================================
+
 const ProgramIntakeTab = () => {
-  const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const [intakes, setIntakes] = useState<ProgramIntake[]>(programIntakes);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [filterYearId, setFilterYearId] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
+  const [editingIntakeId, setEditingIntakeId] = useState<string | null>(null);
+  const [deleteConfirmIntake, setDeleteConfirmIntake] = useState<string | null>(null);
 
-  // ── Form state ──
-  const [formAcademicYearId, setFormAcademicYearId] = useState('');
-  const [formProgramOfferingId, setFormProgramOfferingId] = useState('');
-  const [formSanctionedIntake, setFormSanctionedIntake] = useState('');
-  const [formAdmittedIntake, setFormAdmittedIntake] = useState('');
-  const [formLateralEntryIntake, setFormLateralEntryIntake] = useState('');
-  const [formApprovalAuthority, setFormApprovalAuthority] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-
-  // ── Determine the academicYearId to pass as a query param ──
-  const filterAcademicYearId = filterYearId === 'all' ? undefined : Number(filterYearId);
-
-  // ── Query: fetch all program intakes ──
-  const {
-    data: apiIntakes,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<ProgramIntakeApiResponse[]>({
-    queryKey: ['programIntakes', filterAcademicYearId],
-    queryFn: () =>
-      institutionAdminService.getProgramIntakes({
-        academicYearId: filterAcademicYearId,
-      }),
-    enabled: isAuthenticated,
+  // Form state for add/edit intake
+  const [intakeForm, setIntakeForm] = useState({
+    academicYearId: '',
+    programOfferingId: '',
+    sanctionedIntake: 0,
+    admittedIntake: 0,
+    lateralEntryIntake: 0,
+    approvalAuthority: '',
+    status: 'active' as 'active' | 'inactive',
   });
+  const [uploadedIntakeFiles, setUploadedIntakeFiles] = useState<Array<{ name: string; type: string; size: number }>>([]);
+  const [dragActiveIntake, setDragActiveIntake] = useState(false);
+  const intakeFileInputRef = useRef<HTMLInputElement>(null);
+  const intakeDragCounterRef = useRef(0);
 
-  // ── Queries for dropdown data (only when dialog is open) ──
-  const { data: apiYearsForIntake } = useQuery<AcademicYearApiResponse[]>({
-    queryKey: ['academicYears'],
-    queryFn: () => institutionAdminService.getAcademicYears(),
-    enabled: showAddDialog,
-  });
+  const INTAKE_ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
+  const INTAKE_ACCEPTED_MIME_TYPES = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'application/zip',
+  ];
 
-  const { data: apiOfferingsForIntake } = useQuery<ProgramOfferingApiResponse[]>({
-    queryKey: ['programOfferings'],
-    queryFn: () => institutionAdminService.getProgramOfferings(),
-    enabled: showAddDialog,
-  });
-
-  // Compute auto vacant seats
-  const computedVacantSeats = Math.max(
-    0,
-    (Number(formSanctionedIntake) || 0) - (Number(formAdmittedIntake) || 0)
-  );
-
-  // ── Mutation: create program intake ──
-  const createMutation = useMutation({
-    mutationFn: (data: CreateProgramIntakeRequest) =>
-      institutionAdminService.createProgramIntake(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programIntakes'] });
-      setShowAddDialog(false);
-      resetForm();
-      toast.success('Program intake created successfully');
-    },
-    onError: () => {
-      toast.error('Failed to create program intake');
-    },
-  });
-
-  // ── Mutation: delete program intake ──
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => institutionAdminService.deleteProgramIntake(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['programIntakes'] });
-      toast.success('Program intake deleted');
-    },
-    onError: () => {
-      toast.error('Failed to delete program intake');
-    },
-  });
-
-  const resetForm = () => {
-    setFormAcademicYearId('');
-    setFormProgramOfferingId('');
-    setFormSanctionedIntake('');
-    setFormAdmittedIntake('');
-    setFormLateralEntryIntake('');
-    setFormApprovalAuthority('');
-    setFormStatus('ACTIVE');
+  const getIntakeFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return Image;
+    if (type.includes('pdf')) return BookOpen;
+    if (type.includes('word') || type.includes('document')) return FileText;
+    if (type.includes('spreadsheet') || type.includes('excel')) return File;
+    if (type.includes('presentation') || type.includes('powerpoint')) return File;
+    return File;
   };
 
-  const handleCreate = () => {
-    if (
-      !formAcademicYearId ||
-      !formProgramOfferingId ||
-      !formSanctionedIntake ||
-      !formAdmittedIntake
-    ) {
+  const formatIntakeFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const isValidIntakeFile = (file: File): boolean => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    const acceptedExts = INTAKE_ACCEPTED_FILE_TYPES.split(',');
+    return acceptedExts.includes(ext) || INTAKE_ACCEPTED_MIME_TYPES.includes(file.type);
+  };
+
+  const handleIntakeFileDrop = (files: FileList) => {
+    const newFiles: Array<{ name: string; type: string; size: number }> = [];
+    let hasInvalid = false;
+    setUploadedIntakeFiles((prev) => {
+      const existingNames = new Set(prev.map((f) => f.name));
+      Array.from(files).forEach((file) => {
+        if (isValidIntakeFile(file) && !existingNames.has(file.name)) {
+          existingNames.add(file.name);
+          newFiles.push({ name: file.name, type: file.type, size: file.size });
+        } else if (!isValidIntakeFile(file)) {
+          hasInvalid = true;
+        }
+      });
+      return [...prev, ...newFiles];
+    });
+    if (hasInvalid) {
+      toast.error('Some files were skipped due to unsupported format');
+    }
+  };
+
+  const handleRemoveIntakeFile = (fileName: string) => {
+    setUploadedIntakeFiles((prev) => prev.filter((f) => f.name !== fileName));
+  };
+
+  const handleIntakeDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current++;
+    if (intakeDragCounterRef.current === 1) setDragActiveIntake(true);
+  };
+
+  const handleIntakeDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current--;
+    if (intakeDragCounterRef.current === 0) setDragActiveIntake(false);
+  };
+
+  const handleIntakeDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleIntakeDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    intakeDragCounterRef.current = 0;
+    setDragActiveIntake(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleIntakeFileDrop(e.dataTransfer.files);
+    }
+  };
+
+  const handleIntakeKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      intakeFileInputRef.current?.click();
+    }
+  };
+
+  const handleIntakeFileBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleIntakeFileDrop(e.target.files);
+    }
+    e.target.value = '';
+  };
+
+  const filtered = filterYear === 'all'
+    ? intakes
+    : intakes.filter((i) => i.academicYear === filterYear);
+
+  const totalSanctioned = filtered.reduce((s, i) => s + i.sanctionedIntake, 0);
+  const totalAdmitted = filtered.reduce((s, i) => s + i.admittedIntake, 0);
+  const totalVacant = filtered.reduce((s, i) => s + i.vacantSeats, 0);
+
+
+  const vacantSeats = Math.max(0, (intakeForm.sanctionedIntake || 0) - (intakeForm.admittedIntake || 0) - (intakeForm.lateralEntryIntake || 0));
+
+  const openAddIntakeDialog = () => {
+    setIntakeForm({ academicYearId: '', programOfferingId: '', sanctionedIntake: 0, admittedIntake: 0, lateralEntryIntake: 0, approvalAuthority: '', status: 'active' });
+    setEditingIntakeId(null);
+    setUploadedIntakeFiles([]);
+    setShowAddDialog(true);
+  };
+
+  const openEditIntakeDialog = (intake: ProgramIntake) => {
+    setIntakeForm({
+      academicYearId: intake.academicYearId,
+      programOfferingId: intake.programOfferingId,
+      sanctionedIntake: intake.sanctionedIntake,
+      admittedIntake: intake.admittedIntake,
+      lateralEntryIntake: intake.lateralEntryIntake,
+      approvalAuthority: intake.approvalAuthority,
+      status: intake.status,
+    });
+    setEditingIntakeId(intake.id);
+    setUploadedIntakeFiles(intake.documents.map((d) => ({ name: d, type: 'application/octet-stream', size: 0 })));
+    setShowAddDialog(true);
+  };
+
+  const handleSaveIntake = () => {
+    const { academicYearId, programOfferingId, sanctionedIntake, admittedIntake, lateralEntryIntake, approvalAuthority, status } = intakeForm;
+    if (!academicYearId || !programOfferingId || !sanctionedIntake) {
       toast.error('Please fill in all required fields');
       return;
     }
-    createMutation.mutate({
-      academicYearId: Number(formAcademicYearId),
-      programOfferingId: Number(formProgramOfferingId),
-      sanctionedIntake: Number(formSanctionedIntake),
-      admittedIntake: Number(formAdmittedIntake),
-      lateralEntryIntake: formLateralEntryIntake ? Number(formLateralEntryIntake) : 0,
-      approvalAuthority: formApprovalAuthority || '',
-      status: formStatus,
+
+    const year = academicYears.find((y) => y.id === academicYearId);
+    const offering = programOfferings.find((o) => o.id === programOfferingId);
+    if (!year || !offering) return;
+
+    const vacant = Math.max(0, sanctionedIntake - admittedIntake - lateralEntryIntake);
+
+    const intake: ProgramIntake = {
+      id: editingIntakeId || `INT-${String(Date.now()).slice(-3)}`,
+      academicYear: year.year,
+      academicYearId,
+      programOffering: offering.generatedName,
+      programOfferingId,
+      sanctionedIntake,
+      admittedIntake,
+      lateralEntryIntake,
+      vacantSeats: vacant,
+      approvalAuthority,
+      status,
+      documents: uploadedIntakeFiles.map((f) => f.name),
+    };
+
+    setIntakes((prev) => {
+      const idx = prev.findIndex((i) => i.id === intake.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = intake;
+        return updated;
+      }
+      return [intake, ...prev];
     });
+
+    setShowAddDialog(false);
+    setEditingIntakeId(null);
+    toast.success(editingIntakeId ? 'Intake updated' : 'Intake record added');
   };
 
-  const handleDelete = (id: string) => {
-    const intake = apiIntakes?.find(i => String(i.id) === id);
-    if (intake) {
-      deleteMutation.mutate(intake.id);
-    }
+  const handleDeleteIntake = (id: string) => {
+    setIntakes((prev) => prev.filter((i) => i.id !== id));
+    setDeleteConfirmIntake(null);
+    toast.success('Intake record deleted');
   };
-
-  // ── Summary totals ──
-  const totalSanctioned = (apiIntakes ?? []).reduce((s, i) => s + i.sanctionedIntake, 0);
-  const totalAdmitted = (apiIntakes ?? []).reduce((s, i) => s + i.admittedIntake, 0);
-  const totalVacant = (apiIntakes ?? []).reduce((s, i) => s + i.vacantSeats, 0);
-
-  // ── Loading state ──
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-9 w-32" />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-20 rounded-lg" />
-          ))}
-        </div>
-        <div className="rounded-lg border">
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-4 w-8 ml-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Error state ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-red-500">Failed to load program intakes.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Program Intake</h3>
-          <Select value={filterYearId} onValueChange={setFilterYearId}>
+          <Select value={filterYear} onValueChange={setFilterYear}>
             <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Filter year" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {(apiYearsForIntake ?? []).map(y => (
-                <SelectItem key={y.id} value={String(y.id)}>
-                  {y.year}
-                </SelectItem>
+              {academicYears.map((y) => (
+                <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Intake
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add Program Intake</DialogTitle>
-            </DialogHeader>
-            <p className="text-xs text-muted-foreground mb-2">
-              Vacant Seats = Sanctioned Intake - Admitted Intake
-            </p>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Academic Year *</Label>
-                <Select value={formAcademicYearId} onValueChange={setFormAcademicYearId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiYearsForIntake ?? []).map(y => (
-                      <SelectItem key={y.id} value={String(y.id)}>
-                        {y.year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Program Offering *</Label>
-                <Select value={formProgramOfferingId} onValueChange={setFormProgramOfferingId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(apiOfferingsForIntake ?? [])
-                      .filter(o => o.status === 'ACTIVE')
-                      .map(o => (
-                        <SelectItem key={o.id} value={String(o.id)}>
-                          {o.generatedName}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Sanctioned Intake *</Label>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 120"
-                    value={formSanctionedIntake}
-                    onChange={e => setFormSanctionedIntake(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Admitted Intake *</Label>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 118"
-                    value={formAdmittedIntake}
-                    onChange={e => setFormAdmittedIntake(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Lateral Entry Intake</Label>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 12"
-                    value={formLateralEntryIntake}
-                    onChange={e => setFormLateralEntryIntake(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vacant Seats (Auto)</Label>
-                  <Input disabled value={computedVacantSeats} className="bg-muted" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Approval Authority</Label>
-                <Input
-                  placeholder="e.g., AICTE"
-                  value={formApprovalAuthority}
-                  onChange={e => setFormApprovalAuthority(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formStatus}
-                  onValueChange={(v: 'ACTIVE' | 'INACTIVE') => setFormStatus(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add Intake'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openAddIntakeDialog}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Intake
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -3201,80 +2684,261 @@ const ProgramIntakeTab = () => {
             </tr>
           </thead>
           <tbody>
-            {!apiIntakes || apiIntakes.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                  No program intakes found. Click "Add Intake" to create one.
+                <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
+                  No intake records found
                 </td>
               </tr>
             ) : (
-              apiIntakes.map(intake => {
-                const offering = apiOfferingsForIntake?.find(
-                  o => o.id === intake.programOfferingId
-                );
-                const academicYear = apiYearsForIntake?.find(y => y.id === intake.academicYearId);
-                return (
-                  <tr key={intake.id} className="border-t hover:bg-muted/30">
-                    <td className="py-3 px-4 font-semibold">
-                      {offering?.generatedName ?? intake.programOfferingId}
-                    </td>
-                    <td className="py-3 px-4">{academicYear?.year ?? intake.academicYearId}</td>
-                    <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
-                    <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
-                    <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
-                    <td className="py-3 px-4 text-center">
-                      <Badge
-                        variant={intake.vacantSeats === 0 ? 'default' : 'secondary'}
-                        className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}
-                      >
-                        {intake.vacantSeats}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">{intake.approvalAuthority || '-'}</td>
-                    <td className="py-3 px-4 text-center">
-                      <Badge variant={intake.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {intake.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Program Intake</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this intake record? This action cannot
-                              be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(String(intake.id))}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </td>
-                  </tr>
-                );
-              })
+              filtered.map((intake) => (
+                <tr key={intake.id} className="border-t hover:bg-muted/30">
+                  <td className="py-3 px-4 font-semibold text-primary">{intake.programOffering}</td>
+                  <td className="py-3 px-4">{intake.academicYear}</td>
+                  <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
+                  <td className="py-3 px-4 text-center">{intake.admittedIntake}</td>
+                  <td className="py-3 px-4 text-center">{intake.lateralEntryIntake || '-'}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={intake.vacantSeats === 0 ? 'default' : 'secondary'} className={intake.vacantSeats === 0 ? 'bg-green-100 text-green-700' : ''}>
+                      {intake.vacantSeats}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4">{intake.approvalAuthority}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Badge variant={intake.status === 'active' ? 'default' : 'secondary'}>{intake.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600" onClick={() => openEditIntakeDialog(intake)} title="Edit intake">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => setDeleteConfirmIntake(intake.id)} title="Delete intake">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirmIntake} onOpenChange={() => setDeleteConfirmIntake(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete Intake Record</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">Are you sure you want to delete this intake record?</p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmIntake(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={() => deleteConfirmIntake && handleDeleteIntake(deleteConfirmIntake)}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Intake Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingIntakeId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">{editingIntakeId ? 'Edit Program Intake' : 'Add Program Intake'}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground mb-2">
+            Vacant Seats = Sanctioned Intake - Admitted Intake - Lateral Entry
+          </p>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Academic Year *</Label>
+              <Select
+                value={intakeForm.academicYearId}
+                onValueChange={(v) => setIntakeForm((f) => ({ ...f, academicYearId: v }))}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((y) => (
+                    <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Program Offering *</Label>
+              <Select
+                value={intakeForm.programOfferingId}
+                onValueChange={(v) => setIntakeForm((f) => ({ ...f, programOfferingId: v }))}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {programOfferings.filter((o) => o.status === 'active').map((o) => (
+                    <SelectItem key={o.id} value={o.id} className="text-xs">{o.generatedName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Sanctioned Intake *</Label>
+                <Input type="number" value={intakeForm.sanctionedIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, sanctionedIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 120" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Admitted Intake</Label>
+                <Input type="number" value={intakeForm.admittedIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, admittedIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 118" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Lateral Entry Intake</Label>
+                <Input type="number" value={intakeForm.lateralEntryIntake || ''}
+                  onChange={(e) => setIntakeForm((f) => ({ ...f, lateralEntryIntake: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder="e.g., 12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Vacant Seats (Auto calc)</Label>
+                <Input disabled value={vacantSeats} className="h-9 text-sm bg-muted" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Approval Authority</Label>
+              <Select value={intakeForm.approvalAuthority} onValueChange={(v) => setIntakeForm((f) => ({ ...f, approvalAuthority: v }))}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select authority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AICTE" className="text-xs">AICTE</SelectItem>
+                  <SelectItem value="UGC" className="text-xs">UGC</SelectItem>
+                  <SelectItem value="NBA" className="text-xs">NBA</SelectItem>
+                  <SelectItem value="NAAC" className="text-xs">NAAC</SelectItem>
+                  <SelectItem value="University" className="text-xs">University</SelectItem>
+                  <SelectItem value="Government" className="text-xs">Government</SelectItem>
+                  <SelectItem value="Affiliating University" className="text-xs">Affiliating University</SelectItem>
+                  <SelectItem value="NCTE" className="text-xs">NCTE</SelectItem>
+                  <SelectItem value="BCI" className="text-xs">BCI</SelectItem>
+                  <SelectItem value="PCI" className="text-xs">PCI</SelectItem>
+                  <SelectItem value="Other" className="text-xs">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Status</Label>
+              <Select value={intakeForm.status} onValueChange={(v: 'active' | 'inactive') => setIntakeForm((f) => ({ ...f, status: v }))}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active" className="text-xs">Active</SelectItem>
+                  <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Documents Upload */}
+            <Separator className="my-2" />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                Supporting Documents
+                {uploadedIntakeFiles.length > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-[9px] px-1.5 py-0">
+                    {uploadedIntakeFiles.length} file{uploadedIntakeFiles.length !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </Label>
+              {/* Drop Zone */}
+              <div
+                role="button"
+                tabIndex={0}
+                onDragEnter={handleIntakeDragEnter}
+                onDragLeave={handleIntakeDragLeave}
+                onDragOver={handleIntakeDragOver}
+                onDrop={handleIntakeDrop}
+                onClick={() => intakeFileInputRef.current?.click()}
+                onKeyDown={handleIntakeKeyDown}
+                aria-label="Upload supporting documents"
+                className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-200 ${
+                  dragActiveIntake
+                    ? 'border-indigo-500 bg-indigo-500/5 scale-[1.01] shadow-lg shadow-indigo-500/10'
+                    : 'border-border/60 hover:border-indigo-400/50 hover:bg-muted/30'
+                }`}
+              >
+                <input
+                  ref={intakeFileInputRef}
+                  type="file"
+                  multiple
+                  accept={INTAKE_ACCEPTED_FILE_TYPES}
+                  onChange={handleIntakeFileBrowse}
+                  className="hidden"
+                />
+                <UploadCloud className={`h-7 w-7 mx-auto mb-1.5 transition-colors duration-200 ${
+                  dragActiveIntake ? 'text-indigo-500' : 'text-muted-foreground/60'
+                }`} />
+                <p className={`text-xs font-medium transition-colors duration-200 ${
+                  dragActiveIntake ? 'text-indigo-600' : 'text-muted-foreground'
+                }`}>
+                  {dragActiveIntake ? 'Drop files here' : 'Drag & drop files here, or click to browse'}
+                </p>
+                <p className="text-[9px] text-muted-foreground/60 mt-0.5">
+                  Supported: PDF, DOCX, Images, Excel, PPT, TXT, ZIP
+                </p>
+              </div>
+              {/* Uploaded Files List */}
+              {uploadedIntakeFiles.length > 0 && (
+                <div className="space-y-1.5 mt-1.5">
+                  <p className="text-[9px] font-medium text-muted-foreground">UPLOADED FILES</p>
+                  {uploadedIntakeFiles.map((file, idx) => {
+                    const FileIcon = getIntakeFileIcon(file.type);
+                    return (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="group flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-medium truncate">{file.name}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[8px] px-1 py-0 leading-none">
+                              {file.type.split('/').pop()?.toUpperCase() || file.name.split('.').pop()?.toUpperCase()}
+                            </Badge>
+                            <span className="text-[9px] text-muted-foreground">{formatIntakeFileSize(file.size)}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveIntakeFile(file.name); }}
+                        >
+                          <X className="h-3 w-3 text-red-500" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Vacant seats info card */}
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Calculated Vacant Seats:</span>
+                <span className="font-semibold text-indigo-600">{vacantSeats}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setShowAddDialog(false); setEditingIntakeId(null); }}>Cancel</Button>
+            <Button size="sm" className="h-8 text-xs" onClick={handleSaveIntake}>
+              {editingIntakeId ? 'Update Intake' : 'Add Intake'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="text-xs text-muted-foreground">
         <strong>Documents:</strong> AICTE Approval Letter, University Approval, Seat Matrix
@@ -3282,6 +2946,7 @@ const ProgramIntakeTab = () => {
     </div>
   );
 };
+
 // Main Academic Structure Page
 export const AcademicStructurePage = () => {
   const location = useLocation();
@@ -3314,66 +2979,41 @@ export const AcademicStructurePage = () => {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Academic Structure</h1>
         <p className="text-muted-foreground">
-          Configure the academic hierarchy: Academic Year → Program → Department → Specialization →
-          Regulation → Program Offering → Program Intake
+          Configure the academic hierarchy: Academic Year → Program → Department → Specialization → Regulation → Program Offering → Program Intake
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          <TabsTrigger
-            value="dashboard"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="dashboard" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <BarChart3 className="h-3.5 w-3.5" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger
-            value="academic-years"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="academic-years" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Calendar className="h-3.5 w-3.5" />
             Academic Years
           </TabsTrigger>
-          <TabsTrigger
-            value="programs"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="programs" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <GraduationCap className="h-3.5 w-3.5" />
             Programs
           </TabsTrigger>
-          <TabsTrigger
-            value="departments"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="departments" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Building2 className="h-3.5 w-3.5" />
             Departments
           </TabsTrigger>
-          <TabsTrigger
-            value="specializations"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="specializations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Layers className="h-3.5 w-3.5" />
             Specializations
           </TabsTrigger>
-          <TabsTrigger
-            value="regulations"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="regulations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <BookOpen className="h-3.5 w-3.5" />
             Regulations
           </TabsTrigger>
-          <TabsTrigger
-            value="offerings"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="offerings" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Combine className="h-3.5 w-3.5" />
             Program Offerings
           </TabsTrigger>
-          <TabsTrigger
-            value="intake"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg"
-          >
+          <TabsTrigger value="intake" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Users className="h-3.5 w-3.5" />
             Program Intake
           </TabsTrigger>
@@ -3386,30 +3026,14 @@ export const AcademicStructurePage = () => {
           transition={{ duration: 0.2 }}
           className="mt-6"
         >
-          <TabsContent value="dashboard" className="mt-0">
-            <DashboardTab />
-          </TabsContent>
-          <TabsContent value="academic-years" className="mt-0">
-            <AcademicYearsTab />
-          </TabsContent>
-          <TabsContent value="programs" className="mt-0">
-            <ProgramsTab />
-          </TabsContent>
-          <TabsContent value="departments" className="mt-0">
-            <DepartmentsTab />
-          </TabsContent>
-          <TabsContent value="specializations" className="mt-0">
-            <SpecializationsTab />
-          </TabsContent>
-          <TabsContent value="regulations" className="mt-0">
-            <AcademicRegulationsTab />
-          </TabsContent>
-          <TabsContent value="offerings" className="mt-0">
-            <ProgramOfferingsTab />
-          </TabsContent>
-          <TabsContent value="intake" className="mt-0">
-            <ProgramIntakeTab />
-          </TabsContent>
+          <TabsContent value="dashboard" className="mt-0"><DashboardTab /></TabsContent>
+          <TabsContent value="academic-years" className="mt-0"><AcademicYearsTab /></TabsContent>
+          <TabsContent value="programs" className="mt-0"><ProgramsTab /></TabsContent>
+          <TabsContent value="departments" className="mt-0"><DepartmentsTab /></TabsContent>
+          <TabsContent value="specializations" className="mt-0"><SpecializationsTab /></TabsContent>
+          <TabsContent value="regulations" className="mt-0"><AcademicRegulationsTab /></TabsContent>
+          <TabsContent value="offerings" className="mt-0"><ProgramOfferingsTab /></TabsContent>
+          <TabsContent value="intake" className="mt-0"><ProgramIntakeTab /></TabsContent>
         </motion.div>
       </Tabs>
     </div>
