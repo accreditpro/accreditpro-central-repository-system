@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "alumniId": "ALM-2015-011",
+    "alumniRefId": "ALM-2015-011",
+    "institutionName": "Stanford University",
+    "programName": "MS in Computer Science",
+    "country": "USA",
+    "admissionYear": "2015",
+    "completionYear": "2017",
+    "status": "Completed"
+  },
+  {
+    "id": 2,
+    "alumniId": "ALM-2018-012",
+    "alumniRefId": "ALM-2018-012",
+    "institutionName": "IIM Ahmedabad",
+    "programName": "MBA",
+    "country": "India",
+    "admissionYear": "2020",
+    "completionYear": "2022",
+    "status": "Completed"
+  },
+  {
+    "id": 3,
+    "alumniId": "ALM-2022-088",
+    "alumniRefId": "ALM-2022-088",
+    "institutionName": "University of Toronto",
+    "programName": "M.Tech AI",
+    "country": "Canada",
+    "admissionYear": "2023",
+    "completionYear": "2025",
+    "status": "Pursuing"
+  }
+]

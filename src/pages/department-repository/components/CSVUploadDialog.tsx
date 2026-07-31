@@ -45,7 +45,7 @@ interface CSVUploadDialogProps {
   onClose: () => void;
   tabConfig: RepositoryTabConfig;
   existingData: Record<string, string>[];
-  onUploadComplete?: (data: Record<string, string>[]) => void;
+  onUploadComplete: (data: Record<string, string>[], evidenceFiles?: Record<string, File>) => void;
 }
 
 type UploadStep = 'upload' | 'mapping' | 'validate' | 'preview' | 'evidence' | 'submit';
@@ -126,6 +126,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [step5EvidenceFiles, setStep5EvidenceFiles] = useState<Record<string, File>>({});
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
 
@@ -198,6 +199,24 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         return row['Employee ID'] && row['Degree'] ? `${row['Employee ID']}|${row['Degree']}` : null;
       case 'certifications':
         return row['Employee ID'] && row['Certification Name'] ? `${row['Employee ID']}|${row['Certification Name']}` : null;
+      case 'alumni-details':
+        return row['Alumni ID'] || null;
+      case 'employment-career':
+        return row['Alumni ID'] && row['Organization Name'] ? `${row['Alumni ID']}|${row['Organization Name']}` : (row['Alumni ID'] || null);
+      case 'higher-education':
+        return row['Alumni ID'] && row['Institution Name'] ? `${row['Alumni ID']}|${row['Institution Name']}` : (row['Alumni ID'] || null);
+      case 'alumni-engagement':
+        return row['Alumni ID'] && row['Activity Name'] ? `${row['Alumni ID']}|${row['Activity Name']}` : (row['Alumni ID'] || null);
+      case 'alumni-contributions':
+        return row['Alumni ID'] && row['Contribution Title'] ? `${row['Alumni ID']}|${row['Contribution Title']}` : (row['Alumni ID'] || null);
+      case 'alumni-mentorship':
+        return row['Alumni ID'] && row['Mentorship Program'] ? `${row['Alumni ID']}|${row['Mentorship Program']}` : (row['Alumni ID'] || null);
+      case 'alumni-achievements':
+        return row['Alumni ID'] && row['Achievement Title'] ? `${row['Alumni ID']}|${row['Achievement Title']}` : (row['Alumni ID'] || null);
+      case 'alumni-chapters':
+        return row['Chapter Name'] || null;
+      case 'alumni-events':
+        return row['Event Name'] && row['Event Date'] ? `${row['Event Name']}|${row['Event Date']}` : (row['Event Name'] || null);
       case 'student-profile':
         return row['Student Registration Number'] || null;
       case 'admission-info':
@@ -235,6 +254,15 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       case 'faculty-profiles': return 'Employee ID';
       case 'qualifications': return 'Employee ID + Degree';
       case 'certifications': return 'Employee ID + Certification';
+      case 'alumni-details': return 'Alumni ID';
+      case 'employment-career': return 'Alumni ID + Organization';
+      case 'higher-education': return 'Alumni ID + Institution';
+      case 'alumni-engagement': return 'Alumni ID + Activity Name';
+      case 'alumni-contributions': return 'Alumni ID + Contribution Title';
+      case 'alumni-mentorship': return 'Alumni ID + Mentorship Program';
+      case 'alumni-achievements': return 'Alumni ID + Achievement Title';
+      case 'alumni-chapters': return 'Chapter Name';
+      case 'alumni-events': return 'Event Name + Event Date';
       case 'student-profile': return 'Student Registration Number';
       case 'admission-info': return 'Registration Number + Admission Year';
       case 'student-diversity': return 'Student Registration Number';
@@ -326,38 +354,76 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       });
 
       // Check for duplicates against existing data
-      const duplicateKey = getDuplicateKey(tabConfig.id, row);
-      if (duplicateKey) {
-        const existingDuplicate = existingData.find(existing => {
-          const existingKey = getDuplicateKey(tabConfig.id, existing);
-          return existingKey === duplicateKey;
-        });
-        if (existingDuplicate) {
+      if (tabConfig.id === 'alumni-details') {
+        const almId = row['Alumni ID']?.trim();
+        const rollNo = row['Roll Number']?.trim();
+        const existingDup = existingData.find(ex =>
+          (almId && ex['Alumni ID']?.trim() === almId) ||
+          (rollNo && ex['Roll Number']?.trim() === rollNo)
+        );
+        if (existingDup) {
+          const isAlmDup = almId && existingDup['Alumni ID']?.trim() === almId;
+          const dupField = isAlmDup ? 'Alumni ID' : 'Roll Number';
+          const dupVal = isAlmDup ? almId : rollNo;
           errors.push({
             row: rowIndex + 1,
-            column: getDuplicateKeyColumn(tabConfig.id),
-            value: duplicateKey,
-            message: `Duplicate: "${duplicateKey}" already exists in the system`,
+            column: dupField,
+            value: dupVal || '',
+            message: `Duplicate: ${dupField} "${dupVal}" already exists in system`,
             severity: 'error',
           });
           rowHasError = true;
         }
-      }
 
-      // Check for duplicates within the uploaded file itself
-      if (duplicateKey) {
-        const withinFileDuplicate = mappedData.slice(0, rowIndex).find(prevRow => {
-          const prevKey = getDuplicateKey(tabConfig.id, prevRow);
-          return prevKey && prevKey === duplicateKey;
-        });
-        if (withinFileDuplicate) {
+        const withinFileDup = mappedData.slice(0, rowIndex).find(prev =>
+          (almId && prev['Alumni ID']?.trim() === almId) ||
+          (rollNo && prev['Roll Number']?.trim() === rollNo)
+        );
+        if (withinFileDup) {
+          const isAlmDup = almId && withinFileDup['Alumni ID']?.trim() === almId;
+          const dupField = isAlmDup ? 'Alumni ID' : 'Roll Number';
+          const dupVal = isAlmDup ? almId : rollNo;
           errors.push({
             row: rowIndex + 1,
-            column: getDuplicateKeyColumn(tabConfig.id),
-            value: duplicateKey,
-            message: `Duplicate within file: "${duplicateKey}" appears multiple times`,
+            column: dupField,
+            value: dupVal || '',
+            message: `Duplicate in file: ${dupField} "${dupVal}" appears multiple times`,
             severity: 'warning',
           });
+        }
+      } else {
+        const duplicateKey = getDuplicateKey(tabConfig.id, row);
+        if (duplicateKey) {
+          const existingDuplicate = existingData.find(existing => {
+            const existingKey = getDuplicateKey(tabConfig.id, existing);
+            return existingKey === duplicateKey;
+          });
+          if (existingDuplicate) {
+            errors.push({
+              row: rowIndex + 1,
+              column: getDuplicateKeyColumn(tabConfig.id),
+              value: duplicateKey,
+              message: `Duplicate: "${duplicateKey}" already exists in the system`,
+              severity: 'error',
+            });
+            rowHasError = true;
+          }
+        }
+
+        if (duplicateKey) {
+          const withinFileDuplicate = mappedData.slice(0, rowIndex).find(prevRow => {
+            const prevKey = getDuplicateKey(tabConfig.id, prevRow);
+            return prevKey && prevKey === duplicateKey;
+          });
+          if (withinFileDuplicate) {
+            errors.push({
+              row: rowIndex + 1,
+              column: getDuplicateKeyColumn(tabConfig.id),
+              value: duplicateKey,
+              message: `Duplicate within file: "${duplicateKey}" appears multiple times`,
+              severity: 'warning',
+            });
+          }
         }
       }
 
@@ -422,7 +488,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     } else {
       // Submit - only pass valid data
       if (validationResult && validationResult.validData.length > 0 && onUploadComplete) {
-        onUploadComplete(validationResult.validData);
+        onUploadComplete(validationResult.validData, step5EvidenceFiles);
       }
       handleClose();
     }
@@ -443,6 +509,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     setUploadedFileName('');
     setColumnMappings([]);
     setValidationResult(null);
+    setStep5EvidenceFiles({});
   };
 
   const canProceed = useMemo(() => {
@@ -735,17 +802,46 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">Upload supporting evidence documents for this submission:</p>
       <div className="space-y-2">
-        {tabConfig.requiredEvidence.map((evidence) => (
-          <div key={evidence} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/20">
-            <div className="flex items-center gap-2">
-              <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium">{evidence}</span>
+        {tabConfig.requiredEvidence.map((evidence) => {
+          const fileAttached = step5EvidenceFiles[evidence];
+          const inputId = `step5-file-${evidence.replace(/[^a-zA-Z0-9]/g, '-')}`;
+          return (
+            <div key={evidence} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/20">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                <div>
+                  <span className="text-xs font-medium block">{evidence}</span>
+                  {fileAttached && (
+                    <span className="text-[10px] text-emerald-600 font-medium block">
+                      ✓ Attached: {fileAttached.name} ({(fileAttached.size / 1024).toFixed(1)} KB)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <input
+                  type="file"
+                  id={inputId}
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      setStep5EvidenceFiles(prev => ({ ...prev, [evidence]: f }));
+                    }
+                  }}
+                />
+                <Button
+                  variant={fileAttached ? 'secondary' : 'outline'}
+                  size="sm"
+                  className="text-[10px] h-6 px-2"
+                  onClick={() => document.getElementById(inputId)?.click()}
+                >
+                  <Upload className="h-3 w-3 mr-1" /> {fileAttached ? 'Change' : 'Upload'}
+                </Button>
+              </div>
             </div>
-            <Button variant="outline" size="sm" className="text-[10px] h-6 px-2">
-              <Upload className="h-3 w-3 mr-1" /> Upload
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
         <p className="text-[10px] text-muted-foreground">

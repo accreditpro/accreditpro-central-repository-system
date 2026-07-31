@@ -306,7 +306,7 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
                 academicYear={academicYear || '2025-26'}
               />
             ) : (
-              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} academicYear={academicYear || '2025-26'} />
             )}
           </TabsContent>
         ))}

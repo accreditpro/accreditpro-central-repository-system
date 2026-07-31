@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "message": "Employment records retrieved successfully",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "alumniId": "ALM-2020-001",
+        "organizationName": "Google India",
+        "designation": "Software Engineer",
+        "industrySector": "IT/Software",
+        "employmentType": "Full Time",
+        "startDate": "2020-08-15",
+        "currentPackage": 18.5,
+        "careerLevel": "Mid Level"
+      },
+      {
+        "id": 2,
+        "alumniId": "ALM-2021-042",
+        "organizationName": "Microsoft",
+        "designation": "Data Scientist",
+        "industrySector": "IT/Software",
+        "employmentType": "Full Time",
+        "startDate": "2021-07-01",
+        "currentPackage": 22.0,
+        "careerLevel": "Senior"
+      },
+      {
+        "id": 3,
+        "alumniId": "ALM-2019-105",
+        "organizationName": "Palo Alto Networks",
+        "designation": "Cybersecurity Analyst",
+        "industrySector": "Consulting",
+        "employmentType": "Full Time",
+        "startDate": "2019-09-10",
+        "currentPackage": 25.0,
+        "careerLevel": "Lead"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 3,
+    "totalPages": 1
+  },
+  "timestamp": "2026-07-29T10:00:00.000Z"
+}

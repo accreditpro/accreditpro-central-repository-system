@@ -1,4 +1,57 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  getAlumniDetails,
+  createAlumniDetail,
+  updateAlumniDetail,
+  deleteAlumniDetail,
+  uploadAlumniDetailsCsv,
+  getEmploymentRecords,
+  uploadEmploymentCsv,
+  createEmploymentRecord,
+  updateEmploymentRecord,
+  deleteEmploymentRecord,
+  getHigherEducationRecords,
+  createHigherEducationRecord,
+  uploadHigherEducationCsv,
+  updateHigherEducationRecord,
+  deleteHigherEducationRecord,
+  getEngagementRecords,
+  createEngagementRecord,
+  updateEngagementRecord,
+  deleteEngagementRecord,
+  uploadEngagementCsv,
+  getContributionRecords,
+  createContributionRecord,
+  updateContributionRecord,
+  deleteContributionRecord,
+  uploadContributionCsv,
+  getMentorshipRecords,
+  createMentorshipRecord,
+  updateMentorshipRecord,
+  deleteMentorshipRecord,
+  uploadMentorshipCsv,
+  getAchievementRecords,
+  createAchievementRecord,
+  updateAchievementRecord,
+  deleteAchievementRecord,
+  uploadAchievementCsv,
+  getChapterRecords,
+  createChapterRecord,
+  updateChapterRecord,
+  deleteChapterRecord,
+  uploadChapterCsv,
+  getEventRecords,
+  createEventRecord,
+  updateEventRecord,
+  deleteEventRecord,
+  uploadEventCsv,
+  uploadEvidenceDocument,
+  getEvidenceDocuments,
+  deleteEvidenceDocument,
+  getSectionName,
+} from '@/services/alumni-repository.service';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +89,7 @@ import {
   coordinatorContext,
 } from '../repository-configs';
 import { CSVUploadDialog } from './CSVUploadDialog';
+import { EvidencePreviewModal } from './EvidencePreviewModal';
 import {
   Download,
   Upload,
@@ -52,6 +106,7 @@ import {
 interface RepositoryTabContentProps {
   tabConfig: RepositoryTabConfig;
   repositoryId?: string;
+  academicYear?: string;
 }
 
 // Generate mock table data based on tab config fields
@@ -164,13 +219,180 @@ const generateMockData = (tabConfig: RepositoryTabConfig): Record<string, string
   return rows;
 };
 
-export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) => {
+// ─── Alumni-specific helpers ──────────────────────────────────────────────────
+
+/** Map an API record (camelCase) to the table row format (CSV column names). */
+const mapApiToRow = (
+  record: Record<string, any>,
+  fields: RepositoryTabConfig['fields']
+): Record<string, string> => {
+  const row: Record<string, string> = { _id: String(record.id ?? '') };
+  fields.forEach((f) => {
+    row[f.csvColumn] = record[f.key] != null ? String(record[f.key]) : '';
+  });
+  return row;
+};
+
+/** Map a table row (CSV column names) back to an API payload (camelCase). */
+const mapRowToApi = (
+  row: Record<string, string>,
+  fields: RepositoryTabConfig['fields']
+): Record<string, any> => {
+  const payload: Record<string, any> = {};
+  fields.forEach((f) => {
+    if (row[f.csvColumn] !== undefined && row[f.csvColumn] !== '') {
+      payload[f.key] = row[f.csvColumn];
+    }
+  });
+  return payload;
+};
+
+export const RepositoryTabContent = ({ tabConfig, repositoryId, academicYear }: RepositoryTabContentProps) => {
+  const { user } = useAuth();
+  const departmentId = user?.departmentId || 101;
+  const year = academicYear || '2025-26';
+
+  // Determine if this is an API-integrated alumni tab
+  const isAlumniDetails = repositoryId === 'alumni' && tabConfig.id === 'alumni-details';
+  const isEmploymentCareer = repositoryId === 'alumni' && tabConfig.id === 'employment-career';
+  const isHigherEducation = repositoryId === 'alumni' && tabConfig.id === 'higher-education';
+  const isAlumniEngagement = repositoryId === 'alumni' && tabConfig.id === 'alumni-engagement';
+  const isAlumniContributions = repositoryId === 'alumni' && tabConfig.id === 'alumni-contributions';
+  const isAlumniMentorship = repositoryId === 'alumni' && tabConfig.id === 'alumni-mentorship';
+  const isAlumniAchievements = repositoryId === 'alumni' && tabConfig.id === 'alumni-achievements';
+  const isAlumniChapters = repositoryId === 'alumni' && tabConfig.id === 'alumni-chapters';
+  const isAlumniEvents = repositoryId === 'alumni' && tabConfig.id === 'alumni-events';
+  const isApiDriven = isAlumniDetails || isEmploymentCareer || isHigherEducation || isAlumniEngagement || isAlumniContributions || isAlumniMentorship || isAlumniAchievements || isAlumniChapters || isAlumniEvents;
+
+  const sectionName = getSectionName(tabConfig.id);
+
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, string>[]>(() => generateMockData(tabConfig));
+  const [tableData, setTableData] = useState<Record<string, string>[]>(() =>
+    isApiDriven ? [] : generateMockData(tabConfig)
+  );
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createFormData, setCreateFormData] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  // Evidence Repository state
+  const [evidenceList, setEvidenceList] = useState<any[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [showUploadEvidenceDialog, setShowUploadEvidenceDialog] = useState(false);
+  const [uploadEvidenceFile, setUploadEvidenceFile] = useState<File | null>(null);
+  const [uploadEvidenceRecordId, setUploadEvidenceRecordId] = useState<string>('');
+  const [uploadEvidenceDocType, setUploadEvidenceDocType] = useState<string>('');
+  const [evidenceUploading, setEvidenceUploading] = useState(false);
+
+  // Preview Dialog state
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+
+  // ─── Fetch data from API ───────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    if (!isApiDriven) return;
+    setLoading(true);
+    try {
+      let response: any;
+      if (isAlumniDetails) {
+        response = await getAlumniDetails(year, departmentId);
+      } else if (isEmploymentCareer) {
+        response = await getEmploymentRecords(year, departmentId);
+      } else if (isHigherEducation) {
+        response = await getHigherEducationRecords(year, departmentId);
+      } else if (isAlumniEngagement) {
+        response = await getEngagementRecords(year, departmentId);
+      } else if (isAlumniContributions) {
+        response = await getContributionRecords(year, departmentId);
+      } else if (isAlumniMentorship) {
+        response = await getMentorshipRecords(year, departmentId);
+      } else if (isAlumniAchievements) {
+        response = await getAchievementRecords(year, departmentId);
+      } else if (isAlumniChapters) {
+        response = await getChapterRecords(year, departmentId);
+      } else if (isAlumniEvents) {
+        response = await getEventRecords(year, departmentId);
+      }
+      const rawData = response?.data ?? response;
+      const records = rawData?.content ?? (Array.isArray(rawData) ? rawData : (Array.isArray(response) ? response : []));
+      setTableData(records.map((r: any) => mapApiToRow(r, tabConfig.fields)));
+    } catch {
+      // API not available yet — keep empty table, no error toast
+    } finally {
+      setLoading(false);
+    }
+  }, [isApiDriven, isAlumniDetails, isEmploymentCareer, isHigherEducation, isAlumniEngagement, isAlumniContributions, isAlumniMentorship, isAlumniAchievements, isAlumniChapters, isAlumniEvents, year, departmentId, tabConfig.fields]);
+
+  // ─── Fetch Evidence Documents from API ──────────────────────────────────────
+  const fetchEvidence = useCallback(async () => {
+    setEvidenceLoading(true);
+    try {
+      const res = await getEvidenceDocuments({
+        departmentId,
+        academicYear: year,
+        sectionName,
+      });
+      const rawData = res?.data ?? res;
+      const docs = rawData?.content ?? (Array.isArray(rawData) ? rawData : []);
+      setEvidenceList(docs);
+    } catch {
+      setEvidenceList([]);
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [departmentId, year, sectionName]);
+
+  useEffect(() => {
+    fetchData();
+    fetchEvidence();
+  }, [fetchData, fetchEvidence]);
+
+  const handleUploadEvidence = async () => {
+    if (!uploadEvidenceFile) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+    if (!uploadEvidenceRecordId) {
+      toast.error('Please select an associated record');
+      return;
+    }
+
+    setEvidenceUploading(true);
+    try {
+      await uploadEvidenceDocument({
+        departmentId,
+        uploadedBy: user?.id || 1,
+        file: uploadEvidenceFile,
+        academicYear: year,
+        sectionName,
+        recordId: uploadEvidenceRecordId,
+        documentType: uploadEvidenceDocType || (tabConfig.requiredEvidence[0] || 'General Evidence'),
+      });
+      toast.success('Evidence document uploaded successfully');
+      setShowUploadEvidenceDialog(false);
+      setUploadEvidenceFile(null);
+      setUploadEvidenceRecordId('');
+      setUploadEvidenceDocType('');
+      fetchEvidence();
+    } catch {
+      toast.error('Failed to upload evidence document');
+    } finally {
+      setEvidenceUploading(false);
+    }
+  };
+
+  const handleDeleteEvidence = async (docId: number | string) => {
+    try {
+      await deleteEvidenceDocument(docId, departmentId);
+      toast.success('Evidence document deleted successfully');
+      fetchEvidence();
+    } catch {
+      toast.error('Failed to delete evidence document');
+    }
+  };
 
   const tabEvidence = evidenceDocuments.filter(d =>
     d.category.toLowerCase().includes(tabConfig.label.toLowerCase().split(' ')[0]) ||
@@ -178,6 +400,29 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
   );
 
   const handleDownloadTemplate = () => {
+    // For API-driven tabs: export current table data as CSV
+    if (isApiDriven) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      tableData.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${tabConfig.id}_${year}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
     if (!tabConfig.templateFile) return;
     const headers = tabConfig.fields.map(f => f.csvColumn).join(',');
     const sampleRow = tabConfig.fields.map(f => {
@@ -210,25 +455,705 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
     setShowEditDialog(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editingRow !== null) {
-      const newData = [...tableData];
-      newData[editingRow] = { ...editFormData };
-      setTableData(newData);
-      setShowEditDialog(false);
-      setEditingRow(null);
+  const handleSaveEdit = async () => {
+    if (editingRow === null) return;
+
+    if (isAlumniDetails) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      setLoading(true);
+      try {
+        await updateAlumniDetail(recordId, year, departmentId, payload);
+        toast.success('Record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update record');
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
+
+    if (isEmploymentCareer) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      if (payload.currentPackage !== undefined && payload.currentPackage !== '') {
+        payload.currentPackage = Number(payload.currentPackage);
+      }
+      setLoading(true);
+      try {
+        await updateEmploymentRecord(recordId, year, departmentId, payload);
+        toast.success('Employment record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update employment record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isHigherEducation) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      setLoading(true);
+      try {
+        await updateHigherEducationRecord(recordId, year, departmentId, payload);
+        toast.success('Higher education record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update higher education record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniEngagement) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      if (payload.contributionHours !== undefined && payload.contributionHours !== '') {
+        payload.contributionHours = Number(payload.contributionHours);
+      }
+      setLoading(true);
+      try {
+        await updateEngagementRecord(recordId, year, departmentId, payload);
+        toast.success('Engagement record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update engagement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniContributions) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      if (payload.contributionValue !== undefined && payload.contributionValue !== '') {
+        payload.contributionValue = Number(payload.contributionValue);
+      }
+      setLoading(true);
+      try {
+        await updateContributionRecord(recordId, year, departmentId, payload);
+        toast.success('Contribution record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update contribution record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniMentorship) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      if (payload.numberOfMentees !== undefined && payload.numberOfMentees !== '') {
+        payload.numberOfMentees = Number(payload.numberOfMentees);
+      }
+      setLoading(true);
+      try {
+        await updateMentorshipRecord(recordId, year, departmentId, payload);
+        toast.success('Mentorship record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update mentorship record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniAchievements) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      setLoading(true);
+      try {
+        await updateAchievementRecord(recordId, year, departmentId, payload);
+        toast.success('Achievement record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update achievement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniChapters) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      setLoading(true);
+      try {
+        await updateChapterRecord(recordId, year, departmentId, payload);
+        toast.success('Chapter record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update chapter record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isAlumniEvents) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      if (payload.participantsCount !== undefined && payload.participantsCount !== '') {
+        payload.participantsCount = Number(payload.participantsCount);
+      }
+      setLoading(true);
+      try {
+        await updateEventRecord(recordId, year, departmentId, payload);
+        toast.success('Event record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update event record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    const newData = [...tableData];
+    newData[editingRow] = { ...editFormData };
+    setTableData(newData);
+    setShowEditDialog(false);
+    setEditingRow(null);
   };
 
-  const handleDeleteRow = (index: number) => {
+  const handleDeleteRow = async (index: number) => {
+    if (isAlumniDetails) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteAlumniDetail(recordId, year, departmentId);
+        toast.success('Record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isEmploymentCareer) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteEmploymentRecord(recordId, year, departmentId);
+        toast.success('Employment record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete employment record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isHigherEducation) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteHigherEducationRecord(recordId, year, departmentId);
+        toast.success('Higher education record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete higher education record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniEngagement) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteEngagementRecord(recordId, year, departmentId);
+        toast.success('Engagement record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete engagement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniContributions) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteContributionRecord(recordId, year, departmentId);
+        toast.success('Contribution record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete contribution record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniMentorship) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteMentorshipRecord(recordId, year, departmentId);
+        toast.success('Mentorship record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete mentorship record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniAchievements) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteAchievementRecord(recordId, year, departmentId);
+        toast.success('Achievement record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete achievement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniChapters) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteChapterRecord(recordId, year, departmentId);
+        toast.success('Chapter record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete chapter record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniEvents) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteEventRecord(recordId, year, departmentId);
+        toast.success('Event record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete event record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     const newData = tableData.filter((_, i) => i !== index);
     setTableData(newData);
   };
 
-  const handleCSVUploadComplete = useCallback((data: Record<string, string>[]) => {
-    setTableData(prev => [...prev, ...data]);
+  const handleCreateRow = async () => {
+    if (isAlumniDetails) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      setLoading(true);
+      try {
+        await createAlumniDetail(year, departmentId, payload);
+        toast.success('Record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isEmploymentCareer) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      if (payload.currentPackage !== undefined && payload.currentPackage !== '') {
+        payload.currentPackage = Number(payload.currentPackage);
+      }
+      setLoading(true);
+      try {
+        await createEmploymentRecord(year, departmentId, payload);
+        toast.success('Employment record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create employment record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isHigherEducation) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      setLoading(true);
+      try {
+        await createHigherEducationRecord(year, departmentId, payload);
+        toast.success('Higher education record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create higher education record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniEngagement) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      if (payload.contributionHours !== undefined && payload.contributionHours !== '') {
+        payload.contributionHours = Number(payload.contributionHours);
+      }
+      setLoading(true);
+      try {
+        await createEngagementRecord(year, departmentId, payload);
+        toast.success('Engagement record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create engagement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniContributions) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      if (payload.contributionValue !== undefined && payload.contributionValue !== '') {
+        payload.contributionValue = Number(payload.contributionValue);
+      }
+      setLoading(true);
+      try {
+        await createContributionRecord(year, departmentId, payload);
+        toast.success('Contribution record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create contribution record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniMentorship) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      if (payload.numberOfMentees !== undefined && payload.numberOfMentees !== '') {
+        payload.numberOfMentees = Number(payload.numberOfMentees);
+      }
+      setLoading(true);
+      try {
+        await createMentorshipRecord(year, departmentId, payload);
+        toast.success('Mentorship record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create mentorship record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniAchievements) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      setLoading(true);
+      try {
+        await createAchievementRecord(year, departmentId, payload);
+        toast.success('Achievement record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create achievement record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniChapters) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      setLoading(true);
+      try {
+        await createChapterRecord(year, departmentId, payload);
+        toast.success('Chapter record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create chapter record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (isAlumniEvents) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      if (payload.participantsCount !== undefined && payload.participantsCount !== '') {
+        payload.participantsCount = Number(payload.participantsCount);
+      }
+      setLoading(true);
+      try {
+        await createEventRecord(year, departmentId, payload);
+        toast.success('Event record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create event record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // Non-API tabs: add to local state
+    setTableData(prev => [{ ...createFormData }, ...prev]);
+    setShowCreateDialog(false);
+    setCreateFormData({});
+  };
+
+  const handleCSVUploadComplete = useCallback(async (data: Record<string, string>[], evidenceFiles?: Record<string, File>) => {
+    if (isAlumniDetails) {
+      // The CSVUploadDialog gives us parsed rows — we create a CSV blob and upload via API
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'alumni_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadAlumniDetailsCsv(departmentId, csvFile, { academicYear: year, replaceExisting: true });
+        toast.success('CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload CSV');
+      }
+    } else if (isEmploymentCareer) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'employment_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadEmploymentCsv(departmentId, csvFile, year);
+        toast.success('Employment CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Employment CSV');
+      }
+    } else if (isHigherEducation) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'higher_education_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadHigherEducationCsv(departmentId, csvFile, year);
+        toast.success('Higher Education CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Higher Education CSV');
+      }
+    } else if (isAlumniEngagement) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'engagement_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadEngagementCsv(departmentId, csvFile, year);
+        toast.success('Engagement CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Engagement CSV');
+      }
+    } else if (isAlumniContributions) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'contributions_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadContributionCsv(departmentId, csvFile, year);
+        toast.success('Contribution CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Contribution CSV');
+      }
+    } else if (isAlumniMentorship) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'mentorship_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadMentorshipCsv(departmentId, csvFile, year);
+        toast.success('Mentorship CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Mentorship CSV');
+      }
+    } else if (isAlumniAchievements) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'achievements_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadAchievementCsv(departmentId, csvFile, year);
+        toast.success('Achievement CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Achievement CSV');
+      }
+    } else if (isAlumniChapters) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'chapters_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadChapterCsv(departmentId, csvFile, year);
+        toast.success('Chapter CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Chapter CSV');
+      }
+    } else if (isAlumniEvents) {
+      const headers = tabConfig.fields.map(f => f.csvColumn);
+      const csvRows = [headers.join(',')];
+      data.forEach(row => {
+        const values = headers.map(h => {
+          const val = row[h] || '';
+          return val.includes(',') ? `"${val}"` : val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const csvFile = new File([csvBlob], 'events_upload.csv', { type: 'text/csv' });
+      try {
+        await uploadEventCsv(departmentId, csvFile, year);
+        toast.success('Event CSV uploaded successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to upload Event CSV');
+      }
+    } else {
+      setTableData(prev => [...prev, ...data]);
+    }
+
+    if (evidenceFiles && Object.keys(evidenceFiles).length > 0) {
+      for (const [docType, file] of Object.entries(evidenceFiles)) {
+        try {
+          await uploadEvidenceDocument({
+            departmentId,
+            uploadedBy: user?.id || 1,
+            file,
+            academicYear: year,
+            sectionName,
+            recordId: 1,
+            documentType: docType,
+          });
+        } catch {
+          // ignore evidence upload error
+        }
+      }
+      fetchEvidence();
+    }
     setShowUploadDialog(false);
-  }, []);
+  }, [isAlumniDetails, isEmploymentCareer, isHigherEducation, isAlumniEngagement, isAlumniContributions, isAlumniMentorship, isAlumniAchievements, isAlumniChapters, isAlumniEvents, departmentId, year, tabConfig.fields, fetchData, fetchEvidence, sectionName, user?.id]);
 
   const filteredData = tableData.filter(row => {
     if (!searchQuery) return true;
@@ -237,13 +1162,15 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
     );
   });
 
-  const getFieldInput = (field: { key: string; label: string; type: string; csvColumn: string; masterDataSource?: string; selectOptions?: string[]; autoPopulate?: boolean }) => {
-    const value = editFormData[field.csvColumn] || '';
+  const getFieldInput = (field: { key: string; label: string; type: string; csvColumn: string; masterDataSource?: string; selectOptions?: string[]; autoPopulate?: boolean }, isCreate = false) => {
+    const formData = isCreate ? createFormData : editFormData;
+    const setFormData = isCreate ? setCreateFormData : setEditFormData;
+    const value = formData[field.csvColumn] || '';
 
     if (field.masterDataSource) {
       const options = masterData[field.masterDataSource as keyof typeof masterData] as string[];
       return (
-        <Select value={value} onValueChange={(v) => setEditFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
+        <Select value={value} onValueChange={(v) => setFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
           <SelectTrigger className="h-9 text-xs">
             <SelectValue placeholder={`Select ${field.label}`} />
           </SelectTrigger>
@@ -258,7 +1185,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
 
     if (field.selectOptions) {
       return (
-        <Select value={value} onValueChange={(v) => setEditFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
+        <Select value={value} onValueChange={(v) => setFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
           <SelectTrigger className="h-9 text-xs">
             <SelectValue placeholder={`Select ${field.label}`} />
           </SelectTrigger>
@@ -273,7 +1200,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
 
     if (field.type === 'boolean') {
       return (
-        <Select value={value} onValueChange={(v) => setEditFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
+        <Select value={value} onValueChange={(v) => setFormData(prev => ({ ...prev, [field.csvColumn]: v }))}>
           <SelectTrigger className="h-9 text-xs">
             <SelectValue placeholder="Select" />
           </SelectTrigger>
@@ -290,7 +1217,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
         className="h-9 text-xs"
         type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
         value={value}
-        onChange={(e) => setEditFormData(prev => ({ ...prev, [field.csvColumn]: e.target.value }))}
+        onChange={(e) => setFormData(prev => ({ ...prev, [field.csvColumn]: e.target.value }))}
         disabled={field.autoPopulate}
       />
     );
@@ -314,9 +1241,9 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {tabConfig.templateFile && (
+            {(tabConfig.templateFile || isApiDriven) && (
               <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleDownloadTemplate}>
-                <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
+                <Download className="h-3.5 w-3.5 mr-1.5" /> {isApiDriven ? 'Export CSV' : 'Download Template'}
               </Button>
             )}
             {tabConfig.fields.length > 0 && (
@@ -324,7 +1251,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
               </Button>
             )}
-            <Button variant="outline" size="sm" className="text-xs h-8">
+            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { setCreateFormData({}); setShowCreateDialog(true); }}>
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Record
             </Button>
           </div>
@@ -427,7 +1354,12 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
               <CardTitle className="text-sm font-semibold">Evidence Repository</CardTitle>
               <CardDescription className="text-xs">Supporting documents for {tabConfig.label}</CardDescription>
             </div>
-            <Badge variant="secondary" className="text-[10px]">{tabEvidence.length} documents</Badge>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setShowUploadEvidenceDialog(true)}>
+                <Upload className="h-3 w-3 mr-1" /> Upload Document
+              </Button>
+              <Badge variant="secondary" className="text-[10px]">{evidenceList.length} documents</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -443,9 +1375,9 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="text-[10px]">Document</TableHead>
-                  <TableHead className="text-[10px]">Category</TableHead>
-                  <TableHead className="text-[10px]">Version</TableHead>
+                  <TableHead className="text-[10px]">Document Name</TableHead>
+                  <TableHead className="text-[10px]">Document Type</TableHead>
+                  <TableHead className="text-[10px]">Record ID</TableHead>
                   <TableHead className="text-[10px]">Uploaded By</TableHead>
                   <TableHead className="text-[10px]">Date</TableHead>
                   <TableHead className="text-[10px]">Status</TableHead>
@@ -453,37 +1385,47 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(tabConfig.id.includes('documents') ? evidenceDocuments : tabEvidence.slice(0, 4)).map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-muted/20">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-medium truncate max-w-[180px]">{doc.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge variant="outline" className="text-[9px]">{doc.category}</Badge></TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{doc.version}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{doc.uploadedBy}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{doc.uploadedDate}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={cn('text-[9px]',
-                        doc.status === 'verified' && 'bg-emerald-500/10 text-emerald-600',
-                        doc.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                        doc.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                        doc.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
-                      )}>
-                        {doc.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6"><Eye className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6"><DownloadCloud className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6"><Replace className="h-3 w-3" /></Button>
-                      </div>
+                {evidenceList.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground text-xs">
+                      No evidence documents uploaded yet for this section. Click "Upload Document" to add supporting evidence.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  evidenceList.map((doc) => (
+                    <TableRow key={doc.id} className="hover:bg-muted/20">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium truncate max-w-[180px]">{doc.documentName || doc.fileName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell><Badge variant="outline" className="text-[9px]">{doc.documentType || 'General'}</Badge></TableCell>
+                      <TableCell className="text-xs text-muted-foreground">#{doc.recordId || '-'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{doc.uploadedBy || 'Admin'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{doc.uploadedAt ? doc.uploadedAt.split('T')[0] : doc.createdAt ? doc.createdAt.split('T')[0] : '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={cn('text-[9px]',
+                          doc.verificationStatus === 'VERIFIED' && 'bg-emerald-500/10 text-emerald-600',
+                          doc.verificationStatus === 'PENDING' && 'bg-amber-500/10 text-amber-600',
+                          doc.verificationStatus === 'REJECTED' && 'bg-red-500/10 text-red-600'
+                        )}>
+                          {doc.verificationStatus || 'PENDING'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Preview Document" onClick={() => { setPreviewDoc(doc); setShowPreviewDialog(true); }}>
+                            <Eye className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Delete Document" onClick={() => handleDeleteEvidence(doc.id)}>
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -521,6 +1463,37 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
         </DialogContent>
       </Dialog>
 
+      {/* Create Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Add New Record</DialogTitle>
+            <DialogDescription className="text-xs">
+              Enter details below. Fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-3">
+            {tabConfig.fields.map(field => (
+              <div key={field.key} className="grid gap-1.5">
+                <Label className="text-xs font-medium">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                </Label>
+                {getFieldInput(field, true)}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" className="text-xs" onClick={handleCreateRow} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Record'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* CSV Upload Dialog */}
       <CSVUploadDialog
         open={showUploadDialog}
@@ -528,6 +1501,88 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
         tabConfig={tabConfig}
         existingData={tableData}
         onUploadComplete={handleCSVUploadComplete}
+      />
+
+      {/* Upload Evidence Dialog */}
+      <Dialog open={showUploadEvidenceDialog} onOpenChange={setShowUploadEvidenceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Upload Evidence Document</DialogTitle>
+            <DialogDescription className="text-xs">
+              Upload a supporting document for {tabConfig.label}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-3">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium">Associated Record *</Label>
+              <Select value={uploadEvidenceRecordId} onValueChange={setUploadEvidenceRecordId}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Select associated record" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tableData.map((row, idx) => {
+                    const recId = row._id || String(idx + 1);
+                    const labelStr = row['Alumni ID'] || row['Event Name'] || row['Chapter Name'] || row['Company Name'] || row['Institution Name'] || `Record #${recId}`;
+                    return (
+                      <SelectItem key={idx} value={String(recId)} className="text-xs">
+                        #{recId} - {labelStr}
+                      </SelectItem>
+                    );
+                  })}
+                  {tableData.length === 0 && (
+                    <SelectItem value="1" className="text-xs">General / Section Record (#1)</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium">Document Type</Label>
+              <Select value={uploadEvidenceDocType} onValueChange={setUploadEvidenceDocType}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tabConfig.requiredEvidence.map(type => (
+                    <SelectItem key={type} value={type} className="text-xs">{type}</SelectItem>
+                  ))}
+                  <SelectItem value="General Evidence" className="text-xs">General Evidence</SelectItem>
+                  <SelectItem value="Other Document" className="text-xs">Other Document</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-medium">Select File *</Label>
+              <Input
+                type="file"
+                className="h-9 text-xs cursor-pointer"
+                onChange={(e) => setUploadEvidenceFile(e.target.files?.[0] || null)}
+              />
+              {uploadEvidenceFile && (
+                <p className="text-[10px] text-muted-foreground">
+                  Selected: {uploadEvidenceFile.name} ({(uploadEvidenceFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowUploadEvidenceDialog(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" className="text-xs" onClick={handleUploadEvidence} disabled={evidenceUploading}>
+              {evidenceUploading ? 'Uploading...' : 'Upload Document'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Evidence Document Preview Modal */}
+      <EvidencePreviewModal
+        open={showPreviewDialog}
+        onClose={() => setShowPreviewDialog(false)}
+        document={previewDoc}
+        sectionName={sectionName}
       />
     </motion.div>
   );
