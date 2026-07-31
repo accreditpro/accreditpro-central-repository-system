@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { evidenceDocuments } from '../repository-configs';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 import {
   Search,
   Upload,
@@ -29,12 +30,29 @@ import {
   Replace,
   FileText,
   Filter,
+  BookOpen,
+  GraduationCap,
+  Users,
+  FlaskConical,
+  HeartHandshake,
+  Award,
 } from 'lucide-react';
+
+const uploadCategories: EvidenceCategory[] = [
+  { id: 'curriculum', label: 'Curriculum & Courses', icon: <BookOpen className="h-4 w-4 text-primary" /> },
+  { id: 'faculty', label: 'Faculty Profiles', icon: <Users className="h-4 w-4 text-primary" /> },
+  { id: 'students', label: 'Student Records', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
+  { id: 'research', label: 'Research & Publications', icon: <FlaskConical className="h-4 w-4 text-primary" /> },
+  { id: 'student-development', label: 'Student Development & Outcomes', icon: <HeartHandshake className="h-4 w-4 text-primary" /> },
+  { id: 'other', label: 'Other Documents', icon: <FileText className="h-4 w-4 text-primary" /> },
+];
 
 export const DocumentsView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
 
   const categories = [...new Set(evidenceDocuments.map(d => d.category))];
 
@@ -80,7 +98,7 @@ export const DocumentsView = () => {
               <CardTitle className="text-sm font-semibold">Document Repository</CardTitle>
               <CardDescription className="text-xs">All evidence documents for your department</CardDescription>
             </div>
-            <Button size="sm" className="text-xs h-8">
+            <Button size="sm" className="text-xs h-8" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
               <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload Document
             </Button>
           </div>
@@ -136,7 +154,7 @@ export const DocumentsView = () => {
               </TableHeader>
               <TableBody>
                 {filteredDocs.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-muted/20">
+                  <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -174,6 +192,19 @@ export const DocumentsView = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        title={uploadTarget?.label || 'Department Supporting Documents'}
+        subtitle={
+          uploadTarget
+            ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+            : 'Upload evidence & supporting documents across all department repositories'
+        }
+        categories={uploadTarget ? [uploadTarget] : uploadCategories}
+      />
     </div>
   );
 };

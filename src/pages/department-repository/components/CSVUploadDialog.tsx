@@ -532,7 +532,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
               const mapping = columnMappings[idx];
               const selectValue = mapping?.csvColumn || UNMAPPED_VALUE;
               return (
-                <TableRow key={field.key} className="hover:bg-muted/20">
+                <TableRow key={field.key} className="hover:bg-muted/50">
                   <TableCell className="p-2">
                     <span className="text-xs font-medium">{field.csvColumn}</span>
                     {field.required && <span className="text-red-500 ml-0.5 text-[9px]">*</span>}
@@ -709,7 +709,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
               </thead>
               <tbody>
                 {validationResult.validData.slice(0, 20).map((row, idx) => (
-                  <tr key={idx} className="border-b hover:bg-muted/20">
+                  <tr key={idx} className="border-b hover:bg-muted/50">
                     <td className="p-2 text-center text-muted-foreground font-mono">{idx + 1}</td>
                     {tabConfig.fields.map(f => (
                       <td key={f.key} className="p-2 max-w-[150px] truncate">
@@ -736,7 +736,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       <p className="text-xs text-muted-foreground">Upload supporting evidence documents for this submission:</p>
       <div className="space-y-2">
         {tabConfig.requiredEvidence.map((evidence) => (
-          <div key={evidence} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/20">
+          <div key={evidence} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50">
             <div className="flex items-center gap-2">
               <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs font-medium">{evidence}</span>
@@ -801,8 +801,8 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden !flex !flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-base">CSV Upload - {tabConfig.label}</DialogTitle>
           <DialogDescription className="text-xs">
             Upload and validate data with duplicate detection and field validation
@@ -810,7 +810,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         </DialogHeader>
 
         {/* Step Indicator */}
-        <div className="flex items-center justify-between px-1 py-3">
+        <div className="flex items-center justify-between px-1 py-3 shrink-0">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStepIndex;
@@ -840,13 +840,13 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           })}
         </div>
 
-        {/* Step Content */}
-        <div className="min-h-[280px] flex-1 overflow-y-auto px-1">
+        {/* Scrollable Step Content */}
+        <div className="flex-1 overflow-y-auto min-h-0 px-1 py-2">
           {renderStepContent()}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t">
+        <div className="flex items-center justify-between pt-3 border-t shrink-0">
           <Button variant="ghost" size="sm" className="text-xs" onClick={handleBack} disabled={currentStepIndex === 0}>
             Back
           </Button>

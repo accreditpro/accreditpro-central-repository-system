@@ -258,7 +258,7 @@ export const BasicInfoStep = () => {
               'mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer',
               isDragging
                 ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

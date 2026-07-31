@@ -165,7 +165,7 @@ export const RepositoryMonitoringPage = () => {
               </thead>
               <tbody>
                 {departmentReadiness.map((dept) => (
-                  <tr key={dept.department} className="border-b last:border-0 hover:bg-muted/30">
+                  <tr key={dept.department} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-3 px-3 font-medium">{dept.department}</td>
                     <td className="text-center py-3 px-3">
                       <span className={`text-xs font-medium ${dept.academic >= 90 ? 'text-green-600' : 'text-amber-600'}`}>{dept.academic}%</span>
@@ -400,7 +400,7 @@ export const ActivityLogsPage = () => {
               </thead>
               <tbody>
                 {filtered.map((log) => (
-                  <tr key={log.id} className="border-t hover:bg-muted/30">
+                  <tr key={log.id} className="border-t hover:bg-muted/50">
                     <td className="py-3 px-4 font-medium">{log.user}</td>
                     <td className="py-3 px-4">
                       <Badge variant="outline" className="text-xs">{log.role}</Badge>

@@ -140,7 +140,7 @@ export function ReportsModule() {
               </thead>
               <tbody>
                 {recentReports.map((report, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3 font-medium">{report.name}</td>
                     <td className="p-3 text-muted-foreground">{new Date(report.generatedOn).toLocaleDateString()}</td>
                     <td className="p-3">

@@ -141,7 +141,7 @@ export function ActivityTimeline() {
 
                   {/* Content */}
                   <div className="flex-1 pb-4">
-                    <div className="p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                    <div className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-sm">{activity.description}</p>

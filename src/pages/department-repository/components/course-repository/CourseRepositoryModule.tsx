@@ -874,7 +874,7 @@ export const CourseRepositoryModule = () => {
                     {filteredCourses.map((course, idx) => (
                       <tr
                         key={course.id}
-                        className="border-t border-border/50 hover:bg-muted/10 cursor-pointer"
+                        className="border-t border-border/50 hover:bg-muted/50 cursor-pointer"
                         onClick={() => openCourse(course.id)}
                       >
                         <td className="p-3 text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</td>

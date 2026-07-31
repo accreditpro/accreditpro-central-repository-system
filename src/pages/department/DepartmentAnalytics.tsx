@@ -148,7 +148,7 @@ export const DepartmentAnalytics = () => {
                 {missingRecords.map((record, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
                   >
                     <AlertTriangle className={cn(
                       'h-4 w-4 mt-0.5 shrink-0',
@@ -204,7 +204,7 @@ export const DepartmentAnalytics = () => {
                 {missingDocuments.map((doc, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
                   >
                     <FileX className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
                     <div className="flex-1 min-w-0">

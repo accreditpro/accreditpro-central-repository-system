@@ -136,7 +136,7 @@ export function EvidenceReview() {
               </thead>
               <tbody>
                 {filteredData.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr key={item.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         {getFileIcon(item.fileType)}

@@ -29,6 +29,7 @@ import {
   X,
   Eye,
   DownloadCloud,
+  RefreshCw,
   Building2,
   CalendarDays,
   GraduationCap,
@@ -440,86 +441,6 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     URL.revokeObjectURL(url);
   }, []);
 
-  // Evidence rendering helper
-  const renderEvidenceSection = useCallback((courseId: string) => {
-    const evidence = courseEvidenceMap[courseId] || {
-      geoTaggedPhotos: { status: 'not-uploaded' },
-      registeredStudentsList: { status: 'not-uploaded' },
-      attendedStudentsList: { status: 'not-uploaded' },
-    };
-
-    const docTypes: { key: EvidenceDocType; label: string }[] = [
-      { key: 'geoTaggedPhotos', label: 'Geo-tagged Photos' },
-      { key: 'registeredStudentsList', label: 'Registered Students List' },
-      { key: 'attendedStudentsList', label: 'Attended Students List' },
-    ];
-
-    return (
-      <div className="mt-3 pt-3 border-t border-border/40">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Evidence Documents</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {docTypes.map(({ key, label }) => {
-            const doc = evidence[key];
-            const isUploaded = doc.status === 'uploaded';
-            return (
-              <div key={key} className={cn(
-                'rounded-lg border p-2.5 transition-all',
-                isUploaded ? 'bg-emerald-50/50 border-emerald-200/60' : 'bg-muted/20 border-border/40'
-              )}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-medium truncate">{label}</span>
-                  {isUploaded ? (
-                    <Badge variant="outline" className="text-[8px] h-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                      Uploaded
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[8px] h-4 bg-amber-500/10 text-amber-600 border-amber-500/20">
-                      Pending
-                    </Badge>
-                  )}
-                </div>
-                {isUploaded && doc.fileName && (
-                  <p className="text-[9px] text-muted-foreground truncate mb-1.5">{doc.fileName}</p>
-                )}
-                <div className="flex gap-1">
-                  {!isUploaded ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-[9px] gap-1 flex-1"
-                      onClick={() => handleUploadEvidence(courseId, key)}
-                    >
-                      <Upload className="h-2.5 w-2.5" /> Upload
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 text-[9px] gap-1 flex-1"
-                        onClick={() => handlePreviewEvidence(courseId, key)}
-                      >
-                        <Eye className="h-2.5 w-2.5" /> Preview
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 text-[9px] gap-1 flex-1"
-                        onClick={() => handleDownloadEvidence(courseId, key)}
-                      >
-                        <DownloadCloud className="h-2.5 w-2.5" /> Download
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }, [courseEvidenceMap, handleUploadEvidence, handlePreviewEvidence, handleDownloadEvidence]);
-
   const totalCoursesForYearSem = courses.filter(
     (c) => c.year === selectedYear && c.semester === selectedSemester
   ).length;
@@ -722,7 +643,7 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                 </TableHeader>
                 <TableBody>
                   {filteredCourses.map((course, idx) => (
-                    <TableRow key={course.id} className="hover:bg-muted/20">
+                    <TableRow key={course.id} className="hover:bg-muted/50">
                       <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
                       <TableCell className="text-xs font-medium whitespace-nowrap">{course.courseName}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{course.courseInstructor}</TableCell>
@@ -756,26 +677,118 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
         </CardContent>
       </Card>
 
-      {/* Per-Course Evidence Section */}
+      {/* Per-Course Evidence Section — Inline Row Style like Add-on Programs */}
       {filteredCourses.length > 0 && (
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-violet-600" />
-              Evidence Documents — Per Course
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-violet-600" />
+                Course Evidence — {selectedYear} / {selectedSemester}
+              </CardTitle>
+              <Badge variant="secondary" className="text-[10px]">{filteredCourses.length} courses</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Upload evidence documents for each course: Geo-tagged Photos, Registered Students List, Attended Students List
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredCourses.map((course) => (
-              <div key={course.id} className="rounded-lg border border-border/50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <BookOpen className="h-3.5 w-3.5 text-violet-600" />
-                  <span className="text-xs font-semibold">{course.courseName}</span>
-                  <span className="text-[10px] text-muted-foreground">— {course.courseInstructor}</span>
+          <CardContent className="space-y-3">
+            {filteredCourses.map((course) => {
+              const courseEvidence = courseEvidenceMap[course.id] || {
+                geoTaggedPhotos: { status: 'not-uploaded' },
+                registeredStudentsList: { status: 'not-uploaded' },
+                attendedStudentsList: { status: 'not-uploaded' },
+              };
+              const evidenceItems = [
+                { key: 'geoTaggedPhotos' as const, label: 'Geo-tagged Photos of Session', icon: '📸', data: courseEvidence.geoTaggedPhotos },
+                { key: 'registeredStudentsList' as const, label: 'Registered Students List', icon: '📋', data: courseEvidence.registeredStudentsList },
+                { key: 'attendedStudentsList' as const, label: 'Attended Students List', icon: '✅', data: courseEvidence.attendedStudentsList },
+              ];
+              return (
+                <div key={course.id} className="rounded-lg border border-border/60 overflow-hidden">
+                  {/* Course Header */}
+                  <div className="bg-muted/30 px-4 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-violet-600" />
+                      <span className="text-xs font-semibold">{course.courseName}</span>
+                      <Badge variant="outline" className="text-[9px] ml-1">
+                        {course.fromDate} — {course.toDate}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {evidenceItems.filter((ei) => ei.data.status === 'uploaded').length === 3 ? (
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px]">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> All Uploaded
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
+                          {evidenceItems.filter((ei) => ei.data.status === 'uploaded').length}/3 Uploaded
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {/* Evidence Documents */}
+                  <div className="divide-y divide-border/40">
+                    {evidenceItems.map((item) => (
+                      <div key={item.key} className="px-4 py-2.5 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm">{item.icon}</span>
+                          <div>
+                            <p className="text-xs font-medium">{item.label}</p>
+                            {item.data.status === 'uploaded' && item.data.fileName ? (
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {item.data.fileName} • Uploaded {item.data.uploadedAt || ''}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Not uploaded yet</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {item.data.status === 'uploaded' ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                onClick={() => handlePreviewEvidence(course.id, item.key)}
+                              >
+                                <Eye className="h-3 w-3" /> Preview
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                onClick={() => handleDownloadEvidence(course.id, item.key)}
+                              >
+                                <DownloadCloud className="h-3 w-3" /> Download
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                                onClick={() => handleUploadEvidence(course.id, item.key)}
+                              >
+                                <RefreshCw className="h-3 w-3" /> Re-upload
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-7 px-3 text-[10px] gap-1 bg-violet-600 hover:bg-violet-700"
+                              onClick={() => handleUploadEvidence(course.id, item.key)}
+                            >
+                              <Upload className="h-3 w-3" /> Upload
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {renderEvidenceSection(course.id)}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
@@ -1008,7 +1021,7 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                   'relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200',
                   dragOver
                     ? 'border-violet-500 bg-violet-50/50 scale-[1.01]'
-                    : 'border-border/60 hover:border-violet-400 hover:bg-muted/30',
+                    : 'border-border/60 hover:border-violet-400 hover:bg-muted/50',
                   selectedFile && !uploadError && 'border-violet-500/50 bg-violet-50/30'
                 )}
               >

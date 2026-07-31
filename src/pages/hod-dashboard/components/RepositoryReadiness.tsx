@@ -170,7 +170,7 @@ export function RepositoryReadiness() {
                 {yearlyTrends.map((trend) => {
                   const avg = Math.round((trend.academic + trend.faculty + trend.student + trend.research + trend.alumni) / 5);
                   return (
-                    <tr key={trend.year} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={trend.year} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-medium">{trend.year}</td>
                       <td className="p-3"><span className={getScoreColor(trend.academic)}>{trend.academic}%</span></td>
                       <td className="p-3"><span className={getScoreColor(trend.faculty)}>{trend.faculty}%</span></td>

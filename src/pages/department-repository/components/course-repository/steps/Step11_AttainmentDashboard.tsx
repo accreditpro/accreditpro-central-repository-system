@@ -710,7 +710,7 @@ export default function Step11_AttainmentDashboard({
                             <Fragment key={co.coCode}>
                               <tr
                                 className={cn(
-                                  'border-t border-border/40 hover:bg-muted/10 cursor-pointer transition-colors',
+                                  'border-t border-border/40 hover:bg-muted/50 cursor-pointer transition-colors',
                                   isExpanded && 'bg-muted/20'
                                 )}
                                 onClick={() =>
@@ -857,7 +857,7 @@ export default function Step11_AttainmentDashboard({
                       {data.poAttainments.map((po, idx) => {
                         const level = po.attainmentLevel ?? getAttainmentLevel(po.attainment, obeLevels);
                         return (
-                          <tr key={po.poCode} className="border-t border-border/40 hover:bg-muted/10">
+                          <tr key={po.poCode} className="border-t border-border/40 hover:bg-muted/50">
                             <td className="p-2.5 font-semibold font-mono">{po.poCode}</td>
                             <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
                               {NBA_POS[idx]?.shortName || po.poCode}
@@ -910,7 +910,7 @@ export default function Step11_AttainmentDashboard({
                       {data.psoAttainments.map((pso, idx) => {
                         const level = pso.attainmentLevel ?? getAttainmentLevel(pso.attainment, obeLevels);
                         return (
-                          <tr key={pso.poCode} className="border-t border-border/40 hover:bg-muted/10">
+                          <tr key={pso.poCode} className="border-t border-border/40 hover:bg-muted/50">
                             <td className="p-2.5 font-semibold font-mono">{pso.poCode}</td>
                             <td className="p-2.5 text-muted-foreground max-w-[250px] truncate">
                               {NBA_PSOS[idx]?.description || pso.poCode}
@@ -976,7 +976,7 @@ export default function Step11_AttainmentDashboard({
                           return (
                             <tr
                               key={student.rollNumber}
-                              className="border-t border-border/30 hover:bg-muted/10"
+                              className="border-t border-border/30 hover:bg-muted/50"
                             >
                               <td className="p-2 text-muted-foreground">{idx + 1}</td>
                               <td className="p-2 font-mono font-medium">

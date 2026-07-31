@@ -686,7 +686,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
             </div>
           ) : (
             <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-              <Table className="min-w-[1200px]">
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow className="bg-muted/30">
                     <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
@@ -705,9 +705,9 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                 </TableHeader>
                 <TableBody>
                   {filteredPrograms.map((program, idx) => (
-                    <TableRow key={program.id} className="hover:bg-muted/20">
+                    <TableRow key={program.id} className="hover:bg-muted/50">
                       <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
-                      <TableCell className="text-sm font-medium whitespace-nowrap">{program.topic}</TableCell>
+                      <TableCell className="text-xs font-medium whitespace-nowrap">{program.topic}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{program.fromDate}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{program.toDate}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{program.timeFrom} - {program.timeTo}</TableCell>
@@ -800,7 +800,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   {/* Evidence Documents */}
                   <div className="divide-y divide-border/40">
                     {evidenceItems.map((item) => (
-                      <div key={item.key} className="px-4 py-2.5 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                      <div key={item.key} className="px-4 py-2.5 flex items-center justify-between hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
                           <span className="text-sm">{item.icon}</span>
                           <div>
@@ -1199,7 +1199,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                   'relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200',
                   dragOver
                     ? 'border-emerald-500 bg-emerald-50/50 scale-[1.01]'
-                    : 'border-border/60 hover:border-emerald-400 hover:bg-muted/30',
+                    : 'border-border/60 hover:border-emerald-400 hover:bg-muted/50',
                   selectedFile && !uploadError && 'border-emerald-500/50 bg-emerald-50/30'
                 )}
               >

@@ -249,7 +249,7 @@ export const AssessmentSchemePanel = ({ yearLabel, yearLevelLabel, assessmentSch
                       'flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors',
                       isSelected
                         ? 'border-primary/40 bg-primary/[0.03]'
-                        : 'border-border/50 hover:bg-muted/20'
+                        : 'border-border/50 hover:bg-muted/50'
                     )}
                   >
                     <div
@@ -415,7 +415,7 @@ export const AssessmentSchemePanel = ({ yearLabel, yearLevelLabel, assessmentSch
                       'flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors',
                       isSelected
                         ? 'border-primary/40 bg-primary/[0.03]'
-                        : 'border-border/50 hover:bg-muted/20'
+                        : 'border-border/50 hover:bg-muted/50'
                     )}
                   >
                     <div

@@ -23,6 +23,14 @@ import {
   User,
 } from 'lucide-react';
 import { financeDocumentCategories } from '../finance-configs';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+
+const uploadCategories: EvidenceCategory[] = financeDocumentCategories.map((c) => ({
+  id: c.id,
+  label: c.label,
+  description: `Upload financial evidence documents for ${c.label.toLowerCase()}`,
+  icon: <FileText className="h-4 w-4 text-primary" />,
+}));
 
 interface Document {
   id: string;
@@ -54,6 +62,8 @@ const sampleDocuments: Record<string, Document[]> = {
 export function FinanceDocumentsView() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
 
   const currentDocs = selectedCategory ? (sampleDocuments[selectedCategory] || []) : [];
   const filteredDocs = currentDocs.filter(doc =>
@@ -77,7 +87,7 @@ export function FinanceDocumentsView() {
             <h3 className="text-lg font-semibold">Supporting Documents</h3>
             <p className="text-sm text-muted-foreground">Manage financial documents organized by category</p>
           </div>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
             <Upload className="h-4 w-4" />
             Upload Document
           </Button>
@@ -89,6 +99,7 @@ export function FinanceDocumentsView() {
               key={category.id}
               className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
               onClick={() => setSelectedCategory(category.id)}
+              onDoubleClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null); setUploadDialogOpen(true); }}
             >
               <CardContent className="p-5">
                 <div className="flex items-start gap-3">
@@ -105,6 +116,19 @@ export function FinanceDocumentsView() {
             </Card>
           ))}
         </div>
+
+        {/* Evidence Upload Dialog */}
+        <EvidenceUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          title={uploadTarget?.label || 'Finance Supporting Documents'}
+          subtitle={
+            uploadTarget
+              ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+              : 'Upload financial supporting documents across all categories'
+          }
+          categories={uploadTarget ? [uploadTarget] : uploadCategories}
+        />
       </div>
     );
   }
@@ -134,7 +158,7 @@ export function FinanceDocumentsView() {
             className="pl-9"
           />
         </div>
-        <Button size="sm" className="gap-2">
+        <Button size="sm" className="gap-2" onClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === selectedCategory) || null); setUploadDialogOpen(true); }}>
           <Upload className="h-4 w-4" />
           Upload
         </Button>
@@ -201,13 +225,25 @@ export function FinanceDocumentsView() {
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                  </TableRow>            ))}
+          </TableBody>
+        </Table>
+      )}
         </CardContent>
       </Card>
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        title={uploadTarget?.label || 'Finance Supporting Documents'}
+        subtitle={
+          uploadTarget
+            ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+            : 'Upload financial supporting documents across all categories'
+        }
+        categories={uploadTarget ? [uploadTarget] : uploadCategories}
+      />
     </div>
   );
 }

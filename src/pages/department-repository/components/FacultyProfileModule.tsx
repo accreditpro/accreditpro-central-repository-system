@@ -288,7 +288,7 @@ export const FacultyProfileModule = ({ department, academicYear }: FacultyProfil
                 </TableRow></TableHeader>
                 <TableBody>
                   {filteredRecords.map((r, idx) => (
-                    <TableRow key={r.id} className="hover:bg-muted/20">
+                    <TableRow key={r.id} className="hover:bg-muted/50">
                       <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
                       <TableCell className="text-xs font-medium font-mono whitespace-nowrap">{r.empCode}</TableCell>
                       <TableCell className="text-sm font-medium whitespace-nowrap">{r.name}</TableCell>

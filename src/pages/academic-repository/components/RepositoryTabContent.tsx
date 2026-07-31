@@ -167,7 +167,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 </TableHeader>
                 <TableBody>
                   {mockValidationResult.errors.map((err, i) => (
-                    <TableRow key={i} className="hover:bg-muted/20">
+                    <TableRow key={i} className="hover:bg-muted/50">
                       <TableCell className="text-xs font-mono">{err.row}</TableCell>
                       <TableCell className="text-xs font-medium">{err.column}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{err.value || '(empty)'}</TableCell>
@@ -221,7 +221,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
               </TableHeader>
               <TableBody>
                 {tabEvidence.slice(0, 4).map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-muted/20">
+                  <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -331,7 +331,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 </TableHeader>
                 <TableBody>
                   {tabUploads.map((record) => (
-                    <TableRow key={record.id} className="hover:bg-muted/20">
+                    <TableRow key={record.id} className="hover:bg-muted/50">
                       <TableCell className="text-xs font-medium">{record.fileName}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
                       <TableCell className="text-xs">{record.recordsCount}</TableCell>

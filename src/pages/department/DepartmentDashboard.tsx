@@ -173,7 +173,7 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
                 {missingRecords.slice(0, 5).map((record, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors"
+                    className="flex items-start gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
                   >
                     <AlertTriangle className={cn(
                       'h-4 w-4 mt-0.5 shrink-0',
@@ -221,7 +221,7 @@ export const DepartmentDashboard = ({ onNavigate }: DepartmentDashboardProps) =>
               {uploadHistory.slice(0, 4).map((upload) => (
                 <div
                   key={upload.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10">
                     <FileText className="h-4 w-4 text-indigo-500" />

@@ -211,7 +211,7 @@ const COManager = ({ course, onUpdate }: COManagerProps) => {
               key={co.id}
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/20 transition-colors group"
+              className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/50 transition-colors group"
             >
               <div className="flex items-center justify-center h-8 w-10 rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-xs font-bold shrink-0">
                 {co.displayCode}
@@ -942,7 +942,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                 </TableHeader>
                 <TableBody>
                   {filteredCourses.map((course, idx) => (
-                    <TableRow key={course.id} className="hover:bg-muted/20">
+                    <TableRow key={course.id} className="hover:bg-muted/50">
                       <TableCell className="text-xs text-muted-foreground sticky left-0 bg-background z-10">{idx + 1}</TableCell>
                       <TableCell className="text-xs font-medium font-mono whitespace-nowrap">{course.courseCode}</TableCell>
                       <TableCell className="text-sm font-medium whitespace-nowrap">
@@ -1175,7 +1175,7 @@ export const CoursesModule = ({ department, academicYear }: CoursesModuleProps) 
                         );
                         return courseEvidence.length > 0 ? (
                           courseEvidence.map((ev) => (
-                            <TableRow key={ev.id} className="hover:bg-muted/20">
+                            <TableRow key={ev.id} className="hover:bg-muted/50">
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />

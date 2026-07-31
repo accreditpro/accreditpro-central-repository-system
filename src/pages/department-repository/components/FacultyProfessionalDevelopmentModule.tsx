@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { getModuleTabActiveClasses } from './module-tab-styles';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -211,8 +214,21 @@ const mockDeptOrganized: DeptOrganizedFDP[] = [
 
 // ============ COMPONENT ============
 
+const facultyUploadCategories: EvidenceCategory[] = [
+  { id: 'fdp', label: 'FDP Approval Letters', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'brochures', label: 'Event Brochures', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'attendance', label: 'Attendance Registers', icon: <Users className="h-4 w-4 text-primary" /> },
+  { id: 'participants', label: 'Participant Lists', icon: <Users className="h-4 w-4 text-primary" /> },
+  { id: 'feedback', label: 'Feedback Summaries', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'reports', label: 'Event Reports', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'photos', label: 'Geo-tagged Photographs', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'certificates', label: 'Certificates Issued', icon: <Award className="h-4 w-4 text-primary" /> },
+  { id: 'circulars', label: 'Circulars & Notifications', icon: <FileText className="h-4 w-4 text-primary" /> },
+];
+
 export const FacultyProfessionalDevelopmentModule = ({ department, academicYear }: FacultyProfessionalDevelopmentModuleProps) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('dashboard');
+  const activeClasses = getModuleTabActiveClasses('faculty');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -402,7 +418,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono">{row.employeeId}</td>
                       <td className="p-3 font-medium">{row.facultyName}</td>
                       <td className="p-3">{row.professionalSocietyName}</td>
@@ -512,7 +528,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono">{row.employeeId}</td>
                       <td className="p-3 font-medium">{row.facultyName}</td>
                       <td className="p-3"><Badge variant="outline" className="text-[10px]">{row.programType}</Badge></td>
@@ -623,7 +639,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono">{row.employeeId}</td>
                       <td className="p-3 font-medium">{row.facultyName}</td>
                       <td className="p-3"><Badge variant="outline" className="text-[10px]">{row.eventType}</Badge></td>
@@ -734,7 +750,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono">{row.employeeId}</td>
                       <td className="p-3 font-medium">{row.facultyName}</td>
                       <td className="p-3"><Badge variant="outline" className="text-[10px]">{row.platform}</Badge></td>
@@ -844,7 +860,7 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-medium max-w-[200px] truncate">{row.programName}</td>
                       <td className="p-3"><Badge variant="outline" className="text-[10px]">{row.programType}</Badge></td>
                       <td className="p-3">{row.theme}</td>
@@ -888,14 +904,24 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
   };
 
   // ============ SUPPORTING DOCUMENTS VIEW ============
+  const [showFacultyUpload, setShowFacultyUpload] = useState(false);
   const renderSupportingDocs = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Supporting Documents</h3>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setShowFacultyUpload(true)}>
           <Upload className="h-3.5 w-3.5 mr-1" /> Upload Document
         </Button>
       </div>
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={showFacultyUpload}
+        onClose={() => setShowFacultyUpload(false)}
+        title="Faculty Professional Development Documents"
+        subtitle="Upload FDP & professional development evidence documents"
+        categories={facultyUploadCategories}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
@@ -966,16 +992,23 @@ export const FacultyProfessionalDevelopmentModule = ({ department, academicYear 
             { id: 'moocs', label: 'MOOCs / Online Certifications', icon: Globe },
             { id: 'dept-organized', label: 'Dept Organized FDP/STTP', icon: Building2 },
             { id: 'supporting-docs', label: 'Supporting Documents', icon: FolderOpen },
-          ].map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              value={tab.id}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-            >
-              <tab.icon className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">{tab.label}</span>
-            </TabsTrigger>
-          ))}
+          ].map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            return (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
+                )}
+              >
+                <tab.icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
+                <span className="hidden lg:inline">{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-4">{renderDashboard()}</TabsContent>

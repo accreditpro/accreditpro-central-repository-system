@@ -231,7 +231,7 @@ export const CSVUploadEngine = () => {
                   <div
                     className={cn(
                       'border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer',
-                      isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                      isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     )}
                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                     onDragLeave={() => setIsDragOver(false)}
@@ -395,7 +395,7 @@ export const CSVUploadEngine = () => {
               </TableHeader>
               <TableBody>
                 {uploadHistory.map((record) => (
-                  <TableRow key={record.id} className="hover:bg-muted/30">
+                  <TableRow key={record.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />

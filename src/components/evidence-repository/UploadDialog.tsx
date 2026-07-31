@@ -20,8 +20,8 @@ interface UploadDialogProps {
   onClose: () => void;
 }
 
-const ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'image/png', 'image/jpeg'];
-const ACCEPTED_EXTENSIONS = '.pdf,.docx,.xlsx,.png,.jpg,.jpeg';
+const ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'text/csv', 'image/png', 'image/jpeg'];
+const ACCEPTED_EXTENSIONS = '.pdf,.docx,.xlsx,.zip,.csv,.png,.jpg,.jpeg';
 
 export function UploadDialog({ document, open, onClose }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -148,7 +148,7 @@ export function UploadDialog({ document, open, onClose }: UploadDialogProps) {
                   </p>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  Supported: PDF, DOCX, XLSX, PNG, JPG (Max 25MB)
+                  Supported: PDF, DOCX, ZIP, PNG, XLSX, CSV, JPG (Max 25MB)
                 </p>
                 <Input
                   type="file"

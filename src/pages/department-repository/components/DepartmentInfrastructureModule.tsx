@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
+import { getModuleTabActiveClasses } from './module-tab-styles';
 import { EvidencePreviewDialog } from '@/components/shared/EvidencePreviewDialog';
 import type { EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import {
@@ -782,7 +783,7 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
               </TableRow>
             ) : (
               filteredRecords.map((record, idx) => (
-                <TableRow key={record.id} className="hover:bg-muted/20">
+                <TableRow key={record.id} className="hover:bg-muted/50">
                   <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                   {fields.slice(0, 5).map((f) => (
                     <TableCell key={f.key} className="text-xs font-medium truncate max-w-[150px]">
@@ -878,7 +879,7 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
                   <TableRow
                     key={row.id}
                     className={cn(
-                      'hover:bg-muted/20',
+                      'hover:bg-muted/50',
                       row.validationStatus === 'invalid' && 'bg-red-500/5'
                     )}
                   >
@@ -1139,6 +1140,7 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
 export const DepartmentInfrastructureModule = ({ config, academicYear }: DepartmentInfrastructureModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   void academicYear;
+  const activeClasses = getModuleTabActiveClasses(config.id);
   const metrics = repositoryHealth[config.id] || { dataCompleteness: 76, evidenceCompleteness: 68, verificationPercent: 72, readinessScore: 71 };
 
   // ===== SHARED EVIDENCE STATE =====
@@ -1539,10 +1541,11 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                 value={tab.id}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
-                  isActive && 'ring-1 ring-amber-500/30'
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
                 )}
               >
-                <Icon className={cn('h-3.5 w-3.5', isActive && 'text-amber-600')} />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );

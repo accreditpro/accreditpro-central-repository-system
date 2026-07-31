@@ -300,7 +300,7 @@ export const InfrastructureRepositoryPage = () => {
                 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                 activeView === 'dashboard'
                   ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
               title={sidebarCollapsed ? 'Dashboard' : undefined}
             >
@@ -344,7 +344,7 @@ export const InfrastructureRepositoryPage = () => {
                           !sidebarCollapsed && 'pl-6',
                           activeView === item.id
                             ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                         )}
                         title={sidebarCollapsed ? item.label : undefined}
                       >
@@ -371,7 +371,7 @@ export const InfrastructureRepositoryPage = () => {
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                   activeView === item.id
                     ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
                 title={sidebarCollapsed ? item.label : undefined}
               >

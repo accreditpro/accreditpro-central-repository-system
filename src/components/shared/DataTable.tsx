@@ -81,7 +81,7 @@ export function DataTable<T>({
       <div className="rounded-lg border border-border/50 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableRow className="bg-muted/30 hover:bg-muted/50">
               {columns.map((col) => (
                 <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                   {col.header}
@@ -111,7 +111,7 @@ export function DataTable<T>({
       <div className="rounded-lg border border-border/50 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableRow className="bg-muted/30 hover:bg-muted/50">
               {columns.map((col) => (
                 <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                   {col.header}
@@ -135,7 +135,7 @@ export function DataTable<T>({
     <div className="rounded-lg border border-border/50 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
+          <TableRow className="bg-muted/30 hover:bg-muted/50">
             {columns.map((col) => (
               <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                 {col.sortable && onSort ? (

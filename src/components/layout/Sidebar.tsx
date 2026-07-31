@@ -127,8 +127,8 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
               className={cn(
                 'flex items-center justify-center rounded-lg h-10 w-10 mx-auto transition-all duration-200',
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/25'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
             >
               <Icon className="h-4 w-4" />
@@ -150,8 +150,8 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
           'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative',
           indented && 'ml-4 pl-3',
           isActive
-            ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/25'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            ? 'bg-primary/10 text-primary font-medium'
+            : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
@@ -244,7 +244,7 @@ export const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
                       'flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                       hasActiveChild
                         ? 'text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                     )}
                   >
                     <div className="flex items-center gap-3">

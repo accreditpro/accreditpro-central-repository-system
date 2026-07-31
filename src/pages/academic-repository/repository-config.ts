@@ -93,7 +93,40 @@ export const academicRepositoryTabs: RepositoryTabConfig[] = [
     frameworkMapping: ['NAAC'],
     templateFile: '/templates/value_added_courses_template.csv',
   },
-,
+  {
+    id: 'add-on-programs',
+    label: 'Add-on Programs',
+    icon: 'Award',
+    fields: [
+      { key: 'topic', label: 'Topic', type: 'text', required: true, csvColumn: 'Topic' },
+      { key: 'fromDate', label: 'From Date', type: 'text', required: true, csvColumn: 'From Date' },
+      { key: 'toDate', label: 'To Date', type: 'text', required: true, csvColumn: 'To Date' },
+      { key: 'coordinator', label: 'Coordinator', type: 'text', required: true, csvColumn: 'Coordinator' },
+      { key: 'duration', label: 'Duration', type: 'text', required: false, csvColumn: 'Duration' },
+      { key: 'studentsEnrolled', label: 'Students Enrolled', type: 'number', required: true, csvColumn: 'Students Enrolled' },
+      { key: 'studentsParticipated', label: 'Students Participated', type: 'number', required: true, csvColumn: 'Students Participated' },
+      { key: 'certificationProvided', label: 'Certification Provided', type: 'boolean', required: true, csvColumn: 'Certification Provided' },
+    ],
+    requiredEvidence: ['Program Brochure', 'Attendance Sheets', 'Certificates', 'Feedback Forms'],
+    frameworkMapping: ['NAAC'],
+    templateFile: '/templates/addon_programs_template.csv',
+  },
+  {
+    id: 'academic-timetable',
+    label: 'Academic Timetable',
+    icon: 'Clock',
+    fields: [
+      { key: 'period', label: 'Period', type: 'number', required: true, csvColumn: 'Period' },
+      { key: 'day', label: 'Day', type: 'text', required: true, csvColumn: 'Day' },
+      { key: 'courseCode', label: 'Course Code', type: 'text', required: true, csvColumn: 'Course Code' },
+      { key: 'courseName', label: 'Course Name', type: 'text', required: true, csvColumn: 'Course Name' },
+      { key: 'facultyName', label: 'Faculty Name', type: 'text', required: true, csvColumn: 'Faculty Name' },
+      { key: 'roomNumber', label: 'Room Number', type: 'text', required: false, csvColumn: 'Room Number' },
+    ],
+    requiredEvidence: ['Timetable PDF', 'Faculty Workload Statement', 'Room Allocation'],
+    frameworkMapping: ['NBA', 'NAAC'],
+    templateFile: '/templates/academic_timetable_template.csv',
+  },
 ];
 
 // Mock KPI Data
@@ -112,7 +145,9 @@ export const repositorySummaries: Record<string, RepositorySummary> = {
   curriculum: { recordsUploaded: 8, pendingValidation: 1, pendingVerification: 2, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-08 10:15' },
   courses: { recordsUploaded: 156, pendingValidation: 5, pendingVerification: 12, verified: 130, approved: 125, rejected: 4, lastUpdated: '2025-01-12 16:45' },
   'academic-calendar': { recordsUploaded: 4, pendingValidation: 0, pendingVerification: 0, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-05 09:00' },
-  'value-added-courses': { recordsUploaded: 12, pendingValidation: 2, pendingVerification: 3, verified: 5, approved: 5, rejected: 1, lastUpdated: '2025-01-09 11:20' }
+  'value-added-courses': { recordsUploaded: 12, pendingValidation: 2, pendingVerification: 3, verified: 5, approved: 5, rejected: 1, lastUpdated: '2025-01-09 11:20' },
+  'add-on-programs': { recordsUploaded: 6, pendingValidation: 1, pendingVerification: 1, verified: 4, approved: 4, rejected: 0, lastUpdated: '2025-01-11 10:00' },
+  'academic-timetable': { recordsUploaded: 24, pendingValidation: 0, pendingVerification: 2, verified: 22, approved: 22, rejected: 0, lastUpdated: '2025-01-12 09:30' },
 };
 
 // Mock Metrics
@@ -130,6 +165,8 @@ export const uploadHistoryData: UploadHistoryRecord[] = [
   { id: '3', fileName: 'curriculum_r2022.csv', tab: 'Curriculum', uploadedAt: '2025-01-08 10:15', recordsCount: 8, validRecords: 7, invalidRecords: 1, status: 'pending', uploadedBy: 'Dr. Rajesh Kumar' },
   { id: '4', fileName: 'vac_2025_26.csv', tab: 'Value Added Courses', uploadedAt: '2025-01-09 11:20', recordsCount: 12, validRecords: 11, invalidRecords: 1, status: 'approved', uploadedBy: 'Prof. Vikram Singh' },
   { id: '6', fileName: 'academic_calendar_2025_26.csv', tab: 'Academic Calendar', uploadedAt: '2025-01-05 09:00', recordsCount: 4, validRecords: 4, invalidRecords: 0, status: 'approved', uploadedBy: 'Dr. Suresh Nair' },
+  { id: '7', fileName: 'addon_programs_2025.csv', tab: 'Add-on Programs', uploadedAt: '2025-01-11 10:00', recordsCount: 6, validRecords: 5, invalidRecords: 1, status: 'pending', uploadedBy: 'Prof. Meera Patel' },
+  { id: '8', fileName: 'timetable_sem2_2025.csv', tab: 'Academic Timetable', uploadedAt: '2025-01-12 09:30', recordsCount: 24, validRecords: 24, invalidRecords: 0, status: 'approved', uploadedBy: 'Dr. Suresh Nair' },
 ];
 
 // Mock Evidence Documents
@@ -139,7 +176,10 @@ export const evidenceDocuments: EvidenceDocument[] = [
   { id: '3', name: 'Curriculum Structure R2022.xlsx', category: 'Curriculum', version: 'v2.1', uploadedBy: 'Prof. Meera Patel', uploadedDate: '2025-01-07', status: 'pending', fileType: 'xlsx', size: '890 KB' },
   { id: '4', name: 'Academic Calendar 2025-26.pdf', category: 'Academic Calendar', version: 'v1.0', uploadedBy: 'Dr. Suresh Nair', uploadedDate: '2025-01-05', status: 'verified', fileType: 'pdf', size: '1.2 MB' },
   { id: '5', name: 'VAC Certificates Bundle.zip', category: 'Value Added Courses', version: 'v1.0', uploadedBy: 'Prof. Vikram Singh', uploadedDate: '2025-01-09', status: 'pending', fileType: 'zip', size: '15.6 MB' },
-
+  { id: '6', name: 'Add-on Brochure IoT Workshop.pdf', category: 'Add-on Programs', version: 'v1.0', uploadedBy: 'Prof. Meera Patel', uploadedDate: '2025-01-11', status: 'verified', fileType: 'pdf', size: '1.1 MB' },
+  { id: '7', name: 'Add-on Attendance Sheets.zip', category: 'Add-on Programs', version: 'v1.0', uploadedBy: 'Prof. Meera Patel', uploadedDate: '2025-01-11', status: 'pending', fileType: 'zip', size: '4.3 MB' },
+  { id: '8', name: 'Timetable Sem II 2025-26.pdf', category: 'Academic Timetable', version: 'v2.0', uploadedBy: 'Dr. Suresh Nair', uploadedDate: '2025-01-12', status: 'verified', fileType: 'pdf', size: '2.2 MB' },
+  { id: '9', name: 'Faculty Workload Statement.xlsx', category: 'Academic Timetable', version: 'v1.0', uploadedBy: 'Dr. Suresh Nair', uploadedDate: '2025-01-12', status: 'pending', fileType: 'xlsx', size: '890 KB' },
 ];
 
 // Mock Workflow Steps

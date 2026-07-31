@@ -53,7 +53,7 @@ export function VersionHistoryDialog({ document, open, onClose }: VersionHistory
                     }`}
                   />
 
-                  <div className="ml-4 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                  <div className="ml-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] font-bold">

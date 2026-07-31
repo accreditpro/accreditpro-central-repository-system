@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
+import { getModuleTabActiveClasses } from './module-tab-styles';
 import { StudentMOOCModule } from './StudentMOOCModule';
 import {
   Building2,
@@ -44,6 +45,7 @@ const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4',
 
 export const StudentRepositoryModule = ({ config, academicYear }: StudentRepositoryModuleProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[0]?.id || '');
+  const activeClasses = getModuleTabActiveClasses(config.id);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState(academicYear || '2025-26');
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
@@ -175,13 +177,18 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
           {config.tabs.map((tab) => {
             const Icon = iconMap[tab.icon] || FileText;
+            const isActive = activeTab === tab.id;
             return (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
+                )}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );

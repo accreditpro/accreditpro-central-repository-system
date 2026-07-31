@@ -273,7 +273,7 @@ const Login = () => {
                 type="button"
                 onClick={() => fillDemoCredentials(account.email)}
                 disabled={isLoading || loginState === 'success'}
-                className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-left transition-all hover:bg-muted/60 hover:border-border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-left transition-all hover:bg-muted/50 hover:border-border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">

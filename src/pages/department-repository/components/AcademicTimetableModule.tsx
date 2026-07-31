@@ -604,7 +604,7 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
                       // Only show periods that have at least one entry
                       return DAYS.some((day) => timetableGrid[day]?.[period.toString()]);
                     }).map((period) => (
-                      <TableRow key={period} className="hover:bg-muted/10">
+                      <TableRow key={period} className="hover:bg-muted/50">
                         <TableCell className="text-center border-r p-2">
                           <div className="flex flex-col items-center">
                             <span className="text-xs font-bold text-indigo-700">P{period}</span>
@@ -686,7 +686,7 @@ export const AcademicTimetableModule = ({ department, academicYear }: AcademicTi
                       return a.period - b.period;
                     })
                     .map((entry, idx) => (
-                      <TableRow key={entry.id} className="hover:bg-muted/20">
+                      <TableRow key={entry.id} className="hover:bg-muted/50">
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs text-center">
                           <Badge variant="outline" className="text-[10px]">P{entry.period}</Badge>

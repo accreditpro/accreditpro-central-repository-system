@@ -360,7 +360,7 @@ export const UserManagementPage = () => {
               </thead>
               <tbody>
                 {filtered.map((user) => (
-                  <tr key={user.id} className="border-t hover:bg-muted/30">
+                  <tr key={user.id} className="border-t hover:bg-muted/50">
                     <td className="py-3 px-4 font-medium">{user.name}</td>
                     <td className="py-3 px-4 text-muted-foreground">{user.email}</td>
                     <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{user.mobile}</td>

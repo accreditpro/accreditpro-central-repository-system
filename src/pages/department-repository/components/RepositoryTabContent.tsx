@@ -380,7 +380,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                     </TableRow>
                   ) : (
                     filteredData.map((row, index) => (
-                      <TableRow key={index} className="hover:bg-muted/20">
+                      <TableRow key={index} className="hover:bg-muted/50">
                         <TableCell className="text-[10px] text-center text-muted-foreground font-mono p-1.5">{index + 1}</TableCell>
                         {tabConfig.fields.map(field => (
                           <TableCell key={field.key} className="text-[10px] p-1.5 truncate">
@@ -454,7 +454,7 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
               </TableHeader>
               <TableBody>
                 {(tabConfig.id.includes('documents') ? evidenceDocuments : tabEvidence.slice(0, 4)).map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-muted/20">
+                  <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />

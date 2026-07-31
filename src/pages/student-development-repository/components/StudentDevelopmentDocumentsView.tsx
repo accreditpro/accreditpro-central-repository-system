@@ -17,6 +17,7 @@ import {
   FileImage,
   File,
   Download,
+  Upload,
   Eye,
   Trash2,
   FolderOpen,
@@ -46,6 +47,20 @@ import {
   UploadedFile,
 } from '@/pages/tpo-repository/components/TPOEvidenceDialog';
 import { ImageZoomViewer } from '@/components/shared/ImageZoomViewer';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+
+const uploadCategories: EvidenceCategory[] = [
+  { id: 'nss', label: 'NSS Activities', icon: <Heart className="h-4 w-4 text-primary" /> },
+  { id: 'ncc', label: 'NCC Activities', icon: <Shield className="h-4 w-4 text-primary" /> },
+  { id: 'sports', label: 'Sports Activities', icon: <Trophy className="h-4 w-4 text-primary" /> },
+  { id: 'cultural', label: 'Cultural Activities', icon: <Music className="h-4 w-4 text-primary" /> },
+  { id: 'events', label: 'Events', icon: <Calendar className="h-4 w-4 text-primary" /> },
+  { id: 'achievements', label: 'Student Achievements', icon: <Award className="h-4 w-4 text-primary" /> },
+  { id: 'extension', label: 'Extension Activities', icon: <HandHeart className="h-4 w-4 text-primary" /> },
+  { id: 'outreach', label: 'Community Outreach', icon: <Users className="h-4 w-4 text-primary" /> },
+  { id: 'clubs', label: 'Clubs & Societies', icon: <Layers className="h-4 w-4 text-primary" /> },
+  { id: 'chapters', label: 'Student Chapters', icon: <BookMarked className="h-4 w-4 text-primary" /> },
+];
 
 // ============================================================
 // TYPES
@@ -134,6 +149,7 @@ export function StudentDevelopmentDocumentsView({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Flatten all evidence data into a list of documents
   const allDocuments = useMemo(() => {
@@ -425,7 +441,7 @@ export function StudentDevelopmentDocumentsView({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                        className="border-b border-border/30 group hover:bg-muted/50 transition-colors"
                       >
                         <td className="text-[10px] text-muted-foreground px-3 py-2.5 align-middle">
                           {idx + 1}
@@ -528,6 +544,10 @@ export function StudentDevelopmentDocumentsView({
             }
           </p>
         </div>
+        <Button size="sm" className="gap-2" onClick={() => setUploadDialogOpen(true)}>
+          <Upload className="h-4 w-4" />
+          Upload Document
+        </Button>
       </div>
 
       {/* Stats Cards (only show in folder view) */}
@@ -634,6 +654,15 @@ export function StudentDevelopmentDocumentsView({
       {/* Main Content: Folder Grid or Section Documents */}
       {allDocuments.length > 0 && !selectedSection && renderFolderGrid()}
       {selectedSection && renderSectionDocuments()}
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        title="Student Development Supporting Documents"
+        subtitle="Upload student development & outcomes evidence documents across all categories"
+        categories={uploadCategories}
+      />
 
       {/* Preview Dialog */}
       <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>

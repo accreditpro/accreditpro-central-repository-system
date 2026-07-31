@@ -559,7 +559,7 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
                   {filteredEvents.map((event, idx) => {
                     const status = getEventStatus(event.startDate, event.endDate);
                     return (
-                      <TableRow key={event.id} className="hover:bg-muted/20">
+                      <TableRow key={event.id} className="hover:bg-muted/50">
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-sm font-medium">{event.description}</TableCell>
                         <TableCell className="text-xs">{formatDate(event.startDate)}</TableCell>

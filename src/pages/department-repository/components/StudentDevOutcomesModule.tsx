@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo, evidenceDocuments } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
+import { getModuleTabActiveClasses } from './module-tab-styles';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -45,6 +47,18 @@ interface StudentDevOutcomesModuleProps {
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
+const studentDevUploadCategories: EvidenceCategory[] = [
+  { id: 'projects', label: 'Academic Projects', icon: <FolderKanban className="h-4 w-4 text-primary" /> },
+  { id: 'internships', label: 'Internships', icon: <Briefcase className="h-4 w-4 text-primary" /> },
+  { id: 'placements', label: 'Placements', icon: <Target className="h-4 w-4 text-primary" /> },
+  { id: 'higher-studies', label: 'Higher Studies', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
+  { id: 'entrepreneurship', label: 'Entrepreneurship', icon: <Zap className="h-4 w-4 text-primary" /> },
+  { id: 'competitions', label: 'Competitions & Hackathons', icon: <Trophy className="h-4 w-4 text-primary" /> },
+  { id: 'moocs', label: 'MOOCs & Certifications', icon: <Globe className="h-4 w-4 text-primary" /> },
+  { id: 'clubs-events', label: 'Clubs, Events & Workshops', icon: <Calendar className="h-4 w-4 text-primary" /> },
+  { id: 'nss-ncc', label: 'NSS/NCC Activities', icon: <Shield className="h-4 w-4 text-primary" /> },
+];
+
 const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   'dashboard': LayoutDashboard,
   'academic-projects': FolderKanban,
@@ -67,7 +81,9 @@ const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOutcomesModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   void academicYear;
+  const activeClasses = getModuleTabActiveClasses(config.id);
   const metrics = repositoryHealth[config.id] || { dataCompleteness: 72, evidenceCompleteness: 65, verificationPercent: 68, readinessScore: 68 };
 
   // Score card data
@@ -250,7 +266,7 @@ export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOut
             <h3 className="text-lg font-semibold">Supporting Documents Repository</h3>
             <p className="text-sm text-muted-foreground">Central repository for all student development evidence documents</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setUploadDialogOpen(true)}>
             <Upload className="h-4 w-4" />
             Upload Document
           </Button>
@@ -318,7 +334,7 @@ export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOut
                 </thead>
                 <tbody>
                   {evidenceDocuments.slice(0, 5).map((doc) => (
-                    <tr key={doc.id} className="border-b hover:bg-muted/20">
+                    <tr key={doc.id} className="border-b hover:bg-muted/50">
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -350,6 +366,15 @@ export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOut
             </div>
           </CardContent>
         </Card>
+
+        {/* Evidence Upload Dialog */}
+        <EvidenceUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          title="Student Development Supporting Documents"
+          subtitle="Upload student development evidence documents across all categories"
+          categories={studentDevUploadCategories}
+        />
       </div>
     );
   };
@@ -383,13 +408,18 @@ export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOut
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
           {config.tabs.map((tab) => {
             const Icon = tabIcons[tab.id] || FileText;
+            const isActive = activeTab === tab.id;
             return (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
+                )}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );

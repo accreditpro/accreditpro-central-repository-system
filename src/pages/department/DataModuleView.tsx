@@ -65,7 +65,7 @@ export const DataModuleView = ({ module }: DataModuleViewProps) => {
         </TableHeader>
         <TableBody>
           {filtered.map((record) => (
-            <TableRow key={record.id} className="hover:bg-muted/30">
+            <TableRow key={record.id} className="hover:bg-muted/50">
               <TableCell className="font-medium text-sm">{record.title}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="text-[11px]">{record.category}</Badge>
@@ -123,7 +123,7 @@ export const DataModuleView = ({ module }: DataModuleViewProps) => {
         </TableHeader>
         <TableBody>
           {filtered.map((record) => (
-            <TableRow key={record.id} className="hover:bg-muted/30">
+            <TableRow key={record.id} className="hover:bg-muted/50">
               <TableCell className="font-medium text-sm">{record.name}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{record.designation}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{record.specialization}</TableCell>
@@ -175,7 +175,7 @@ export const DataModuleView = ({ module }: DataModuleViewProps) => {
         </TableHeader>
         <TableBody>
           {filtered.map((record) => (
-            <TableRow key={record.id} className="hover:bg-muted/30">
+            <TableRow key={record.id} className="hover:bg-muted/50">
               <TableCell className="font-medium text-sm">{record.name}</TableCell>
               <TableCell className="text-sm font-mono text-muted-foreground">{record.rollNumber}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{record.program}</TableCell>
@@ -231,7 +231,7 @@ export const DataModuleView = ({ module }: DataModuleViewProps) => {
         </TableHeader>
         <TableBody>
           {filtered.map((record) => (
-            <TableRow key={record.id} className="hover:bg-muted/30">
+            <TableRow key={record.id} className="hover:bg-muted/50">
               <TableCell className="font-medium text-sm max-w-[300px] truncate">{record.title}</TableCell>
               <TableCell className="text-sm text-muted-foreground max-w-[180px] truncate">{record.authors}</TableCell>
               <TableCell>

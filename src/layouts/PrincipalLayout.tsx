@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   id: string;
@@ -136,11 +137,17 @@ export default function PrincipalLayout() {
                 {items.map((item) => (
                   <Button
                     key={item.id}
-                    variant={activeView === item.id ? 'secondary' : 'ghost'}
-                    className={`w-full justify-start gap-3 h-8 ${collapsed ? 'px-2' : 'px-3'} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
+                    variant="ghost"
+                    className={cn(
+                      'w-full justify-start gap-3 h-8 rounded-lg transition-all',
+                      collapsed ? 'px-2' : 'px-3',
+                      activeView === item.id
+                        ? 'bg-primary/10 text-primary font-medium shadow-sm hover:bg-primary/15'
+                        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    )}
                     onClick={() => handleNavClick(item.id)}
                   >
-                    <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                    <item.icon className={cn('h-3.5 w-3.5 flex-shrink-0', activeView === item.id && 'text-primary')} />
                     {!collapsed && (
                       <>
                         <span className="flex-1 text-left truncate text-xs">{item.label}</span>

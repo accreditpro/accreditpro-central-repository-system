@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -34,18 +34,35 @@ import {
   Trash2,
   Upload,
   Download,
-  FileUp,
   Eye,
   ArrowUpDown,
+  FileText,
+  Paperclip,
+  CheckCircle2,
 } from 'lucide-react';
 import { ModuleConfig } from '../types';
 import { cn } from '@/lib/utils';
+import {
+  ExaminationEvidenceDialog,
+  MODULE_EVIDENCE_SECTIONS,
+} from './ExaminationEvidenceDialog';
+import { useEvidenceStore, ExaminationEvidenceFile } from '../evidence-store';
 
 interface DataTableModuleProps {
   config: ModuleConfig;
+  academicYear: string;
 }
 
-export function DataTableModule({ config }: DataTableModuleProps) {
+/** Modules that support evidence upload */
+const EVIDENCE_ENABLED_MODULES = new Set([
+  'examination-schedules',
+  'examination-circulars',
+  'result-publications',
+  'supplementary-examinations',
+]);
+
+export function DataTableModule({ config, academicYear }: DataTableModuleProps) {
+  const { evidenceFiles, removeEvidence } = useEvidenceStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -57,6 +74,13 @@ export function DataTableModule({ config }: DataTableModuleProps) {
   const [tableData, setTableData] = useState<Record<string, string | number>[]>(() => [...config.sampleData]);
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
+
+  // Evidence dialog state
+  const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
+  const [evidenceTargetRecord, setEvidenceTargetRecord] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // Filter data
   const filteredData = useMemo(() => {
@@ -96,6 +120,7 @@ export function DataTableModule({ config }: DataTableModuleProps) {
     config.fields.forEach((f) => {
       emptyRow[f.key] = f.type === 'number' ? 0 : '';
     });
+    emptyRow['academicYear'] = academicYear;
     setEditingRow(emptyRow);
     setIsNewRecord(true);
     setEditDialogOpen(true);
@@ -112,7 +137,11 @@ export function DataTableModule({ config }: DataTableModuleProps) {
     setViewDialogOpen(true);
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = (row: Record<string, string | number>) => {
+    const index = tableData.findIndex((r) =>
+      Object.keys(r).every((k) => r[k] === row[k])
+    );
+    if (index === -1) return;
     setTableData((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -148,6 +177,39 @@ export function DataTableModule({ config }: DataTableModuleProps) {
     URL.revokeObjectURL(url);
   };
 
+  // Get the record title for display
+  const getRecordTitle = (row: Record<string, string | number>): string => {
+    return String(
+      row.title || row.examinationName || row.circularNumber || row.subjectName ||
+      Object.values(row).find((v) => typeof v === 'string' && v.length > 10) ||
+      'Record'
+    );
+  };
+
+  // Get evidence files for a specific record
+  const getEvidenceForRow = (row: Record<string, string | number>): ExaminationEvidenceFile[] => {
+    const title = getRecordTitle(row);
+    return evidenceFiles.filter((f) => f.recordTitle === title && f.moduleLabel === config.label);
+  };
+
+  // Get evidence counts per section for a row
+  const getSectionCounts = (row: Record<string, string | number>) => {
+    const sectionConfigs = MODULE_EVIDENCE_SECTIONS[config.id];
+    if (!sectionConfigs) return [];
+    const rowEvidence = getEvidenceForRow(row);
+    return sectionConfigs.map((s) => ({
+      id: s.id,
+      count: rowEvidence.filter((f) => f.category === s.id).length,
+    }));
+  };
+
+  // Open evidence dialog for a specific record
+  const openEvidenceDialog = (row: Record<string, string | number>) => {
+    const title = getRecordTitle(row);
+    setEvidenceTargetRecord({ id: title, title });
+    setEvidenceDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
     if (s === 'published') return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">Published</Badge>;
@@ -156,10 +218,11 @@ export function DataTableModule({ config }: DataTableModuleProps) {
     return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
   };
 
-  // Fields visible in table (max 6)
-  const visibleFields = config.fields.slice(0, 6);
+  // Fields visible in table
+  const visibleFields = config.fields.slice(0, 5);
+  const showEvidenceColumn = EVIDENCE_ENABLED_MODULES.has(config.id);
 
-  // Form fields (exclude file type and status for form - status is auto-managed)
+  // Form fields (exclude file type)
   const formFields = config.fields.filter((f) => f.type !== 'file');
 
   return (
@@ -203,12 +266,6 @@ export function DataTableModule({ config }: DataTableModuleProps) {
             <CardTitle className="text-base">{config.label} Records</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">{sortedData.length} records</Badge>
-              {config.id === 'backlog-repository' && (
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <Upload className="h-3 w-3" />
-                  CSV Upload
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -234,6 +291,11 @@ export function DataTableModule({ config }: DataTableModuleProps) {
                       </div>
                     </TableHead>
                   ))}
+                  {showEvidenceColumn && (
+                    <TableHead className="whitespace-nowrap text-xs text-center">
+                      Documents
+                    </TableHead>
+                  )}
                   <TableHead className="text-right text-xs">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -241,64 +303,97 @@ export function DataTableModule({ config }: DataTableModuleProps) {
                 {paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={visibleFields.length + 1}
+                      colSpan={visibleFields.length + (showEvidenceColumn ? 1 : 0) + 1}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No records found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedData.map((row, idx) => (
-                    <TableRow key={idx} className="hover:bg-muted/50">
-                      {visibleFields.map((field) => (
-                        <TableCell
-                          key={field.key}
-                          className="text-sm whitespace-nowrap max-w-[200px] truncate"
-                        >
-                          {field.key === 'status' ? (
-                            getStatusBadge(String(row[field.key] || ''))
-                          ) : field.type === 'textarea' ? (
-                            <span className="text-xs text-muted-foreground truncate block max-w-[180px]">
-                              {String(row[field.key] || '-')}
-                            </span>
-                          ) : (
-                            String(row[field.key] || '-')
-                          )}
+                  paginatedData.map((row, idx) => {
+                    const rowEvidence = getEvidenceForRow(row);
+                    const sectionCounts = getSectionCounts(row);
+                    const totalFiles = rowEvidence.length;
+
+                    return (
+                      <TableRow key={idx} className="hover:bg-muted/50">
+                        {visibleFields.map((field) => (
+                          <TableCell
+                            key={field.key}
+                            className="text-sm whitespace-nowrap max-w-[200px] truncate"
+                          >
+                            {field.key === 'status' ? (
+                              getStatusBadge(String(row[field.key] || ''))
+                            ) : field.type === 'textarea' ? (
+                              <span className="text-xs text-muted-foreground truncate block max-w-[180px]">
+                                {String(row[field.key] || '-')}
+                              </span>
+                            ) : (
+                              String(row[field.key] || '-')
+                            )}
+                          </TableCell>
+                        ))}
+                        {showEvidenceColumn && (
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                'h-7 gap-1 text-[10px]',
+                                totalFiles > 0
+                                  ? 'text-emerald-600 hover:text-emerald-700'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              )}
+                              onClick={() => openEvidenceDialog(row)}
+                            >
+                              {totalFiles > 0 ? (
+                                <>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {totalFiles} file{totalFiles > 1 ? 's' : ''}
+                                </>
+                              ) : (
+                                <>
+                                  <Paperclip className="h-3 w-3" />
+                                  Upload
+                                </>
+                              )}
+                            </Button>
+                          </TableCell>
+                        )}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleView(row)}
+                              title="View details"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleEdit(row)}
+                              title="Edit"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive"
+                              onClick={() => handleDelete(row)}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </TableCell>
-                      ))}
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleView(row)}
-                            title="View details"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleEdit(row)}
-                            title="Edit"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => handleDelete(idx + (currentPage - 1) * perPage)}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -381,6 +476,26 @@ export function DataTableModule({ config }: DataTableModuleProps) {
                 </span>
               </div>
             ))}
+            {/* Show evidence summary in view dialog */}
+            {showEvidenceColumn && viewingRow && (() => {
+              const evidence = getEvidenceForRow(viewingRow);
+              if (evidence.length === 0) return null;
+              return (
+                <div key="evidence-section" className="flex items-start gap-3 pt-2 border-t">
+                  <span className="text-xs font-medium text-muted-foreground w-36 shrink-0">
+                    Evidence Files
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {evidence.map((f) => (
+                      <Badge key={f.id} variant="secondary" className="text-[9px] gap-1">
+                        <FileText className="h-2.5 w-2.5" />
+                        {f.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
@@ -461,20 +576,6 @@ export function DataTableModule({ config }: DataTableModuleProps) {
                 )}
               </div>
             ))}
-            {/* File upload fields */}
-            {config.fields
-              .filter((f) => f.type === 'file')
-              .map((field) => (
-                <div key={field.key} className="space-y-1.5">
-                  <Label className="text-xs font-medium">{field.label}</Label>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9 w-full">
-                      <FileUp className="h-3.5 w-3.5" />
-                      Upload {field.label}
-                    </Button>
-                  </div>
-                </div>
-              ))}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
@@ -486,6 +587,24 @@ export function DataTableModule({ config }: DataTableModuleProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Examination Evidence Dialog (multi-file, drag-and-drop, sections) */}
+      {evidenceTargetRecord && (
+        <ExaminationEvidenceDialog
+          recordId={evidenceTargetRecord.id}
+          recordTitle={evidenceTargetRecord.title}
+          moduleId={config.id}
+          moduleLabel={config.label}
+          open={evidenceDialogOpen}
+          onClose={() => {
+            setEvidenceDialogOpen(false);
+            setEvidenceTargetRecord(null);
+          }}
+          existingFiles={evidenceTargetRecord ? evidenceFiles.filter(
+            (f) => f.recordTitle === evidenceTargetRecord.title && f.moduleLabel === config.label
+          ) : []}
+        />
+      )}
     </div>
   );
 }

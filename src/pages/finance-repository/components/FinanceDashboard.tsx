@@ -192,7 +192,7 @@ export function FinanceDashboard() {
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                   <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 shrink-0 ${getActivityColor(activity.type)}`}>
                     {activity.type}
                   </Badge>

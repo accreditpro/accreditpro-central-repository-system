@@ -233,7 +233,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                   </tr>
                 ) : (
                   paginatedData.map((row) => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono text-[10px]">{row.registrationNumber}</td>
                       <td className="p-3 font-medium">{row.studentName}</td>
                       <td className="p-3">

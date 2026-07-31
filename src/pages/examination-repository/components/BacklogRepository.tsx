@@ -77,7 +77,7 @@ const textFields = [
   { key: 'studentsFailed', label: 'Students Failed', type: 'number' },
 ];
 
-export function BacklogRepository() {
+export function BacklogRepository({ academicYear }: { academicYear: string }) {
   const [activeTab, setActiveTab] = useState('records');
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<BacklogRecord[]>(sampleData);
@@ -163,7 +163,7 @@ export function BacklogRepository() {
   const handleAddNew = () => {
     setEditingRecord({
       id: '',
-      academicYear: '',
+      academicYear: academicYear,
       semester: '1',
       program: '',
       department: '',

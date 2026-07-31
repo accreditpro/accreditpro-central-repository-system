@@ -863,7 +863,7 @@ const MemberManagement = ({
             </TableHeader>
             <TableBody>
               {filteredMembers.map((member) => (
-                <TableRow key={member.id} className="hover:bg-muted/30">
+                <TableRow key={member.id} className="hover:bg-muted/50">
                   <TableCell className="text-xs font-mono">{member.employeeId || '-'}</TableCell>
                   <TableCell className="text-xs font-medium">{member.employeeName}</TableCell>
                   <TableCell className="text-xs hidden md:table-cell text-muted-foreground">{member.designation}</TableCell>

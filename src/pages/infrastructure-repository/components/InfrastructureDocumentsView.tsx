@@ -25,10 +25,21 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { infrastructureDocumentCategories } from '../infrastructure-configs';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Map, FileCheck, Flame, BookOpen, Monitor, Leaf, Zap, Droplets, Award, ShieldCheck, FileText, Shield,
 };
+
+const uploadCategories: EvidenceCategory[] = infrastructureDocumentCategories.map((c) => ({
+  id: c.id,
+  label: c.label,
+  description: `Upload evidence documents for ${c.label.toLowerCase()}`,
+  icon: (() => {
+    const IconComponent = iconMap[c.icon] || FileText;
+    return <IconComponent className="h-4 w-4 text-primary" />;
+  })(),
+}));
 
 const mockDocuments = [
   { id: '1', name: 'Campus Master Plan 2024.pdf', category: 'campus-master-plan', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-10', size: '4.2 MB', status: 'verified' as const },
@@ -46,6 +57,8 @@ const mockDocuments = [
 export const InfrastructureDocumentsView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
 
   const filteredDocuments = mockDocuments.filter((doc) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -71,7 +84,7 @@ export const InfrastructureDocumentsView = () => {
           <h2 className="text-xl font-semibold">Supporting Documents</h2>
           <p className="text-sm text-muted-foreground mt-1">Manage infrastructure supporting documents and evidence</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
           <Upload className="h-4 w-4" />
           Upload Document
         </Button>
@@ -94,6 +107,7 @@ export const InfrastructureDocumentsView = () => {
                   isSelected ? 'ring-2 ring-primary border-primary' : ''
                 }`}
                 onClick={() => setSelectedCategory(isSelected ? null : category.id)}
+                onDoubleClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null); setUploadDialogOpen(true); }}
               >
                 <CardContent className="p-3 text-center">
                   <div className="flex justify-center mb-2">
@@ -171,6 +185,19 @@ export const InfrastructureDocumentsView = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        title={uploadTarget?.label || 'Infrastructure Supporting Documents'}
+        subtitle={
+          uploadTarget
+            ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+            : 'Upload supporting documents across all infrastructure categories'
+        }
+        categories={uploadTarget ? [uploadTarget] : uploadCategories}
+      />
     </div>
   );
 };

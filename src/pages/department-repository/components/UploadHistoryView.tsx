@@ -150,7 +150,7 @@ export const UploadHistoryView = () => {
                 {filteredHistory.map((record) => {
                   const wfStatus = workflowStatusLabels[record.workflowStatus] || workflowStatusLabels.draft;
                   return (
-                    <TableRow key={record.id} className="hover:bg-muted/20">
+                    <TableRow key={record.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />

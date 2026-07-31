@@ -296,7 +296,7 @@ export const TemplatesPage = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="border-b last:border-0 hover:bg-muted/20 transition-colors"
+                      className="border-b last:border-0 hover:bg-muted/50 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -416,7 +416,7 @@ export const TemplatesPage = () => {
                 'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-all cursor-pointer',
                 isDragging
                   ? 'border-primary bg-primary/5 scale-[1.02]'
-                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30',
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
                 uploadFile && 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10'
               )}
               onDragOver={handleDragOver}
@@ -528,7 +528,7 @@ export const TemplatesPage = () => {
                 'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-all cursor-pointer',
                 replaceFile
                   ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10'
-                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
               )}
               onClick={() => replaceFileInputRef.current?.click()}
             >

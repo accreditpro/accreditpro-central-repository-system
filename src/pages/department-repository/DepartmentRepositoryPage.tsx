@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { RepositoryDashboard } from './components/RepositoryDashboard';
 import { RepositoryWorkspace } from './components/RepositoryWorkspace';
+import { getModuleNavClasses } from './components/module-tab-styles';
 import { DepartmentMissionVision } from './components/DepartmentMissionVision';
 import { DocumentsView } from './components/DocumentsView';
 import { UploadHistoryView } from './components/UploadHistoryView';
@@ -61,19 +62,31 @@ const ACADEMIC_YEARS = [
 const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'mission-vision', label: 'Mission & Vision', icon: Target, separator: true },
-  { id: 'course-repository', label: 'Course Repository ⭐', icon: BookMarked },
   { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap },
+  { id: 'course-repository', label: 'Course Repository ⭐', icon: BookMarked },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
   { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
-  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2 },
   { id: 'student-dev-outcomes-repository', label: 'Student Dev & Outcomes', icon: UsersRound },
-  { id: 'infrastructure-repository', label: 'Infrastructure Repository', icon: Building2, separator: true },
+  { id: 'infrastructure-repository', label: 'Infrastructure Repository', icon: Building2 },
+  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2, separator: true },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
   { id: 'profile', label: 'Profile', icon: User },
 ];
+
+// Maps sidebar item ids to module ids for per-module nav tinting
+const sidebarModuleMap: Record<string, string> = {
+  'academic-repository': 'academic',
+  'course-repository': 'course',
+  'faculty-repository': 'faculty',
+  'student-repository': 'student',
+  'research-repository': 'research',
+  'student-dev-outcomes-repository': 'student-dev-outcomes',
+  'infrastructure-repository': 'infrastructure',
+  'alumni-repository': 'alumni',
+};
 
 const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
   'academic-repository': academicRepositoryConfig,
@@ -200,6 +213,7 @@ export const DepartmentRepositoryPage = () => {
               const Icon = item.icon;
               const isActive = activeView === item.id;
               const showSeparator = item.separator && index < sidebarItems.length - 1;
+              const nav = getModuleNavClasses(sidebarModuleMap[item.id] || 'primary');
 
               return (
                 <div key={item.id}>
@@ -208,8 +222,7 @@ export const DepartmentRepositoryPage = () => {
                     size="sm"
                     className={cn(
                       'w-full justify-start gap-2.5 h-9 px-3 text-xs font-medium rounded-lg transition-all',
-                      isActive && 'bg-primary/10 text-primary hover:bg-primary/15 shadow-sm border border-primary/20',
-                      !isActive && 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                      isActive ? cn(nav.active, 'shadow-sm border border-primary/20') : nav.inactive,
                       sidebarCollapsed && 'justify-center px-0'
                     )}
                     onClick={() => {
@@ -218,7 +231,7 @@ export const DepartmentRepositoryPage = () => {
                     }}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
-                    <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
+                    <Icon className={cn('h-4 w-4 shrink-0', isActive && nav.icon)} />
                     {!sidebarCollapsed && <span>{item.label}</span>}
                   </Button>
                   {showSeparator && <Separator className="my-2 opacity-50" />}

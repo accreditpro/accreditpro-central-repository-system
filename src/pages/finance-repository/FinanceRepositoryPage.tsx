@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, cloneElement, isValidElement } from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -311,18 +312,29 @@ export default function FinanceRepositoryPage() {
           </Button>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={activeView === item.id ? 'secondary' : 'ghost'}
-              className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
-              onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
-              title={sidebarCollapsed ? item.label : undefined}
-            >
-              {item.icon}
-              {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
-            </Button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeView === item.id;
+            return (
+              <Button
+                key={item.id}
+                variant="ghost"
+                className={cn(
+                  'w-full justify-start gap-2 h-9 rounded-lg transition-all',
+                  sidebarCollapsed && 'px-2 justify-center',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                )}
+                onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+                title={sidebarCollapsed ? item.label : undefined}
+              >
+                {isActive && isValidElement(item.icon)
+                  ? cloneElement(item.icon, { className: 'h-4 w-4 text-primary' })
+                  : item.icon}
+                {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
+              </Button>
+            );
+          })}
         </nav>
       </aside>
 

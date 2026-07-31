@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo, evidenceDocuments } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
+import { getModuleTabActiveClasses } from './module-tab-styles';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 import {
   LayoutDashboard,
   FileText,
@@ -45,6 +47,17 @@ interface ResearchModuleProps {
   academicYear?: string;
 }
 
+const researchUploadCategories: EvidenceCategory[] = [
+  { id: 'journals', label: 'Journal Publications', icon: <FileText className="h-4 w-4 text-primary" /> },
+  { id: 'conferences', label: 'Conference Publications', icon: <FileSpreadsheet className="h-4 w-4 text-primary" /> },
+  { id: 'patents', label: 'Patents', icon: <Shield className="h-4 w-4 text-primary" /> },
+  { id: 'books', label: 'Books & Book Chapters', icon: <Book className="h-4 w-4 text-primary" /> },
+  { id: 'sponsored', label: 'Sponsored Projects', icon: <DollarSign className="h-4 w-4 text-primary" /> },
+  { id: 'consultancy', label: 'Consultancy Projects', icon: <Briefcase className="h-4 w-4 text-primary" /> },
+  { id: 'research-projects', label: 'Research Projects', icon: <FlaskConical className="h-4 w-4 text-primary" /> },
+  { id: 'student', label: 'Student Research & Publications', icon: <GraduationCap className="h-4 w-4 text-primary" /> },
+];
+
 const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   'dashboard': LayoutDashboard,
   'faculty-journal-publications': FileText,
@@ -67,7 +80,9 @@ const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   void academicYear;
+  const activeClasses = getModuleTabActiveClasses(config.id);
   const metrics = repositoryHealth[config.id] || { dataCompleteness: 74, evidenceCompleteness: 60, verificationPercent: 65, readinessScore: 66 };
 
   // Score card data
@@ -374,7 +389,7 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
             <h3 className="text-lg font-semibold">Supporting Documents Repository</h3>
             <p className="text-sm text-muted-foreground">Central repository for all research evidence documents</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setUploadDialogOpen(true)}>
             <Upload className="h-4 w-4" />
             Upload Document
           </Button>
@@ -442,7 +457,7 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
                 </thead>
                 <tbody>
                   {evidenceDocuments.slice(0, 5).map((doc) => (
-                    <tr key={doc.id} className="border-b hover:bg-muted/20">
+                    <tr key={doc.id} className="border-b hover:bg-muted/50">
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -474,6 +489,15 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
             </div>
           </CardContent>
         </Card>
+
+        {/* Evidence Upload Dialog */}
+        <EvidenceUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          title="Research Supporting Documents"
+          subtitle="Upload research evidence documents across all research categories"
+          categories={researchUploadCategories}
+        />
       </div>
     );
   };
@@ -507,13 +531,18 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
           {config.tabs.map((tab) => {
             const Icon = tabIcons[tab.id] || FileText;
+            const isActive = activeTab === tab.id;
             return (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
+                )}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );

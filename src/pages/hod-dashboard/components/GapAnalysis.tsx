@@ -163,7 +163,7 @@ export function GapAnalysis() {
           {filteredData.map((item: GapItem) => (
             <div key={item.id} className={`border rounded-lg border-l-4 ${getSeverityBorder(item.severity)} overflow-hidden`}>
               <div
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => toggleExpand(item.id)}
               >
                 <div className="flex items-center gap-3">
