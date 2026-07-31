@@ -87,18 +87,17 @@ class AuthService {
     try {
       data = await apiService.raw<User>('/auth/me');
     } catch (error) {
-      // If we get a 401, token is expired/invalid
+      // ONLY if we get an explicit 401, token is truly expired/invalid
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         this.clearStoredSession();
         throw new AuthError('Session expired', 'EXPIRED');
       }
-      // Other errors are network issues — let them propagate
+      // Other errors (e.g. 404, 500, network error) — DO NOT clear stored session
       throw error;
     }
 
-    if (!data.success || data.data === null) {
-      this.clearStoredSession();
-      throw new AuthError('Session expired', 'EXPIRED');
+    if (!data || !data.success || !data.data) {
+      throw new Error('Could not fetch user profile from server');
     }
 
     // Refresh cached user data in localStorage with fresh backend data
