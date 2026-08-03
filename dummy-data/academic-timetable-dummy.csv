@@ -1,0 +1,16 @@
+Department,Year,Semester,Section,Period,Day,Time From,Time To,Course Code,Class In-Charge,W.E.F
+Computer Science & Engineering (CSE),III Year,Semester 5,A,1,Monday,09:00,09:50,CS501,Dr. John Doe,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,2,Monday,09:50,10:40,CS502,Dr. Alice Smith,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,3,Monday,10:50,11:40,CS503,Prof. Alan Turing,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,4,Monday,11:40,12:30,CS504,Ms. Sarah Jane,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,5,Monday,13:30,14:20,CS505-LAB,Dr. John Doe,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,6,Monday,14:20,15:10,CS505-LAB,Dr. John Doe,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,1,Tuesday,09:00,09:50,CS502,Dr. Alice Smith,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,2,Tuesday,09:50,10:40,CS503,Prof. Alan Turing,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,A,3,Tuesday,10:50,11:40,CS501,Dr. John Doe,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,B,1,Wednesday,09:00,09:50,CS501,Dr. Alice Smith,2025-08-01
+Computer Science & Engineering (CSE),III Year,Semester 5,B,2,Wednesday,09:50,10:40,CS504,Ms. Sarah Jane,2025-08-01
+Computer Science & Engineering (CSE),IV Year,Semester 7,A,1,Monday,09:00,09:50,CS701,Prof. Alan Turing,2025-08-01
+Computer Science & Engineering (CSE),IV Year,Semester 7,A,2,Monday,09:50,10:40,CS702,Mr. Bob Builder,2025-08-01
+Computer Science & Engineering (CSE),II Year,Semester 3,A,1,Thursday,09:00,09:50,CS301,Dr. Jane Doe,2025-08-01
+Computer Science & Engineering (CSE),II Year,Semester 3,A,2,Thursday,09:50,10:40,CS302,Dr. Alice Smith,2025-08-01

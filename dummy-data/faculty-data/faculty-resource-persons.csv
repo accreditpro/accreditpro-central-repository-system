@@ -1,0 +1,4 @@
+Employee ID,Faculty Name,Event Type,Event Name,Topic Delivered,Organized By,Organization,Location,Mode,Start Date,End Date,Duration,Audience Type,Number of Participants
+EMP010,Dr. Anita Sharma,FDP,AI in Healthcare,Deep Learning for Medical Imaging,VIT University,VIT Vellore,Vellore,Offline,2025-05-10,2025-05-10,3 Hours,Faculty,45
+EMP012,Dr. Priya Reddy,Workshop,Women in Tech Summit,Cloud Computing Fundamentals,Google Developer Group,GDG Hyderabad,Hyderabad,Offline,2025-04-22,2025-04-22,2 Hours,Students & Faculty,120
+EMP014,Dr. Kavitha Rao,Conference,ICACC 2025,IoT Security Challenges,IEEE Hyderabad Section,IEEE,Hyderabad,Hybrid,2025-03-15,2025-03-15,1 Hour,Researchers,200

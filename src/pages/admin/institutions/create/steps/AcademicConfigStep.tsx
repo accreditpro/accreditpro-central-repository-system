@@ -2,13 +2,7 @@ import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Plus, X, GraduationCap, Building } from 'lucide-react';
 import { DEFAULT_PROGRAMS, DEFAULT_DEPARTMENTS, CreateInstitutionFormData } from '../types';
 import { useState } from 'react';
@@ -30,7 +24,7 @@ export const AcademicConfigStep = () => {
   const removeDepartment = (dept: string) => {
     form.setValue(
       'academicConfig.departments',
-      departments.filter((d) => d !== dept)
+      departments.filter(d => d !== dept)
     );
   };
 
@@ -38,7 +32,7 @@ export const AcademicConfigStep = () => {
     if (programs.includes(program)) {
       form.setValue(
         'academicConfig.programs',
-        programs.filter((p) => p !== program)
+        programs.filter(p => p !== program)
       );
     } else {
       form.setValue('academicConfig.programs', [...programs, program]);
@@ -67,7 +61,7 @@ export const AcademicConfigStep = () => {
             </FormLabel>
             <FormControl>
               <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/20">
-                {DEFAULT_PROGRAMS.map((program) => (
+                {DEFAULT_PROGRAMS.map(program => (
                   <Badge
                     key={program}
                     variant={programs.includes(program) ? 'default' : 'outline'}
@@ -98,12 +92,8 @@ export const AcademicConfigStep = () => {
             <FormControl>
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/20 min-h-[60px]">
-                  {departments.map((dept) => (
-                    <Badge
-                      key={dept}
-                      variant="secondary"
-                      className="text-xs h-7 px-3 gap-1"
-                    >
+                  {departments.map(dept => (
+                    <Badge key={dept} variant="secondary" className="text-xs h-7 px-3 gap-1">
                       {dept}
                       <button
                         type="button"
@@ -121,9 +111,9 @@ export const AcademicConfigStep = () => {
                   <Input
                     placeholder="Add new department..."
                     value={newDepartment}
-                    onChange={(e) => setNewDepartment(e.target.value)}
+                    onChange={e => setNewDepartment(e.target.value)}
                     className="h-8 text-sm flex-1"
-                    onKeyDown={(e) => {
+                    onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addDepartment();

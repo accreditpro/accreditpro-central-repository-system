@@ -72,6 +72,18 @@ export const appNavigationConfig: NavItem[] = [
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
+    title: 'Governance & Committees',
+    href: '/app/governance',
+    icon: 'Shield',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'Assessment & OBE',
+    href: '/app/assessment-and-obe',
+    icon: 'ClipboardCheck',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
     title: 'User Management',
     href: '/app/users',
     icon: 'Users',
@@ -99,6 +111,18 @@ export const appNavigationConfig: NavItem[] = [
     title: 'Activity Logs',
     href: '/app/activity-logs',
     icon: 'ClipboardList',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'Supporting Documents',
+    href: '/app/supporting-documents',
+    icon: 'FileSpreadsheet',
+    roles: [UserRole.INSTITUTION_ADMIN],
+  },
+  {
+    title: 'Settings',
+    href: '/app/settings',
+    icon: 'Settings',
     roles: [UserRole.INSTITUTION_ADMIN],
   },
   {
@@ -133,12 +157,6 @@ export const appNavigationConfig: NavItem[] = [
       UserRole.IQAC_COORDINATOR,
       UserRole.PRINCIPAL,
     ],
-  },
-  {
-    title: 'Settings',
-    href: '/app/settings',
-    icon: 'Settings',
-    roles: [UserRole.INSTITUTION_ADMIN],
   },
 ];
 

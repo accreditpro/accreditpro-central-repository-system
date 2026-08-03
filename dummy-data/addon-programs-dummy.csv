@@ -1,0 +1,6 @@
+Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued
+Computer Science & Engineering (CSE),III Year,Semester 5,Full Stack Web Development,2025-08-01,2025-08-30,16:00,18:00,Prof. John Doe,40 hrs,100,95,Yes,90
+Computer Science & Engineering (CSE),III Year,Semester 5,Cloud Computing Basics,2025-09-01,2025-09-15,16:00,18:00,Dr. Alice Smith,20 hrs,120,110,Yes,110
+Computer Science & Engineering (CSE),IV Year,Semester 7,Advanced AI and ML,2025-07-15,2025-08-15,10:00,12:00,Dr. Alan Turing,30 hrs,80,75,Yes,70
+Computer Science & Engineering (CSE),II Year,Semester 3,Introduction to UI/UX,2025-10-01,2025-10-10,14:00,16:00,Ms. Sarah Design,15 hrs,150,140,No,0
+Computer Science & Engineering (CSE),IV Year,Semester 8,Cybersecurity Ethics,2026-01-10,2026-01-20,09:00,11:00,Mr. Hacker Safe,20 hrs,60,60,Yes,60

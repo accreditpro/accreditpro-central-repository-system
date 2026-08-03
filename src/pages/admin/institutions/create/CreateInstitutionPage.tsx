@@ -13,11 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   CheckCircle2,
+  Copy,
   Building2,
   MapPin,
   GraduationCap,
@@ -29,6 +32,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { adminService } from '@/services/admin.service';
+import type {
+  CreateInstitutionRequest,
+  CreateInstitutionResponse,
+  CreatedUser,
+} from '@/types/institution.types';
 import {
   CreateInstitutionFormData,
   createInstitutionSchema,
@@ -50,18 +59,84 @@ import { AcademicConfigStep } from './steps/AcademicConfigStep';
 import { AcademicYearsStep } from './steps/AcademicYearsStep';
 import { UserStep } from './steps/UserStep';
 import { ReviewStep } from './steps/ReviewStep';
-
-// Mock API
-const mockCreateInstitution = async (_data: CreateInstitutionFormData): Promise<{ success: boolean; id: string }> => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  return { success: true, id: `inst-${Date.now()}` };
+// ── Helper: copy credential text to clipboard ──
+const copyToClipboard = async (
+  field: string,
+  value: string,
+  setCopied: (field: string | null) => void
+) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    setCopied(field);
+    setTimeout(() => setCopied(null), 2000);
+  } catch {
+    // Clipboard API not available
+  }
 };
+
+// ── Helper: display a created user with their credentials ──
+const UserCredentialCard = ({
+  role,
+  icon,
+  user,
+  copiedField,
+  onCopy,
+}: {
+  role: string;
+  icon: React.ReactNode;
+  user: CreatedUser;
+  copiedField: string | null;
+  onCopy: (field: string, value: string) => void;
+}) => (
+  <div className="rounded-lg border p-3 space-y-2 bg-card">
+    <div className="flex items-center gap-2">
+      {icon}
+      <span className="text-xs font-semibold">{role}</span>
+      <Badge variant="outline" className="text-[10px] ml-auto">
+        {user.role}
+      </Badge>
+    </div>
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <span>Email:</span>
+      <span className="font-medium text-foreground truncate">{user.email}</span>
+      {user.temporaryPassword && (
+        <>
+          <span>Password:</span>
+          <span className="flex items-center gap-1.5">
+            <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono text-foreground">
+              {user.temporaryPassword}
+            </code>
+            <button
+              type="button"
+              onClick={() => onCopy(`password-${user.email}`, user.temporaryPassword)}
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              title="Copy password"
+            >
+              {copiedField === `password-${user.email}` ? (
+                <Check className="h-3 w-3 text-emerald-500" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </button>
+          </span>
+        </>
+      )}
+    </div>
+    {user.requiresPasswordChange && (
+      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+        * Password change required on first login
+      </p>
+    )}
+  </div>
+);
 
 export const CreateInstitutionPage = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [createdResponse, setCreatedResponse] = useState<CreateInstitutionResponse | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const form = useForm<CreateInstitutionFormData>({
     resolver: zodResolver(createInstitutionSchema),
@@ -112,7 +187,7 @@ export const CreateInstitutionPage = () => {
     if (!result.success) {
       // Trigger form validation for the current step fields
       const fields = Object.keys(result.error.formErrors.fieldErrors);
-      fields.forEach((field) => {
+      fields.forEach(field => {
         form.trigger(`${prefix}.${field}` as keyof CreateInstitutionFormData);
       });
       return false;
@@ -123,12 +198,12 @@ export const CreateInstitutionPage = () => {
   const handleNext = async () => {
     const isValid = await validateCurrentStep();
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 8));
+      setCurrentStep(prev => Math.min(prev + 1, 8));
     }
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async () => {
@@ -140,11 +215,16 @@ export const CreateInstitutionPage = () => {
 
     setIsSubmitting(true);
     try {
-      const data = form.getValues();
-      await mockCreateInstitution(data);
+      // Form data already matches the nested API request shape 1:1
+      const formData = form.getValues() as CreateInstitutionRequest;
+      const response = await adminService.createInstitution(formData);
+      setCreatedResponse(response);
+      toast.success('Institution created successfully!');
       setShowSuccessDialog(true);
-    } catch {
-      toast.error('Failed to create institution. Please try again.');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create institution. Please try again.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -257,18 +337,16 @@ export const CreateInstitutionPage = () => {
                     'relative z-10 flex items-center justify-center h-8 w-8 rounded-full border-2 transition-all',
                     isCompleted && 'bg-primary border-primary text-primary-foreground',
                     isCurrent && 'border-primary bg-primary/10 text-primary',
-                    !isCompleted && !isCurrent && 'border-muted-foreground/30 text-muted-foreground/50'
+                    !isCompleted &&
+                      !isCurrent &&
+                      'border-muted-foreground/30 text-muted-foreground/50'
                   )}
                   onClick={() => {
                     if (isCompleted) setCurrentStep(step.id);
                   }}
                   disabled={!isCompleted && !isCurrent}
                 >
-                  {isCompleted ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    stepIcons[index]
-                  )}
+                  {isCompleted ? <Check className="h-3.5 w-3.5" /> : stepIcons[index]}
                 </button>
 
                 {/* Label */}
@@ -288,7 +366,7 @@ export const CreateInstitutionPage = () => {
 
       {/* Form Content */}
       <Form {...form}>
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="rounded-xl border bg-card p-6 min-h-[380px]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -318,11 +396,7 @@ export const CreateInstitutionPage = () => {
 
             <div className="flex items-center gap-2">
               {currentStep < 8 ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="gap-2 h-9 text-sm"
-                >
+                <Button type="button" onClick={handleNext} className="gap-2 h-9 text-sm">
                   Next
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -353,18 +427,95 @@ export const CreateInstitutionPage = () => {
 
       {/* Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
               <CheckCircle2 className="h-8 w-8 text-emerald-600" />
             </div>
             <DialogTitle className="text-center">Institution Created Successfully!</DialogTitle>
             <DialogDescription className="text-center">
-              The institution has been created and the admin accounts have been set up.
-              Login credentials will be sent to the respective email addresses.
+              The institution has been created. Below are the login credentials for the created
+              accounts. Please share these with the respective users.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="sm:justify-center gap-2">
+
+          {/* Institution Summary */}
+          {createdResponse && (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">
+                      {createdResponse.institution.name}
+                    </span>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {createdResponse.institution.code}
+                  </Badge>
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {createdResponse.institution.state} · {createdResponse.institution.category}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Users Created */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {createdResponse.usersCreated} user{createdResponse.usersCreated > 1 ? 's' : ''}{' '}
+                  created
+                </p>
+
+                {/* Admin User */}
+                <UserCredentialCard
+                  role="Institution Admin"
+                  icon={<UserCog className="h-4 w-4 text-blue-500" />}
+                  user={createdResponse.adminUser}
+                  copiedField={copiedField}
+                  onCopy={(field, value) => copyToClipboard(field, value, setCopiedField)}
+                />
+
+                {/* IQAC User */}
+                <UserCredentialCard
+                  role="IQAC Coordinator"
+                  icon={<Shield className="h-4 w-4 text-cyan-500" />}
+                  user={createdResponse.iqacUser}
+                  copiedField={copiedField}
+                  onCopy={(field, value) => copyToClipboard(field, value, setCopiedField)}
+                />
+
+                {/* Principal User */}
+                <UserCredentialCard
+                  role="Principal"
+                  icon={<User className="h-4 w-4 text-indigo-500" />}
+                  user={createdResponse.principalUser}
+                  copiedField={copiedField}
+                  onCopy={(field, value) => copyToClipboard(field, value, setCopiedField)}
+                />
+              </div>
+
+              {/* Academic Summary */}
+              <Separator />
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <GraduationCap className="h-3 w-3" />
+                  {createdResponse.academicEntities.programsCreated} programs
+                </Badge>
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <Building2 className="h-3 w-3" />
+                  {createdResponse.academicEntities.departmentsCreated} departments
+                </Badge>
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {createdResponse.academicEntities.academicYearsCreated} academic years
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="sm:justify-center gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -378,6 +529,7 @@ export const CreateInstitutionPage = () => {
               onClick={() => {
                 setShowSuccessDialog(false);
                 form.reset();
+                setCreatedResponse(null);
                 setCurrentStep(1);
               }}
             >

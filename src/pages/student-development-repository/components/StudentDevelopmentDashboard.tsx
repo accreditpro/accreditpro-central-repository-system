@@ -20,21 +20,68 @@ const kpiCards = [
   { label: 'NCC Cadets', value: '260', change: '+8%', icon: Shield, color: 'text-blue-600' },
   { label: 'Sports Medals', value: '47', change: '+15%', icon: Trophy, color: 'text-amber-500' },
   { label: 'Cultural Events', value: '32', change: '+20%', icon: Music, color: 'text-purple-500' },
-  { label: 'Extension Activities', value: '56', change: '+10%', icon: HandHeart, color: 'text-green-500' },
+  {
+    label: 'Extension Activities',
+    value: '56',
+    change: '+10%',
+    icon: HandHeart,
+    color: 'text-green-500',
+  },
   { label: 'Active Clubs', value: '18', change: '+3', icon: Layers, color: 'text-indigo-500' },
   { label: 'Student Awards', value: '85', change: '+22%', icon: Award, color: 'text-orange-500' },
-  { label: 'Events Organized', value: '124', change: '+18%', icon: Calendar, color: 'text-teal-500' },
+  {
+    label: 'Events Organized',
+    value: '124',
+    change: '+18%',
+    icon: Calendar,
+    color: 'text-teal-500',
+  },
 ];
 
 const recentActivities = [
-  { title: 'Blood Donation Camp conducted', date: '2 days ago', type: 'Community Outreach', status: 'completed' },
-  { title: 'IEEE Workshop on IoT', date: '3 days ago', type: 'Student Chapter', status: 'completed' },
-  { title: 'Inter-College Cricket Tournament', date: '5 days ago', type: 'Sports', status: 'completed' },
-  { title: 'NSS Special Camp - Village Adoption', date: '1 week ago', type: 'NSS', status: 'completed' },
-  { title: 'Annual Cultural Fest Planning', date: '1 week ago', type: 'Cultural', status: 'in-progress' },
-  { title: 'NCC Republic Day Camp Selection', date: '2 weeks ago', type: 'NCC', status: 'completed' },
+  {
+    title: 'Blood Donation Camp conducted',
+    date: '2 days ago',
+    type: 'Community Outreach',
+    status: 'completed',
+  },
+  {
+    title: 'IEEE Workshop on IoT',
+    date: '3 days ago',
+    type: 'Student Chapter',
+    status: 'completed',
+  },
+  {
+    title: 'Inter-College Cricket Tournament',
+    date: '5 days ago',
+    type: 'Sports',
+    status: 'completed',
+  },
+  {
+    title: 'NSS Special Camp - Village Adoption',
+    date: '1 week ago',
+    type: 'NSS',
+    status: 'completed',
+  },
+  {
+    title: 'Annual Cultural Fest Planning',
+    date: '1 week ago',
+    type: 'Cultural',
+    status: 'in-progress',
+  },
+  {
+    title: 'NCC Republic Day Camp Selection',
+    date: '2 weeks ago',
+    type: 'NCC',
+    status: 'completed',
+  },
   { title: 'Coding Club Hackathon 2024', date: '2 weeks ago', type: 'Clubs', status: 'completed' },
-  { title: 'National Science Day Celebration', date: '3 weeks ago', type: 'Events', status: 'in-progress' },
+  {
+    title: 'National Science Day Celebration',
+    date: '3 weeks ago',
+    type: 'Events',
+    status: 'in-progress',
+  },
 ];
 
 const repositoryHealth = [
@@ -64,7 +111,7 @@ export function StudentDevelopmentDashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {kpiCards.map((kpi) => (
+        {kpiCards.map(kpi => (
           <Card key={kpi.label} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -89,7 +136,7 @@ export function StudentDevelopmentDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {repositoryHealth.map((item) => (
+              {repositoryHealth.map(item => (
                 <div key={item.module} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
@@ -102,10 +149,10 @@ export function StudentDevelopmentDashboard() {
                           item.completion >= 90
                             ? 'bg-green-500'
                             : item.completion >= 75
-                            ? 'bg-blue-500'
-                            : item.completion >= 60
-                            ? 'bg-amber-500'
-                            : 'bg-red-500'
+                              ? 'bg-blue-500'
+                              : item.completion >= 60
+                                ? 'bg-amber-500'
+                                : 'bg-red-500'
                         }`}
                         style={{ width: `${item.completion}%` }}
                       />
@@ -126,7 +173,10 @@ export function StudentDevelopmentDashboard() {
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {recentActivities.map((activity, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
                   <div className="mt-0.5">
                     {activity.status === 'completed' ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500" />

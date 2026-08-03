@@ -99,24 +99,78 @@ interface RecentActivity {
 }
 
 const recentActivities: RecentActivity[] = [
-  { id: '1', action: 'Budget Revised', details: 'Library budget increased by ₹1L for e-journal subscriptions', timestamp: '2 hours ago', type: 'expense' },
-  { id: '2', action: 'Scholarship Disbursed', details: 'Merit Excellence Award disbursed to 50 students - ₹12.5L', timestamp: '5 hours ago', type: 'scholarship' },
-  { id: '3', action: 'Audit Completed', details: 'Internal audit Q2 completed with 88% compliance score', timestamp: '1 day ago', type: 'audit' },
-  { id: '4', action: 'Grant Received', details: 'DST grant installment received - ₹8L for AI research project', timestamp: '2 days ago', type: 'income' },
-  { id: '5', action: 'FD Renewed', details: 'Corpus Fund FD renewed at 7.5% for 3 years', timestamp: '3 days ago', type: 'investment' },
-  { id: '6', action: 'Donation Received', details: 'Alumni batch 1995 donated ₹5L for sports infrastructure', timestamp: '4 days ago', type: 'income' },
-  { id: '7', action: 'Expenditure Approved', details: 'Server equipment purchase approved - ₹4.5L', timestamp: '5 days ago', type: 'expense' },
-  { id: '8', action: 'UC Submitted', details: 'Utilization certificate submitted for CSIR project', timestamp: '1 week ago', type: 'audit' },
+  {
+    id: '1',
+    action: 'Budget Revised',
+    details: 'Library budget increased by ₹1L for e-journal subscriptions',
+    timestamp: '2 hours ago',
+    type: 'expense',
+  },
+  {
+    id: '2',
+    action: 'Scholarship Disbursed',
+    details: 'Merit Excellence Award disbursed to 50 students - ₹12.5L',
+    timestamp: '5 hours ago',
+    type: 'scholarship',
+  },
+  {
+    id: '3',
+    action: 'Audit Completed',
+    details: 'Internal audit Q2 completed with 88% compliance score',
+    timestamp: '1 day ago',
+    type: 'audit',
+  },
+  {
+    id: '4',
+    action: 'Grant Received',
+    details: 'DST grant installment received - ₹8L for AI research project',
+    timestamp: '2 days ago',
+    type: 'income',
+  },
+  {
+    id: '5',
+    action: 'FD Renewed',
+    details: 'Corpus Fund FD renewed at 7.5% for 3 years',
+    timestamp: '3 days ago',
+    type: 'investment',
+  },
+  {
+    id: '6',
+    action: 'Donation Received',
+    details: 'Alumni batch 1995 donated ₹5L for sports infrastructure',
+    timestamp: '4 days ago',
+    type: 'income',
+  },
+  {
+    id: '7',
+    action: 'Expenditure Approved',
+    details: 'Server equipment purchase approved - ₹4.5L',
+    timestamp: '5 days ago',
+    type: 'expense',
+  },
+  {
+    id: '8',
+    action: 'UC Submitted',
+    details: 'Utilization certificate submitted for CSIR project',
+    timestamp: '1 week ago',
+    type: 'audit',
+  },
 ];
 
 const getActivityColor = (type: string) => {
   switch (type) {
-    case 'income': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-    case 'expense': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
-    case 'audit': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-    case 'scholarship': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-    case 'investment': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-    default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+    case 'income':
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+    case 'expense':
+      return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+    case 'audit':
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'scholarship':
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    case 'investment':
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+    default:
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
   }
 };
 
@@ -125,7 +179,7 @@ export function FinanceDashboard() {
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiCards.map((kpi) => (
+        {kpiCards.map(kpi => (
           <Card key={kpi.title} className="hover:shadow-md transition-shadow">
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
@@ -133,19 +187,26 @@ export function FinanceDashboard() {
                   <p className="text-sm text-muted-foreground font-medium">{kpi.title}</p>
                   <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
                   <div className="flex items-center gap-1">
-                    {kpi.changeType === 'positive' && <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />}
-                    {kpi.changeType === 'negative' && <ArrowDownRight className="h-3.5 w-3.5 text-red-600" />}
-                    <span className={`text-xs ${
-                      kpi.changeType === 'positive' ? 'text-emerald-600' :
-                      kpi.changeType === 'negative' ? 'text-red-600' : 'text-muted-foreground'
-                    }`}>
+                    {kpi.changeType === 'positive' && (
+                      <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
+                    )}
+                    {kpi.changeType === 'negative' && (
+                      <ArrowDownRight className="h-3.5 w-3.5 text-red-600" />
+                    )}
+                    <span
+                      className={`text-xs ${
+                        kpi.changeType === 'positive'
+                          ? 'text-emerald-600'
+                          : kpi.changeType === 'negative'
+                            ? 'text-red-600'
+                            : 'text-muted-foreground'
+                      }`}
+                    >
                       {kpi.change}
                     </span>
                   </div>
                 </div>
-                <div className={`p-2.5 rounded-lg ${kpi.color}`}>
-                  {kpi.icon}
-                </div>
+                <div className={`p-2.5 rounded-lg ${kpi.color}`}>{kpi.icon}</div>
               </div>
             </CardContent>
           </Card>
@@ -167,7 +228,7 @@ export function FinanceDashboard() {
               { label: 'Audit Compliance', value: 92, color: 'bg-green-500' },
               { label: 'Asset Growth', value: 88, color: 'bg-purple-500' },
               { label: 'Scholarship Coverage', value: 65, color: 'bg-cyan-500' },
-            ].map((item) => (
+            ].map(item => (
               <div key={item.label} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{item.label}</span>
@@ -191,9 +252,15 @@ export function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 shrink-0 ${getActivityColor(activity.type)}`}>
+              {recentActivities.map(activity => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                >
+                  <Badge
+                    variant="secondary"
+                    className={`text-[10px] px-1.5 py-0.5 shrink-0 ${getActivityColor(activity.type)}`}
+                  >
                     {activity.type}
                   </Badge>
                   <div className="flex-1 min-w-0">

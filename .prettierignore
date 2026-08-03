@@ -1,0 +1,8 @@
+dist
+node_modules
+.mgx
+bun.lock
+build
+public
+*.min.js
+vite.config.ts.timestamp*

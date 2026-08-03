@@ -12,26 +12,22 @@ const BlogIndexPage = () => (
           Start with a blog section that is ready to grow with your SEO site
         </h1>
         <p className="text-lg leading-8 text-slate-600">
-          This is the starter blog index. Add Markdown files under
-          `seo/content/` and the site will automatically generate the list,
-          article pages, and prerender routes.
+          This is the starter blog index. Add Markdown files under `seo/content/` and the site will
+          automatically generate the list, article pages, and prerender routes.
         </p>
       </div>
 
       <div className="mt-12 grid gap-6">
         {blogPosts.length > 0 ? (
-          blogPosts.map((post) => (
+          blogPosts.map(post => (
             <article
               key={post.slug}
               className="rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-sm shadow-sky-100/60 transition-transform duration-200 hover:-translate-y-1"
             >
               <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                 {post.frontmatter.date ? <span>{post.frontmatter.date}</span> : null}
-                {post.frontmatter.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-sky-50 px-3 py-1 text-sky-700"
-                  >
+                {post.frontmatter.tags?.map(tag => (
+                  <span key={tag} className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">
                     {tag}
                   </span>
                 ))}
@@ -41,9 +37,7 @@ const BlogIndexPage = () => (
                   {post.title}
                 </Link>
               </h2>
-              <p className="mt-3 text-base leading-7 text-slate-600">
-                {post.description}
-              </p>
+              <p className="mt-3 text-base leading-7 text-slate-600">{post.description}</p>
               <Link
                 to={getBlogRoute(post.slug)}
                 className="mt-5 inline-flex text-sm font-semibold text-sky-700 underline underline-offset-4"
@@ -56,10 +50,9 @@ const BlogIndexPage = () => (
           <section className="rounded-[2rem] border border-dashed border-sky-200 bg-white/80 p-8">
             <h2 className="font-serif text-2xl text-slate-950">No articles yet</h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-              Add Markdown files under `seo/content/` and article cards will
-              appear here automatically. This keeps the starter clean by default
-              while making it easy to begin publishing content for your own SEO
-              strategy.
+              Add Markdown files under `seo/content/` and article cards will appear here
+              automatically. This keeps the starter clean by default while making it easy to begin
+              publishing content for your own SEO strategy.
             </p>
           </section>
         )}

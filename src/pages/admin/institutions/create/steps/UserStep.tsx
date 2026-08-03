@@ -94,10 +94,7 @@ export const UserStep = ({ title, description, fieldPrefix, icon }: UserStepProp
           render={({ field }) => (
             <FormItem className="md:col-span-2 flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4 bg-muted/20">
               <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel className="flex items-center gap-2 text-sm cursor-pointer">

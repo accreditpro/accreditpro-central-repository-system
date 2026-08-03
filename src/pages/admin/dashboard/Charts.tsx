@@ -16,14 +16,35 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import {
-  institutionGrowthData,
-  categoryDistributionData,
-  repositoryCompletionData,
-} from './mock-data';
+import type {
+  InstitutionGrowthData,
+  CategoryDistributionData,
+  RepositoryCompletionData,
+  TopInstitutionData,
+} from './types';
 import { Badge } from '@/components/ui/badge';
 
-export const InstitutionGrowthChart = () => {
+export const InstitutionGrowthChart = ({ data }: { data: InstitutionGrowthData[] }) => {
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <div>
+            <CardTitle className="text-base font-semibold">Institution Growth</CardTitle>
+            <CardDescription className="text-xs">
+              Monthly institution registration and activity trends
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
@@ -42,7 +63,7 @@ export const InstitutionGrowthChart = () => {
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={institutionGrowthData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
@@ -105,19 +126,37 @@ export const InstitutionGrowthChart = () => {
   );
 };
 
-export const CategoryDistributionChart = () => {
+export const CategoryDistributionChart = ({ data }: { data: CategoryDistributionData[] }) => {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <div>
+            <CardTitle className="text-base font-semibold">Category Distribution</CardTitle>
+            <CardDescription className="text-xs">Institutions by academic category</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Category Distribution</CardTitle>
-            <CardDescription className="text-xs">
-              Institutions by academic category
-            </CardDescription>
+            <CardDescription className="text-xs">Institutions by academic category</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
-            248 total
+            {total} total
           </Badge>
         </div>
       </CardHeader>
@@ -126,7 +165,7 @@ export const CategoryDistributionChart = () => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={categoryDistributionData}
+                data={data}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -135,8 +174,11 @@ export const CategoryDistributionChart = () => {
                 dataKey="value"
                 stroke="none"
               >
-                {categoryDistributionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.fill || `hsl(${210 + index * 30}, 70%, 50%)`}
+                  />
                 ))}
               </Pie>
               <Tooltip
@@ -165,16 +207,32 @@ export const CategoryDistributionChart = () => {
   );
 };
 
-export const RepositoryCompletionChart = () => {
+export const RepositoryCompletionChart = ({ data }: { data: RepositoryCompletionData[] }) => {
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <div>
+            <CardTitle className="text-base font-semibold">Repository Completion Trend</CardTitle>
+            <CardDescription className="text-xs">Weekly completion rate vs target</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Repository Completion Trend</CardTitle>
-            <CardDescription className="text-xs">
-              Weekly completion rate vs target
-            </CardDescription>
+            <CardDescription className="text-xs">Weekly completion rate vs target</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
             Last 8 weeks
@@ -184,14 +242,9 @@ export const RepositoryCompletionChart = () => {
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={repositoryCompletionData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
-              <XAxis
-                dataKey="week"
-                tick={{ fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
+              <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis
                 tick={{ fontSize: 11 }}
                 tickLine={false}
@@ -240,14 +293,29 @@ export const RepositoryCompletionChart = () => {
   );
 };
 
-export const TopInstitutionsChart = () => {
-  const data = [
-    { name: 'NIT Trichy', score: 94 },
-    { name: 'AIIMS', score: 91 },
-    { name: 'IIM-B', score: 88 },
-    { name: 'JNU', score: 85 },
-    { name: 'NLSIU', score: 82 },
-  ];
+export const TopInstitutionsChart = ({ institutions }: { institutions: TopInstitutionData[] }) => {
+  const data = institutions.slice(0, 5).map(inst => ({
+    name: inst.name.length > 15 ? inst.name.slice(0, 15) + '…' : inst.name,
+    score: inst.repositoryCompletion,
+  }));
+
+  if (institutions.length === 0) {
+    return (
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <div>
+            <CardTitle className="text-base font-semibold">Top Active Institutions</CardTitle>
+            <CardDescription className="text-xs">By repository completion score</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border/50">
@@ -255,9 +323,7 @@ export const TopInstitutionsChart = () => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Top Active Institutions</CardTitle>
-            <CardDescription className="text-xs">
-              By repository completion score
-            </CardDescription>
+            <CardDescription className="text-xs">By repository completion score</CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
             Top 5
@@ -267,8 +333,16 @@ export const TopInstitutionsChart = () => {
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" horizontal={false} />
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                className="stroke-border/50"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 tick={{ fontSize: 11 }}
@@ -295,12 +369,7 @@ export const TopInstitutionsChart = () => {
                 }}
                 formatter={(value: number) => [`${value}%`, 'Completion']}
               />
-              <Bar
-                dataKey="score"
-                fill="hsl(var(--chart-1))"
-                radius={[0, 4, 4, 0]}
-                barSize={24}
-              />
+              <Bar dataKey="score" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </div>

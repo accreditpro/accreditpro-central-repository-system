@@ -7,12 +7,12 @@ export const Breadcrumbs = () => {
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
   // Skip the first segment if it's 'app' or 'admin' (prefix)
-  const displaySegments = pathSegments.filter((s) => s !== 'app' && s !== 'admin');
+  const displaySegments = pathSegments.filter(s => s !== 'app' && s !== 'admin');
 
   const formatSegment = (segment: string) => {
     return segment
       .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -27,9 +27,7 @@ export const Breadcrumbs = () => {
           const isLast = index === displaySegments.length - 1;
           return (
             <li key={segment + index} className="flex items-center gap-1">
-              {index > 0 && (
-                <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-              )}
+              {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
               {isLast ? (
                 <span className="text-sm font-medium text-foreground">
                   {formatSegment(segment)}

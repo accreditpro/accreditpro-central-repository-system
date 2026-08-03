@@ -12,8 +12,8 @@ const Unauthorized = () => {
       </div>
       <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
       <p className="text-muted-foreground max-w-md mb-6">
-        You don't have permission to access this page. Please contact your administrator
-        if you believe this is an error.
+        You don't have permission to access this page. Please contact your administrator if you
+        believe this is an error.
       </p>
       <Button onClick={() => navigate('/dashboard')} variant="default">
         <ArrowLeft className="mr-2 h-4 w-4" />

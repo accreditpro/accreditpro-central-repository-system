@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { CoordinatorSidebar } from '@/components/layout/CoordinatorSidebar';
 import { InfrastructureDashboard } from './components/InfrastructureDashboard';
 import { InfrastructureDocumentsView } from './components/InfrastructureDocumentsView';
 import { RepositoryWorkspace } from '../department-repository/components/RepositoryWorkspace';
@@ -16,6 +16,7 @@ import {
   greenCampusRepositoryConfig,
   safetySecurityRepositoryConfig,
   utilitiesRepositoryConfig,
+  infrastructureCoordinatorContext,
 } from './infrastructure-configs';
 import {
   LayoutDashboard,
@@ -44,17 +45,14 @@ import {
   FileText,
   Upload,
   User,
+  ChevronLeft,
+  ChevronRight,
   Menu,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { toggleNotificationPanel } from '@/store/slices/uiSlice';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
-import { Bell } from 'lucide-react';
 
 type InfrastructureView =
   | 'dashboard'
+  // Infrastructure tabs
   | 'buildings'
   | 'classrooms'
   | 'laboratories'
@@ -65,25 +63,40 @@ type InfrastructureView =
   | 'sports-facilities'
   | 'seminar-halls'
   | 'transport'
+  // Green Campus tabs
   | 'green-initiatives'
   | 'energy-management'
   | 'water-management'
   | 'waste-management'
   | 'green-audit'
+  // Safety & Security tabs
   | 'fire-safety'
   | 'security-infrastructure'
   | 'emergency-preparedness'
   | 'insurance-compliance'
+  // Utilities tabs
   | 'power-infrastructure'
   | 'water-supply'
   | 'internet-network'
   | 'utility-assets'
+  // Other views
   | 'supporting-documents'
   | 'upload-history'
   | 'verification-status'
   | 'profile';
 
-const sidebarGroups = [
+interface SidebarGroup {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  items: {
+    id: InfrastructureView;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[];
+}
+
+const sidebarGroups: SidebarGroup[] = [
   {
     title: 'Infrastructure',
     icon: Building2,
@@ -137,18 +150,52 @@ const sidebarGroups = [
   },
 ];
 
-const bottomItems = [
+const bottomItems: {
+  id: InfrastructureView;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: 'supporting-documents', label: 'Supporting Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
-const getConfigForView = (view: InfrastructureView): { config: typeof infrastructureRepositoryConfig; tabIndex: number } | null => {
-  const infraTabs = ['buildings', 'classrooms', 'laboratories', 'equipment', 'library', 'ict-infrastructure', 'hostels', 'sports-facilities', 'seminar-halls', 'transport'];
-  const greenTabs = ['green-initiatives', 'energy-management', 'water-management', 'waste-management', 'green-audit'];
-  const safetyTabs = ['fire-safety', 'security-infrastructure', 'emergency-preparedness', 'insurance-compliance'];
-  const utilityTabs = ['power-infrastructure', 'water-supply', 'internet-network', 'utility-assets'];
+// Map tab IDs to their config and index
+const getConfigForView = (
+  view: InfrastructureView
+): { config: typeof infrastructureRepositoryConfig; tabIndex: number } | null => {
+  const infraTabs = [
+    'buildings',
+    'classrooms',
+    'laboratories',
+    'equipment',
+    'library',
+    'ict-infrastructure',
+    'hostels',
+    'sports-facilities',
+    'seminar-halls',
+    'transport',
+  ];
+  const greenTabs = [
+    'green-initiatives',
+    'energy-management',
+    'water-management',
+    'waste-management',
+    'green-audit',
+  ];
+  const safetyTabs = [
+    'fire-safety',
+    'security-infrastructure',
+    'emergency-preparedness',
+    'insurance-compliance',
+  ];
+  const utilityTabs = [
+    'power-infrastructure',
+    'water-supply',
+    'internet-network',
+    'utility-assets',
+  ];
 
   const infraIndex = infraTabs.indexOf(view);
   if (infraIndex >= 0) return { config: infrastructureRepositoryConfig, tabIndex: infraIndex };
@@ -165,29 +212,26 @@ const getConfigForView = (view: InfrastructureView): { config: typeof infrastruc
   return null;
 };
 
-const getCurrentLabel = (activeView: InfrastructureView): string => {
-  if (activeView === 'dashboard') return 'Dashboard';
-  for (const group of sidebarGroups) {
-    const item = group.items.find((i) => i.id === activeView);
-    if (item) return item.label;
-  }
-  const bottomItem = bottomItems.find((i) => i.id === activeView);
-  if (bottomItem) return bottomItem.label;
-  return 'Dashboard';
-};
-
 export const InfrastructureRepositoryPage = () => {
-  const { user } = useAuth();
-  const dispatch = useAppDispatch();
-  const { notifications } = useAppSelector((state) => state.ui);
-  const unreadCount = notifications.filter((n) => !n.read).length;
   const [activeView, setActiveView] = useState<InfrastructureView>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    Infrastructure: true,
+    'Green Campus & Sustainability': true,
+    'Safety & Security': true,
+    Utilities: true,
+  });
+
+  const toggleGroup = (title: string) => {
+    setExpandedGroups(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   const renderContent = () => {
     if (activeView === 'dashboard') {
-      return <InfrastructureDashboard onNavigate={(tabId) => setActiveView(tabId as InfrastructureView)} />;
+      return (
+        <InfrastructureDashboard onNavigate={tabId => setActiveView(tabId as InfrastructureView)} />
+      );
     }
     if (activeView === 'supporting-documents') {
       return <InfrastructureDocumentsView />;
@@ -205,76 +249,223 @@ export const InfrastructureRepositoryPage = () => {
     const viewConfig = getConfigForView(activeView);
     if (viewConfig) {
       return (
-        <RepositoryWorkspace
-          config={viewConfig.config}
-          initialTabIndex={viewConfig.tabIndex}
-          hideTabs
-        />
+        <RepositoryWorkspace config={viewConfig.config} initialTabIndex={viewConfig.tabIndex} />
       );
     }
 
-    return <InfrastructureDashboard onNavigate={(tabId) => setActiveView(tabId as InfrastructureView)} />;
+    return (
+      <InfrastructureDashboard onNavigate={tabId => setActiveView(tabId as InfrastructureView)} />
+    );
+  };
+
+  // Find the label for current view
+  const getCurrentLabel = (): string => {
+    if (activeView === 'dashboard') return 'Dashboard';
+    for (const group of sidebarGroups) {
+      const item = group.items.find(i => i.id === activeView);
+      if (item) return item.label;
+    }
+    const bottomItem = bottomItems.find(i => i.id === activeView);
+    if (bottomItem) return bottomItem.label;
+    return 'Dashboard';
   };
 
   return (
-    <div className="flex h-screen">
-      <CoordinatorSidebar
-        subtitle="Infrastructure Coordinator"
-        activeView={activeView}
-        onNavigate={(id) => setActiveView(id as InfrastructureView)}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-        items={[{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, separatorAfter: true }]}
-        groups={sidebarGroups}
-        bottomItems={bottomItems}
-      />
+    <div className="flex h-[calc(100vh-64px)]">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {mobileSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-
-      <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-background/80 px-4 md:px-6 backdrop-blur-xl">
-          
-          {/* Left Side: Menu Toggle, Title & Badges */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 lg:hidden shrink-0"
-              onClick={() => setMobileSidebarOpen(true)}
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-semibold">{getCurrentLabel(activeView)}</h1>
-              <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
-                Infrastructure Coordinator
-              </Badge>
+      {/* Sidebar */}
+      <motion.aside
+        className={cn(
+          'fixed lg:relative z-50 lg:z-0 h-full bg-card border-r flex flex-col transition-all duration-300',
+          sidebarCollapsed ? 'w-16' : 'w-64',
+          mobileSidebarOpen ? 'left-0' : '-left-64 lg:left-0'
+        )}
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 border-b flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">Infrastructure</p>
+                <p className="text-[10px] text-muted-foreground">Coordinator</p>
+              </div>
             </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 hidden lg:flex"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* Coordinator Info */}
+        {!sidebarCollapsed && (
+          <div className="px-4 py-3 border-b">
+            <p className="text-xs font-medium text-muted-foreground">Coordinator</p>
+            <p className="text-sm font-semibold truncate">
+              {infrastructureCoordinatorContext.name}
+            </p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {infrastructureCoordinatorContext.institution}
+            </p>
           </div>
+        )}
 
-          {/* Right Side: Action Buttons */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8"
-              onClick={() => dispatch(toggleNotificationPanel())}
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+        {/* Navigation */}
+        <ScrollArea className="flex-1 py-2">
+          <div className="px-2 space-y-0.5">
+            {/* Dashboard */}
+            <button
+              onClick={() => {
+                setActiveView('dashboard');
+                setMobileSidebarOpen(false);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
+                activeView === 'dashboard'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
-            </Button>
+              title={sidebarCollapsed ? 'Dashboard' : undefined}
+            >
+              <LayoutDashboard
+                className={cn('h-4 w-4 shrink-0', activeView === 'dashboard' && 'text-primary')}
+              />
+              {!sidebarCollapsed && <span className="truncate">Dashboard</span>}
+            </button>
 
-            <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
+            <Separator className="my-2" />
 
-            {user && <UserProfileMenu user={user} />}
+            {/* Module Groups */}
+            {sidebarGroups.map(group => (
+              <div key={group.title} className="mb-1">
+                {!sidebarCollapsed ? (
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                  >
+                    <span className={cn('flex items-center gap-1.5', group.color)}>
+                      <group.icon className="h-3 w-3" />
+                      <span className="truncate">{group.title}</span>
+                    </span>
+                    <ChevronRight
+                      className={cn(
+                        'h-3 w-3 transition-transform',
+                        expandedGroups[group.title] && 'rotate-90'
+                      )}
+                    />
+                  </button>
+                ) : (
+                  <div className="flex justify-center py-1">
+                    <group.icon className={cn('h-4 w-4', group.color)} />
+                  </div>
+                )}
+
+                {(expandedGroups[group.title] || sidebarCollapsed) && (
+                  <div className="space-y-0.5">
+                    {group.items.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveView(item.id);
+                          setMobileSidebarOpen(false);
+                        }}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-all',
+                          !sidebarCollapsed && 'pl-6',
+                          activeView === item.id
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                        title={sidebarCollapsed ? item.label : undefined}
+                      >
+                        <item.icon
+                          className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            activeView === item.id && 'text-primary'
+                          )}
+                        />
+                        {!sidebarCollapsed && (
+                          <span className="truncate text-xs">{item.label}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <Separator className="my-2" />
+
+            {/* Bottom Items */}
+            {bottomItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveView(item.id);
+                  setMobileSidebarOpen(false);
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
+                  activeView === item.id
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+                title={sidebarCollapsed ? item.label : undefined}
+              >
+                <item.icon
+                  className={cn('h-4 w-4 shrink-0', activeView === item.id && 'text-primary')}
+                />
+                {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </motion.aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Content Header */}
+        <div className="border-b px-6 py-3 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 lg:hidden"
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold">{getCurrentLabel()}</h1>
+            <Badge variant="secondary" className="text-[10px]">
+              Infrastructure Coordinator
+            </Badge>
           </div>
         </div>
 
+        {/* Content Area */}
         <ScrollArea className="flex-1">
           <div className="p-6">
             <AnimatePresence mode="wait">
@@ -290,7 +481,7 @@ export const InfrastructureRepositoryPage = () => {
             </AnimatePresence>
           </div>
         </ScrollArea>
-      </main>
+      </div>
     </div>
   );
 };

@@ -2,35 +2,29 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { ExportFormat } from './types';
-import {
-  analyticsCards,
-  institutionGrowthData,
-  topInstitutionsData,
-  repositoryCompletionData,
-  recentActivityData,
-} from './mock-data';
+import { ExportFormat, AnalyticsOverviewData } from './types';
 
-function getExportData() {
+/** Maps the overview API response to flat export-friendly sections */
+function buildExportData(data: AnalyticsOverviewData) {
   return {
-    summary: analyticsCards.map((card) => ({
+    summary: (data.summaryCards || []).map(card => ({
       Metric: card.title,
       Value: String(card.value),
       'Change (%)': card.change,
     })),
-    growth: institutionGrowthData.map((item) => ({
+    growth: (data.institutionGrowth || []).map(item => ({
       Month: item.month,
       Institutions: item.institutions,
       Users: item.users,
     })),
-    topInstitutions: topInstitutionsData.map((item) => ({
+    topInstitutions: (data.topInstitutions || []).map(item => ({
       Institution: item.name,
       State: item.state,
       Users: item.users,
       Documents: item.documents,
       'Completion (%)': item.completion,
     })),
-    repositoryCompletion: repositoryCompletionData.map((item) => ({
+    repositoryCompletion: (data.repositoryCompletion || []).map(item => ({
       Institution: item.institution,
       'Academic (%)': item.academic,
       'Faculty (%)': item.faculty,
@@ -38,8 +32,8 @@ function getExportData() {
       'Research (%)': item.research,
       'Infrastructure (%)': item.infrastructure,
     })),
-    recentActivity: recentActivityData.map((item) => ({
-      Action: item.action,
+    recentActivity: (data.recentActivity || []).map(item => ({
+      Action: item.title,
       User: item.user,
       Institution: item.institution,
       Time: item.timestamp,
@@ -48,14 +42,14 @@ function getExportData() {
   };
 }
 
-export function exportToCSV() {
-  const data = getExportData();
+function exportToCSV(data: AnalyticsOverviewData) {
+  const exportData = buildExportData(data);
   let csv = '';
 
   // Summary
   csv += 'ANALYTICS SUMMARY\n';
   csv += 'Metric,Value,Change (%)\n';
-  data.summary.forEach((row) => {
+  exportData.summary.forEach(row => {
     csv += `${row.Metric},${row.Value},${row['Change (%)']}\n`;
   });
   csv += '\n';
@@ -63,7 +57,7 @@ export function exportToCSV() {
   // Growth
   csv += 'INSTITUTION GROWTH\n';
   csv += 'Month,Institutions,Users\n';
-  data.growth.forEach((row) => {
+  exportData.growth.forEach(row => {
     csv += `${row.Month},${row.Institutions},${row.Users}\n`;
   });
   csv += '\n';
@@ -71,7 +65,7 @@ export function exportToCSV() {
   // Top Institutions
   csv += 'TOP INSTITUTIONS\n';
   csv += 'Institution,State,Users,Documents,Completion (%)\n';
-  data.topInstitutions.forEach((row) => {
+  exportData.topInstitutions.forEach(row => {
     csv += `${row.Institution},${row.State},${row.Users},${row.Documents},${row['Completion (%)']}\n`;
   });
   csv += '\n';
@@ -79,7 +73,7 @@ export function exportToCSV() {
   // Repository Completion
   csv += 'REPOSITORY COMPLETION\n';
   csv += 'Institution,Academic (%),Faculty (%),Student (%),Research (%),Infrastructure (%)\n';
-  data.repositoryCompletion.forEach((row) => {
+  exportData.repositoryCompletion.forEach(row => {
     csv += `${row.Institution},${row['Academic (%)']},${row['Faculty (%)']},${row['Student (%)']},${row['Research (%)']},${row['Infrastructure (%)']}\n`;
   });
 
@@ -87,33 +81,35 @@ export function exportToCSV() {
   saveAs(blob, `analytics-report-${new Date().toISOString().split('T')[0]}.csv`);
 }
 
-export function exportToExcel() {
-  const data = getExportData();
+function exportToExcel(data: AnalyticsOverviewData) {
+  const exportData = buildExportData(data);
   const workbook = XLSX.utils.book_new();
 
-  const summarySheet = XLSX.utils.json_to_sheet(data.summary);
+  const summarySheet = XLSX.utils.json_to_sheet(exportData.summary);
   XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
-  const growthSheet = XLSX.utils.json_to_sheet(data.growth);
+  const growthSheet = XLSX.utils.json_to_sheet(exportData.growth);
   XLSX.utils.book_append_sheet(workbook, growthSheet, 'Institution Growth');
 
-  const topSheet = XLSX.utils.json_to_sheet(data.topInstitutions);
+  const topSheet = XLSX.utils.json_to_sheet(exportData.topInstitutions);
   XLSX.utils.book_append_sheet(workbook, topSheet, 'Top Institutions');
 
-  const repoSheet = XLSX.utils.json_to_sheet(data.repositoryCompletion);
+  const repoSheet = XLSX.utils.json_to_sheet(exportData.repositoryCompletion);
   XLSX.utils.book_append_sheet(workbook, repoSheet, 'Repository Completion');
 
-  const activitySheet = XLSX.utils.json_to_sheet(data.recentActivity);
+  const activitySheet = XLSX.utils.json_to_sheet(exportData.recentActivity);
   XLSX.utils.book_append_sheet(workbook, activitySheet, 'Recent Activity');
 
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
   saveAs(blob, `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-export function exportToPDF() {
+function exportToPDF(data: AnalyticsOverviewData) {
   const doc = new jsPDF();
-  const data = getExportData();
+  const exportData = buildExportData(data);
 
   // Title
   doc.setFontSize(20);
@@ -130,7 +126,7 @@ export function exportToPDF() {
   autoTable(doc, {
     startY: 46,
     head: [['Metric', 'Value', 'Change (%)']],
-    body: data.summary.map((row) => [row.Metric, row.Value, `${row['Change (%)']}%`]),
+    body: exportData.summary.map(row => [row.Metric, row.Value, `${row['Change (%)']}%`]),
     theme: 'striped',
     headStyles: { fillColor: [99, 102, 241] },
   });
@@ -142,7 +138,7 @@ export function exportToPDF() {
   autoTable(doc, {
     startY: finalY1 + 16,
     head: [['Institution', 'State', 'Users', 'Documents', 'Completion (%)']],
-    body: data.topInstitutions.map((row) => [
+    body: exportData.topInstitutions.map(row => [
       row.Institution,
       row.State,
       String(row.Users),
@@ -160,7 +156,7 @@ export function exportToPDF() {
   autoTable(doc, {
     startY: 26,
     head: [['Institution', 'Academic', 'Faculty', 'Student', 'Research', 'Infrastructure']],
-    body: data.repositoryCompletion.map((row) => [
+    body: exportData.repositoryCompletion.map(row => [
       row.Institution,
       `${row['Academic (%)']}%`,
       `${row['Faculty (%)']}%`,
@@ -175,16 +171,20 @@ export function exportToPDF() {
   doc.save(`analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
-export function handleExport(format: ExportFormat) {
+/**
+ * Export analytics data in the specified format.
+ * Requires the overview data from the API (not mock data).
+ */
+export function handleExport(format: ExportFormat, data: AnalyticsOverviewData) {
   switch (format) {
     case 'csv':
-      exportToCSV();
+      exportToCSV(data);
       break;
     case 'excel':
-      exportToExcel();
+      exportToExcel(data);
       break;
     case 'pdf':
-      exportToPDF();
+      exportToPDF(data);
       break;
   }
 }

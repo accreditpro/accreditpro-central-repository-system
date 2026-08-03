@@ -4,12 +4,7 @@ import { Shield, PanelLeftClose, PanelLeft, ChevronDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -56,11 +51,11 @@ export const CoordinatorSidebar = ({
 }: CoordinatorSidebarProps) => {
   const { user } = useAuth();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map((g) => [g.title, true]))
+    Object.fromEntries(groups.map(g => [g.title, true]))
   );
 
   const toggleGroup = (title: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }));
+    setExpandedGroups(prev => ({ ...prev, [title]: !prev[title] }));
   };
 
   const handleNavigate = (id: string) => {
@@ -149,7 +144,12 @@ export const CoordinatorSidebar = ({
             )}
           </div>
           {mobileOpen ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={onMobileClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 lg:hidden"
+              onClick={onMobileClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           ) : !collapsed ? (
@@ -182,14 +182,14 @@ export const CoordinatorSidebar = ({
         <ScrollArea className="flex-1 py-4">
           <TooltipProvider delayDuration={0}>
             <nav className={cn('space-y-1', collapsed ? 'px-2' : 'px-3')}>
-              {items.map((item) => (
+              {items.map(item => (
                 <div key={item.id}>
                   {renderNavButton(item)}
                   {item.separatorAfter && !collapsed && <Separator className="my-2 opacity-50" />}
                 </div>
               ))}
 
-              {groups.map((group) => (
+              {groups.map(group => (
                 <div key={group.title} className="space-y-1">
                   {!collapsed ? (
                     <button
@@ -225,7 +225,7 @@ export const CoordinatorSidebar = ({
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden space-y-1"
                       >
-                        {group.items.map((item) => renderNavButton(item, true))}
+                        {group.items.map(item => renderNavButton(item, true))}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -236,7 +236,7 @@ export const CoordinatorSidebar = ({
                 <Separator className={cn('my-2 opacity-50', collapsed && 'mx-1')} />
               )}
 
-              {bottomItems.map((item) => renderNavButton(item))}
+              {bottomItems.map(item => renderNavButton(item))}
             </nav>
           </TooltipProvider>
         </ScrollArea>

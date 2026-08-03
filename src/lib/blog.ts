@@ -40,14 +40,11 @@ type SeoMeta = {
   tags?: string[];
 };
 
-const markdownModules = import.meta.glob(
-  ['../../seo/content/**/*.md'],
-  {
-    query: '?raw',
-    import: 'default',
-    eager: true,
-  },
-) as Record<string, string>;
+const markdownModules = import.meta.glob(['../../seo/content/**/*.md'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
 function parseFrontmatter(markdown: string) {
   if (!markdown.startsWith('---')) {
@@ -74,10 +71,7 @@ function parseFrontmatter(markdown: string) {
 
     return { data, content };
   } catch (error) {
-    console.warn(
-      'Failed to parse blog frontmatter, falling back to raw content',
-      error,
-    );
+    console.warn('Failed to parse blog frontmatter, falling back to raw content', error);
 
     return {
       data: {} satisfies BlogFrontmatter,
@@ -91,24 +85,17 @@ function normalizeFrontmatter(value: unknown): BlogFrontmatter {
     return {};
   }
 
-  const entries = Object.entries(value as Record<string, unknown>).map(
-    ([key, entryValue]) => {
-      if (Array.isArray(entryValue)) {
-        return [
-          key,
-          entryValue
-            .map((item) => String(item).trim())
-            .filter(Boolean),
-        ] as const;
-      }
+  const entries = Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => {
+    if (Array.isArray(entryValue)) {
+      return [key, entryValue.map(item => String(item).trim()).filter(Boolean)] as const;
+    }
 
-      if (entryValue === null || typeof entryValue === 'undefined') {
-        return [key, undefined] as const;
-      }
+    if (entryValue === null || typeof entryValue === 'undefined') {
+      return [key, undefined] as const;
+    }
 
-      return [key, String(entryValue).trim()] as const;
-    },
-  );
+    return [key, String(entryValue).trim()] as const;
+  });
 
   return Object.fromEntries(entries) as BlogFrontmatter;
 }
@@ -117,7 +104,7 @@ function titleFromSlug(slug: string) {
   return slug
     .split('-')
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 }
 
@@ -178,7 +165,7 @@ const blogPosts: BlogPost[] = Object.entries(markdownModules)
   .sort(compareBlogPosts);
 
 function getBlogPost(slug: string) {
-  return blogPosts.find((post) => post.slug === slug);
+  return blogPosts.find(post => post.slug === slug);
 }
 
 function getBlogRoute(slug: string) {
@@ -216,18 +203,12 @@ function hasBlogPosts() {
   return blogPosts.length > 0;
 }
 
-function frontmatterString(
-  frontmatter: BlogFrontmatter,
-  key: string,
-): string | undefined {
+function frontmatterString(frontmatter: BlogFrontmatter, key: string): string | undefined {
   const value = frontmatter[key];
   return typeof value === 'string' ? value : undefined;
 }
 
-function frontmatterStringList(
-  frontmatter: BlogFrontmatter,
-  key: string,
-): string[] | undefined {
+function frontmatterStringList(frontmatter: BlogFrontmatter, key: string): string[] | undefined {
   const value = frontmatter[key];
 
   if (Array.isArray(value)) {
@@ -237,7 +218,7 @@ function frontmatterStringList(
   if (typeof value === 'string') {
     return value
       .split(',')
-      .map((entry) => entry.trim())
+      .map(entry => entry.trim())
       .filter(Boolean);
   }
 
@@ -274,10 +255,8 @@ function getPostSeoMeta(post?: BlogPost | null): SeoMeta {
   const title = `${post.title} | Blog`;
   const description = post.description;
   const url =
-    frontmatterString(post.frontmatter, 'og_url') ??
-    getAbsoluteUrl(getBlogRoute(post.slug));
-  const keywordsList =
-    frontmatterStringList(post.frontmatter, 'keywords') ?? post.frontmatter.tags;
+    frontmatterString(post.frontmatter, 'og_url') ?? getAbsoluteUrl(getBlogRoute(post.slug));
+  const keywordsList = frontmatterStringList(post.frontmatter, 'keywords') ?? post.frontmatter.tags;
   const ogImage =
     frontmatterString(post.frontmatter, 'og_image') ??
     frontmatterString(post.frontmatter, 'hero_image');
@@ -285,8 +264,7 @@ function getPostSeoMeta(post?: BlogPost | null): SeoMeta {
     frontmatterString(post.frontmatter, 'og_image_alt') ??
     frontmatterString(post.frontmatter, 'twitter_image_alt') ??
     post.title;
-  const twitterImage =
-    frontmatterString(post.frontmatter, 'twitter_image') ?? ogImage;
+  const twitterImage = frontmatterString(post.frontmatter, 'twitter_image') ?? ogImage;
 
   return {
     title,
@@ -296,23 +274,17 @@ function getPostSeoMeta(post?: BlogPost | null): SeoMeta {
     url,
     siteName: frontmatterString(post.frontmatter, 'og_site_name') ?? siteName,
     ogTitle: frontmatterString(post.frontmatter, 'og_title') ?? title,
-    ogDescription:
-      frontmatterString(post.frontmatter, 'og_description') ?? description,
+    ogDescription: frontmatterString(post.frontmatter, 'og_description') ?? description,
     ogImage,
     ogImageAlt: imageAlt,
     ogType: frontmatterString(post.frontmatter, 'og_type') ?? 'article',
     twitterCard:
       frontmatterString(post.frontmatter, 'twitter_card') ??
       (twitterImage ? 'summary_large_image' : 'summary'),
-    twitterSite:
-      frontmatterString(post.frontmatter, 'twitter_site') ?? twitterSiteHandle,
-    twitterCreator:
-      frontmatterString(post.frontmatter, 'twitter_creator') ??
-      twitterCreatorHandle,
-    twitterTitle:
-      frontmatterString(post.frontmatter, 'twitter_title') ?? title,
-    twitterDescription:
-      frontmatterString(post.frontmatter, 'twitter_description') ?? description,
+    twitterSite: frontmatterString(post.frontmatter, 'twitter_site') ?? twitterSiteHandle,
+    twitterCreator: frontmatterString(post.frontmatter, 'twitter_creator') ?? twitterCreatorHandle,
+    twitterTitle: frontmatterString(post.frontmatter, 'twitter_title') ?? title,
+    twitterDescription: frontmatterString(post.frontmatter, 'twitter_description') ?? description,
     twitterImage,
     twitterImageAlt: imageAlt,
     publishedTime: frontmatterString(post.frontmatter, 'date'),
@@ -320,11 +292,5 @@ function getPostSeoMeta(post?: BlogPost | null): SeoMeta {
   };
 }
 
-export {
-  blogPosts,
-  getBlogPost,
-  getBlogRoute,
-  getPostSeoMeta,
-  hasBlogPosts,
-};
+export { blogPosts, getBlogPost, getBlogRoute, getPostSeoMeta, hasBlogPosts };
 export type { BlogFrontmatter, BlogPost, SeoMeta };

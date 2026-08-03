@@ -11,11 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ComboboxProps {
   options: { value: string; label: string }[];
@@ -50,9 +46,7 @@ export function Combobox({
           className={cn('w-full justify-between', className)}
           disabled={disabled}
         >
-          {value
-            ? options.find(option => option.value === value)?.label
-            : placeholder}
+          {value ? options.find(option => option.value === value)?.label : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

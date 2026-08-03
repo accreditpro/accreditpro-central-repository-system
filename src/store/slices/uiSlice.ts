@@ -50,24 +50,24 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    toggleSidebar: (state) => {
+    toggleSidebar: state => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
     },
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
     },
-    toggleNotificationPanel: (state) => {
+    toggleNotificationPanel: state => {
       state.notificationPanelOpen = !state.notificationPanelOpen;
     },
     setNotificationPanelOpen: (state, action: PayloadAction<boolean>) => {
       state.notificationPanelOpen = action.payload;
     },
     markNotificationRead: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find((n) => n.id === action.payload);
+      const notification = state.notifications.find(n => n.id === action.payload);
       if (notification) notification.read = true;
     },
-    markAllNotificationsRead: (state) => {
-      state.notifications.forEach((n) => (n.read = true));
+    markAllNotificationsRead: state => {
+      state.notifications.forEach(n => (n.read = true));
     },
     addNotification: (state, action: PayloadAction<Omit<Notification, 'id' | 'createdAt'>>) => {
       state.notifications.unshift({

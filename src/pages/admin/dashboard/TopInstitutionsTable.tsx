@@ -2,12 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Institution } from './mock-data';
+import type { TopInstitutionData } from './types';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TopInstitutionsTableProps {
-  institutions: Institution[];
+  institutions: TopInstitutionData[];
 }
 
 export const TopInstitutionsTable = ({ institutions }: TopInstitutionsTableProps) => {
@@ -35,13 +35,15 @@ export const TopInstitutionsTable = ({ institutions }: TopInstitutionsTableProps
               className="group flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50"
             >
               {/* Rank */}
-              <div className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                index === 0 && 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                index === 1 && 'bg-slate-400/10 text-slate-500 dark:text-slate-400',
-                index === 2 && 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-                index > 2 && 'bg-muted text-muted-foreground'
-              )}>
+              <div
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                  index === 0 && 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                  index === 1 && 'bg-slate-400/10 text-slate-500 dark:text-slate-400',
+                  index === 2 && 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+                  index > 2 && 'bg-muted text-muted-foreground'
+                )}
+              >
                 #{index + 1}
               </div>
 
