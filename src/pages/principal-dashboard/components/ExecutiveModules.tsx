@@ -9,6 +9,7 @@ import {
   CheckSquare,
   AlertTriangle,
   Trophy,
+  Award,
   Bot,
   FileBarChart,
   Activity,

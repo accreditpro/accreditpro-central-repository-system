@@ -26,6 +26,8 @@ const getRoleBasedRedirect = (role?: UserRole): string => {
       return '/app/hod-dashboard';
     case UserRole.PRINCIPAL:
       return '/app/principal-dashboard';
+    case UserRole.IQAC_COORDINATOR:
+      return '/app/iqac-dashboard';
     default:
       return '/app/dashboard';
   }

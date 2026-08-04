@@ -1,206 +1,186 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import {
-  Target,
-  Award,
-  Trophy,
-  TrendingUp,
   Database,
+  Trophy,
+  Award,
+  TrendingUp,
+  Building,
+  BookOpen,
+  Users,
   FileCheck,
-  ShieldCheck,
-  Clock,
+  CheckSquare,
+  ClipboardList,
   AlertTriangle,
-  Heart,
-  BarChart3,
-  Sparkles,
+  Gauge,
+  ChevronRight,
 } from 'lucide-react';
-import { kpiData, departmentScores } from '../principal-configs';
+import {
+  kpiData,
+  institutionStats,
+  departmentRepositories,
+  nbaDeptScores,
+  naacDeptScores,
+  nirfDeptScores,
+  principalGaps,
+} from '../principal-data';
+import { StatCard, statusOf, StatusBadge, ReadinessBar, scoreTone } from './common';
+
+function ReadinessGauge({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="relative w-36 h-36 mx-auto">
+      <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted/20" />
+        <circle
+          cx="60"
+          cy="60"
+          r="50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="10"
+          strokeLinecap="round"
+          className={value >= 85 ? 'text-emerald-500' : value >= 70 ? 'text-amber-500' : 'text-red-500'}
+          strokeDasharray={`${value * 3.14} 314`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold">{value}%</span>
+        <span className="text-[10px] text-muted-foreground">{label}</span>
+      </div>
+    </div>
+  );
+}
 
 const kpiCards = [
-  { label: 'Institution Readiness', value: kpiData.institutionReadiness, icon: Target, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950' },
-  { label: 'NAAC Readiness', value: kpiData.naacReadiness, icon: Award, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950' },
-  { label: 'NBA Readiness', value: kpiData.nbaReadiness, icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950' },
-  { label: 'NIRF Readiness', value: kpiData.nirfReadiness, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950' },
-  { label: 'Repository Completion', value: kpiData.repositoryCompletion, icon: Database, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950' },
-  { label: 'Evidence Completion', value: kpiData.evidenceCompletion, icon: FileCheck, color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-950' },
-  { label: 'Verification Status', value: kpiData.verificationStatus, icon: ShieldCheck, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-950' },
-  { label: 'Pending Approvals', value: kpiData.pendingApprovals, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950', isCount: true },
-  { label: 'Departments at Risk', value: kpiData.departmentsAtRisk, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950', isCount: true },
-  { label: 'Overall Health Score', value: kpiData.overallHealthScore, icon: Heart, color: 'text-pink-600', bg: 'bg-pink-50 dark:bg-pink-950' },
-  { label: 'Performance Index', value: kpiData.performanceIndex, icon: BarChart3, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950' },
-  { label: 'Data Quality Score', value: kpiData.dataQualityScore, icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950' },
+  { label: 'Overall Repository Readiness', value: `${kpiData.repositoryCompletion}%`, icon: Database, tone: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/40' },
+  { label: 'NBA Readiness', value: `${kpiData.nbaReadiness}%`, icon: Trophy, tone: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40' },
+  { label: 'NAAC Readiness', value: `${kpiData.naacReadiness}%`, icon: Award, tone: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/40' },
+  { label: 'NIRF Readiness', value: `${kpiData.nirfReadiness}%`, icon: TrendingUp, tone: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
+  { label: 'Total Departments', value: `${institutionStats.departments}`, icon: Building, tone: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/40' },
+  { label: 'Total Programs', value: `${institutionStats.programs}`, icon: BookOpen, tone: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-950/40' },
+  { label: 'Total Faculty', value: `${institutionStats.faculty}`, icon: Users, tone: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/40' },
+  { label: 'Total Students', value: `${institutionStats.students.toLocaleString()}`, icon: Users, tone: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-950/40' },
+  { label: 'Overall Evidence Completion', value: `${kpiData.evidenceCompletion}%`, icon: FileCheck, tone: 'text-fuchsia-600', bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40' },
+  { label: 'Pending HOD Approvals', value: `${kpiData.pendingApprovals}`, icon: CheckSquare, tone: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/40' },
+  { label: 'IQAC Observations', value: '5', icon: ClipboardList, tone: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/40' },
+  { label: 'Critical Gaps', value: `${principalGaps.filter((g) => g.priority === 'critical').length}`, icon: AlertTriangle, tone: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950/40' },
 ];
 
-const getHealthBadge = (health: string) => {
-  switch (health) {
-    case 'excellent': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px]">🟢 Excellent</Badge>;
-    case 'good': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">🔵 Good</Badge>;
-    case 'warning': return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 text-[10px]">🟡 Warning</Badge>;
-    case 'critical': return <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-[10px]">🔴 Critical</Badge>;
-    default: return null;
-  }
-};
-
 export function ExecutiveDashboard() {
+  const navigate = useNavigate();
+  const criticalGaps = principalGaps.filter((g) => g.priority === 'critical').length;
+  const approvedEvidence = Math.round(kpiData.evidenceCompletion * 0.72);
+
   return (
     <div className="space-y-6">
-      {/* KPI Cards Grid */}
+      {/* Executive KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {kpiCards.map((kpi) => (
-          <Card key={kpi.label} className="relative overflow-hidden">
-            <CardContent className="p-3">
-              <div className={`inline-flex items-center justify-center h-8 w-8 rounded-lg ${kpi.bg} mb-2`}>
-                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</p>
-                <p className="text-xl font-bold mt-0.5">
-                  {kpi.value}{!kpi.isCount && '%'}
-                </p>
-              </div>
-              {!kpi.isCount && (
-                <Progress value={kpi.value} className="h-1 mt-2" />
-              )}
-            </CardContent>
-          </Card>
+          <StatCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone} iconBg={kpi.bg} />
         ))}
       </div>
 
-      {/* Department Performance Scorecard */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Department Performance Scorecard
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Department</th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Repository</th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Evidence</th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Verification</th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Readiness</th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Health</th>
-                </tr>
-              </thead>
-              <tbody>
-                {departmentScores.map((dept) => (
-                  <tr key={dept.id} className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors">
-                    <td className="py-2.5 px-3">
-                      <div>
-                        <p className="font-medium text-sm">{dept.code}</p>
-                        <p className="text-[10px] text-muted-foreground">{dept.name}</p>
-                      </div>
-                    </td>
-                    <td className="text-center py-2.5 px-3">
-                      <span className={`font-semibold ${dept.repository >= 85 ? 'text-green-600' : dept.repository >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {dept.repository}%
-                      </span>
-                    </td>
-                    <td className="text-center py-2.5 px-3">
-                      <span className={`font-semibold ${dept.evidence >= 85 ? 'text-green-600' : dept.evidence >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {dept.evidence}%
-                      </span>
-                    </td>
-                    <td className="text-center py-2.5 px-3">
-                      <span className={`font-semibold ${dept.verification >= 85 ? 'text-green-600' : dept.verification >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {dept.verification}%
-                      </span>
-                    </td>
-                    <td className="text-center py-2.5 px-3">
-                      <span className={`font-semibold ${dept.readiness >= 85 ? 'text-green-600' : dept.readiness >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {dept.readiness}%
-                      </span>
-                    </td>
-                    <td className="text-center py-2.5 px-3">
-                      {getHealthBadge(dept.health)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Readiness Gauge */}
+      {/* Institution Readiness Gauge + Department Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Accreditation Readiness</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">NAAC</span>
-                <span className="text-xs font-semibold">{kpiData.naacReadiness}%</span>
-              </div>
-              <Progress value={kpiData.naacReadiness} className="h-2" />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">NBA</span>
-                <span className="text-xs font-semibold">{kpiData.nbaReadiness}%</span>
-              </div>
-              <Progress value={kpiData.nbaReadiness} className="h-2" />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">NIRF</span>
-                <span className="text-xs font-semibold">{kpiData.nirfReadiness}%</span>
-              </div>
-              <Progress value={kpiData.nirfReadiness} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Performing */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Top Performing Departments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {departmentScores
-                .sort((a, b) => b.readiness - a.readiness)
-                .slice(0, 4)
-                .map((dept, idx) => (
-                  <div key={dept.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-muted-foreground w-4">{idx + 1}.</span>
-                      <span className="text-xs font-medium">{dept.code}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={dept.readiness} className="h-1.5 w-16" />
-                      <span className="text-xs font-semibold w-8 text-right">{dept.readiness}%</span>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* AI Quick Insight */}
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Bot className="h-4 w-4 text-primary" />
-              AI Quick Insight
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-primary" />
+              Institution Readiness
             </CardTitle>
           </CardHeader>
+          <CardContent className="space-y-5">
+            <ReadinessGauge value={kpiData.repositoryCompletion} label="Repository Completion" />
+            <div className="space-y-3">
+              {[
+                { label: 'Repository Completion', value: kpiData.repositoryCompletion, tone: 'text-blue-600' },
+                { label: 'Approved Evidence', value: approvedEvidence, tone: 'text-emerald-600' },
+                { label: 'Missing Evidence', value: 100 - approvedEvidence, tone: 'text-red-600' },
+                { label: 'Accreditation Readiness', value: kpiData.naacReadiness, tone: 'text-purple-600' },
+              ].map((m) => (
+                <div key={m.label}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">{m.label}</span>
+                    <span className={`font-semibold ${m.tone}`}>{m.value}%</span>
+                  </div>
+                  <ReadinessBar value={m.value} />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Department Summary */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">Department Summary</CardTitle>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/app/principal-dashboard?view=departments')}>
+                View all <ChevronRight className="h-3 w-3" />
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Institution is performing well with 81% overall health. Focus areas: EEE department needs immediate attention (63% readiness).
-              14 approvals pending your review. NAAC readiness on track for Grade A by March 2025.
-            </p>
-            <Badge variant="outline" className="mt-3 text-[10px]">
-              Updated 5 min ago
-            </Badge>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-2.5 font-medium text-muted-foreground">Department</th>
+                    <th className="text-center p-2.5 font-medium text-muted-foreground">Repository Readiness</th>
+                    <th className="text-center p-2.5 font-medium text-amber-600">NBA</th>
+                    <th className="text-center p-2.5 font-medium text-purple-600">NAAC</th>
+                    <th className="text-center p-2.5 font-medium text-emerald-600">NIRF</th>
+                    <th className="text-center p-2.5 font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departmentRepositories.map((dept) => {
+                    const nba = nbaDeptScores.find((d) => d.dept === dept.code)?.overall ?? 0;
+                    const naac = naacDeptScores.find((d) => d.dept === dept.code)?.overall ?? 0;
+                    const nirf = nirfDeptScores.find((d) => d.dept === dept.code)?.overall ?? 0;
+                    return (
+                      <tr key={dept.code} className="border-b last:border-0 hover:bg-muted/40 transition-colors">
+                        <td className="p-2.5 font-medium">
+                          {dept.code}
+                          <p className="text-[10px] text-muted-foreground">{dept.name}</p>
+                        </td>
+                        <td className="p-2.5 text-center">
+                          <span className={scoreTone(dept.readiness)}>{dept.readiness}%</span>
+                        </td>
+                        <td className="p-2.5 text-center">{nba}%</td>
+                        <td className="p-2.5 text-center">{naac}%</td>
+                        <td className="p-2.5 text-center">{nirf}%</td>
+                        <td className="p-2.5 text-center">
+                          <StatusBadge status={statusOf(dept.readiness)} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Ready (≥85%)</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Needs Attention (70–84%)</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Critical (&lt;70%)</span>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick alert strip */}
+      {criticalGaps > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+          <p className="text-xs text-red-700 dark:text-red-400">
+            {criticalGaps} critical gap{criticalGaps !== 1 ? 's' : ''} require immediate attention —{' '}
+            {principalGaps.filter((g) => g.priority === 'critical').map((g) => `${g.department} (${g.repository})`).join(', ')}.
+          </p>
+          <Badge variant="outline" className="text-[10px] shrink-0">Gap Analysis</Badge>
+        </div>
+      )}
     </div>
   );
 }

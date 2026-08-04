@@ -13,11 +13,13 @@ interface UIState {
   sidebarCollapsed: boolean;
   notificationPanelOpen: boolean;
   notifications: Notification[];
+  selectedAcademicYear: string;
 }
 
 const initialState: UIState = {
   sidebarCollapsed: false,
   notificationPanelOpen: false,
+  selectedAcademicYear: '2025-26',
   notifications: [
     {
       id: '1',
@@ -76,6 +78,9 @@ const uiSlice = createSlice({
         createdAt: new Date().toISOString(),
       });
     },
+    setSelectedAcademicYear: (state, action: PayloadAction<string>) => {
+      state.selectedAcademicYear = action.payload;
+    },
   },
 });
 
@@ -87,5 +92,6 @@ export const {
   markNotificationRead,
   markAllNotificationsRead,
   addNotification,
+  setSelectedAcademicYear,
 } = uiSlice.actions;
 export default uiSlice.reducer;

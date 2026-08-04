@@ -15,11 +15,11 @@ import {
   Mail,
   Calendar,
 } from 'lucide-react';
-import { reportTypes } from '../hod-configs';
+import { reportTypes, ACADEMIC_YEARS } from '../hod-configs';
 
-export function ReportsModule() {
+export function ReportsModule({ academicYear }: { academicYear: string }) {
   const [selectedReport, setSelectedReport] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<string>('2024-25');
+  const [selectedYear, setSelectedYear] = useState<string>(academicYear);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
 
   const getReportIcon = (iconName: string) => {
@@ -67,11 +67,9 @@ export function ReportsModule() {
                 <SelectValue placeholder="Academic Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2024-25">2024-25</SelectItem>
-                <SelectItem value="2023-24">2023-24</SelectItem>
-                <SelectItem value="2022-23">2022-23</SelectItem>
-                <SelectItem value="2021-22">2021-22</SelectItem>
-                <SelectItem value="2020-21">2020-21</SelectItem>
+                {ACADEMIC_YEARS.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={selectedFormat} onValueChange={setSelectedFormat}>

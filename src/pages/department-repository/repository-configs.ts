@@ -1464,6 +1464,8 @@ export const evidenceDocuments: EvidenceDocument[] = [
   { id: '7', name: 'Regulation R22 Document.pdf', category: 'Academic Regulations', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-04', status: 'verified', fileType: 'pdf', size: '3.1 MB' },
   { id: '8', name: 'Faculty Appointment Orders.zip', category: 'Faculty Profiles', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-07', status: 'verified', fileType: 'zip', size: '6.8 MB' },
   { id: '9', name: 'Research Publications 2024.zip', category: 'Publications', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-12', status: 'pending', fileType: 'zip', size: '22.4 MB' },
+  { id: '10', name: 'Add-on Program Brochures 2025-26.pdf', category: 'Add-on Programs', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-11', status: 'uploaded', fileType: 'pdf', size: '1.6 MB' },
+  { id: '11', name: 'Academic Timetable 2025-26.pdf', category: 'Academic Timetable', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-10', status: 'uploaded', fileType: 'pdf', size: '1.1 MB' },
 ];
 
 // Workflow Steps

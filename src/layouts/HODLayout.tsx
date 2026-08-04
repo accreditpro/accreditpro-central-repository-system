@@ -22,20 +22,23 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { useAppSelector } from '@/store';
+import { selectReviews } from '@/store/slices/evidenceReviewSlice';
+import { getHODYearData } from '@/pages/hod-dashboard/hod-configs';
+import { applyReviewOverrides } from '@/pages/hod-dashboard/components/evidence-utils';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ElementType;
-  badge?: string;
 }
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'evidence', label: 'Evidence Review', icon: FileCheck, badge: '5' },
-  { id: 'approvals', label: 'Approval Queue', icon: CheckSquare, badge: '6' },
-  { id: 'gaps', label: 'Gap Analysis', icon: AlertTriangle, badge: '8' },
+  { id: 'evidence', label: 'Evidence Review', icon: FileCheck },
+  { id: 'approvals', label: 'Approval Queue', icon: CheckSquare },
+  { id: 'gaps', label: 'Gap Analysis', icon: AlertTriangle },
   { id: 'readiness', label: 'Repository Readiness', icon: Target },
   { id: 'analytics', label: 'Department Analytics', icon: BarChart3 },
   { id: 'reports', label: 'Reports', icon: FileText },
@@ -48,8 +51,20 @@ export default function HODLayout() {
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const selectedAcademicYear = useAppSelector((state) => state.ui.selectedAcademicYear);
 
   const activeView = searchParams.get('view') || 'dashboard';
+
+  const reviews = useAppSelector(selectReviews);
+  const yearData = getHODYearData(selectedAcademicYear);
+  const pendingEvidence = applyReviewOverrides(yearData.evidence, selectedAcademicYear, reviews).filter(
+    (e) => e.status === 'pending'
+  ).length;
+  const badgeFor: Record<string, string | undefined> = {
+    evidence: String(pendingEvidence),
+    approvals: String(pendingEvidence),
+    gaps: String(yearData.gaps.length),
+  };
 
   const handleNavClick = (id: string) => {
     navigate(`/app/hod-dashboard?view=${id}`);
@@ -73,6 +88,9 @@ export default function HODLayout() {
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">AccreditPro</p>
               <p className="text-xs text-muted-foreground truncate">Head of Department</p>
+              <Badge variant="outline" className="mt-1 h-4 px-1.5 text-[9px] font-medium">
+                AY {selectedAcademicYear}
+              </Badge>
             </div>
           )}
         </div>
@@ -97,9 +115,9 @@ export default function HODLayout() {
                 {!collapsed && (
                   <>
                     <span className="flex-1 text-left truncate text-sm">{item.label}</span>
-                    {item.badge && (
+                    {badgeFor[item.id] && (
                       <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                        {item.badge}
+                        {badgeFor[item.id]}
                       </Badge>
                     )}
                   </>

@@ -42,8 +42,9 @@ const getRoleBasedRedirect = (role: UserRole): string => {
       return '/app/hod-dashboard';
     case UserRole.PRINCIPAL:
       return '/app/principal-dashboard';
-    case UserRole.INSTITUTION_ADMIN:
     case UserRole.IQAC_COORDINATOR:
+      return '/app/iqac-dashboard';
+    case UserRole.INSTITUTION_ADMIN:
       return '/app/dashboard';
     default:
       return '/app/dashboard';
@@ -75,7 +76,9 @@ const Login = () => {
     resetError();
     setLoginState('loading');
     try {
-      const response = await login(data);
+      // RHF + zodResolver can widen the submitted value type; normalize to the
+      // LoginCredentials shape before handing it to the auth service.
+      const response = await login({ email: data.email ?? '', password: data.password ?? '' });
       if (rememberMe) {
         localStorage.setItem('accreditpro-remember', data.email);
       } else {

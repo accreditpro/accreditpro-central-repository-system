@@ -167,11 +167,11 @@ export const nbaCriteria: FrameworkCriterion[] = [
 
 // Framework Readiness - NIRF
 export const nirfParameters = [
-  { id: '1', name: 'Teaching, Learning & Resources', weightage: 30, score: 74, status: 'in-progress' as const },
-  { id: '2', name: 'Research & Professional Practice', weightage: 30, score: 68, status: 'in-progress' as const },
-  { id: '3', name: 'Graduation Outcomes', weightage: 20, score: 76, status: 'in-progress' as const },
-  { id: '4', name: 'Outreach & Inclusivity', weightage: 10, score: 71, status: 'in-progress' as const },
-  { id: '5', name: 'Perception', weightage: 10, score: 65, status: 'in-progress' as const },
+  { id: '1', name: 'Teaching, Learning and Resources (TLR)', weightage: 30, score: 74, status: 'in-progress' as const },
+  { id: '2', name: 'Research and Professional Practice (RP)', weightage: 30, score: 68, status: 'in-progress' as const },
+  { id: '3', name: 'Graduation Outcomes (GO)', weightage: 20, score: 76, status: 'in-progress' as const },
+  { id: '4', name: 'Outreach and Inclusivity (OI)', weightage: 10, score: 71, status: 'in-progress' as const },
+  { id: '5', name: 'Perception (PR)', weightage: 10, score: 65, status: 'in-progress' as const },
 ];
 
 // AI Insights

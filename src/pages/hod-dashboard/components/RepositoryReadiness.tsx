@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { readinessData, yearlyTrends } from '../hod-configs';
+import { getHODYearData, yearlyTrends } from '../hod-configs';
 import { TrendingUp, Target, ShieldCheck, FileCheck } from 'lucide-react';
 
-export function RepositoryReadiness() {
+export function RepositoryReadiness({ academicYear }: { academicYear: string }) {
+  const readinessData = getHODYearData(academicYear).readiness;
+
   // Calculate weighted readiness score
   const weightedScore = readinessData.reduce((acc, item) => {
     const avgScore = (item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4;
