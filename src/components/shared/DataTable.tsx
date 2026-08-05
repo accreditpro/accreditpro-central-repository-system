@@ -81,12 +81,9 @@ export function DataTable<T>({
       <div className="rounded-lg border border-border/50 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              {columns.map(col => (
-                <TableHead
-                  key={col.id}
-                  className={cn('text-xs font-semibold', col.headerClassName)}
-                >
+            <TableRow className="bg-muted/30 hover:bg-muted/50">
+              {columns.map((col) => (
+                <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                   {col.header}
                 </TableHead>
               ))}
@@ -95,7 +92,7 @@ export function DataTable<T>({
           <TableBody>
             {Array.from({ length: skeletonRows }).map((_, rowIndex) => (
               <TableRow key={rowIndex}>
-                {columns.map(col => (
+                {columns.map((col) => (
                   <TableCell key={col.id} className={col.className}>
                     <Skeleton className="h-4 w-full max-w-[120px]" />
                   </TableCell>
@@ -114,12 +111,9 @@ export function DataTable<T>({
       <div className="rounded-lg border border-border/50 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              {columns.map(col => (
-                <TableHead
-                  key={col.id}
-                  className={cn('text-xs font-semibold', col.headerClassName)}
-                >
+            <TableRow className="bg-muted/30 hover:bg-muted/50">
+              {columns.map((col) => (
+                <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                   {col.header}
                 </TableHead>
               ))}
@@ -141,16 +135,16 @@ export function DataTable<T>({
     <div className="rounded-lg border border-border/50 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
-            {columns.map(col => (
+          <TableRow className="bg-muted/30 hover:bg-muted/50">
+            {columns.map((col) => (
               <TableHead key={col.id} className={cn('text-xs font-semibold', col.headerClassName)}>
                 {col.sortable && onSort ? (
                   <button
                     className="flex items-center gap-0.5 hover:text-foreground transition-colors"
-                    onClick={() => handleSort((col.accessorKey as string) || col.id)}
+                    onClick={() => handleSort(col.accessorKey as string || col.id)}
                   >
                     {col.header}
-                    {getSortIcon((col.accessorKey as string) || col.id)}
+                    {getSortIcon(col.accessorKey as string || col.id)}
                   </button>
                 ) : (
                   col.header
@@ -160,13 +154,16 @@ export function DataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map(row => (
+          {data.map((row) => (
             <TableRow
               key={rowKey(row)}
-              className={cn('transition-colors', onRowClick && 'cursor-pointer hover:bg-muted/50')}
+              className={cn(
+                'transition-colors',
+                onRowClick && 'cursor-pointer hover:bg-muted/50'
+              )}
               onClick={() => onRowClick?.(row)}
             >
-              {columns.map(col => (
+              {columns.map((col) => (
                 <TableCell key={col.id} className={cn('text-sm', col.className)}>
                   {col.cell
                     ? col.cell(row)

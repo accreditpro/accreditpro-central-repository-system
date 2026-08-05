@@ -41,7 +41,7 @@ export function RepositoryHealth() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('repositories');
 
-  const filteredRepos = repositoryStatuses.filter(r =>
+  const filteredRepos = repositoryStatuses.filter((r) =>
     r.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -72,22 +72,19 @@ export function RepositoryHealth() {
             <Input
               placeholder="Search repositories..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9"
             />
           </div>
 
           {/* Repository Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredRepos.map(repo => (
+            {filteredRepos.map((repo) => (
               <Card key={repo.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">{repo.name}</CardTitle>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ${getQualityColor(repo.qualityScore)}`}
-                    >
+                    <Badge variant="outline" className={`text-[10px] ${getQualityColor(repo.qualityScore)}`}>
                       Q: {repo.qualityScore}
                     </Badge>
                   </div>
@@ -133,9 +130,7 @@ export function RepositoryHealth() {
             <Card>
               <CardContent className="p-3 text-center">
                 <CheckCircle2 className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                <p className="text-lg font-bold">
-                  {evidenceData.mandatory.uploaded}/{evidenceData.mandatory.total}
-                </p>
+                <p className="text-lg font-bold">{evidenceData.mandatory.uploaded}/{evidenceData.mandatory.total}</p>
                 <p className="text-[10px] text-muted-foreground">Mandatory Docs</p>
                 <Progress value={evidenceData.mandatory.percentage} className="h-1 mt-1" />
               </CardContent>
@@ -143,9 +138,7 @@ export function RepositoryHealth() {
             <Card>
               <CardContent className="p-3 text-center">
                 <FolderCheck className="h-5 w-5 text-blue-600 mx-auto mb-1" />
-                <p className="text-lg font-bold">
-                  {evidenceData.optional.uploaded}/{evidenceData.optional.total}
-                </p>
+                <p className="text-lg font-bold">{evidenceData.optional.uploaded}/{evidenceData.optional.total}</p>
                 <p className="text-[10px] text-muted-foreground">Optional Docs</p>
                 <Progress value={evidenceData.optional.percentage} className="h-1 mt-1" />
               </CardContent>
@@ -174,9 +167,7 @@ export function RepositoryHealth() {
             <Card>
               <CardContent className="p-3 text-center">
                 <Database className="h-5 w-5 text-purple-600 mx-auto mb-1" />
-                <p className="text-lg font-bold text-purple-600">
-                  {evidenceData.pendingVerification}
-                </p>
+                <p className="text-lg font-bold text-purple-600">{evidenceData.pendingVerification}</p>
                 <p className="text-[10px] text-muted-foreground">Pending Verification</p>
               </CardContent>
             </Card>
@@ -192,50 +183,24 @@ export function RepositoryHealth() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">
-                        Repository
-                      </th>
-                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                        Mandatory
-                      </th>
-                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                        Optional
-                      </th>
-                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                        Overall
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground w-32">
-                        Progress
-                      </th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Repository</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Mandatory</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Optional</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Overall</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground w-32">Progress</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {evidenceData.repositoryWise.map(repo => (
+                    {evidenceData.repositoryWise.map((repo) => (
                       <tr key={repo.name} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="py-2 px-3 font-medium">{repo.name}</td>
                         <td className="text-center py-2 px-3">
-                          <span
-                            className={
-                              repo.mandatory >= 90
-                                ? 'text-green-600'
-                                : repo.mandatory >= 75
-                                  ? 'text-yellow-600'
-                                  : 'text-red-600'
-                            }
-                          >
+                          <span className={repo.mandatory >= 90 ? 'text-green-600' : repo.mandatory >= 75 ? 'text-yellow-600' : 'text-red-600'}>
                             {repo.mandatory}%
                           </span>
                         </td>
                         <td className="text-center py-2 px-3">
-                          <span
-                            className={
-                              repo.optional >= 75
-                                ? 'text-green-600'
-                                : repo.optional >= 60
-                                  ? 'text-yellow-600'
-                                  : 'text-red-600'
-                            }
-                          >
+                          <span className={repo.optional >= 75 ? 'text-green-600' : repo.optional >= 60 ? 'text-yellow-600' : 'text-red-600'}>
                             {repo.optional}%
                           </span>
                         </td>

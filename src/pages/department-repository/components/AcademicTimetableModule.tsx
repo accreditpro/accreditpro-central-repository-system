@@ -1,32 +1,13 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -52,11 +33,6 @@ import {
   BookOpen,
   Users,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  academicRepositoryService,
-  ApiTimetableEntry,
-} from '@/services/academic-repository.service';
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -116,36 +92,7 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-const mapYearOfStudyToLabel = (y: string) => {
-  if (y === '1') return 'I Year';
-  if (y === '2') return 'II Year';
-  if (y === '3') return 'III Year';
-  if (y === '4') return 'IV Year';
-  return 'III Year';
-};
-
-const mapLabelToYearOfStudy = (y: string) => {
-  if (y === 'I Year') return '1';
-  if (y === 'II Year') return '2';
-  if (y === 'III Year') return '3';
-  if (y === 'IV Year') return '4';
-  return '3';
-};
-
-const mapSemesterToLabel = (s: string) => {
-  return `Semester ${s}`;
-};
-
-const mapLabelToSemester = (s: string) => {
-  return s.replace('Semester ', '');
-};
-
-export const AcademicTimetableModule = ({
-  department,
-  academicYear,
-}: AcademicTimetableModuleProps) => {
-  const { user } = useAuth();
-  const departmentId = user?.departmentId || 101;
+export const AcademicTimetableModule = ({ department, academicYear }: AcademicTimetableModuleProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
@@ -156,11 +103,7 @@ export const AcademicTimetableModule = ({
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<TimetableEntry[]>([]);
-  const [uploadStats, setUploadStats] = useState<{
-    total: number;
-    valid: number;
-    invalid: number;
-  } | null>(null);
+  const [uploadStats, setUploadStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // New entry form state
@@ -174,35 +117,6 @@ export const AcademicTimetableModule = ({
     wef: '',
   });
 
-  const loadTimetable = useCallback(async () => {
-    try {
-      const res = await academicRepositoryService.getTimetableEntries(academicYear, departmentId);
-      if (res?.content) {
-        const mappedEntries: TimetableEntry[] = res.content.map((item: any) => ({
-          id: String(item.id),
-          department,
-          year: mapYearOfStudyToLabel(item.yearOfStudy),
-          semester: mapSemesterToLabel(item.semester),
-          section: item.section || 'A',
-          period: item.period || 1,
-          day: item.day || 'Monday',
-          timeFrom: item.timeFrom || '',
-          timeTo: item.timeTo || '',
-          courseCode: item.courseCode || '',
-          classInCharge: item.classInCharge || '',
-          wef: item.wef || '',
-        }));
-        setEntries(mappedEntries);
-      }
-    } catch (err) {
-      console.error('Failed to load timetable entries:', err);
-    }
-  }, [academicYear, departmentId, department]);
-
-  useEffect(() => {
-    loadTimetable();
-  }, [loadTimetable]);
-
   // Update semester when year changes
   const handleYearChange = (year: string) => {
     setSelectedYear(year);
@@ -215,21 +129,20 @@ export const AcademicTimetableModule = ({
   // Filtered entries for selected year/semester/section
   const filteredEntries = useMemo(() => {
     return entries.filter(
-      e =>
-        e.year === selectedYear && e.semester === selectedSemester && e.section === selectedSection
+      (e) => e.year === selectedYear && e.semester === selectedSemester && e.section === selectedSection
     );
   }, [entries, selectedYear, selectedSemester, selectedSection]);
 
   // Build timetable grid data
   const timetableGrid = useMemo(() => {
     const grid: Record<string, Record<string, TimetableEntry | null>> = {};
-    DAYS.forEach(day => {
+    DAYS.forEach((day) => {
       grid[day] = {};
-      PERIODS.forEach(period => {
+      PERIODS.forEach((period) => {
         grid[day][period.toString()] = null;
       });
     });
-    filteredEntries.forEach(entry => {
+    filteredEntries.forEach((entry) => {
       if (grid[entry.day]) {
         grid[entry.day][entry.period.toString()] = entry;
       }
@@ -240,7 +153,7 @@ export const AcademicTimetableModule = ({
   // Get unique time slots from entries
   const periodTimes = useMemo(() => {
     const times: Record<number, { from: string; to: string }> = {};
-    filteredEntries.forEach(entry => {
+    filteredEntries.forEach((entry) => {
       if (!times[entry.period] && entry.timeFrom && entry.timeTo) {
         times[entry.period] = { from: entry.timeFrom, to: entry.timeTo };
       }
@@ -252,28 +165,30 @@ export const AcademicTimetableModule = ({
 
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
-    const header =
-      'Department,Year,Semester,Section,Period,Day,Time From,Time To,Course Code,Class In-Charge,W.E.F';
-    let rows: string[] = [];
-    if (filteredEntries && filteredEntries.length > 0) {
-      rows = filteredEntries.map(
-        e =>
-          `"${department}","${e.year}","${e.semester}","${e.section}","${e.period}","${e.day}","${e.timeFrom}","${e.timeTo}","${e.courseCode}","${e.classInCharge}","${e.wef}"`
-      );
-    } else {
-      rows = [
-        `"${department}","${selectedYear}","${selectedSemester}","${selectedSection}","1","Monday","09:00","09:50","CS501","Dr. Anita Sharma","2025-07-01"`,
-      ];
-    }
-    const csv = [header, ...rows].join('\n');
+    const header = 'Department,Year,Semester,Section,Period,Day,Time From,Time To,Course Code,Class In-Charge,W.E.F';
+    const sampleRows = [
+      `${department},${selectedYear},${selectedSemester},${selectedSection},1,Monday,09:00,09:50,CS501,Dr. Anita Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},2,Monday,09:50,10:40,CS502,Mr. Anil Reddy,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},3,Monday,10:50,11:40,CS503,Dr. Priya Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},4,Monday,11:40,12:30,CS504,Dr. Rajesh Kumar,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},5,Monday,13:30,14:20,CS505-LAB,Dr. Anita Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},6,Monday,14:20,15:10,CS505-LAB,Dr. Anita Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},1,Tuesday,09:00,09:50,CS502,Mr. Anil Reddy,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},2,Tuesday,09:50,10:40,CS503,Dr. Priya Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},3,Tuesday,10:50,11:40,CS501,Dr. Anita Sharma,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},4,Tuesday,11:40,12:30,CS506,Dr. Sunita Patel,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},5,Tuesday,13:30,14:20,CS504,Dr. Rajesh Kumar,2025-07-01`,
+      `${department},${selectedYear},${selectedSemester},${selectedSection},6,Tuesday,14:20,15:10,CS507,Mr. Anil Reddy,2025-07-01`,
+    ];
+    const csv = [header, ...sampleRows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_timetable_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_Sec${selectedSection}.csv`;
+    a.download = `academic_timetable_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_Sec${selectedSection}_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester, selectedSection, filteredEntries]);
+  }, [department, selectedYear, selectedSemester, selectedSection]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -282,9 +197,9 @@ export const AcademicTimetableModule = ({
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = event => {
+      reader.onload = (event) => {
         const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        const lines = text.split(/\r?\n/).filter((line) => line.trim());
         const headers = parseCSVLine(lines[0]);
 
         const parsed: TimetableEntry[] = [];
@@ -364,143 +279,62 @@ export const AcademicTimetableModule = ({
   );
 
   // Import uploaded entries (only valid ones)
-  const handleImportUploaded = useCallback(async () => {
-    const validRecords = uploadPreview.filter(e => e.validationStatus === 'valid');
-
-    if (validRecords.length > 0) {
-      const recordsByGroup: Record<string, typeof validRecords> = {};
-      validRecords.forEach(c => {
-        const year = c.year || selectedYear;
-        const semester = c.semester || selectedSemester;
-        const section = c.section || selectedSection;
-        const key = `${year}|${semester}|${section}`;
-        if (!recordsByGroup[key]) recordsByGroup[key] = [];
-        recordsByGroup[key].push(c);
-      });
-
-      try {
-        for (const [key, groupRecords] of Object.entries(recordsByGroup)) {
-          const [year, semester, section] = key.split('|');
-          const payload = {
-            academicYear,
-            yearOfStudy: mapLabelToYearOfStudy(year),
-            semester: mapLabelToSemester(semester),
-            section: section,
-            entries: groupRecords.map(c => ({
-              period: c.period,
-              day: c.day,
-              timeFrom: c.timeFrom,
-              timeTo: c.timeTo,
-              courseCode: c.courseCode,
-              classInCharge: c.classInCharge,
-              wef: c.wef,
-            })),
-          };
-          await academicRepositoryService.bulkSaveTimetable(departmentId, payload);
-        }
-        await loadTimetable();
-
-        const first = validRecords[0];
-        if (first.year && YEARS_OF_STUDY.includes(first.year)) {
-          setSelectedYear(first.year);
-        }
-        const semOptions = SEMESTERS_MAP[first.year || selectedYear] || [];
-        if (first.semester && semOptions.includes(first.semester)) {
-          setSelectedSemester(first.semester);
-        }
-        if (first.section && SECTIONS.includes(first.section)) {
-          setSelectedSection(first.section);
-        }
-      } catch (err) {
-        console.error('Failed to bulk save imported timetable entries:', err);
+  const handleImportUploaded = useCallback(() => {
+    const validEntries = uploadPreview.filter((e) => e.validationStatus === 'valid');
+    const newEntries = validEntries.map((e, idx) => ({
+      ...e,
+      id: `entry-${Date.now()}-${idx}`,
+      validationStatus: undefined as TimetableEntry['validationStatus'],
+      errors: undefined,
+    }));
+    setEntries((prev) => [...prev, ...newEntries]);
+    // Auto-switch to the year/semester/section of the first imported record
+    if (newEntries.length > 0) {
+      const first = newEntries[0];
+      if (first.year && YEARS_OF_STUDY.includes(first.year)) {
+        setSelectedYear(first.year);
+      }
+      if (first.semester) {
+        setSelectedSemester(first.semester);
+      }
+      if (first.section && SECTIONS.includes(first.section)) {
+        setSelectedSection(first.section);
       }
     }
-
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [
-    uploadPreview,
-    academicYear,
-    departmentId,
-    loadTimetable,
-    selectedYear,
-    selectedSemester,
-    selectedSection,
-  ]);
+  }, [uploadPreview]);
 
   // Add entry manually
-  const handleAddEntry = useCallback(async () => {
+  const handleAddEntry = useCallback(() => {
     if (!newEntry.courseCode || !newEntry.classInCharge) return;
 
-    try {
-      const entryData: ApiTimetableEntry = {
-        academicYear,
-        yearOfStudy: mapLabelToYearOfStudy(selectedYear),
-        semester: mapLabelToSemester(selectedSemester),
-        section: selectedSection,
-        period: parseInt(newEntry.period),
-        day: newEntry.day,
-        timeFrom: newEntry.timeFrom,
-        timeTo: newEntry.timeTo,
-        courseCode: newEntry.courseCode,
-        classInCharge: newEntry.classInCharge,
-        wef: newEntry.wef,
-      };
+    const entry: TimetableEntry = {
+      id: editingEntry ? editingEntry.id : `entry-${Date.now()}`,
+      department,
+      year: selectedYear,
+      semester: selectedSemester,
+      section: selectedSection,
+      period: parseInt(newEntry.period),
+      day: newEntry.day,
+      timeFrom: newEntry.timeFrom,
+      timeTo: newEntry.timeTo,
+      courseCode: newEntry.courseCode,
+      classInCharge: newEntry.classInCharge,
+      wef: newEntry.wef,
+    };
 
-      if (
-        editingEntry &&
-        !editingEntry.id.toString().startsWith('entry-') &&
-        !editingEntry.id.toString().startsWith('upload-')
-      ) {
-        await academicRepositoryService.updateTimetableEntry(
-          editingEntry.id,
-          departmentId,
-          entryData
-        );
-      } else if (!editingEntry) {
-        await academicRepositoryService.createTimetableEntry(departmentId, entryData);
-      } else {
-        // Local only fallback
-        const entry: TimetableEntry = {
-          id: editingEntry.id,
-          department,
-          year: selectedYear,
-          semester: selectedSemester,
-          section: selectedSection,
-          ...newEntry,
-          period: parseInt(newEntry.period),
-        };
-        setEntries(prev => prev.map(e => (e.id === editingEntry.id ? entry : e)));
-      }
-
-      await loadTimetable();
-
-      setNewEntry({
-        period: '1',
-        day: 'Monday',
-        timeFrom: '',
-        timeTo: '',
-        courseCode: '',
-        classInCharge: '',
-        wef: '',
-      });
-      setShowAddDialog(false);
-      setEditingEntry(null);
-    } catch (err) {
-      console.error('Failed to save timetable entry:', err);
+    if (editingEntry) {
+      setEntries((prev) => prev.map((e) => (e.id === editingEntry.id ? entry : e)));
+    } else {
+      setEntries((prev) => [...prev, entry]);
     }
-  }, [
-    newEntry,
-    department,
-    selectedYear,
-    selectedSemester,
-    selectedSection,
-    editingEntry,
-    academicYear,
-    departmentId,
-    loadTimetable,
-  ]);
+
+    setNewEntry({ period: '1', day: 'Monday', timeFrom: '', timeTo: '', courseCode: '', classInCharge: '', wef: '' });
+    setShowAddDialog(false);
+    setEditingEntry(null);
+  }, [newEntry, department, selectedYear, selectedSemester, selectedSection, editingEntry]);
 
   // Edit entry
   const handleEditEntry = useCallback((entry: TimetableEntry) => {
@@ -518,70 +352,15 @@ export const AcademicTimetableModule = ({
   }, []);
 
   // Delete entry
-  const handleDeleteEntry = useCallback(
-    async (id: string) => {
-      if (!id.startsWith('entry-') && !id.startsWith('upload-')) {
-        try {
-          await academicRepositoryService.deleteTimetableEntry(id, departmentId);
-          await loadTimetable();
-        } catch (err) {
-          console.error('Failed to delete entry:', err);
-        }
-      } else {
-        setEntries(prev => prev.filter(e => e.id !== id));
-      }
-    },
-    [departmentId, loadTimetable]
-  );
+  const handleDeleteEntry = useCallback((id: string) => {
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+  }, []);
 
   // Save Timetable
-  const handleSaveTimetable = useCallback(async () => {
-    const records = entries.filter(
-      e =>
-        e.year === selectedYear && e.semester === selectedSemester && e.section === selectedSection
-    );
-
-    const unsavedRecords = records.filter(
-      p => p.id.startsWith('entry-') || p.id.startsWith('upload-')
-    );
-
-    if (unsavedRecords.length > 0) {
-      try {
-        const payload = {
-          academicYear,
-          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
-          semester: mapLabelToSemester(selectedSemester),
-          section: selectedSection,
-          entries: unsavedRecords.map(p => ({
-            period: p.period,
-            day: p.day,
-            timeFrom: p.timeFrom,
-            timeTo: p.timeTo,
-            courseCode: p.courseCode,
-            classInCharge: p.classInCharge,
-            wef: p.wef,
-          })),
-        };
-        await academicRepositoryService.bulkSaveTimetable(departmentId, payload);
-        await loadTimetable();
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 4000);
-      } catch (err) {
-        console.error('Bulk save failed:', err);
-      }
-    } else {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-    }
-  }, [
-    entries,
-    selectedYear,
-    selectedSemester,
-    selectedSection,
-    academicYear,
-    departmentId,
-    loadTimetable,
-  ]);
+  const handleSaveTimetable = useCallback(() => {
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 4000);
+  }, []);
 
   const totalEntriesForContext = filteredEntries.length;
 
@@ -599,7 +378,7 @@ export const AcademicTimetableModule = ({
       'bg-rose-100 text-rose-800 border-rose-200',
       'bg-teal-100 text-teal-800 border-teal-200',
     ];
-    const uniqueCourses = [...new Set(filteredEntries.map(e => e.courseCode))];
+    const uniqueCourses = [...new Set(filteredEntries.map((e) => e.courseCode))];
     const map: Record<string, string> = {};
     uniqueCourses.forEach((course, idx) => {
       map[course] = colors[idx % colors.length];
@@ -651,37 +430,29 @@ export const AcademicTimetableModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Department
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
             </div>
             <p className="text-sm font-semibold text-white truncate">{department}</p>
           </div>
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-4 w-4 text-purple-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Academic Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Academic Year</span>
             </div>
             <p className="text-sm font-semibold text-purple-300 truncate">{academicYear}</p>
           </div>
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Year</span>
             </div>
             <Select value={selectedYear} onValueChange={handleYearChange}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-emerald-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {YEARS_OF_STUDY.map(y => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
+                {YEARS_OF_STUDY.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -689,19 +460,15 @@ export const AcademicTimetableModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Semester
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Semester</span>
             </div>
             <Select value={selectedSemester} onValueChange={setSelectedSemester}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-amber-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {availableSemesters.map(s => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
+                {availableSemesters.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -709,19 +476,15 @@ export const AcademicTimetableModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-rose-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Section
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Section</span>
             </div>
             <Select value={selectedSection} onValueChange={setSelectedSection}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-rose-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SECTIONS.map(s => (
-                  <SelectItem key={s} value={s}>
-                    Section {s}
-                  </SelectItem>
+                {SECTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>Section {s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -745,34 +508,12 @@ export const AcademicTimetableModule = ({
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-3.5 w-3.5" />
                 Upload CSV
               </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEditingEntry(null);
-                setNewEntry({
-                  period: '1',
-                  day: 'Monday',
-                  timeFrom: '',
-                  timeTo: '',
-                  courseCode: '',
-                  classInCharge: '',
-                  wef: '',
-                });
-                setShowAddDialog(true);
-              }}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={() => { setEditingEntry(null); setNewEntry({ period: '1', day: 'Monday', timeFrom: '', timeTo: '', courseCode: '', classInCharge: '', wef: '' }); setShowAddDialog(true); }} className="gap-2">
               <Plus className="h-3.5 w-3.5" />
               Add Entry
             </Button>
@@ -806,12 +547,9 @@ export const AcademicTimetableModule = ({
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <div>
-                  <p className="text-sm font-semibold text-green-700">
-                    Timetable Saved Successfully
-                  </p>
+                  <p className="text-sm font-semibold text-green-700">Timetable Saved Successfully</p>
                   <p className="text-xs text-green-600 mt-0.5">
-                    {selectedYear} / {selectedSemester} / Section {selectedSection} —{' '}
-                    {totalEntriesForContext} entries
+                    {selectedYear} / {selectedSemester} / Section {selectedSection} — {totalEntriesForContext} entries
                   </p>
                 </div>
               </CardContent>
@@ -828,8 +566,7 @@ export const AcademicTimetableModule = ({
               <Clock className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground font-medium">No timetable entries yet</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Upload a CSV or add entries manually for {selectedYear} / {selectedSemester} /
-                Section {selectedSection}
+                Upload a CSV or add entries manually for {selectedYear} / {selectedSemester} / Section {selectedSection}
               </p>
             </div>
           </CardContent>
@@ -854,25 +591,20 @@ export const AcademicTimetableModule = ({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-indigo-50/50 dark:bg-indigo-950/20">
-                      <TableHead className="text-xs font-bold text-center w-[100px] border-r">
-                        Period / Day
-                      </TableHead>
-                      {DAYS.map(day => (
-                        <TableHead
-                          key={day}
-                          className="text-xs font-bold text-center border-r last:border-r-0"
-                        >
+                      <TableHead className="text-xs font-bold text-center w-[100px] border-r">Period / Day</TableHead>
+                      {DAYS.map((day) => (
+                        <TableHead key={day} className="text-xs font-bold text-center border-r last:border-r-0">
                           {day.slice(0, 3)}
                         </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {PERIODS.filter(period => {
+                    {PERIODS.filter((period) => {
                       // Only show periods that have at least one entry
-                      return DAYS.some(day => timetableGrid[day]?.[period.toString()]);
-                    }).map(period => (
-                      <TableRow key={period} className="hover:bg-muted/10">
+                      return DAYS.some((day) => timetableGrid[day]?.[period.toString()]);
+                    }).map((period) => (
+                      <TableRow key={period} className="hover:bg-muted/50">
                         <TableCell className="text-center border-r p-2">
                           <div className="flex flex-col items-center">
                             <span className="text-xs font-bold text-indigo-700">P{period}</span>
@@ -883,7 +615,7 @@ export const AcademicTimetableModule = ({
                             )}
                           </div>
                         </TableCell>
-                        {DAYS.map(day => {
+                        {DAYS.map((day) => {
                           const entry = timetableGrid[day]?.[period.toString()];
                           return (
                             <TableCell key={day} className="border-r last:border-r-0 p-1.5">
@@ -891,25 +623,17 @@ export const AcademicTimetableModule = ({
                                 <div
                                   className={cn(
                                     'rounded-md border p-1.5 text-center cursor-pointer hover:shadow-sm transition-shadow group relative',
-                                    courseColors[entry.courseCode] ||
-                                      'bg-gray-100 text-gray-800 border-gray-200'
+                                    courseColors[entry.courseCode] || 'bg-gray-100 text-gray-800 border-gray-200'
                                   )}
                                   onClick={() => handleEditEntry(entry)}
                                 >
-                                  <p className="text-[11px] font-bold leading-tight">
-                                    {entry.courseCode}
-                                  </p>
-                                  <p className="text-[9px] mt-0.5 opacity-80 truncate">
-                                    {entry.classInCharge}
-                                  </p>
+                                  <p className="text-[11px] font-bold leading-tight">{entry.courseCode}</p>
+                                  <p className="text-[9px] mt-0.5 opacity-80 truncate">{entry.classInCharge}</p>
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     className="absolute -top-1 -right-1 h-4 w-4 opacity-0 group-hover:opacity-100 bg-white shadow-sm rounded-full"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      handleDeleteEntry(entry.id);
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteEntry(entry.id); }}
                                   >
                                     <X className="h-2.5 w-2.5 text-red-500" />
                                   </Button>
@@ -962,47 +686,26 @@ export const AcademicTimetableModule = ({
                       return a.period - b.period;
                     })
                     .map((entry, idx) => (
-                      <TableRow key={entry.id} className="hover:bg-muted/20">
+                      <TableRow key={entry.id} className="hover:bg-muted/50">
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs text-center">
-                          <Badge variant="outline" className="text-[10px]">
-                            P{entry.period}
-                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">P{entry.period}</Badge>
                         </TableCell>
                         <TableCell className="text-xs font-medium">{entry.day}</TableCell>
-                        <TableCell className="text-xs">
-                          {entry.timeFrom} - {entry.timeTo}
-                        </TableCell>
+                        <TableCell className="text-xs">{entry.timeFrom} - {entry.timeTo}</TableCell>
                         <TableCell>
-                          <Badge
-                            className={cn(
-                              'text-[10px]',
-                              courseColors[entry.courseCode] || 'bg-gray-100 text-gray-800'
-                            )}
-                          >
+                          <Badge className={cn('text-[10px]', courseColors[entry.courseCode] || 'bg-gray-100 text-gray-800')}>
                             {entry.courseCode}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs">{entry.classInCharge}</TableCell>
-                        <TableCell className="text-xs">
-                          {entry.wef ? formatDate(entry.wef) : '—'}
-                        </TableCell>
+                        <TableCell className="text-xs">{entry.wef ? formatDate(entry.wef) : '—'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEditEntry(entry)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteEntry(entry.id)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteEntry(entry.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -1023,12 +726,9 @@ export const AcademicTimetableModule = ({
             <p className="text-xs font-semibold text-muted-foreground mb-2">Course Legend</p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(courseColors).map(([course, color]) => {
-                const entry = filteredEntries.find(e => e.courseCode === course);
+                const entry = filteredEntries.find((e) => e.courseCode === course);
                 return (
-                  <div
-                    key={course}
-                    className={cn('px-2 py-1 rounded-md border text-[10px] font-medium', color)}
-                  >
+                  <div key={course} className={cn('px-2 py-1 rounded-md border text-[10px] font-medium', color)}>
                     {course} — {entry?.classInCharge || ''}
                   </div>
                 );
@@ -1050,7 +750,7 @@ export const AcademicTimetableModule = ({
               'Room Allocation',
               'NAAC Evidence',
               'NBA Evidence',
-            ].map(item => (
+            ].map((item) => (
               <Badge key={item} variant="outline" className="text-[10px] bg-background">
                 {item}
               </Badge>
@@ -1060,20 +760,10 @@ export const AcademicTimetableModule = ({
       </Card>
 
       {/* Add/Edit Entry Dialog */}
-      <Dialog
-        open={showAddDialog}
-        onOpenChange={open => {
-          if (!open) {
-            setShowAddDialog(false);
-            setEditingEntry(null);
-          }
-        }}
-      >
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingEntry(null); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base">
-              {editingEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}
-            </DialogTitle>
+            <DialogTitle className="text-base">{editingEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-3 gap-3">
@@ -1095,36 +785,22 @@ export const AcademicTimetableModule = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Period *</Label>
-                  <Select
-                    value={newEntry.period}
-                    onValueChange={v => setNewEntry({ ...newEntry, period: v })}
-                  >
-                    <SelectTrigger className="mt-1 h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={newEntry.period} onValueChange={(v) => setNewEntry({ ...newEntry, period: v })}>
+                    <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {PERIODS.map(p => (
-                        <SelectItem key={p} value={p.toString()}>
-                          Period {p}
-                        </SelectItem>
+                      {PERIODS.map((p) => (
+                        <SelectItem key={p} value={p.toString()}>Period {p}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label className="text-xs">Day *</Label>
-                  <Select
-                    value={newEntry.day}
-                    onValueChange={v => setNewEntry({ ...newEntry, day: v })}
-                  >
-                    <SelectTrigger className="mt-1 h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={newEntry.day} onValueChange={(v) => setNewEntry({ ...newEntry, day: v })}>
+                    <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {DAYS.map(d => (
-                        <SelectItem key={d} value={d}>
-                          {d}
-                        </SelectItem>
+                      {DAYS.map((d) => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1136,7 +812,7 @@ export const AcademicTimetableModule = ({
                   <div className="mt-1">
                     <TimePicker
                       value={newEntry.timeFrom}
-                      onChange={v => setNewEntry({ ...newEntry, timeFrom: v })}
+                      onChange={(v) => setNewEntry({ ...newEntry, timeFrom: v })}
                       placeholder="Start time"
                       className="h-9 text-sm"
                     />
@@ -1147,7 +823,7 @@ export const AcademicTimetableModule = ({
                   <div className="mt-1">
                     <TimePicker
                       value={newEntry.timeTo}
-                      onChange={v => setNewEntry({ ...newEntry, timeTo: v })}
+                      onChange={(v) => setNewEntry({ ...newEntry, timeTo: v })}
                       placeholder="End time"
                       className="h-9 text-sm"
                     />
@@ -1158,7 +834,7 @@ export const AcademicTimetableModule = ({
                 <Label className="text-xs">Course Code *</Label>
                 <Input
                   value={newEntry.courseCode}
-                  onChange={e => setNewEntry({ ...newEntry, courseCode: e.target.value })}
+                  onChange={(e) => setNewEntry({ ...newEntry, courseCode: e.target.value })}
                   placeholder="e.g., CS501 or CS505-LAB"
                   className="mt-1 h-9 text-sm"
                 />
@@ -1167,7 +843,7 @@ export const AcademicTimetableModule = ({
                 <Label className="text-xs">Class In-Charge *</Label>
                 <Input
                   value={newEntry.classInCharge}
-                  onChange={e => setNewEntry({ ...newEntry, classInCharge: e.target.value })}
+                  onChange={(e) => setNewEntry({ ...newEntry, classInCharge: e.target.value })}
                   placeholder="e.g., Dr. Anita Sharma"
                   className="mt-1 h-9 text-sm"
                 />
@@ -1177,7 +853,7 @@ export const AcademicTimetableModule = ({
                 <div className="mt-1">
                   <DatePicker
                     value={newEntry.wef}
-                    onChange={v => setNewEntry({ ...newEntry, wef: v })}
+                    onChange={(v) => setNewEntry({ ...newEntry, wef: v })}
                     placeholder="Select effective date"
                     className="h-9 text-sm"
                   />
@@ -1186,14 +862,7 @@ export const AcademicTimetableModule = ({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setShowAddDialog(false);
-                setEditingEntry(null);
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingEntry(null); }}>
               Cancel
             </Button>
             <Button
@@ -1209,7 +878,7 @@ export const AcademicTimetableModule = ({
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <Upload className="h-4 w-4" />
@@ -1243,9 +912,7 @@ export const AcademicTimetableModule = ({
               {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <p className="text-sm text-green-700 font-medium">
-                    CSV Uploaded Successfully — All records are valid
-                  </p>
+                  <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
                 </div>
               )}
 
@@ -1269,16 +936,13 @@ export const AcademicTimetableModule = ({
                       <TableRow
                         key={entry.id}
                         className={cn(
-                          entry.validationStatus === 'invalid' &&
-                            'bg-red-500/5 border-l-2 border-l-red-500'
+                          entry.validationStatus === 'invalid' && 'bg-red-500/5 border-l-2 border-l-red-500'
                         )}
                       >
                         <TableCell className="text-xs">{idx + 1}</TableCell>
                         <TableCell className="text-xs text-center">P{entry.period}</TableCell>
                         <TableCell className="text-xs">{entry.day}</TableCell>
-                        <TableCell className="text-xs">
-                          {entry.timeFrom} - {entry.timeTo}
-                        </TableCell>
+                        <TableCell className="text-xs">{entry.timeFrom} - {entry.timeTo}</TableCell>
                         <TableCell className="text-xs font-medium">{entry.courseCode}</TableCell>
                         <TableCell className="text-xs">{entry.classInCharge}</TableCell>
                         <TableCell className="text-xs">{entry.wef}</TableCell>
@@ -1288,10 +952,7 @@ export const AcademicTimetableModule = ({
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              <span
-                                className="text-[9px] text-red-600 max-w-[200px] truncate"
-                                title={entry.errors?.join(', ')}
-                              >
+                              <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={entry.errors?.join(', ')}>
                                 {entry.errors?.[0]}
                               </span>
                             </div>
@@ -1307,9 +968,9 @@ export const AcademicTimetableModule = ({
               {uploadStats.invalid > 0 && (
                 <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
-                  <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2">
+                  <div className="space-y-1">
                     {uploadPreview
-                      .filter(e => e.validationStatus === 'invalid')
+                      .filter((e) => e.validationStatus === 'invalid')
                       .map((e, idx) => (
                         <div key={idx} className="flex items-start gap-2">
                           <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />

@@ -424,7 +424,7 @@ export default function Step4_CourseOutcomes({
                     ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/[0.04] to-transparent'
                     : co.status === 'APPROVED'
                       ? 'border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.04] to-transparent'
-                      : 'border-border/50 bg-card hover:bg-muted/20'
+                      : 'border-border/50 bg-card hover:bg-muted/50'
                 )}
               >
                 {/* CO Code Badge */}

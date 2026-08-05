@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Download, Upload } from 'lucide-react';
@@ -25,7 +25,7 @@ import {
 import { DataTable, ColumnDef, SortState } from '@/components/shared/DataTable';
 import { DataTablePagination } from '@/components/shared/DataTablePagination';
 import { InstitutionFilters } from './InstitutionFilters';
-import { adminService } from '@/services/admin.service';
+import { institutionService } from '@/services/institution.service';
 import {
   Institution,
   InstitutionFilters as IFilters,
@@ -34,7 +34,12 @@ import {
 } from '@/types/institution.types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { MoreHorizontal, Eye, Pencil, Power, PowerOff, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Power, PowerOff, Trash2, UserCog } from 'lucide-react';
+import { InstitutionLogo } from './components/InstitutionLogo';
+import { StatusBadge } from './components/StatusBadge';
+import { InstitutionDetailsDialog } from './components/InstitutionDetailsDialog';
+import { EditInstitutionDialog } from './components/EditInstitutionDialog';
+import { ImpersonateDialog } from './components/ImpersonateDialog';
 
 export const InstitutionsPage = () => {
   const navigate = useNavigate();
@@ -44,7 +49,6 @@ export const InstitutionsPage = () => {
     page: 1,
     pageSize: 10,
     total: 0,
-    totalPages: 0,
   });
   const [sort, setSort] = useState<SortState | null>(null);
   const [filters, setFilters] = useState<IFilters>({
@@ -54,40 +58,38 @@ export const InstitutionsPage = () => {
     state: 'all',
     repositoryCompletion: 'all',
   });
-  const [deleteDialog, setDeleteDialog] = useState<{
-    open: boolean;
-    institution: Institution | null;
-  }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [viewDialog, setViewDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [deactivateDialog, setDeactivateDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [impersonateDialog, setImpersonateDialog] = useState<{ open: boolean; institution: Institution | null }>({
     open: false,
     institution: null,
   });
 
-  // Debounce search input to avoid excessive API calls
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => {
-      setDebouncedSearch(filters.search);
-    }, 400);
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    };
-  }, [filters.search]);
-
   const fetchInstitutions = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminService.getInstitutions({
+      const response = await institutionService.getInstitutions({
         page: pagination.page,
         pageSize: pagination.pageSize,
-        search: debouncedSearch || undefined,
+        search: filters.search || undefined,
         status: filters.status !== 'all' ? filters.status : undefined,
         category: filters.category !== 'all' ? filters.category : undefined,
         state: filters.state !== 'all' ? filters.state : undefined,
-        repositoryCompletion:
-          filters.repositoryCompletion !== 'all' ? filters.repositoryCompletion : undefined,
+        repositoryCompletion: filters.repositoryCompletion !== 'all' ? filters.repositoryCompletion : undefined,
         sortBy: sort?.key || undefined,
         sortDirection: sort?.direction || undefined,
       });
@@ -98,40 +100,21 @@ export const InstitutionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    pagination.page,
-    pagination.pageSize,
-    debouncedSearch,
-    filters.status,
-    filters.category,
-    filters.state,
-    filters.repositoryCompletion,
-    sort,
-  ]);
+  }, [pagination.page, pagination.pageSize, filters, sort]);
 
   useEffect(() => {
     fetchInstitutions();
   }, [fetchInstitutions]);
 
-  // Reset to page 1 when filters change (but not search, which is debounced)
+  // Reset to page 1 when filters change
   useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [filters.status, filters.category, filters.state, filters.repositoryCompletion]);
-
-  // Reset to page 1 when debounced search changes
-  useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [debouncedSearch]);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [filters]);
 
   const handleStatusChange = async (institution: Institution, newStatus: InstitutionStatus) => {
     try {
-      await adminService.updateInstitutionStatus(
-        institution.id,
-        newStatus as 'ACTIVE' | 'INACTIVE'
-      );
-      toast.success(
-        `${institution.name} has been ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'}`
-      );
+      await institutionService.updateInstitutionStatus(institution.id, newStatus);
+      toast.success(`${institution.name} has been ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
       fetchInstitutions();
     } catch {
       toast.error('Failed to update status');
@@ -141,7 +124,7 @@ export const InstitutionsPage = () => {
   const handleDelete = async () => {
     if (!deleteDialog.institution) return;
     try {
-      await adminService.deleteInstitution(deleteDialog.institution.id);
+      await institutionService.deleteInstitution(deleteDialog.institution.id);
       toast.success(`${deleteDialog.institution.name} has been deleted`);
       setDeleteDialog({ open: false, institution: null });
       fetchInstitutions();
@@ -150,22 +133,8 @@ export const InstitutionsPage = () => {
     }
   };
 
-  const getStatusBadge = (status: InstitutionStatus) => {
-    const config: Record<
-      InstitutionStatus,
-      { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-    > = {
-      ACTIVE: { label: 'Active', variant: 'default' },
-      INACTIVE: { label: 'Inactive', variant: 'secondary' },
-      PENDING: { label: 'Pending', variant: 'outline' },
-      SUSPENDED: { label: 'Suspended', variant: 'destructive' },
-    };
-    const { label, variant } = config[status] || { label: status, variant: 'outline' as const };
-    return (
-      <Badge variant={variant} className="text-[10px] font-medium">
-        {label}
-      </Badge>
-    );
+  const handleImpersonate = (institution: Institution) => {
+    setImpersonateDialog({ open: true, institution });
   };
 
   const columns: ColumnDef<Institution>[] = [
@@ -173,25 +142,7 @@ export const InstitutionsPage = () => {
       id: 'logo',
       header: '',
       className: 'w-12',
-      headerClassName: 'w-12',
-      cell: row => (
-        <div className="flex items-center justify-center">
-          <div className="h-9 w-9 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-border/50 flex items-center justify-center">
-            <img
-              src={
-                row.logo ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`
-              }
-              alt={row.name}
-              className="h-9 w-9 object-cover"
-              onError={e => {
-                (e.target as HTMLImageElement).src =
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name.slice(0, 2))}&background=3b82f6&color=fff&size=40&bold=true`;
-              }}
-            />
-          </div>
-        </div>
-      ),
+      cell: (row) => <InstitutionLogo name={row.name} logo={row.logo} size="sm" />,
     },
     {
       id: 'name',
@@ -199,12 +150,10 @@ export const InstitutionsPage = () => {
       accessorKey: 'name',
       sortable: true,
       className: 'min-w-[200px]',
-      cell: row => (
+      cell: (row) => (
         <div className="flex flex-col">
           <span className="text-sm font-medium truncate max-w-[250px]">{row.name}</span>
-          <span className="text-[10px] text-muted-foreground">
-            {row.city || '—'}, {row.state || '—'}
-          </span>
+          <span className="text-[10px] text-muted-foreground">{row.city}, {row.state}</span>
         </div>
       ),
     },
@@ -214,7 +163,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'code',
       sortable: true,
       className: 'w-[120px]',
-      cell: row => (
+      cell: (row) => (
         <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{row.code}</code>
       ),
     },
@@ -224,7 +173,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'category',
       sortable: true,
       className: 'w-[130px]',
-      cell: row => (
+      cell: (row) => (
         <Badge variant="outline" className="text-[10px] font-normal">
           {row.category}
         </Badge>
@@ -236,7 +185,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'state',
       sortable: true,
       className: 'w-[120px]',
-      cell: row => <span className="text-xs">{row.state}</span>,
+      cell: (row) => <span className="text-xs">{row.state}</span>,
     },
     {
       id: 'usersCount',
@@ -245,7 +194,9 @@ export const InstitutionsPage = () => {
       sortable: true,
       className: 'w-[80px] text-center',
       headerClassName: 'text-center',
-      cell: row => <span className="text-xs font-medium">{row.usersCount}</span>,
+      cell: (row) => (
+        <span className="text-xs font-medium">{row.usersCount}</span>
+      ),
     },
     {
       id: 'repositoryCompletion',
@@ -253,22 +204,18 @@ export const InstitutionsPage = () => {
       accessorKey: 'repositoryCompletion',
       sortable: true,
       className: 'w-[140px]',
-      cell: row => (
+      cell: (row) => (
         <div className="flex items-center gap-2">
           <Progress
             value={row.repositoryCompletion}
             className={cn(
               'h-1.5 flex-1',
               row.repositoryCompletion < 50 && '[&>div]:bg-red-500',
-              row.repositoryCompletion >= 50 &&
-                row.repositoryCompletion < 75 &&
-                '[&>div]:bg-amber-500',
+              row.repositoryCompletion >= 50 && row.repositoryCompletion < 75 && '[&>div]:bg-amber-500',
               row.repositoryCompletion >= 75 && '[&>div]:bg-emerald-500'
             )}
           />
-          <span className="text-[10px] font-medium w-8 text-right">
-            {row.repositoryCompletion}%
-          </span>
+          <span className="text-[10px] font-medium w-8 text-right">{row.repositoryCompletion}%</span>
         </div>
       ),
     },
@@ -278,31 +225,26 @@ export const InstitutionsPage = () => {
       accessorKey: 'status',
       sortable: true,
       className: 'w-[100px]',
-      cell: row => getStatusBadge(row.status),
+      cell: (row) => <StatusBadge status={row.status} />,
     },
     {
       id: 'actions',
       header: 'Actions',
       className: 'w-[60px] text-center',
       headerClassName: 'text-center',
-      cell: row => (
+      cell: (row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={e => e.stopPropagation()}
-            >
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/admin/institutions/${row.id}`);
+                setViewDialog({ open: true, institution: row });
               }}
             >
               <Eye className="h-3.5 w-3.5" />
@@ -310,21 +252,36 @@ export const InstitutionsPage = () => {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/admin/institutions/${row.id}/edit`);
+                setEditDialog({ open: true, institution: row });
               }}
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
             </DropdownMenuItem>
+            {row.status === 'active' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-xs gap-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleImpersonate(row);
+                  }}
+                >
+                  <UserCog className="h-3.5 w-3.5" />
+                  Impersonate
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
-            {row.status === 'ACTIVE' ? (
+            {row.status === 'active' ? (
               <DropdownMenuItem
                 className="text-xs gap-2 cursor-pointer"
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  handleStatusChange(row, 'INACTIVE');
+                  setDeactivateDialog({ open: true, institution: row });
                 }}
               >
                 <PowerOff className="h-3.5 w-3.5" />
@@ -333,9 +290,9 @@ export const InstitutionsPage = () => {
             ) : (
               <DropdownMenuItem
                 className="text-xs gap-2 cursor-pointer"
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  handleStatusChange(row, 'ACTIVE');
+                  handleStatusChange(row, 'active');
                 }}
               >
                 <Power className="h-3.5 w-3.5" />
@@ -345,7 +302,7 @@ export const InstitutionsPage = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer text-destructive focus:text-destructive"
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 setDeleteDialog({ open: true, institution: row });
               }}
@@ -364,9 +321,9 @@ export const InstitutionsPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col min-h-[calc(100vh-10rem)]"
+      className="space-y-6"
     >
-      {/* Header - sticky at top */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Institutions</h1>
@@ -383,73 +340,130 @@ export const InstitutionsPage = () => {
             <Download className="h-3.5 w-3.5" />
             Export
           </Button>
-          <Button
-            size="sm"
-            className="gap-2 h-8 text-xs"
-            onClick={() => navigate('/admin/institutions/create')}
-          >
+          <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => navigate('/admin/institutions/create')}>
             <Plus className="h-3.5 w-3.5" />
             Add Institution
           </Button>
         </div>
       </div>
 
-      {/* Scrollable content area - takes remaining space */}
-      <div className="flex-1 flex flex-col min-h-0 gap-5">
-        {/* Filters */}
-        <InstitutionFilters filters={filters} onFilterChange={setFilters} />
+      {/* Filters */}
+      <InstitutionFilters
+        filters={filters}
+        onFilterChange={setFilters}
+        states={institutionService.getStates()}
+        categories={institutionService.getCategories()}
+      />
 
-        {/* Summary */}
-        {!loading && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-[10px]">
-              {pagination.total} institution{pagination.total !== 1 ? 's' : ''} found
+      {/* Summary */}
+      {!loading && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-[10px]">
+            {pagination.total} institution{pagination.total !== 1 ? 's' : ''} found
+          </Badge>
+          {sort && (
+            <Badge variant="outline" className="text-[10px] gap-1">
+              Sorted by {sort.key} ({sort.direction})
             </Badge>
-            {sort && (
-              <Badge variant="outline" className="text-[10px] gap-1">
-                Sorted by {sort.key} ({sort.direction})
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {/* Table - flex-1 so it fills available space */}
-        <div className="flex-1 min-h-0">
-          <DataTable
-            columns={columns}
-            data={institutions}
-            loading={loading}
-            sort={sort}
-            onSort={setSort}
-            rowKey={row => String(row.id)}
-            emptyTitle="No institutions found"
-            emptyDescription="Try adjusting your search or filter criteria to find institutions."
-          />
+          )}
         </div>
+      )}
 
-        {/* Pagination - sticks to bottom */}
-        {!loading && pagination.total > 0 && (
-          <DataTablePagination
-            pagination={pagination}
-            onPageChange={page => setPagination(prev => ({ ...prev, page }))}
-            onPageSizeChange={pageSize => setPagination(prev => ({ ...prev, pageSize, page: 1 }))}
-          />
-        )}
-      </div>
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={institutions}
+        loading={loading}
+        sort={sort}
+        onSort={setSort}
+        rowKey={(row) => row.id}
+        emptyTitle="No institutions found"
+        emptyDescription="Try adjusting your search or filter criteria to find institutions."
+      />
+
+      {/* Pagination */}
+      {!loading && pagination.total > 0 && (
+        <DataTablePagination
+          pagination={pagination}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          onPageSizeChange={(pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 }))}
+        />
+      )}
+
+      {/* View Details Dialog */}
+      <InstitutionDetailsDialog
+        institution={viewDialog.institution}
+        open={viewDialog.open}
+        onOpenChange={(open) => setViewDialog({ open, institution: open ? viewDialog.institution : null })}
+        onEdit={(institution) => setEditDialog({ open: true, institution })}
+        onImpersonate={handleImpersonate}
+      />
+
+      {/* Impersonate Dialog */}
+      <ImpersonateDialog
+        institution={impersonateDialog.institution}
+        open={impersonateDialog.open}
+        onOpenChange={(open) =>
+          setImpersonateDialog({ open, institution: open ? impersonateDialog.institution : null })
+        }
+      />
+
+      {/* Edit Dialog */}
+      <EditInstitutionDialog
+        institution={editDialog.institution}
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ open, institution: open ? editDialog.institution : null })}
+        onSaved={() => fetchInstitutions()}
+      />
+
+      {/* Deactivate Confirmation Dialog */}
+      <AlertDialog
+        open={deactivateDialog.open}
+        onOpenChange={(open) =>
+          setDeactivateDialog({ open, institution: open ? deactivateDialog.institution : null })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PowerOff className="h-4 w-4 text-destructive" />
+              Deactivate Institution
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate <strong>{deactivateDialog.institution?.name}</strong>?
+              Deactivated institutions will no longer be able to log in to the platform. You can
+              reactivate them at any time from this page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deactivateDialog.institution) {
+                  handleStatusChange(deactivateDialog.institution, 'inactive');
+                }
+                setDeactivateDialog({ open: false, institution: null });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <PowerOff className="h-3.5 w-3.5 mr-1.5" />
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={deleteDialog.open}
-        onOpenChange={open =>
-          setDeleteDialog({ open, institution: open ? deleteDialog.institution : null })
-        }
+        onOpenChange={(open) => setDeleteDialog({ open, institution: open ? deleteDialog.institution : null })}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Institution</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteDialog.institution?.name}</strong>?
-              This action cannot be undone and will remove all associated data.
+              Are you sure you want to delete <strong>{deleteDialog.institution?.name}</strong>? This action
+              cannot be undone and will remove all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

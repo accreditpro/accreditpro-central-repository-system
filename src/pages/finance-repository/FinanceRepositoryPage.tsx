@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, cloneElement, isValidElement } from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +50,7 @@ import {
 import { financeTabConfigs } from './finance-configs';
 import { FinanceDashboard } from './components/FinanceDashboard';
 import { FinanceDocumentsView } from './components/FinanceDocumentsView';
+import { useReadOnly } from '@/hooks/useReadOnly';
 
 type ViewType = 'dashboard' | 'documents' | string;
 
@@ -65,32 +67,27 @@ const navItems: NavItem[] = [
   { id: 'expenditure', label: 'Expenditure', icon: <Receipt className="h-4 w-4" /> },
   { id: 'research-funding', label: 'Research Funding', icon: <FlaskConical className="h-4 w-4" /> },
   { id: 'scholarships', label: 'Scholarships', icon: <GraduationCap className="h-4 w-4" /> },
-  {
-    id: 'endowments-donations',
-    label: 'Endowments & Donations',
-    icon: <Heart className="h-4 w-4" />,
-  },
+  { id: 'endowments-donations', label: 'Endowments & Donations', icon: <Heart className="h-4 w-4" /> },
   { id: 'audit-reports', label: 'Audit Reports', icon: <FileCheck className="h-4 w-4" /> },
   { id: 'financial-assets', label: 'Financial Assets', icon: <Landmark className="h-4 w-4" /> },
   { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
 export default function FinanceRepositoryPage() {
+  const isReadOnly = useReadOnly();
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(
-    () => {
-      const initial: Record<string, Record<string, string | number>[]> = {};
-      financeTabConfigs.forEach(tab => {
-        initial[tab.id] = [...tab.sampleData];
-      });
-      return initial;
-    }
-  );
+  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
+    const initial: Record<string, Record<string, string | number>[]> = {};
+    financeTabConfigs.forEach(tab => {
+      initial[tab.id] = [...tab.sampleData];
+    });
+    return initial;
+  });
 
   const activeTabConfig = useMemo(() => {
     return financeTabConfigs.find(t => t.id === activeView);
@@ -101,16 +98,16 @@ export default function FinanceRepositoryPage() {
     const data = tableData[activeView] || [];
     if (!searchQuery) return data;
     return data.filter(row =>
-      Object.values(row).some(val => String(val).toLowerCase().includes(searchQuery.toLowerCase()))
+      Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
   }, [activeTabConfig, tableData, activeView, searchQuery]);
 
   const handleAddNew = () => {
     if (!activeTabConfig) return;
     const emptyRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach(f => {
-      emptyRow[f.key] = '';
-    });
+    activeTabConfig.fields.forEach(f => { emptyRow[f.key] = ''; });
     setEditingRow(emptyRow);
     setIsNewRecord(true);
     setEditDialogOpen(true);
@@ -168,17 +165,21 @@ export default function FinanceRepositoryPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="h-4 w-4" />
-              CSV Upload
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button size="sm" className="gap-2" onClick={handleAddNew}>
-              <Plus className="h-4 w-4" />
-              Add Record
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  CSV Upload
+                </Button>
+                <Button size="sm" className="gap-2" onClick={handleAddNew}>
+                  <Plus className="h-4 w-4" />
+                  Add Record
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -188,7 +189,7 @@ export default function FinanceRepositoryPage() {
           <Input
             placeholder={`Search ${activeTabConfig.label.toLowerCase()}...`}
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -217,10 +218,7 @@ export default function FinanceRepositoryPage() {
                 <TableBody>
                   {currentData.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={visibleFields.length + 1}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={visibleFields.length + 1} className="text-center py-8 text-muted-foreground">
                         No records found
                       </TableCell>
                     </TableRow>
@@ -228,35 +226,28 @@ export default function FinanceRepositoryPage() {
                     currentData.map((row, idx) => (
                       <TableRow key={idx}>
                         {visibleFields.map(field => (
-                          <TableCell
-                            key={field.key}
-                            className="text-sm whitespace-nowrap max-w-[200px] truncate"
-                          >
+                          <TableCell key={field.key} className="text-sm whitespace-nowrap max-w-[200px] truncate">
                             {field.type === 'currency'
                               ? `₹${Number(row[field.key]).toLocaleString('en-IN')}`
                               : field.type === 'percentage'
-                                ? `${row[field.key]}%`
-                                : String(row[field.key] || '-')}
+                              ? `${row[field.key]}%`
+                              : String(row[field.key] || '-')}
                           </TableCell>
                         ))}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEdit(row)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => handleDelete(idx)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -284,48 +275,22 @@ export default function FinanceRepositoryPage() {
                   {field.type === 'select' ? (
                     <Select
                       value={String(editingRow?.[field.key] || '')}
-                      onValueChange={val =>
-                        setEditingRow(prev => (prev ? { ...prev, [field.key]: val } : null))
-                      }
+                      onValueChange={(val) => setEditingRow(prev => prev ? { ...prev, [field.key]: val } : null)}
                     >
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder={`Select ${field.label}`} />
                       </SelectTrigger>
                       <SelectContent>
                         {field.options?.map(opt => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
                     <Input
-                      type={
-                        field.type === 'number' ||
-                        field.type === 'currency' ||
-                        field.type === 'percentage'
-                          ? 'number'
-                          : field.type === 'date'
-                            ? 'date'
-                            : 'text'
-                      }
+                      type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                       value={String(editingRow?.[field.key] || '')}
-                      onChange={e =>
-                        setEditingRow(prev =>
-                          prev
-                            ? {
-                                ...prev,
-                                [field.key]:
-                                  field.type === 'number' ||
-                                  field.type === 'currency' ||
-                                  field.type === 'percentage'
-                                    ? Number(e.target.value)
-                                    : e.target.value,
-                              }
-                            : null
-                        )
-                      }
+                      onChange={(e) => setEditingRow(prev => prev ? { ...prev, [field.key]: field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? Number(e.target.value) : e.target.value } : null)}
                       placeholder={field.placeholder || `Enter ${field.label}`}
                       className="h-9"
                     />
@@ -334,9 +299,7 @@ export default function FinanceRepositoryPage() {
               ))}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSave}>{isNewRecord ? 'Add Record' : 'Save Changes'}</Button>
             </DialogFooter>
           </DialogContent>
@@ -348,47 +311,49 @@ export default function FinanceRepositoryPage() {
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <aside
-        className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}
-      >
+      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}>
         <div className="flex items-center justify-between p-3 border-b">
-          {!sidebarCollapsed && (
-            <span className="text-sm font-semibold text-primary">Finance Repository</span>
-          )}
+          {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">Finance Repository</span>}
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navItems.map(item => (
-            <Button
-              key={item.id}
-              variant={activeView === item.id ? 'secondary' : 'ghost'}
-              className={`w-full justify-start gap-2 h-9 ${sidebarCollapsed ? 'px-2 justify-center' : ''} ${activeView === item.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
-              onClick={() => {
-                setActiveView(item.id);
-                setSearchQuery('');
-              }}
-              title={sidebarCollapsed ? item.label : undefined}
-            >
-              {item.icon}
-              {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
-            </Button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeView === item.id;
+            return (
+              <Button
+                key={item.id}
+                variant="ghost"
+                className={cn(
+                  'w-full justify-start gap-2 h-9 rounded-lg transition-all',
+                  sidebarCollapsed && 'px-2 justify-center',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                )}
+                onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+                title={sidebarCollapsed ? item.label : undefined}
+              >
+                {isActive && isValidElement(item.icon)
+                  ? cloneElement(item.icon, { className: 'h-4 w-4 text-primary' })
+                  : item.icon}
+                {!sidebarCollapsed && <span className="text-sm truncate">{item.label}</span>}
+              </Button>
+            );
+          })}
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
+      <main className="flex-1 overflow-y-auto p-6">
+        {renderContent()}
+      </main>
     </div>
   );
 }

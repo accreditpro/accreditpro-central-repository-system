@@ -1,41 +1,18 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  academicRepositoryService,
-  ApiCalendarEvent,
-} from '@/services/academic-repository.service';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import {
   Calendar,
   Download,
@@ -76,20 +53,7 @@ interface AcademicCalendarModuleProps {
 
 const YEARS_OF_STUDY = ['I Year', 'II Year', 'III Year', 'IV Year'];
 const SEMESTERS = ['Semester I', 'Semester II'];
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -134,40 +98,8 @@ function getEventStatus(startDate: string, endDate: string): 'upcoming' | 'compl
   return 'ongoing';
 }
 
-const mapYearOfStudyToLabel = (y: string) => {
-  if (y === '1') return 'I Year';
-  if (y === '2') return 'II Year';
-  if (y === '3') return 'III Year';
-  if (y === '4') return 'IV Year';
-  return 'III Year';
-};
-
-const mapLabelToYearOfStudy = (y: string) => {
-  if (y === 'I Year') return '1';
-  if (y === 'II Year') return '2';
-  if (y === 'III Year') return '3';
-  if (y === 'IV Year') return '4';
-  return '3';
-};
-
-const mapSemesterToLabel = (s: string) => {
-  if (s === '1') return 'Semester I';
-  if (s === '2') return 'Semester II';
-  return 'Semester I';
-};
-
-const mapLabelToSemester = (s: string) => {
-  if (s === 'Semester I') return '1';
-  if (s === 'Semester II') return '2';
-  return '1';
-};
-
-export const AcademicCalendarModule = ({
-  department,
-  academicYear,
-}: AcademicCalendarModuleProps) => {
-  const { user } = useAuth();
-  const departmentId = user?.departmentId || 101;
+export const AcademicCalendarModule = ({ department, academicYear }: AcademicCalendarModuleProps) => {
+  const isReadOnly = useReadOnly();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester I');
@@ -179,11 +111,7 @@ export const AcademicCalendarModule = ({
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [uploadPreview, setUploadPreview] = useState<CalendarEvent[]>([]);
-  const [uploadStats, setUploadStats] = useState<{
-    total: number;
-    valid: number;
-    invalid: number;
-  } | null>(null);
+  const [uploadStats, setUploadStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // New event form state
@@ -193,51 +121,30 @@ export const AcademicCalendarModule = ({
     endDate: '',
   });
 
-  const loadEvents = useCallback(async () => {
-    try {
-      const res = await academicRepositoryService.getCalendarEvents(academicYear, departmentId);
-      if (res?.content) {
-        const mappedEvents: CalendarEvent[] = res.content.map((item: any) => ({
-          id: String(item.id),
-          department,
-          year: mapYearOfStudyToLabel(item.yearOfStudy),
-          semester: mapSemesterToLabel(item.semester),
-          description: item.description,
-          startDate: item.startDate,
-          endDate: item.endDate,
-          duration: item.duration || calculateDuration(item.startDate, item.endDate),
-        }));
-        setEvents(mappedEvents);
-      }
-    } catch (err) {
-      console.error('Failed to load events:', err);
-    }
-  }, [academicYear, departmentId, department]);
-
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
-
   // Filtered events
   const filteredEvents = useMemo(() => {
-    let filtered = events.filter(e => e.year === selectedYear && e.semester === selectedSemester);
+    let filtered = events.filter(
+      (e) => e.year === selectedYear && e.semester === selectedSemester
+    );
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        e => e.description.toLowerCase().includes(q) || e.semester.toLowerCase().includes(q)
+        (e) =>
+          e.description.toLowerCase().includes(q) ||
+          e.semester.toLowerCase().includes(q)
       );
     }
 
     if (filterMonth && filterMonth !== 'all') {
-      filtered = filtered.filter(e => {
+      filtered = filtered.filter((e) => {
         const month = new Date(e.startDate).toLocaleString('en-US', { month: 'long' });
         return month === filterMonth;
       });
     }
 
     if (filterStatus && filterStatus !== 'all') {
-      filtered = filtered.filter(e => {
+      filtered = filtered.filter((e) => {
         const status = getEventStatus(e.startDate, e.endDate);
         return status === filterStatus;
       });
@@ -249,26 +156,24 @@ export const AcademicCalendarModule = ({
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
     const header = 'Department,Year,Semester,Description,Start Date,End Date,Duration';
-    let rows: string[] = [];
-    if (filteredEvents && filteredEvents.length > 0) {
-      rows = filteredEvents.map(
-        e =>
-          `"${department}","${e.year}","${e.semester}","${e.description}","${e.startDate}","${e.endDate}","${e.duration}"`
-      );
-    } else {
-      rows = [
-        `"${department}","${selectedYear}","${selectedSemester}","Commencement of Class Work","2025-07-01","2025-07-01","1"`,
-      ];
-    }
-    const csv = [header, ...rows].join('\n');
+    const sampleRows = [
+      `${department},${selectedYear},${selectedSemester},Commencement of Class Work,2025-07-01,2025-07-01,1`,
+      `${department},${selectedYear},${selectedSemester},Orientation Program,2025-07-02,2025-07-03,2`,
+      `${department},${selectedYear},${selectedSemester},First Internal Examination,2025-09-05,2025-09-07,3`,
+      `${department},${selectedYear},${selectedSemester},Industrial Visit,2025-09-20,2025-09-20,1`,
+      `${department},${selectedYear},${selectedSemester},Second Internal Examination,2025-11-10,2025-11-12,3`,
+      `${department},${selectedYear},${selectedSemester},Practical Examinations,2025-12-05,2025-12-10,6`,
+      `${department},${selectedYear},${selectedSemester},Theory Examinations,2025-12-15,2025-12-24,10`,
+    ];
+    const csv = [header, ...sampleRows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_calendar_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
+    a.download = `academic_calendar_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester, filteredEvents]);
+  }, [department, selectedYear, selectedSemester]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -277,9 +182,9 @@ export const AcademicCalendarModule = ({
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = event => {
+      reader.onload = (event) => {
         const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        const lines = text.split(/\r?\n/).filter((line) => line.trim());
         const headers = parseCSVLine(lines[0]);
 
         const parsed: CalendarEvent[] = [];
@@ -297,9 +202,7 @@ export const AcademicCalendarModule = ({
 
           // Validation
           if (row['Department'] && row['Department'] !== department) {
-            errors.push(
-              `Department "${row['Department']}" does not match logged-in department "${department}"`
-            );
+            errors.push(`Department "${row['Department']}" does not match logged-in department "${department}"`);
           }
           if (!row['Description']) {
             errors.push('Description is mandatory');
@@ -365,120 +268,57 @@ export const AcademicCalendarModule = ({
     [department, selectedYear, selectedSemester]
   );
 
-  // Import uploaded events (only valid ones) and auto-save to backend
-  const handleImportUploaded = useCallback(async () => {
-    const validEvents = uploadPreview.filter(e => e.status === 'valid');
-
-    if (validEvents.length > 0) {
-      // Group events by year and semester since API requires them at root level
-      const eventsByGroup: Record<string, typeof validEvents> = {};
-      validEvents.forEach(e => {
-        const year = e.year || selectedYear;
-        const semester = e.semester || selectedSemester;
-        const key = `${year}|${semester}`;
-        if (!eventsByGroup[key]) eventsByGroup[key] = [];
-        eventsByGroup[key].push(e);
-      });
-
-      try {
-        for (const [key, groupEvents] of Object.entries(eventsByGroup)) {
-          const [year, semester] = key.split('|');
-          const payload = {
-            academicYear,
-            yearOfStudy: mapLabelToYearOfStudy(year),
-            semester: mapLabelToSemester(semester),
-            events: groupEvents.map(e => ({
-              description: e.description,
-              startDate: e.startDate,
-              endDate: e.endDate,
-            })),
-          };
-          await academicRepositoryService.bulkSaveCalendarEvents(departmentId, payload);
-        }
-        await loadEvents();
-
-        // Auto-switch to the year/semester of the first imported record so user can see results
-        const firstEvent = validEvents[0];
-        if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
-          setSelectedYear(firstEvent.year);
-        }
-        if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
-          setSelectedSemester(firstEvent.semester);
-        }
-      } catch (err) {
-        console.error('Failed to bulk save imported events:', err);
+  // Import uploaded events (only valid ones)
+  const handleImportUploaded = useCallback(() => {
+    const validEvents = uploadPreview.filter((e) => e.status === 'valid');
+    const newEvents = validEvents.map((e, idx) => ({
+      ...e,
+      id: `event-${Date.now()}-${idx}`,
+      status: undefined as CalendarEvent['status'],
+      errors: undefined,
+    }));
+    setEvents((prev) => [...prev, ...newEvents]);
+    // Auto-switch to the year/semester of the first imported record so user can see results
+    if (newEvents.length > 0) {
+      const firstEvent = newEvents[0];
+      if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
+        setSelectedYear(firstEvent.year);
+      }
+      if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
+        setSelectedSemester(firstEvent.semester);
       }
     }
-
     setShowUploadDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
-  }, [uploadPreview, academicYear, departmentId, loadEvents, selectedYear, selectedSemester]);
+  }, [uploadPreview]);
 
   // Add event manually
-  const handleAddEvent = useCallback(async () => {
+  const handleAddEvent = useCallback(() => {
     if (!newEvent.description || !newEvent.startDate || !newEvent.endDate) return;
 
     const duration = calculateDuration(newEvent.startDate, newEvent.endDate);
+    const event: CalendarEvent = {
+      id: `event-${Date.now()}`,
+      department,
+      year: selectedYear,
+      semester: selectedSemester,
+      description: newEvent.description,
+      startDate: newEvent.startDate,
+      endDate: newEvent.endDate,
+      duration,
+    };
 
-    try {
-      if (
-        editingEvent &&
-        !editingEvent.id.toString().startsWith('upload-') &&
-        !editingEvent.id.toString().startsWith('event-')
-      ) {
-        // Numeric ID implies it exists on backend
-        await academicRepositoryService.updateCalendarEvent(editingEvent.id, departmentId, {
-          academicYear,
-          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
-          semester: mapLabelToSemester(selectedSemester),
-          description: newEvent.description,
-          startDate: newEvent.startDate,
-          endDate: newEvent.endDate,
-        });
-        await loadEvents();
-      } else if (!editingEvent) {
-        // New event
-        await academicRepositoryService.createCalendarEvent(departmentId, {
-          academicYear,
-          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
-          semester: mapLabelToSemester(selectedSemester),
-          description: newEvent.description,
-          startDate: newEvent.startDate,
-          endDate: newEvent.endDate,
-        });
-        await loadEvents();
-      } else {
-        // Was a local unsaved event, just update local state
-        const event: CalendarEvent = {
-          id: editingEvent.id,
-          department,
-          year: selectedYear,
-          semester: selectedSemester,
-          description: newEvent.description,
-          startDate: newEvent.startDate,
-          endDate: newEvent.endDate,
-          duration,
-        };
-        setEvents(prev => prev.map(e => (e.id === editingEvent.id ? event : e)));
-      }
-
-      setNewEvent({ description: '', startDate: '', endDate: '' });
-      setShowAddDialog(false);
-      setEditingEvent(null);
-    } catch (err) {
-      console.error('Failed to save event:', err);
+    if (editingEvent) {
+      setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? { ...event, id: editingEvent.id } : e)));
+    } else {
+      setEvents((prev) => [...prev, event]);
     }
-  }, [
-    newEvent,
-    department,
-    selectedYear,
-    selectedSemester,
-    editingEvent,
-    academicYear,
-    departmentId,
-    loadEvents,
-  ]);
+
+    setNewEvent({ description: '', startDate: '', endDate: '' });
+    setShowAddDialog(false);
+    setEditingEvent(null);
+  }, [newEvent, department, selectedYear, selectedSemester, editingEvent]);
 
   // Edit event
   const handleEditEvent = useCallback((event: CalendarEvent) => {
@@ -492,61 +332,23 @@ export const AcademicCalendarModule = ({
   }, []);
 
   // Delete event
-  const handleDeleteEvent = useCallback(
-    async (id: string) => {
-      if (!id.startsWith('upload-') && !id.startsWith('event-')) {
-        try {
-          await academicRepositoryService.deleteCalendarEvent(id, departmentId);
-          await loadEvents();
-        } catch (err) {
-          console.error('Failed to delete event:', err);
-        }
-      } else {
-        setEvents(prev => prev.filter(e => e.id !== id));
-      }
-    },
-    [departmentId, loadEvents]
-  );
+  const handleDeleteEvent = useCallback((id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  }, []);
 
   // Save Calendar
-  const handleSaveCalendar = useCallback(async () => {
+  const handleSaveCalendar = useCallback(() => {
     const yearSemEvents = events.filter(
-      e => e.year === selectedYear && e.semester === selectedSemester
+      (e) => e.year === selectedYear && e.semester === selectedSemester
     );
-
-    // Find unsaved events (e.g. from CSV import)
-    const unsavedEvents = yearSemEvents.filter(
-      e => e.id.startsWith('upload-') || e.id.startsWith('event-')
-    );
-
-    if (unsavedEvents.length > 0) {
-      try {
-        const payload = {
-          academicYear,
-          yearOfStudy: mapLabelToYearOfStudy(selectedYear),
-          semester: mapLabelToSemester(selectedSemester),
-          events: unsavedEvents.map(e => ({
-            description: e.description,
-            startDate: e.startDate,
-            endDate: e.endDate,
-          })),
-        };
-        await academicRepositoryService.bulkSaveCalendarEvents(departmentId, payload);
-        await loadEvents();
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 4000);
-      } catch (err) {
-        console.error('Bulk save failed:', err);
-      }
-    } else {
-      // If nothing to save, just simulate
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-    }
-  }, [events, selectedYear, selectedSemester, academicYear, departmentId, loadEvents]);
+    // Simulate save
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 4000);
+    console.log('Saving calendar events:', yearSemEvents);
+  }, [events, selectedYear, selectedSemester]);
 
   const totalEventsForYearSem = events.filter(
-    e => e.year === selectedYear && e.semester === selectedSemester
+    (e) => e.year === selectedYear && e.semester === selectedSemester
   ).length;
 
   return (
@@ -573,9 +375,7 @@ export const AcademicCalendarModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Department
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
             </div>
             <p className="text-sm font-semibold text-white truncate">{department}</p>
           </div>
@@ -583,9 +383,7 @@ export const AcademicCalendarModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-4 w-4 text-purple-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Academic Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Academic Year</span>
             </div>
             <p className="text-sm font-semibold text-purple-300 truncate">{academicYear}</p>
           </div>
@@ -593,19 +391,15 @@ export const AcademicCalendarModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Year</span>
             </div>
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-emerald-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {YEARS_OF_STUDY.map(y => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
+                {YEARS_OF_STUDY.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -614,19 +408,15 @@ export const AcademicCalendarModule = ({
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Semester
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Semester</span>
             </div>
             <Select value={selectedSemester} onValueChange={setSelectedSemester}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-amber-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SEMESTERS.map(s => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
+                {SEMESTERS.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -642,48 +432,40 @@ export const AcademicCalendarModule = ({
               <Download className="h-3.5 w-3.5" />
               Download CSV Template
             </Button>
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-3.5 w-3.5" />
-                Upload CSV
-              </Button>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEditingEvent(null);
-                setNewEvent({ description: '', startDate: '', endDate: '' });
-                setShowAddDialog(true);
-              }}
-              className="gap-2"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Event
-            </Button>
-            <div className="ml-auto">
-              <Button
-                size="sm"
-                onClick={handleSaveCalendar}
-                disabled={totalEventsForYearSem === 0}
-                className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save Calendar
-              </Button>
-            </div>
+            {!isReadOnly && (
+              <>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload CSV
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { setEditingEvent(null); setNewEvent({ description: '', startDate: '', endDate: '' }); setShowAddDialog(true); }} className="gap-2">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Event
+                </Button>
+              </>
+            )}
+            {!isReadOnly && (
+              <div className="ml-auto">
+                <Button
+                  size="sm"
+                  onClick={handleSaveCalendar}
+                  disabled={totalEventsForYearSem === 0}
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  Save Calendar
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -700,12 +482,9 @@ export const AcademicCalendarModule = ({
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <div>
-                  <p className="text-sm font-semibold text-green-700">
-                    Department Academic Calendar Saved Successfully
-                  </p>
+                  <p className="text-sm font-semibold text-green-700">Department Academic Calendar Saved Successfully</p>
                   <p className="text-xs text-green-600 mt-0.5">
-                    Total Records Imported: {totalEventsForYearSem} • Imported Successfully:{' '}
-                    {totalEventsForYearSem}
+                    Total Records Imported: {totalEventsForYearSem} • Imported Successfully: {totalEventsForYearSem}
                   </p>
                 </div>
               </CardContent>
@@ -721,7 +500,7 @@ export const AcademicCalendarModule = ({
           <Input
             placeholder="Search by description..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-9 text-sm"
           />
         </div>
@@ -732,10 +511,8 @@ export const AcademicCalendarModule = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Months</SelectItem>
-            {MONTHS.map(m => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
+            {MONTHS.map((m) => (
+              <SelectItem key={m} value={m}>{m}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -790,7 +567,7 @@ export const AcademicCalendarModule = ({
                   {filteredEvents.map((event, idx) => {
                     const status = getEventStatus(event.startDate, event.endDate);
                     return (
-                      <TableRow key={event.id} className="hover:bg-muted/20">
+                      <TableRow key={event.id} className="hover:bg-muted/50">
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-sm font-medium">{event.description}</TableCell>
                         <TableCell className="text-xs">{formatDate(event.startDate)}</TableCell>
@@ -805,12 +582,9 @@ export const AcademicCalendarModule = ({
                             variant="outline"
                             className={cn(
                               'text-[10px]',
-                              status === 'upcoming' &&
-                                'bg-blue-500/10 text-blue-600 border-blue-500/20',
-                              status === 'ongoing' &&
-                                'bg-green-500/10 text-green-600 border-green-500/20',
-                              status === 'completed' &&
-                                'bg-gray-500/10 text-gray-600 border-gray-500/20'
+                              status === 'upcoming' && 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                              status === 'ongoing' && 'bg-green-500/10 text-green-600 border-green-500/20',
+                              status === 'completed' && 'bg-gray-500/10 text-gray-600 border-gray-500/20'
                             )}
                           >
                             {status}
@@ -818,22 +592,18 @@ export const AcademicCalendarModule = ({
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEditEvent(event)}
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteEvent(event.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEvent(event)}>
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteEvent(event.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -857,7 +627,7 @@ export const AcademicCalendarModule = ({
               'Excel Export',
               'NAAC Academic Calendar Evidence',
               'NBA Academic Calendar Evidence',
-            ].map(item => (
+            ].map((item) => (
               <Badge key={item} variant="outline" className="text-[10px] bg-background">
                 {item}
               </Badge>
@@ -867,20 +637,10 @@ export const AcademicCalendarModule = ({
       </Card>
 
       {/* Add/Edit Event Dialog */}
-      <Dialog
-        open={showAddDialog}
-        onOpenChange={open => {
-          if (!open) {
-            setShowAddDialog(false);
-            setEditingEvent(null);
-          }
-        }}
-      >
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingEvent(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base">
-              {editingEvent ? 'Edit Event' : 'Add Event'}
-            </DialogTitle>
+            <DialogTitle className="text-base">{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -907,7 +667,7 @@ export const AcademicCalendarModule = ({
                 <Label className="text-xs">Description *</Label>
                 <Input
                   value={newEvent.description}
-                  onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                   placeholder="e.g., Commencement of Class Work"
                   className="mt-1 h-9 text-sm"
                 />
@@ -918,7 +678,7 @@ export const AcademicCalendarModule = ({
                   <div className="mt-1">
                     <DatePicker
                       value={newEvent.startDate}
-                      onChange={v => setNewEvent({ ...newEvent, startDate: v })}
+                      onChange={(v) => setNewEvent({ ...newEvent, startDate: v })}
                       placeholder="Select start date"
                       className="h-9 text-sm"
                     />
@@ -929,7 +689,7 @@ export const AcademicCalendarModule = ({
                   <div className="mt-1">
                     <DatePicker
                       value={newEvent.endDate}
-                      onChange={v => setNewEvent({ ...newEvent, endDate: v })}
+                      onChange={(v) => setNewEvent({ ...newEvent, endDate: v })}
                       placeholder="Select end date"
                       className="h-9 text-sm"
                     />
@@ -939,22 +699,14 @@ export const AcademicCalendarModule = ({
               {newEvent.startDate && newEvent.endDate && (
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    Duration: {calculateDuration(newEvent.startDate, newEvent.endDate)} days
-                    (auto-calculated)
+                    Duration: {calculateDuration(newEvent.startDate, newEvent.endDate)} days (auto-calculated)
                   </Badge>
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setShowAddDialog(false);
-                setEditingEvent(null);
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingEvent(null); }}>
               Cancel
             </Button>
             <Button
@@ -1004,9 +756,7 @@ export const AcademicCalendarModule = ({
               {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <p className="text-sm text-green-700 font-medium">
-                    CSV Uploaded Successfully — All records are valid
-                  </p>
+                  <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
                 </div>
               )}
 
@@ -1048,10 +798,7 @@ export const AcademicCalendarModule = ({
                           ) : (
                             <div className="flex items-center gap-1 justify-center">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              <span
-                                className="text-[9px] text-red-600 max-w-[120px] truncate"
-                                title={event.errors?.join(', ')}
-                              >
+                              <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={event.errors?.join(', ')}>
                                 {event.errors?.[0]}
                               </span>
                             </div>
@@ -1069,7 +816,7 @@ export const AcademicCalendarModule = ({
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
                   <div className="space-y-1">
                     {uploadPreview
-                      .filter(e => e.status === 'invalid')
+                      .filter((e) => e.status === 'invalid')
                       .map((e, idx) => (
                         <div key={idx} className="flex items-start gap-2">
                           <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />

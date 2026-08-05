@@ -81,4 +81,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isImpersonating?: boolean;
+  originalUser?: User | null;
 }

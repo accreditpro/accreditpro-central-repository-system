@@ -45,12 +45,12 @@ const iconVariants: Record<string, React.ElementType> = {
   schedule: Calendar, result: BadgeCheck, circular: FileText, backlog: AlertTriangle, supplementary: Repeat,
 };
 
-export function ExaminationDashboard() {
+export function ExaminationDashboard({ academicYear }: { academicYear: string }) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Examination Dashboard</h2>
-        <p className="text-muted-foreground">Read-only overview of institutional examination activities</p>
+        <p className="text-muted-foreground">Academic Year {academicYear} &mdash; Read-only overview of institutional examination activities</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {statsCards.map((stat) => (

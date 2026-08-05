@@ -48,7 +48,7 @@ const filters = [
   { label: 'Supporting Documents', value: 'documents' },
 ];
 
-export function GlobalSearch() {
+export function GlobalSearch({ academicYear }: { academicYear: string }) {
   const [query, setQuery] = useState('');
   const [moduleFilter, setModuleFilter] = useState('all');
 

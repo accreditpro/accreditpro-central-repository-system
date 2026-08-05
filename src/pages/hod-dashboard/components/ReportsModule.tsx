@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   FileText,
   FileCheck,
@@ -21,39 +15,27 @@ import {
   Mail,
   Calendar,
 } from 'lucide-react';
-import { reportTypes } from '../hod-configs';
+import { reportTypes, ACADEMIC_YEARS } from '../hod-configs';
 
-export function ReportsModule() {
+export function ReportsModule({ academicYear }: { academicYear: string }) {
   const [selectedReport, setSelectedReport] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<string>('2024-25');
+  const [selectedYear, setSelectedYear] = useState<string>(academicYear);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
 
   const getReportIcon = (iconName: string) => {
     switch (iconName) {
-      case 'FileText':
-        return <FileText className="h-5 w-5" />;
-      case 'FileCheck':
-        return <FileCheck className="h-5 w-5" />;
-      case 'Clock':
-        return <Clock className="h-5 w-5" />;
-      case 'AlertTriangle':
-        return <AlertTriangle className="h-5 w-5" />;
-      case 'Activity':
-        return <Activity className="h-5 w-5" />;
-      case 'TrendingUp':
-        return <TrendingUp className="h-5 w-5" />;
-      default:
-        return <FileText className="h-5 w-5" />;
+      case 'FileText': return <FileText className="h-5 w-5" />;
+      case 'FileCheck': return <FileCheck className="h-5 w-5" />;
+      case 'Clock': return <Clock className="h-5 w-5" />;
+      case 'AlertTriangle': return <AlertTriangle className="h-5 w-5" />;
+      case 'Activity': return <Activity className="h-5 w-5" />;
+      case 'TrendingUp': return <TrendingUp className="h-5 w-5" />;
+      default: return <FileText className="h-5 w-5" />;
     }
   };
 
   const recentReports = [
-    {
-      name: 'Department Repository Report',
-      generatedOn: '2024-12-14',
-      format: 'PDF',
-      size: '2.4 MB',
-    },
+    { name: 'Department Repository Report', generatedOn: '2024-12-14', format: 'PDF', size: '2.4 MB' },
     { name: 'Evidence Report', generatedOn: '2024-12-12', format: 'Excel', size: '1.8 MB' },
     { name: 'Gap Analysis Report', generatedOn: '2024-12-10', format: 'PDF', size: '1.2 MB' },
     { name: 'Five Year Summary', generatedOn: '2024-12-08', format: 'PDF', size: '3.6 MB' },
@@ -74,10 +56,8 @@ export function ReportsModule() {
                 <SelectValue placeholder="Select Report Type" />
               </SelectTrigger>
               <SelectContent>
-                {reportTypes.map(report => (
-                  <SelectItem key={report.id} value={report.id}>
-                    {report.name}
-                  </SelectItem>
+                {reportTypes.map((report) => (
+                  <SelectItem key={report.id} value={report.id}>{report.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -87,11 +67,9 @@ export function ReportsModule() {
                 <SelectValue placeholder="Academic Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2024-25">2024-25</SelectItem>
-                <SelectItem value="2023-24">2023-24</SelectItem>
-                <SelectItem value="2022-23">2022-23</SelectItem>
-                <SelectItem value="2021-22">2021-22</SelectItem>
-                <SelectItem value="2020-21">2020-21</SelectItem>
+                {ACADEMIC_YEARS.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={selectedFormat} onValueChange={setSelectedFormat}>
@@ -124,12 +102,8 @@ export function ReportsModule() {
 
       {/* Available Reports */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reportTypes.map(report => (
-          <Card
-            key={report.id}
-            className="border hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setSelectedReport(report.id)}
-          >
+        {reportTypes.map((report) => (
+          <Card key={report.id} className="border hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedReport(report.id)}>
             <CardContent className="p-5">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -164,11 +138,9 @@ export function ReportsModule() {
               </thead>
               <tbody>
                 {recentReports.map((report, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3 font-medium">{report.name}</td>
-                    <td className="p-3 text-muted-foreground">
-                      {new Date(report.generatedOn).toLocaleDateString()}
-                    </td>
+                    <td className="p-3 text-muted-foreground">{new Date(report.generatedOn).toLocaleDateString()}</td>
                     <td className="p-3">
                       <Badge variant="outline">{report.format}</Badge>
                     </td>

@@ -370,7 +370,7 @@ export default function Step5_COPOMapping({
                     </thead>
                     <tbody>
                       {outcomes.map((co) => (
-                        <tr key={co.id} className="border-t border-border/50 hover:bg-muted/10">
+                        <tr key={co.id} className="border-t border-border/50 hover:bg-muted/50">
                           <td className="p-2 font-medium sticky left-0 bg-card z-10">
                             <span className="text-[10px]">{co.code}</span>
                           </td>

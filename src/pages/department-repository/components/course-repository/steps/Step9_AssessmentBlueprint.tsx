@@ -1427,7 +1427,7 @@ export default function Step9_AssessmentBlueprint({
                   >
                     {/* Assessment Header */}
                     <div
-                      className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-muted/20 transition-colors"
+                      className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => toggleExpand(assessment.id)}
                     >
                       <Button
@@ -2258,7 +2258,7 @@ export default function Step9_AssessmentBlueprint({
                   const effectiveContrib = validation.effectiveContributions.get(assessment.id);
                   const isEffectiveDifferent = effectiveContrib !== undefined && effectiveContrib !== assessment.weightage;
                   return (
-                    <TableRow key={assessment.id} className="hover:bg-muted/10">
+                    <TableRow key={assessment.id} className="hover:bg-muted/50">
                       <TableCell className="text-[10px] text-muted-foreground">{idx + 1}</TableCell>
                       <TableCell className="text-[10px] font-medium flex items-center gap-1">
                         {assessment.compositeGroupId && (

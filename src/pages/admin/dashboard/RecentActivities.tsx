@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { RecentActivityData } from './types';
+import { Activity } from './mock-data';
 import {
   FileText,
   UserPlus,
@@ -12,35 +12,16 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-const activityConfig: Record<
-  string,
-  { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }
-> = {
-  document_upload: {
-    icon: FileText,
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-500/10',
-  },
-  user_registration: {
-    icon: UserPlus,
-    color: 'text-violet-600 dark:text-violet-400',
-    bg: 'bg-violet-500/10',
-  },
-  approval: {
-    icon: CheckCircle2,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-500/10',
-  },
-  compliance: {
-    icon: AlertTriangle,
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-500/10',
-  },
+const activityConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
+  document_upload: { icon: FileText, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
+  user_registration: { icon: UserPlus, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10' },
+  approval: { icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
+  compliance: { icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
   repository: { icon: Database, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/10' },
 };
 
 interface RecentActivitiesProps {
-  activities: RecentActivityData[];
+  activities: Activity[];
 }
 
 export const RecentActivities = ({ activities }: RecentActivitiesProps) => {

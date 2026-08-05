@@ -20,14 +20,8 @@ interface UploadDialogProps {
   onClose: () => void;
 }
 
-const ACCEPTED_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'image/png',
-  'image/jpeg',
-];
-const ACCEPTED_EXTENSIONS = '.pdf,.docx,.xlsx,.png,.jpg,.jpeg';
+const ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'text/csv', 'image/png', 'image/jpeg'];
+const ACCEPTED_EXTENSIONS = '.pdf,.docx,.xlsx,.zip,.csv,.png,.jpg,.jpeg';
 
 export function UploadDialog({ document, open, onClose }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -146,11 +140,15 @@ export function UploadDialog({ document, open, onClose }: UploadDialogProps) {
               <div className="space-y-2">
                 <CloudUpload className="h-10 w-10 mx-auto text-muted-foreground/50" />
                 <div>
-                  <p className="text-sm font-medium">Drag & drop your file here</p>
-                  <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
+                  <p className="text-sm font-medium">
+                    Drag & drop your file here
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    or click to browse
+                  </p>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  Supported: PDF, DOCX, XLSX, PNG, JPG (Max 25MB)
+                  Supported: PDF, DOCX, ZIP, PNG, XLSX, CSV, JPG (Max 25MB)
                 </p>
                 <Input
                   type="file"
@@ -165,14 +163,11 @@ export function UploadDialog({ document, open, onClose }: UploadDialogProps) {
           {/* Version Notes */}
           <div className="space-y-2">
             <Label htmlFor="version-notes" className="text-sm">
-              Version Notes{' '}
-              {isReplace && <span className="text-muted-foreground">(What changed?)</span>}
+              Version Notes {isReplace && <span className="text-muted-foreground">(What changed?)</span>}
             </Label>
             <Input
               id="version-notes"
-              placeholder={
-                isReplace ? 'e.g., Updated approval letter for 2025-26' : 'e.g., Initial upload'
-              }
+              placeholder={isReplace ? 'e.g., Updated approval letter for 2025-26' : 'e.g., Initial upload'}
               value={versionNotes}
               onChange={e => setVersionNotes(e.target.value)}
             />

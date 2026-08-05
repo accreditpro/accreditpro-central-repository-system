@@ -7,7 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import { MapPin } from 'lucide-react';
 import { INDIAN_STATES, CreateInstitutionFormData } from '../types';
 
@@ -15,24 +21,22 @@ export const AddressStep = () => {
   const form = useFormContext<CreateInstitutionFormData>();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <MapPin className="h-5 w-5 text-primary" />
           Address
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Enter the institution&apos;s physical address
-        </p>
+        <p className="text-sm text-muted-foreground">Enter the institution&apos;s physical address</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
         {/* Address Line 1 */}
         <FormField
           control={form.control}
           name="address.addressLine1"
           render={({ field }) => (
-            <FormItem className="md:col-span-2">
+            <FormItem className="md:col-span-2 space-y-4">
               <FormLabel className="text-sm">
                 Address Line 1 <span className="text-destructive">*</span>
               </FormLabel>
@@ -49,7 +53,7 @@ export const AddressStep = () => {
           control={form.control}
           name="address.addressLine2"
           render={({ field }) => (
-            <FormItem className="md:col-span-2">
+            <FormItem className="md:col-span-2 space-y-4">
               <FormLabel className="text-sm">Address Line 2</FormLabel>
               <FormControl>
                 <Input placeholder="Area, landmark (optional)" {...field} className="h-9" />
@@ -64,7 +68,7 @@ export const AddressStep = () => {
           control={form.control}
           name="address.state"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="text-sm">
                 State <span className="text-destructive">*</span>
               </FormLabel>
@@ -75,10 +79,8 @@ export const AddressStep = () => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {INDIAN_STATES.map(state => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
+                  {INDIAN_STATES.map((state) => (
+                    <SelectItem key={state} value={state}>{state}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -92,7 +94,7 @@ export const AddressStep = () => {
           control={form.control}
           name="address.district"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="text-sm">
                 District <span className="text-destructive">*</span>
               </FormLabel>
@@ -109,7 +111,7 @@ export const AddressStep = () => {
           control={form.control}
           name="address.pincode"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="text-sm">
                 Pincode <span className="text-destructive">*</span>
               </FormLabel>

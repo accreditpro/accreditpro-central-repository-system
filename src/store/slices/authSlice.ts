@@ -1,31 +1,24 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, LoginCredentials, LoginResponse, User } from '@/types/auth.types';
-import { authService, AuthError } from '@/services/auth.service';
+import { authService } from '@/services/auth.service';
+import { clearImpersonation, loadImpersonation, saveImpersonation } from '@/services/impersonation.service';
 
-/**
- * Initial auth state.
- * isLoading starts as true because we must restore any persisted session
- * from localStorage BEFORE rendering protected routes. See AppInitializer
- * and initializeAuth thunk for the init flow.
- */
 const initialState: AuthState = {
   user: null,
   tokens: null,
   isAuthenticated: false,
-  isLoading: true, // ← intentional: blocks rendering until session is checked
+  isLoading: true,
   error: null,
+  isImpersonating: false,
+  originalUser: null,
 };
 
-/**
- * Login thunk — calls POST /api/auth/login via authService.
- * On success: stores user + tokens in Redux and localStorage.
- * On failure: returns rejectWithValue with error message.
- */
 export const loginAsync = createAsyncThunk<LoginResponse, LoginCredentials>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      return await authService.login(credentials);
+      const response = await authService.login(credentials);
+      return response;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Login failed';
       return rejectWithValue(message);
@@ -33,67 +26,60 @@ export const loginAsync = createAsyncThunk<LoginResponse, LoginCredentials>(
   }
 );
 
-/**
- * Logout thunk — calls POST /api/auth/logout via authService.
- * Always clears local state regardless of backend response.
- */
 export const logoutAsync = createAsyncThunk('auth/logout', async () => {
-  await authService.logout();
+  authService.logout();
 });
 
-/**
- * Initialize auth thunk — runs on app startup.
- *
- * Flow:
- * 1. Check localStorage for stored session (user + tokens)
- * 2. If found, set authenticated state immediately (no loading flash)
- * 3. Then call GET /api/auth/me in background to validate token
- *    and refresh user data from backend
- * 4. If /me fails (expired token), clear session
- */
-export const initializeAuth = createAsyncThunk(
-  'auth/initialize',
-  async (_, { rejectWithValue }) => {
+export const initializeAuth = createAsyncThunk('auth/initialize', async (_, { rejectWithValue }) => {
+  try {
     const session = authService.getStoredSession();
-    if (!session) {
-      return rejectWithValue('No stored session');
+    if (session) {
+      return session;
     }
-
-    try {
-      // Validate token against backend via GET /api/auth/me
-      const freshUser = await authService.getCurrentUser();
-      return { user: freshUser, tokens: session.tokens };
-    } catch (error) {
-      // Distinguish between expired token and network error
-      if (error instanceof AuthError && error.reason === 'EXPIRED') {
-        return rejectWithValue('Session expired');
-      }
-      // Network error — keep stored session, user stays authenticated
-      // with cached data. They can retry on next page load.
-      return {
-        user: session.user,
-        tokens: session.tokens,
-      };
-    }
+    return rejectWithValue('No stored session');
+  } catch {
+    return rejectWithValue('Failed to initialize auth');
   }
-);
+});
+
+// Clears an active impersonation preview (in-memory + persisted sessionStorage).
+const resetImpersonationState = (state: AuthState) => {
+  clearImpersonation();
+  state.originalUser = null;
+  state.isImpersonating = false;
+};
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: state => {
+    clearError: (state) => {
       state.error = null;
     },
-    setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
+    setUser: (state, action: PayloadAction<LoginResponse>) => {
+      state.user = action.payload.user;
+      state.tokens = action.payload.tokens;
       state.isAuthenticated = true;
     },
+    startImpersonation: (state, action: PayloadAction<User>) => {
+      if (!state.user) return;
+      state.originalUser = state.user;
+      state.user = action.payload;
+      state.isImpersonating = true;
+      saveImpersonation(state.originalUser, action.payload);
+    },
+    stopImpersonation: (state) => {
+      clearImpersonation();
+      if (state.originalUser) {
+        state.user = state.originalUser;
+      }
+      state.originalUser = null;
+      state.isImpersonating = false;
+    },
   },
-  extraReducers: builder => {
+  extraReducers: (builder) => {
     builder
-      // ── Login ──
-      .addCase(loginAsync.pending, state => {
+      .addCase(loginAsync.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -102,37 +88,41 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.tokens = action.payload.tokens;
+        resetImpersonationState(state);
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // ── Logout ──
-      .addCase(logoutAsync.fulfilled, state => {
+      .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
         state.tokens = null;
         state.isAuthenticated = false;
         state.error = null;
+        resetImpersonationState(state);
       })
-      // ── Initialize ──
-      .addCase(initializeAuth.pending, state => {
-        state.isLoading = true;
-        state.error = null;
+      .addCase(initializeAuth.pending, (state) => {
+        if (!state.isAuthenticated) {
+          state.isLoading = true;
+        }
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.tokens = action.payload.tokens;
         state.isAuthenticated = true;
         state.isLoading = false;
+        const persisted = loadImpersonation();
+        if (persisted && persisted.originalUser.id === action.payload.user.id) {
+          state.originalUser = persisted.originalUser;
+          state.user = persisted.impersonatedUser;
+          state.isImpersonating = true;
+        }
       })
-      .addCase(initializeAuth.rejected, state => {
-        state.user = null;
-        state.tokens = null;
-        state.isAuthenticated = false;
+      .addCase(initializeAuth.rejected, (state) => {
         state.isLoading = false;
       });
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, startImpersonation, stopImpersonation } = authSlice.actions;
 export default authSlice.reducer;

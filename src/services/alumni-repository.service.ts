@@ -685,3 +685,38 @@ export async function deleteEvidenceDocument(
   const query = qs({ departmentId });
   return apiService.delete<any>(`${BASE}/evidence/${id}?${query}`);
 }
+
+// ─── Health / Metrics ─────────────────────────────────────────────────────────
+
+export interface TabMetric {
+  tabId: string;
+  tabLabel: string;
+  recordsUploaded: number;
+  pendingValidation: number;
+  pendingVerification: number;
+  verified: number;
+  approved: number;
+  rejected: number;
+  lastUpdated?: string;
+}
+
+export interface AlumniRepositoryHealth {
+  academicYear: string;
+  dataCompleteness: number;
+  evidenceCompleteness: number;
+  verificationPercent: number;
+  readinessScore: number;
+  tabWiseMetrics?: Record<string, TabMetric>;
+}
+
+/**
+ * GET /health?departmentId=X&academicYear=Y
+ * Fetches readiness scores and tab-wise metrics for Alumni Repository.
+ */
+export async function getAlumniRepositoryHealth(
+  academicYear: string = '2025-26',
+  departmentId: number
+): Promise<AlumniRepositoryHealth> {
+  const query = qs({ academicYear, departmentId });
+  return apiService.get<AlumniRepositoryHealth>(`${BASE}/health?${query}`);
+}

@@ -23,6 +23,14 @@ import {
   User,
 } from 'lucide-react';
 import { financeDocumentCategories } from '../finance-configs';
+import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+
+const uploadCategories: EvidenceCategory[] = financeDocumentCategories.map((c) => ({
+  id: c.id,
+  label: c.label,
+  description: `Upload financial evidence documents for ${c.label.toLowerCase()}`,
+  icon: <FileText className="h-4 w-4 text-primary" />,
+}));
 
 interface Document {
   id: string;
@@ -36,104 +44,38 @@ interface Document {
 
 const sampleDocuments: Record<string, Document[]> = {
   'budget-approvals': [
-    {
-      id: '1',
-      name: 'Budget_Approval_2024-25.pdf',
-      type: 'PDF',
-      uploadedBy: 'Priya Sharma',
-      uploadDate: '2024-04-15',
-      size: '2.4 MB',
-      status: 'Verified',
-    },
-    {
-      id: '2',
-      name: 'Revised_Budget_Q2_2024.pdf',
-      type: 'PDF',
-      uploadedBy: 'Priya Sharma',
-      uploadDate: '2024-09-20',
-      size: '1.8 MB',
-      status: 'Verified',
-    },
-    {
-      id: '3',
-      name: 'Department_Budget_Allocation.xlsx',
-      type: 'Excel',
-      uploadedBy: 'Finance Office',
-      uploadDate: '2024-04-01',
-      size: '856 KB',
-      status: 'Verified',
-    },
+    { id: '1', name: 'Budget_Approval_2024-25.pdf', type: 'PDF', uploadedBy: 'Priya Sharma', uploadDate: '2024-04-15', size: '2.4 MB', status: 'Verified' },
+    { id: '2', name: 'Revised_Budget_Q2_2024.pdf', type: 'PDF', uploadedBy: 'Priya Sharma', uploadDate: '2024-09-20', size: '1.8 MB', status: 'Verified' },
+    { id: '3', name: 'Department_Budget_Allocation.xlsx', type: 'Excel', uploadedBy: 'Finance Office', uploadDate: '2024-04-01', size: '856 KB', status: 'Verified' },
   ],
   'audit-certificates': [
-    {
-      id: '1',
-      name: 'Statutory_Audit_Report_2023-24.pdf',
-      type: 'PDF',
-      uploadedBy: 'M/s Sharma & Associates',
-      uploadDate: '2024-06-30',
-      size: '5.2 MB',
-      status: 'Verified',
-    },
-    {
-      id: '2',
-      name: 'Internal_Audit_Q2_2024.pdf',
-      type: 'PDF',
-      uploadedBy: 'Internal Audit Cell',
-      uploadDate: '2024-10-20',
-      size: '3.1 MB',
-      status: 'Under Review',
-    },
-    {
-      id: '3',
-      name: 'Tax_Audit_Report_2023-24.pdf',
-      type: 'PDF',
-      uploadedBy: 'M/s Patel Consultants',
-      uploadDate: '2024-09-15',
-      size: '4.5 MB',
-      status: 'Verified',
-    },
+    { id: '1', name: 'Statutory_Audit_Report_2023-24.pdf', type: 'PDF', uploadedBy: 'M/s Sharma & Associates', uploadDate: '2024-06-30', size: '5.2 MB', status: 'Verified' },
+    { id: '2', name: 'Internal_Audit_Q2_2024.pdf', type: 'PDF', uploadedBy: 'Internal Audit Cell', uploadDate: '2024-10-20', size: '3.1 MB', status: 'Under Review' },
+    { id: '3', name: 'Tax_Audit_Report_2023-24.pdf', type: 'PDF', uploadedBy: 'M/s Patel Consultants', uploadDate: '2024-09-15', size: '4.5 MB', status: 'Verified' },
   ],
   'funding-sanctions': [
-    {
-      id: '1',
-      name: 'DST_Sanction_Letter_AI_Project.pdf',
-      type: 'PDF',
-      uploadedBy: 'Research Office',
-      uploadDate: '2023-06-15',
-      size: '1.2 MB',
-      status: 'Verified',
-    },
-    {
-      id: '2',
-      name: 'AICTE_Grant_Sanction_2024.pdf',
-      type: 'PDF',
-      uploadedBy: 'Research Office',
-      uploadDate: '2022-04-01',
-      size: '980 KB',
-      status: 'Verified',
-    },
+    { id: '1', name: 'DST_Sanction_Letter_AI_Project.pdf', type: 'PDF', uploadedBy: 'Research Office', uploadDate: '2023-06-15', size: '1.2 MB', status: 'Verified' },
+    { id: '2', name: 'AICTE_Grant_Sanction_2024.pdf', type: 'PDF', uploadedBy: 'Research Office', uploadDate: '2022-04-01', size: '980 KB', status: 'Verified' },
   ],
 };
 
 export function FinanceDocumentsView() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
 
-  const currentDocs = selectedCategory ? sampleDocuments[selectedCategory] || [] : [];
+  const currentDocs = selectedCategory ? (sampleDocuments[selectedCategory] || []) : [];
   const filteredDocs = currentDocs.filter(doc =>
     doc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Verified':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case 'Pending':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'Under Review':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      default:
-        return '';
+      case 'Verified': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'Pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'Under Review': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      default: return '';
     }
   };
 
@@ -143,22 +85,21 @@ export function FinanceDocumentsView() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Supporting Documents</h3>
-            <p className="text-sm text-muted-foreground">
-              Manage financial documents organized by category
-            </p>
+            <p className="text-sm text-muted-foreground">Manage financial documents organized by category</p>
           </div>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
             <Upload className="h-4 w-4" />
             Upload Document
           </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {financeDocumentCategories.map(category => (
+          {financeDocumentCategories.map((category) => (
             <Card
               key={category.id}
               className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
               onClick={() => setSelectedCategory(category.id)}
+              onDoubleClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null); setUploadDialogOpen(true); }}
             >
               <CardContent className="p-5">
                 <div className="flex items-start gap-3">
@@ -169,14 +110,25 @@ export function FinanceDocumentsView() {
                     <p className="font-medium text-sm">{category.label}</p>
                     <p className="text-xs text-muted-foreground mt-1">{category.count} documents</p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {category.count}
-                  </Badge>
+                  <Badge variant="secondary" className="text-xs">{category.count}</Badge>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Evidence Upload Dialog */}
+        <EvidenceUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          title={uploadTarget?.label || 'Finance Supporting Documents'}
+          subtitle={
+            uploadTarget
+              ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+              : 'Upload financial supporting documents across all categories'
+          }
+          categories={uploadTarget ? [uploadTarget] : uploadCategories}
+        />
       </div>
     );
   }
@@ -186,14 +138,7 @@ export function FinanceDocumentsView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSelectedCategory(null);
-            setSearchQuery('');
-          }}
-        >
+        <Button variant="ghost" size="sm" onClick={() => { setSelectedCategory(null); setSearchQuery(''); }}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
@@ -209,11 +154,11 @@ export function FinanceDocumentsView() {
           <Input
             placeholder="Search documents..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Button size="sm" className="gap-2">
+        <Button size="sm" className="gap-2" onClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === selectedCategory) || null); setUploadDialogOpen(true); }}>
           <Upload className="h-4 w-4" />
           Upload
         </Button>
@@ -243,7 +188,7 @@ export function FinanceDocumentsView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocs.map(doc => (
+                {filteredDocs.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -252,9 +197,7 @@ export function FinanceDocumentsView() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {doc.type}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs">{doc.type}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -270,9 +213,7 @@ export function FinanceDocumentsView() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{doc.size}</TableCell>
                     <TableCell>
-                      <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>
-                        {doc.status}
-                      </Badge>
+                      <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>{doc.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -284,13 +225,25 @@ export function FinanceDocumentsView() {
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                  </TableRow>            ))}
+          </TableBody>
+        </Table>
+      )}
         </CardContent>
       </Card>
+
+      {/* Evidence Upload Dialog */}
+      <EvidenceUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        title={uploadTarget?.label || 'Finance Supporting Documents'}
+        subtitle={
+          uploadTarget
+            ? `Upload supporting documents for ${uploadTarget.label.toLowerCase()}`
+            : 'Upload financial supporting documents across all categories'
+        }
+        categories={uploadTarget ? [uploadTarget] : uploadCategories}
+      />
     </div>
   );
 }

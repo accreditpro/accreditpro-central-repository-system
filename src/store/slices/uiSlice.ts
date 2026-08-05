@@ -13,11 +13,13 @@ interface UIState {
   sidebarCollapsed: boolean;
   notificationPanelOpen: boolean;
   notifications: Notification[];
+  selectedAcademicYear: string;
 }
 
 const initialState: UIState = {
   sidebarCollapsed: false,
   notificationPanelOpen: false,
+  selectedAcademicYear: '2025-26',
   notifications: [
     {
       id: '1',
@@ -50,24 +52,24 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    toggleSidebar: state => {
+    toggleSidebar: (state) => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
     },
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
     },
-    toggleNotificationPanel: state => {
+    toggleNotificationPanel: (state) => {
       state.notificationPanelOpen = !state.notificationPanelOpen;
     },
     setNotificationPanelOpen: (state, action: PayloadAction<boolean>) => {
       state.notificationPanelOpen = action.payload;
     },
     markNotificationRead: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find(n => n.id === action.payload);
+      const notification = state.notifications.find((n) => n.id === action.payload);
       if (notification) notification.read = true;
     },
-    markAllNotificationsRead: state => {
-      state.notifications.forEach(n => (n.read = true));
+    markAllNotificationsRead: (state) => {
+      state.notifications.forEach((n) => (n.read = true));
     },
     addNotification: (state, action: PayloadAction<Omit<Notification, 'id' | 'createdAt'>>) => {
       state.notifications.unshift({
@@ -75,6 +77,9 @@ const uiSlice = createSlice({
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
       });
+    },
+    setSelectedAcademicYear: (state, action: PayloadAction<string>) => {
+      state.selectedAcademicYear = action.payload;
     },
   },
 });
@@ -87,5 +92,6 @@ export const {
   markNotificationRead,
   markAllNotificationsRead,
   addNotification,
+  setSelectedAcademicYear,
 } = uiSlice.actions;
 export default uiSlice.reducer;

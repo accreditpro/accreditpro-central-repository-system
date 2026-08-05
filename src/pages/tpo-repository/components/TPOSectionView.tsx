@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import { TPOTabConfig } from '../tpo-configs';
 import { TPOEvidenceDialog, TPOEvidence, EvidenceBadge, TPOEvidenceSectionConfig } from './TPOEvidenceDialog';
 import {
@@ -96,6 +97,7 @@ export function TPOSectionView({
   initialEvidenceMap,
   onRecordEvidenceChange,
 }: TPOSectionViewProps) {
+  const isReadOnly = useReadOnly();
   const [records, setRecords] = useState<RowWithEvidence[]>(() =>
     initialData.map((d, i) => {
       const id = getRecordId(d, i);
@@ -276,10 +278,12 @@ export function TPOSectionView({
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
-          <Button size="sm" className="gap-2" onClick={handleAddNew}>
-            <Plus className="h-4 w-4" />
-            Add Record
-          </Button>
+          {!isReadOnly && (
+            <Button size="sm" className="gap-2" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
+              Add Record
+            </Button>
+          )}
         </div>
       </div>
 
@@ -397,33 +401,39 @@ export function TPOSectionView({
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleOpenEvidence(row, idx)}
-                              title="Upload Documents"
-                            >
-                              <Upload className="h-3.5 w-3.5 text-amber-500" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEdit(row, idx)}
-                              title="Edit"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => handleDelete(idx)}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleOpenEvidence(row, idx)}
+                                  title="Upload Documents"
+                                >
+                                  <Upload className="h-3.5 w-3.5 text-amber-500" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleEdit(row, idx)}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive"
+                                  onClick={() => handleDelete(idx)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

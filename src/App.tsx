@@ -14,6 +14,7 @@ import { StudentDevelopmentCoordinatorLayout } from '@/layouts/StudentDevelopmen
 import { ExaminationOfficerLayout } from '@/layouts/ExaminationOfficerLayout';
 import HODLayout from '@/layouts/HODLayout';
 import PrincipalLayout from '@/layouts/PrincipalLayout';
+import IQACLayout from '@/layouts/IQACLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
@@ -28,6 +29,7 @@ import { InstitutionsPage } from '@/pages/admin/institutions/InstitutionsPage';
 import { CreateInstitutionPage } from '@/pages/admin/institutions/create/CreateInstitutionPage';
 import { TemplatesPage } from '@/pages/admin/templates/TemplatesPage';
 import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
+import { UsersPage } from '@/pages/admin/users/UsersPage';
 import { DepartmentPage } from '@/pages/department/DepartmentPage';
 import { AcademicRepositoryPage } from '@/pages/academic-repository/AcademicRepositoryPage';
 import { DepartmentRepositoryPage } from '@/pages/department-repository/DepartmentRepositoryPage';
@@ -38,6 +40,7 @@ import StudentDevelopmentRepositoryPage from '@/pages/student-development-reposi
 import { ExaminationRepositoryPage } from '@/pages/examination-repository/ExaminationRepositoryPage';
 import HODDashboardPage from '@/pages/hod-dashboard/HODDashboardPage';
 import PrincipalDashboardPage from '@/pages/principal-dashboard/PrincipalDashboardPage';
+import IQACDashboardPage from '@/pages/iqac-dashboard/IQACDashboardPage';
 import SupportingDocumentsPage from '@/pages/institution-admin/supporting-documents/SupportingDocumentsPage';
 import { AssessmentAndOBEPage } from '@/pages/institution-admin/assessment-and-obe/AssessmentAndOBEPage';
 
@@ -46,7 +49,7 @@ import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashb
 import { InstitutionProfilePage } from '@/pages/institution-admin/InstitutionProfilePage';
 import { AcademicStructurePage } from '@/pages/institution-admin/AcademicStructurePage';
 import { UserManagementPage } from '@/pages/institution-admin/UserManagementPage';
-import { GovernancePage } from '@/pages/institution-admin/governance/GovernancePage'
+import { GovernancePage } from '@/pages/institution-admin/AdminPages';
 import {
   RoleManagementPage,
   RepositoryMonitoringPage,
@@ -128,7 +131,7 @@ const AppRoutes = () => {
         <Route path="institutions/create" element={<CreateInstitutionPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="users" element={<PlaceholderPage title="User Management" />} />
+        <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<PlaceholderPage title="Platform Settings" />} />
         <Route path="reports" element={<PlaceholderPage title="Reports" />} />
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -228,6 +231,18 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<PrincipalDashboardPage />} />
+      </Route>
+
+      {/* IQAC Coordinator Routes */}
+      <Route
+        path="/app/iqac-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.IQAC_COORDINATOR]}>
+            <IQACLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<IQACDashboardPage />} />
       </Route>
 
       {/* App Routes - All authenticated users */}

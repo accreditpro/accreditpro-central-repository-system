@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
+import { useExitImpersonation } from '@/hooks/useExitImpersonation';
 import { User } from '@/types/auth.types';
 import {
   DropdownMenu,
@@ -10,14 +11,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, User as UserIcon, ChevronsUpDown } from 'lucide-react';
+import {
+  LogOut,
+  Settings,
+  User as UserIcon,
+  ChevronsUpDown,
+  ShieldCheck,
+  Lock,
+} from 'lucide-react';
 
 interface UserProfileMenuProps {
   user: User;
 }
 
 export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
-  const { logout } = useAuth();
+  const { logout, isImpersonating } = useAuth();
+  const handleExitImpersonation = useExitImpersonation();
 
   const getRoleBadge = (role: string) => {
     const roleLabels: Record<string, string> = {
@@ -33,10 +42,12 @@ export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 gap-2 px-2 hover:bg-accent">
+        <Button
+          variant="ghost"
+          className="h-8 gap-2 px-2 hover:bg-accent"
+        >
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-[10px] font-semibold text-primary-foreground">
-            {user.firstName[0]}
-            {user.lastName[0]}
+            {user.firstName[0]}{user.lastName[0]}
           </div>
           <span className="hidden sm:inline-block text-sm font-medium max-w-[100px] truncate">
             {user.firstName}
@@ -49,42 +60,60 @@ export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-sm font-semibold text-primary-foreground">
-                {user.firstName[0]}
-                {user.lastName[0]}
+                {user.firstName[0]}{user.lastName[0]}
               </div>
               <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium">
-                  {user.firstName} {user.lastName}
-                </p>
+                <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
             </div>
-            <div className="rounded-md bg-muted/50 px-2 py-1">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                {getRoleBadge(user.role)}
-              </p>
-            </div>
+            {isImpersonating ? (
+              <div className="rounded-md border border-amber-300/50 bg-amber-500/10 px-2 py-1 flex items-center gap-1.5">
+                <Lock className="h-3 w-3 text-amber-600" />
+                <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  Read-only preview
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/50 px-2 py-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {getRoleBadge(user.role)}
+                </p>
+              </div>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer">
-            <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        {!isImpersonating && (
+          <DropdownMenuGroup>
+            <DropdownMenuItem className="cursor-pointer">
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="cursor-pointer text-destructive focus:text-destructive"
-          onClick={logout}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
+        {isImpersonating ? (
+          <DropdownMenuItem
+            className="cursor-pointer text-amber-700 focus:text-amber-700 dark:text-amber-400"
+            onClick={handleExitImpersonation}
+          >
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            <span>Exit impersonation</span>
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem
+            className="cursor-pointer text-destructive focus:text-destructive"
+            onClick={logout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

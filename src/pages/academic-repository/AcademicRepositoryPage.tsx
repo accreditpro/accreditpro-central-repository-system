@@ -13,7 +13,7 @@ import { RepositoryKPICards } from './components/RepositoryKPICards';
 import { RepositoryTabContent } from './components/RepositoryTabContent';
 import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { academicRepositoryTabs, repositoryMetrics } from './repository-config';
-import { GraduationCap, BookOpen, FileText, Calendar, Award } from 'lucide-react';
+import { GraduationCap, BookOpen, FileText, Calendar, Award, Clock } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -21,6 +21,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
   Calendar,
   Award,
+  Clock,
 };
 
 export const AcademicRepositoryPage = () => {
