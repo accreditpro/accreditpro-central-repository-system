@@ -15,6 +15,7 @@ import {
 import { EvidencePreviewDialog, EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import { useEvidenceStore, ExaminationEvidenceFile } from '../evidence-store';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 
 // Module folder definitions
 const MODULE_FOLDERS = [
@@ -82,6 +83,7 @@ interface EvidenceFileCardProps {
 }
 
 function EvidenceFileCard({ file, onRemove, onPreview }: EvidenceFileCardProps) {
+  const isReadOnly = useReadOnly();
   const isImage = file.type.startsWith('image/');
 
   return (
@@ -142,15 +144,17 @@ function EvidenceFileCard({ file, onRemove, onPreview }: EvidenceFileCardProps) 
         >
           <Download className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={() => onRemove(file.id)}
-          title="Delete"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {!isReadOnly && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => onRemove(file.id)}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </motion.div>
   );

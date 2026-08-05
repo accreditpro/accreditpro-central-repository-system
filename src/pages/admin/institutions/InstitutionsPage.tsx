@@ -34,7 +34,12 @@ import {
 } from '@/types/institution.types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { MoreHorizontal, Eye, Pencil, Power, PowerOff, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Power, PowerOff, Trash2, UserCog } from 'lucide-react';
+import { InstitutionLogo } from './components/InstitutionLogo';
+import { StatusBadge } from './components/StatusBadge';
+import { InstitutionDetailsDialog } from './components/InstitutionDetailsDialog';
+import { EditInstitutionDialog } from './components/EditInstitutionDialog';
+import { ImpersonateDialog } from './components/ImpersonateDialog';
 
 export const InstitutionsPage = () => {
   const navigate = useNavigate();
@@ -54,6 +59,22 @@ export const InstitutionsPage = () => {
     repositoryCompletion: 'all',
   });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [viewDialog, setViewDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [deactivateDialog, setDeactivateDialog] = useState<{ open: boolean; institution: Institution | null }>({
+    open: false,
+    institution: null,
+  });
+  const [impersonateDialog, setImpersonateDialog] = useState<{ open: boolean; institution: Institution | null }>({
     open: false,
     institution: null,
   });
@@ -112,19 +133,8 @@ export const InstitutionsPage = () => {
     }
   };
 
-  const getStatusBadge = (status: InstitutionStatus) => {
-    const config: Record<InstitutionStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      active: { label: 'Active', variant: 'default' },
-      inactive: { label: 'Inactive', variant: 'secondary' },
-      pending: { label: 'Pending', variant: 'outline' },
-      suspended: { label: 'Suspended', variant: 'destructive' },
-    };
-    const { label, variant } = config[status];
-    return (
-      <Badge variant={variant} className="text-[10px] font-medium capitalize">
-        {label}
-      </Badge>
-    );
+  const handleImpersonate = (institution: Institution) => {
+    setImpersonateDialog({ open: true, institution });
   };
 
   const columns: ColumnDef<Institution>[] = [
@@ -132,13 +142,7 @@ export const InstitutionsPage = () => {
       id: 'logo',
       header: '',
       className: 'w-12',
-      cell: (row) => (
-        <img
-          src={row.logo}
-          alt={row.name}
-          className="h-8 w-8 rounded-lg object-cover"
-        />
-      ),
+      cell: (row) => <InstitutionLogo name={row.name} logo={row.logo} size="sm" />,
     },
     {
       id: 'name',
@@ -221,7 +225,7 @@ export const InstitutionsPage = () => {
       accessorKey: 'status',
       sortable: true,
       className: 'w-[100px]',
-      cell: (row) => getStatusBadge(row.status),
+      cell: (row) => <StatusBadge status={row.status} />,
     },
     {
       id: 'actions',
@@ -236,21 +240,48 @@ export const InstitutionsPage = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+            <DropdownMenuItem
+              className="text-xs gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewDialog({ open: true, institution: row });
+              }}
+            >
               <Eye className="h-3.5 w-3.5" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs gap-2 cursor-pointer">
+            <DropdownMenuItem
+              className="text-xs gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditDialog({ open: true, institution: row });
+              }}
+            >
               <Pencil className="h-3.5 w-3.5" />
               Edit
             </DropdownMenuItem>
+            {row.status === 'active' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-xs gap-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleImpersonate(row);
+                  }}
+                >
+                  <UserCog className="h-3.5 w-3.5" />
+                  Impersonate
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             {row.status === 'active' ? (
               <DropdownMenuItem
                 className="text-xs gap-2 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleStatusChange(row, 'inactive');
+                  setDeactivateDialog({ open: true, institution: row });
                 }}
               >
                 <PowerOff className="h-3.5 w-3.5" />
@@ -358,6 +389,69 @@ export const InstitutionsPage = () => {
           onPageSizeChange={(pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 }))}
         />
       )}
+
+      {/* View Details Dialog */}
+      <InstitutionDetailsDialog
+        institution={viewDialog.institution}
+        open={viewDialog.open}
+        onOpenChange={(open) => setViewDialog({ open, institution: open ? viewDialog.institution : null })}
+        onEdit={(institution) => setEditDialog({ open: true, institution })}
+        onImpersonate={handleImpersonate}
+      />
+
+      {/* Impersonate Dialog */}
+      <ImpersonateDialog
+        institution={impersonateDialog.institution}
+        open={impersonateDialog.open}
+        onOpenChange={(open) =>
+          setImpersonateDialog({ open, institution: open ? impersonateDialog.institution : null })
+        }
+      />
+
+      {/* Edit Dialog */}
+      <EditInstitutionDialog
+        institution={editDialog.institution}
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ open, institution: open ? editDialog.institution : null })}
+        onSaved={() => fetchInstitutions()}
+      />
+
+      {/* Deactivate Confirmation Dialog */}
+      <AlertDialog
+        open={deactivateDialog.open}
+        onOpenChange={(open) =>
+          setDeactivateDialog({ open, institution: open ? deactivateDialog.institution : null })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PowerOff className="h-4 w-4 text-destructive" />
+              Deactivate Institution
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate <strong>{deactivateDialog.institution?.name}</strong>?
+              Deactivated institutions will no longer be able to log in to the platform. You can
+              reactivate them at any time from this page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deactivateDialog.institution) {
+                  handleStatusChange(deactivateDialog.institution, 'inactive');
+                }
+                setDeactivateDialog({ open: false, institution: null });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <PowerOff className="h-3.5 w-3.5 mr-1.5" />
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

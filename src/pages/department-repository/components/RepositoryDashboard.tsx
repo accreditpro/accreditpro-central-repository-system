@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { dashboardKPIs, repositoryHealth, uploadHistory, allRepositoryConfigs, departmentInfo } from '../repository-configs';
 import { RepositoryModule } from '../types';
+import { PendingIQACObservations } from './PendingIQACObservations';
 import {
   GraduationCap,
   Users,
@@ -318,6 +319,15 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
           </Card>
         </motion.div>
       </div>
+
+      {/* My Pending IQAC Observations */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.42 }}
+      >
+        <PendingIQACObservations />
+      </motion.div>
 
       {/* Readiness Analytics */}
       <motion.div

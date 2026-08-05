@@ -32,8 +32,10 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  Eye,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import {
   addInitiative,
   selectInitiatives,
@@ -88,6 +90,7 @@ const DEFAULT_FORM: InitiativeInput = {
 
 export function ContinuousImprovement() {
   const dispatch = useAppDispatch();
+  const { isImpersonating } = useAuth();
   const initiatives = useAppSelector(selectInitiatives);
 
   const [search, setSearch] = useState('');
@@ -148,9 +151,18 @@ export function ContinuousImprovement() {
             Track institutional quality initiatives — curriculum, faculty, labs, research, industry & infrastructure.
           </p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Initiative
-        </Button>
+        {isImpersonating ? (
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-300/50 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+          >
+            <Eye className="h-3 w-3" /> Read-only preview
+          </Badge>
+        ) : (
+          <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Initiative
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -197,22 +209,28 @@ export function ContinuousImprovement() {
                       <Badge variant="secondary" className="text-[9px]">{init.academicYear}</Badge>
                     </div>
                   </div>
-                  <Select
-                    value={init.status}
-                    onValueChange={(v) => {
-                      dispatch(updateInitiativeStatus({ id: init.id, status: v as InitiativeStatus }));
-                      toast.success(`Initiative marked ${STATUS_META[v as InitiativeStatus].label}.`);
-                    }}
-                  >
-                    <SelectTrigger className="h-7 w-[120px] text-[10px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STATUS_META).map(([value, m]) => (
-                        <SelectItem key={value} value={value} className="text-xs">{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isImpersonating ? (
+                    <Badge variant="outline" className={cn('text-[9px] gap-1', meta.badge)}>
+                      <StatusIcon className="h-3 w-3" /> {meta.label}
+                    </Badge>
+                  ) : (
+                    <Select
+                      value={init.status}
+                      onValueChange={(v) => {
+                        dispatch(updateInitiativeStatus({ id: init.id, status: v as InitiativeStatus }));
+                        toast.success(`Initiative marked ${STATUS_META[v as InitiativeStatus].label}.`);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 w-[120px] text-[10px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS_META).map(([value, m]) => (
+                          <SelectItem key={value} value={value} className="text-xs">{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <p className="text-xs text-muted-foreground leading-relaxed mt-3">{init.description}</p>
@@ -236,17 +254,19 @@ export function ContinuousImprovement() {
                 )}
 
                 <div className="mt-3 flex items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-[10px] gap-1"
-                    onClick={() => {
-                      setEditing(init);
-                      setEditOutcome(init.outcome ?? '');
-                    }}
-                  >
-                    <Target className="h-3 w-3" /> Update Outcome
-                  </Button>
+                  {!isImpersonating && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[10px] gap-1"
+                      onClick={() => {
+                        setEditing(init);
+                        setEditOutcome(init.outcome ?? '');
+                      }}
+                    >
+                      <Target className="h-3 w-3" /> Update Outcome
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

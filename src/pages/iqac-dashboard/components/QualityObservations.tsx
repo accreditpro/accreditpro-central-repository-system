@@ -33,6 +33,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import {
   addObservation,
   deleteObservation,
@@ -102,6 +103,7 @@ const DEFAULT_FORM: ObservationInput = {
 
 export function QualityObservations() {
   const dispatch = useAppDispatch();
+  const { isImpersonating } = useAuth();
   const observations = useAppSelector(selectObservations);
 
   const [search, setSearch] = useState('');
@@ -199,9 +201,18 @@ export function QualityObservations() {
             IQAC does not approve evidence — it raises observations and tracks them to closure.
           </p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Raise Observation
-        </Button>
+        {isImpersonating ? (
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-300/50 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+          >
+            <Eye className="h-3 w-3" /> Read-only preview
+          </Badge>
+        ) : (
+          <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> Raise Observation
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -294,32 +305,40 @@ export function QualityObservations() {
                       <Badge variant="outline" className="text-[9px]">{obs.framework}</Badge>
                     </td>
                     <td className="p-3 text-center">
-                      <Select value={obs.priority} onValueChange={(v) => changePriority(obs, v as ObservationPriority)}>
-                        <SelectTrigger className="h-6 w-[90px] text-[10px] border-0 bg-transparent hover:bg-muted/40">
-                          <PriorityBadge priority={obs.priority} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRIORITY_OPTIONS.map((p) => (
-                            <SelectItem key={p.value} value={p.value} className="text-xs">
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {isImpersonating ? (
+                        <PriorityBadge priority={obs.priority} />
+                      ) : (
+                        <Select value={obs.priority} onValueChange={(v) => changePriority(obs, v as ObservationPriority)}>
+                          <SelectTrigger className="h-6 w-[90px] text-[10px] border-0 bg-transparent hover:bg-muted/40">
+                            <PriorityBadge priority={obs.priority} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRIORITY_OPTIONS.map((p) => (
+                              <SelectItem key={p.value} value={p.value} className="text-xs">
+                                {p.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </td>
                     <td className="p-3 text-center">
-                      <Select value={obs.status} onValueChange={(v) => changeStatus(obs, v as ObservationStatus)}>
-                        <SelectTrigger className="h-6 w-[110px] text-[10px] border-0 bg-transparent hover:bg-muted/40">
-                          <ObsStatusBadge status={obs.status} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_OPTIONS.map((s) => (
-                            <SelectItem key={s.value} value={s.value} className="text-xs">
-                              {s.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {isImpersonating ? (
+                        <ObsStatusBadge status={obs.status} />
+                      ) : (
+                        <Select value={obs.status} onValueChange={(v) => changeStatus(obs, v as ObservationStatus)}>
+                          <SelectTrigger className="h-6 w-[110px] text-[10px] border-0 bg-transparent hover:bg-muted/40">
+                            <ObsStatusBadge status={obs.status} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map((s) => (
+                              <SelectItem key={s.value} value={s.value} className="text-xs">
+                                {s.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </td>
                     <td className="p-3 text-center">
                       <span className={cn('font-medium', obs.dueDate < new Date().toISOString().slice(0, 10) && obs.status !== 'closed' && obs.status !== 'resolved' ? 'text-red-600' : '')}>
@@ -331,7 +350,7 @@ export function QualityObservations() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewObs(obs)} title="View details">
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        {obs.status !== 'closed' && (
+                        {!isImpersonating && obs.status !== 'closed' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -347,14 +366,16 @@ export function QualityObservations() {
                             {nextStatus(obs) === 'closed' ? 'Close' : OBS_STATUS_META[nextStatus(obs)].label}
                           </Button>
                         )}
-                        {obs.status === 'resolved' && (
+                        {!isImpersonating && obs.status === 'resolved' && (
                           <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1" onClick={() => closeObservation(obs)}>
                             <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Close
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600" onClick={() => remove(obs.id)} title="Delete">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {!isImpersonating && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600" onClick={() => remove(obs.id)} title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
@@ -519,7 +540,7 @@ export function QualityObservations() {
               )}
             </div>
           )}
-          {viewObs && viewObs.status !== 'closed' && (
+          {viewObs && viewObs.status !== 'closed' && !isImpersonating && (
             <DialogFooter>
               <Button
                 size="sm"

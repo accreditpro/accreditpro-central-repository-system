@@ -20,41 +20,81 @@ import {
   CheckCircle2,
   Building2,
   MapPin,
-  GraduationCap,
-  Calendar,
   UserCog,
-  Shield,
-  User,
   ClipboardCheck,
+  Copy,
+  Mail,
+  User,
+  KeyRound,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { institutionService } from '@/services/institution.service';
+import { InstitutionCategory } from '@/types/institution.types';
 import {
   CreateInstitutionFormData,
   createInstitutionSchema,
   basicInfoSchema,
   addressSchema,
-  academicConfigSchema,
-  academicYearsSchema,
   adminUserSchema,
-  iqacCoordinatorSchema,
-  principalSchema,
   STEPS,
-  DEFAULT_PROGRAMS,
-  DEFAULT_DEPARTMENTS,
-  DEFAULT_ACADEMIC_YEARS,
+  CATEGORY_MAP,
 } from './types';
+import { StepStepper } from './StepStepper';
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { AddressStep } from './steps/AddressStep';
-import { AcademicConfigStep } from './steps/AcademicConfigStep';
-import { AcademicYearsStep } from './steps/AcademicYearsStep';
 import { UserStep } from './steps/UserStep';
 import { ReviewStep } from './steps/ReviewStep';
 
-// Mock API
-const mockCreateInstitution = async (_data: CreateInstitutionFormData): Promise<{ success: boolean; id: string }> => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  return { success: true, id: `inst-${Date.now()}` };
+interface CreatedInstitution {
+  id: string;
+  name: string;
+  admin: {
+    name: string;
+    email: string;
+    password: string;
+  };
+}
+
+// Mock API - creates the institution via the shared service so it appears in the list
+const mockCreateInstitution = async (data: CreateInstitutionFormData): Promise<CreatedInstitution> => {
+  const generatedPassword = `Acc@${Math.random().toString(36).slice(2, 8)}`;
+  const created = await institutionService.createInstitution({
+    name: data.basicInfo.name,
+    code: data.basicInfo.code,
+    category: CATEGORY_MAP[data.basicInfo.category] || (data.basicInfo.category as InstitutionCategory),
+    email: data.basicInfo.email,
+    phone: data.basicInfo.phone,
+    website: data.basicInfo.website || undefined,
+    state: data.address.state,
+    city: data.address.district,
+    addressLine1: data.address.addressLine1,
+    addressLine2: data.address.addressLine2,
+    district: data.address.district,
+    pincode: data.address.pincode,
+    admin: {
+      name: data.admin.name,
+      email: data.admin.email,
+      mobile: data.admin.mobile,
+    },
+  });
+  return {
+    id: created.id,
+    name: created.name,
+    admin: {
+      name: data.admin.name,
+      email: data.admin.email,
+      password: generatedPassword,
+    },
+  };
+};
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  } catch {
+    toast.error('Failed to copy to clipboard');
+  }
 };
 
 export const CreateInstitutionPage = () => {
@@ -62,17 +102,14 @@ export const CreateInstitutionPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [createdInstitution, setCreatedInstitution] = useState<CreatedInstitution | null>(null);
 
   const form = useForm<CreateInstitutionFormData>({
     resolver: zodResolver(createInstitutionSchema),
     defaultValues: {
       basicInfo: { name: '', code: '', category: '', email: '', phone: '', website: '', logo: '' },
       address: { addressLine1: '', addressLine2: '', state: '', district: '', pincode: '' },
-      academicConfig: { programs: DEFAULT_PROGRAMS, departments: DEFAULT_DEPARTMENTS },
-      academicYears: { academicYears: DEFAULT_ACADEMIC_YEARS },
-      admin: { name: '', email: '', mobile: '', autoGeneratePassword: true },
-      iqacCoordinator: { name: '', email: '', mobile: '', autoGeneratePassword: true },
-      principal: { name: '', email: '', mobile: '', autoGeneratePassword: true },
+      admin: { name: '', email: '', mobile: '' },
     },
     mode: 'onChange',
   });
@@ -80,22 +117,14 @@ export const CreateInstitutionPage = () => {
   const stepSchemas = [
     basicInfoSchema,
     addressSchema,
-    academicConfigSchema,
-    academicYearsSchema,
     adminUserSchema,
-    iqacCoordinatorSchema,
-    principalSchema,
     null, // Review step - no validation
   ];
 
   const stepFieldPrefixes: (keyof CreateInstitutionFormData | null)[] = [
     'basicInfo',
     'address',
-    'academicConfig',
-    'academicYears',
     'admin',
-    'iqacCoordinator',
-    'principal',
     null,
   ];
 
@@ -123,7 +152,7 @@ export const CreateInstitutionPage = () => {
   const handleNext = async () => {
     const isValid = await validateCurrentStep();
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 8));
+      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
     }
   };
 
@@ -141,7 +170,8 @@ export const CreateInstitutionPage = () => {
     setIsSubmitting(true);
     try {
       const data = form.getValues();
-      await mockCreateInstitution(data);
+      const result = await mockCreateInstitution(data);
+      setCreatedInstitution(result);
       setShowSuccessDialog(true);
     } catch {
       toast.error('Failed to create institution. Please try again.');
@@ -153,12 +183,8 @@ export const CreateInstitutionPage = () => {
   const stepIcons = [
     <Building2 key="1" className="h-4 w-4" />,
     <MapPin key="2" className="h-4 w-4" />,
-    <GraduationCap key="3" className="h-4 w-4" />,
-    <Calendar key="4" className="h-4 w-4" />,
-    <UserCog key="5" className="h-4 w-4" />,
-    <Shield key="6" className="h-4 w-4" />,
-    <User key="7" className="h-4 w-4" />,
-    <ClipboardCheck key="8" className="h-4 w-4" />,
+    <UserCog key="3" className="h-4 w-4" />,
+    <ClipboardCheck key="4" className="h-4 w-4" />,
   ];
 
   const renderStep = () => {
@@ -168,37 +194,14 @@ export const CreateInstitutionPage = () => {
       case 2:
         return <AddressStep />;
       case 3:
-        return <AcademicConfigStep />;
-      case 4:
-        return <AcademicYearsStep />;
-      case 5:
         return (
           <UserStep
             title="Institution Admin"
             description="Set up the institution administrator account"
-            fieldPrefix="admin"
             icon={<UserCog className="h-5 w-5 text-primary" />}
           />
         );
-      case 6:
-        return (
-          <UserStep
-            title="IQAC Coordinator"
-            description="Set up the IQAC coordinator account"
-            fieldPrefix="iqacCoordinator"
-            icon={<Shield className="h-5 w-5 text-primary" />}
-          />
-        );
-      case 7:
-        return (
-          <UserStep
-            title="Principal"
-            description="Set up the principal account"
-            fieldPrefix="principal"
-            icon={<User className="h-5 w-5 text-primary" />}
-          />
-        );
-      case 8:
+      case 4:
         return <ReviewStep />;
       default:
         return null;
@@ -206,7 +209,7 @@ export const CreateInstitutionPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -226,76 +229,23 @@ export const CreateInstitutionPage = () => {
       </div>
 
       {/* Stepper */}
-      <div className="relative">
-        <div className="flex items-center justify-between overflow-x-auto pb-2">
-          {STEPS.map((step, index) => {
-            const isCompleted = currentStep > step.id;
-            const isCurrent = currentStep === step.id;
-
-            return (
-              <div
-                key={step.id}
-                className={cn(
-                  'flex flex-col items-center gap-1.5 min-w-[70px] relative',
-                  index < STEPS.length - 1 && 'flex-1'
-                )}
-              >
-                {/* Connector line */}
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'absolute top-4 left-[calc(50%+16px)] right-[calc(-50%+16px)] h-0.5',
-                      isCompleted ? 'bg-primary' : 'bg-border'
-                    )}
-                  />
-                )}
-
-                {/* Step circle */}
-                <button
-                  type="button"
-                  className={cn(
-                    'relative z-10 flex items-center justify-center h-8 w-8 rounded-full border-2 transition-all',
-                    isCompleted && 'bg-primary border-primary text-primary-foreground',
-                    isCurrent && 'border-primary bg-primary/10 text-primary',
-                    !isCompleted && !isCurrent && 'border-muted-foreground/30 text-muted-foreground/50'
-                  )}
-                  onClick={() => {
-                    if (isCompleted) setCurrentStep(step.id);
-                  }}
-                  disabled={!isCompleted && !isCurrent}
-                >
-                  {isCompleted ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    stepIcons[index]
-                  )}
-                </button>
-
-                {/* Label */}
-                <span
-                  className={cn(
-                    'text-[10px] font-medium text-center leading-tight',
-                    isCurrent ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  {step.title}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <StepStepper
+        steps={STEPS}
+        currentStep={currentStep}
+        icons={stepIcons}
+        onStepClick={(id) => setCurrentStep(id)}
+      />
 
       {/* Form Content */}
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()}>
-          <div className="rounded-xl border bg-card p-6 min-h-[380px]">
+          <div className="w-full rounded-xl border bg-card p-6 md:p-8 min-h-[380px]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
                 {renderStep()}
@@ -304,7 +254,7 @@ export const CreateInstitutionPage = () => {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between pt-6">
             <Button
               type="button"
               variant="outline"
@@ -317,7 +267,7 @@ export const CreateInstitutionPage = () => {
             </Button>
 
             <div className="flex items-center gap-2">
-              {currentStep < 8 ? (
+              {currentStep < STEPS.length ? (
                 <Button
                   type="button"
                   onClick={handleNext}
@@ -360,10 +310,88 @@ export const CreateInstitutionPage = () => {
             </div>
             <DialogTitle className="text-center">Institution Created Successfully!</DialogTitle>
             <DialogDescription className="text-center">
-              The institution has been created and the admin accounts have been set up.
-              Login credentials will be sent to the respective email addresses.
+              <strong>{createdInstitution?.name}</strong> has been registered. Share the institution
+              admin login details below with the administrator.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Admin Credentials */}
+          {createdInstitution && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Admin Name
+                  </p>
+                  <p className="text-sm font-medium truncate">{createdInstitution.admin.name}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  aria-label="Copy admin name"
+                  title="Copy admin name"
+                  onClick={() => copyToClipboard(createdInstitution.admin.name, 'Admin name')}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Login Email
+                  </p>
+                  <p className="text-sm font-medium truncate">{createdInstitution.admin.email}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  aria-label="Copy login email"
+                  title="Copy login email"
+                  onClick={() => copyToClipboard(createdInstitution.admin.email, 'Email')}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <KeyRound className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Password
+                  </p>
+                  <p className="text-sm font-medium truncate font-mono">
+                    {createdInstitution.admin.password}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  aria-label="Copy password"
+                  title="Copy password"
+                  onClick={() => copyToClipboard(createdInstitution.admin.password, 'Password')}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground">
+                Credentials are shown only once. Save them before closing this window.
+              </p>
+            </div>
+          )}
+
           <DialogFooter className="sm:justify-center gap-2">
             <Button
               variant="outline"
@@ -377,6 +405,7 @@ export const CreateInstitutionPage = () => {
             <Button
               onClick={() => {
                 setShowSuccessDialog(false);
+                setCreatedInstitution(null);
                 form.reset();
                 setCurrentStep(1);
               }}

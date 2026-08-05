@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import { RepositoryTabConfig } from '../types';
 import {
   evidenceDocuments,
@@ -165,6 +166,7 @@ const generateMockData = (tabConfig: RepositoryTabConfig): Record<string, string
 };
 
 export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) => {
+  const isReadOnly = useReadOnly();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [tableData, setTableData] = useState<Record<string, string>[]>(() => generateMockData(tabConfig));
   const [editingRow, setEditingRow] = useState<number | null>(null);
@@ -319,14 +321,16 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                 <Download className="h-3.5 w-3.5 mr-1.5" /> Download Template
               </Button>
             )}
-            {tabConfig.fields.length > 0 && (
+            {!isReadOnly && tabConfig.fields.length > 0 && (
               <Button size="sm" className="text-xs h-8" onClick={() => setShowUploadDialog(true)}>
                 <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CSV
               </Button>
             )}
-            <Button variant="outline" size="sm" className="text-xs h-8">
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Record
-            </Button>
+            {!isReadOnly && (
+              <Button variant="outline" size="sm" className="text-xs h-8">
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Record
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -401,12 +405,18 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                         ))}
                         <TableCell className="text-center p-1.5">
                           <div className="flex items-center justify-center gap-0">
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditRow(index)}>
-                              <Pencil className="h-3 w-3 text-blue-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeleteRow(index)}>
-                              <Trash2 className="h-3 w-3 text-red-600" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[9px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditRow(index)}>
+                                  <Pencil className="h-3 w-3 text-blue-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeleteRow(index)}>
+                                  <Trash2 className="h-3 w-3 text-red-600" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -479,7 +489,9 @@ export const RepositoryTabContent = ({ tabConfig }: RepositoryTabContentProps) =
                       <div className="flex items-center justify-end gap-0.5">
                         <Button variant="ghost" size="icon" className="h-6 w-6"><Eye className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6"><DownloadCloud className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6"><Replace className="h-3 w-3" /></Button>
+                        {!isReadOnly && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6"><Replace className="h-3 w-3" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

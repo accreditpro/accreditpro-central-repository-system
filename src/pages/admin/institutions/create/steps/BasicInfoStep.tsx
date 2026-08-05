@@ -81,19 +81,19 @@ export const BasicInfoStep = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Basic Information</h2>
         <p className="text-sm text-muted-foreground">Enter the institution&apos;s basic details</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
         {/* Institution Name */}
         <FormField
           control={form.control}
           name="basicInfo.name"
           render={({ field }) => (
-            <FormItem className="md:col-span-2">
+            <FormItem className="md:col-span-2 space-y-4">
               <FormLabel className="flex items-center gap-2 text-sm">
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 Institution Name <span className="text-destructive">*</span>
@@ -111,7 +111,7 @@ export const BasicInfoStep = () => {
           control={form.control}
           name="basicInfo.code"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="text-sm">
                 Institution Code <span className="text-destructive">*</span>
               </FormLabel>
@@ -133,7 +133,7 @@ export const BasicInfoStep = () => {
           control={form.control}
           name="basicInfo.category"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="text-sm">
                 Category <span className="text-destructive">*</span>
               </FormLabel>
@@ -159,7 +159,7 @@ export const BasicInfoStep = () => {
           control={form.control}
           name="basicInfo.email"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="flex items-center gap-2 text-sm">
                 <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                 Email <span className="text-destructive">*</span>
@@ -177,7 +177,7 @@ export const BasicInfoStep = () => {
           control={form.control}
           name="basicInfo.phone"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="flex items-center gap-2 text-sm">
                 <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                 Phone <span className="text-destructive">*</span>
@@ -195,7 +195,7 @@ export const BasicInfoStep = () => {
           control={form.control}
           name="basicInfo.website"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-4">
               <FormLabel className="flex items-center gap-2 text-sm">
                 <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                 Website
@@ -215,9 +215,9 @@ export const BasicInfoStep = () => {
           render={() => (
             <FormItem>
               <FormLabel className="text-sm">Logo</FormLabel>
-              <div className="flex items-center gap-4">
+              <div className="flex w-full items-center gap-4">
                 {logoPreview ? (
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <img src={logoPreview} alt="Logo" className="h-12 w-12 rounded-lg border object-cover" />
                     <button
                       type="button"
@@ -228,12 +228,18 @@ export const BasicInfoStep = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="h-12 w-12 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                  <div className="h-12 w-12 shrink-0 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                     <ImageIcon className="h-4 w-4 text-muted-foreground/50" />
                   </div>
                 )}
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowUploadDialog(true)} className="h-8 text-xs">
-                  <Upload className="h-3 w-3 mr-1.5" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUploadDialog(true)}
+                  className="h-9 flex-1 text-xs gap-1.5"
+                >
+                  <Upload className="h-3.5 w-3.5" />
                   Upload Logo
                 </Button>
               </div>

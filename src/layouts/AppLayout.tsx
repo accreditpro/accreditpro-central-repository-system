@@ -4,6 +4,7 @@ import { useAppSelector } from '@/store';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
+import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,6 +27,9 @@ export const AppLayout = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Impersonation banner (read-only preview by a Super Admin) */}
+      <ImpersonationBanner />
+
       {/* Desktop Sidebar */}
       <aside
         className={cn(

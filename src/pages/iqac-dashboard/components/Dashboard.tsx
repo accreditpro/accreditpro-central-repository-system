@@ -27,6 +27,7 @@ import {
 } from '../iqac-data';
 import { StatCard, statusOf, StatusBadge, ReadinessBar, scoreTone, PRIORITY_META } from './common';
 import { InstitutionalCharts } from './InstitutionalCharts';
+import { VerificationOverview } from './VerificationOverview';
 
 function ReadinessGauge({ value, label }: { value: number; label: string }) {
   return (
@@ -81,6 +82,9 @@ export function Dashboard() {
           <StatCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone} iconBg={kpi.bg} />
         ))}
       </div>
+
+      {/* Evidence Verification Overview */}
+      <VerificationOverview />
 
       {/* Institution Readiness Gauge + Department Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

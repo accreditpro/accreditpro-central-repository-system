@@ -1,6 +1,12 @@
 export type InstitutionStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 export type InstitutionCategory = 'Engineering' | 'Medical' | 'Arts & Science' | 'Management' | 'Law' | 'Education' | 'Pharmacy';
 
+export interface InstitutionAdmin {
+  name: string;
+  email: string;
+  mobile: string;
+}
+
 export interface Institution {
   id: string;
   name: string;
@@ -10,6 +16,14 @@ export interface Institution {
   city: string;
   status: InstitutionStatus;
   logo: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  district?: string;
+  pincode?: string;
+  admin?: InstitutionAdmin;
   usersCount: number;
   repositoryCompletion: number;
   documentsUploaded: number;

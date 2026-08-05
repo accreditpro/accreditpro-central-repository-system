@@ -46,6 +46,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import { tpoTabConfigs } from './tpo-configs';
 import { TPODashboard } from './components/TPODashboard';
 import { TPODocumentsView } from './components/TPODocumentsView';
@@ -81,6 +82,7 @@ const navItems: NavItem[] = [
 ];
 
 export default function TPORepositoryPage() {
+  const isReadOnly = useReadOnly();
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -268,17 +270,21 @@ export default function TPORepositoryPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="h-4 w-4" />
-              CSV Upload
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button size="sm" className="gap-2" onClick={handleAddNew}>
-              <Plus className="h-4 w-4" />
-              Add Record
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  CSV Upload
+                </Button>
+                <Button size="sm" className="gap-2" onClick={handleAddNew}>
+                  <Plus className="h-4 w-4" />
+                  Add Record
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -335,12 +341,18 @@ export default function TPORepositoryPage() {
                         ))}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

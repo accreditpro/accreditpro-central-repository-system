@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { EvidencePreviewDialog, type EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import { addDocument, addDocumentVersion, selectDocuments } from '@/store/slices/iqacSlice';
 import { DOC_FOLDERS, IQAC_NAME } from '../iqac-data';
 import type { IQACDocument, IQACDocumentInput } from '../types';
@@ -110,6 +111,7 @@ const TYPE_COLOR: Record<IQACDocument['fileType'], string> = {
 
 export function SupportingDocuments() {
   const dispatch = useAppDispatch();
+  const { isImpersonating } = useAuth();
   const documents = useAppSelector(selectDocuments);
 
   const [search, setSearch] = useState('');
@@ -179,9 +181,18 @@ export function SupportingDocuments() {
                 Institutional quality documents — annual reports, AQAR, SSR evidence, best practices, policies and minutes.
               </p>
             </div>
-            <Button size="sm" className="gap-1.5" onClick={() => setUploadOpen(true)}>
-              <UploadCloud className="h-4 w-4" /> Upload Document
-            </Button>
+            {isImpersonating ? (
+              <Badge
+                variant="outline"
+                className="gap-1 border-amber-300/50 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+              >
+                <Eye className="h-3 w-3" /> Read-only preview
+              </Badge>
+            ) : (
+              <Button size="sm" className="gap-1.5" onClick={() => setUploadOpen(true)}>
+                <UploadCloud className="h-4 w-4" /> Upload Document
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -272,17 +283,19 @@ export function SupportingDocuments() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Download" onClick={() => download(doc)}>
                           <Download className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-[10px] gap-1"
-                          onClick={() => {
-                            dispatch(addDocumentVersion({ id: doc.id, note: 'New version uploaded' }));
-                            toast.success('New version added.');
-                          }}
-                        >
-                          <Plus className="h-3 w-3" /> New Version
-                        </Button>
+                        {!isImpersonating && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] gap-1"
+                            onClick={() => {
+                              dispatch(addDocumentVersion({ id: doc.id, note: 'New version uploaded' }));
+                              toast.success('New version added.');
+                            }}
+                          >
+                            <Plus className="h-3 w-3" /> New Version
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

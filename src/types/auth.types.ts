@@ -40,6 +40,9 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  // Impersonation — a Super Admin previews an institution as its IQAC Coordinator.
+  isImpersonating: boolean;
+  originalUser: User | null;
 }
 
 export interface LoginResponse {

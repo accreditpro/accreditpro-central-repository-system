@@ -16,18 +16,26 @@ import {
   FileBarChart,
   Bot,
   FolderOpen,
+  Clock,
+  FileCheck,
+  MessageSquareWarning as ObsIcon,
+  FileBarChart2,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Moon,
   Sun,
   ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useAppSelector } from '@/store';
 import { selectObservations } from '@/store/slices/iqacSlice';
+import { selectVerificationObservations } from '@/store/slices/iqacVerificationSlice';
 import { gapStats } from '@/pages/iqac-dashboard/iqac-data';
+import { useVerificationDocuments } from '@/pages/iqac-dashboard/components/verification/useVerificationDocuments';
+import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -49,6 +57,11 @@ const navItems: NavItem[] = [
   { id: 'reports', label: 'Institutional Reports', icon: FileBarChart, group: 'Intelligence' },
   { id: 'ai-insights', label: 'AI Insights', icon: Bot, group: 'Intelligence' },
   { id: 'documents', label: 'Supporting Documents', icon: FolderOpen, group: 'Documents' },
+  { id: 'verification', label: 'Repository Verification', icon: ShieldCheck, group: 'Verification' },
+  { id: 'pending-verification', label: 'Pending Verification', icon: Clock, group: 'Verification' },
+  { id: 'verified-documents', label: 'Verified Documents', icon: FileCheck, group: 'Verification' },
+  { id: 'verification-observations', label: 'Observations', icon: ObsIcon, group: 'Verification' },
+  { id: 'verification-reports', label: 'Verification Reports', icon: FileBarChart2, group: 'Verification' },
 ];
 
 const groupLabels: Record<string, string> = {
@@ -57,22 +70,33 @@ const groupLabels: Record<string, string> = {
   Quality: 'Quality',
   Intelligence: 'Intelligence',
   Documents: 'Documents',
+  Verification: 'Verification',
 };
 
 export default function IQACLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, logout } = useAuth();
+  const { user, logout, isImpersonating } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const observations = useAppSelector(selectObservations);
+  const verificationObservations = useAppSelector(selectVerificationObservations);
+  const { documents: verificationDocuments } = useVerificationDocuments();
   const activeView = searchParams.get('view') || 'dashboard';
 
   const activeObservations = observations.filter((o) => o.status !== 'closed').length;
+  const pendingVerification = verificationDocuments.filter(
+    (d) => d.hodStatus === 'approved' && d.iqacStatus === 'not-verified'
+  ).length;
+  const openVerificationObservations = verificationObservations.filter(
+    (o) => o.status === 'open' || o.status === 'in-progress'
+  ).length;
   const badgeFor: Record<string, string | undefined> = {
     observations: activeObservations > 0 ? String(activeObservations) : undefined,
     gaps: gapStats.critical > 0 ? String(gapStats.critical) : undefined,
+    'pending-verification': pendingVerification > 0 ? String(pendingVerification) : undefined,
+    'verification-observations': openVerificationObservations > 0 ? String(openVerificationObservations) : undefined,
   };
 
   const handleNavClick = (id: string) => {
@@ -95,7 +119,11 @@ export default function IQACLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen flex-col bg-background">
+      {/* Impersonation banner (read-only preview by a Super Admin) */}
+      <ImpersonationBanner />
+
+      <div className="flex min-h-0 flex-1">
       {/* Sidebar */}
       <aside className={`flex flex-col border-r bg-card transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
@@ -106,7 +134,9 @@ export default function IQACLayout() {
           {!collapsed && (
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">AccreditPro</p>
-              <p className="text-xs text-muted-foreground truncate">IQAC Coordinator</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {isImpersonating ? 'Read-only preview' : 'IQAC Coordinator'}
+              </p>
             </div>
           )}
         </div>
@@ -181,7 +211,14 @@ export default function IQACLayout() {
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">{user?.firstName} {user?.lastName}</p>
-                <p className="text-[10px] text-muted-foreground truncate">IQAC Coordinator</p>
+                {isImpersonating ? (
+                  <span className="mt-0.5 inline-flex items-center gap-1 rounded border border-amber-300/50 bg-amber-500/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                    <Lock className="h-2.5 w-2.5" />
+                    Read-only
+                  </span>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground truncate">IQAC Coordinator</p>
+                )}
               </div>
             )}
             {!collapsed && (
@@ -199,6 +236,7 @@ export default function IQACLayout() {
           <Outlet />
         </div>
       </main>
+      </div>
     </div>
   );
 }

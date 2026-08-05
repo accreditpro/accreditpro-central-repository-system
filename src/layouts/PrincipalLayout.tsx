@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -91,7 +92,11 @@ export default function PrincipalLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen flex-col bg-background">
+      {/* Impersonation banner (read-only preview by a Super Admin) */}
+      <ImpersonationBanner />
+
+      <div className="flex min-h-0 flex-1">
       {/* Sidebar */}
       <aside className={`flex flex-col border-r bg-card transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
@@ -189,6 +194,7 @@ export default function PrincipalLayout() {
           <Outlet />
         </div>
       </main>
+      </div>
     </div>
   );
 }

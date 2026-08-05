@@ -19,53 +19,21 @@ export const addressSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
 });
 
-export const academicConfigSchema = z.object({
-  programs: z.array(z.string()).min(1, 'At least one program is required'),
-  departments: z.array(z.string()).min(1, 'At least one department is required'),
-});
-
-export const academicYearsSchema = z.object({
-  academicYears: z.array(z.string()).min(1, 'At least one academic year is required'),
-});
-
 export const adminUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   mobile: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
-  autoGeneratePassword: z.boolean().default(true),
-});
-
-export const iqacCoordinatorSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  mobile: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
-  autoGeneratePassword: z.boolean().default(true),
-});
-
-export const principalSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  mobile: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
-  autoGeneratePassword: z.boolean().default(true),
 });
 
 export const createInstitutionSchema = z.object({
   basicInfo: basicInfoSchema,
   address: addressSchema,
-  academicConfig: academicConfigSchema,
-  academicYears: academicYearsSchema,
   admin: adminUserSchema,
-  iqacCoordinator: iqacCoordinatorSchema,
-  principal: principalSchema,
 });
 
 export type BasicInfoFormData = z.infer<typeof basicInfoSchema>;
 export type AddressFormData = z.infer<typeof addressSchema>;
-export type AcademicConfigFormData = z.infer<typeof academicConfigSchema>;
-export type AcademicYearsFormData = z.infer<typeof academicYearsSchema>;
 export type AdminUserFormData = z.infer<typeof adminUserSchema>;
-export type IqacCoordinatorFormData = z.infer<typeof iqacCoordinatorSchema>;
-export type PrincipalFormData = z.infer<typeof principalSchema>;
 export type CreateInstitutionFormData = z.infer<typeof createInstitutionSchema>;
 
 export interface StepConfig {
@@ -77,17 +45,9 @@ export interface StepConfig {
 export const STEPS: StepConfig[] = [
   { id: 1, title: 'Basic Info', description: 'Institution details' },
   { id: 2, title: 'Address', description: 'Location details' },
-  { id: 3, title: 'Academic', description: 'Programs & departments' },
-  { id: 4, title: 'Years', description: 'Academic years' },
-  { id: 5, title: 'Admin', description: 'Institution admin' },
-  { id: 6, title: 'IQAC', description: 'IQAC coordinator' },
-  { id: 7, title: 'Principal', description: 'Principal details' },
-  { id: 8, title: 'Review', description: 'Review & submit' },
+  { id: 3, title: 'Admin', description: 'Institution admin' },
+  { id: 4, title: 'Review', description: 'Review & submit' },
 ];
-
-export const DEFAULT_PROGRAMS = ['B.Tech', 'M.Tech'];
-export const DEFAULT_DEPARTMENTS = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI & ML', 'Data Science'];
-export const DEFAULT_ACADEMIC_YEARS = ['2024-25', '2025-26', '2026-27'];
 
 export const INSTITUTION_CATEGORIES = [
   'Engineering College',
@@ -98,6 +58,29 @@ export const INSTITUTION_CATEGORIES = [
   'Education College',
   'Pharmacy College',
 ];
+
+// Map wizard category labels to the InstitutionCategory union used by the platform
+import { InstitutionCategory } from '@/types/institution.types';
+
+export const CATEGORY_MAP: Record<string, InstitutionCategory> = {
+  'Engineering College': 'Engineering',
+  'Medical College': 'Medical',
+  'Arts & Science College': 'Arts & Science',
+  'Management Institute': 'Management',
+  'Law College': 'Law',
+  'Education College': 'Education',
+  'Pharmacy College': 'Pharmacy',
+};
+
+export const CATEGORY_LABEL_MAP: Record<InstitutionCategory, string> = {
+  Engineering: 'Engineering College',
+  Medical: 'Medical College',
+  'Arts & Science': 'Arts & Science College',
+  Management: 'Management Institute',
+  Law: 'Law College',
+  Education: 'Education College',
+  Pharmacy: 'Pharmacy College',
+};
 
 export const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',

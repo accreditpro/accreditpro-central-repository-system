@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import {
   Calendar,
   Download,
@@ -98,6 +99,7 @@ function getEventStatus(startDate: string, endDate: string): 'upcoming' | 'compl
 }
 
 export const AcademicCalendarModule = ({ department, academicYear }: AcademicCalendarModuleProps) => {
+  const isReadOnly = useReadOnly();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester I');
@@ -430,34 +432,40 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
               <Download className="h-3.5 w-3.5" />
               Download CSV Template
             </Button>
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="h-3.5 w-3.5" />
-                Upload CSV
-              </Button>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => { setEditingEvent(null); setNewEvent({ description: '', startDate: '', endDate: '' }); setShowAddDialog(true); }} className="gap-2">
-              <Plus className="h-3.5 w-3.5" />
-              Add Event
-            </Button>
-            <div className="ml-auto">
-              <Button
-                size="sm"
-                onClick={handleSaveCalendar}
-                disabled={totalEventsForYearSem === 0}
-                className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save Calendar
-              </Button>
-            </div>
+            {!isReadOnly && (
+              <>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload CSV
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { setEditingEvent(null); setNewEvent({ description: '', startDate: '', endDate: '' }); setShowAddDialog(true); }} className="gap-2">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Event
+                </Button>
+              </>
+            )}
+            {!isReadOnly && (
+              <div className="ml-auto">
+                <Button
+                  size="sm"
+                  onClick={handleSaveCalendar}
+                  disabled={totalEventsForYearSem === 0}
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  Save Calendar
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -584,12 +592,18 @@ export const AcademicCalendarModule = ({ department, academicYear }: AcademicCal
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEvent(event)}>
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteEvent(event.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEvent(event)}>
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteEvent(event.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -5,6 +5,7 @@ import themeReducer from './slices/themeSlice';
 import uiReducer from './slices/uiSlice';
 import evidenceReviewReducer, { persistReviews, setReview } from './slices/evidenceReviewSlice';
 import iqacReducer, { persistIQAC } from './slices/iqacSlice';
+import iqacVerificationReducer, { persistVerification } from './slices/iqacVerificationSlice';
 
 // Persist HOD review decisions to localStorage outside the reducer (reducers stay pure).
 const evidenceReviewPersistence: Middleware = (api) => (next) => (action) => {
@@ -34,6 +35,20 @@ const iqacPersistence: Middleware = (api) => (next) => (action) => {
   return result;
 };
 
+// Persist IQAC evidence verification decisions (verify / observations).
+const iqacVerificationPersistence: Middleware = (api) => (next) => (action) => {
+  const result = next(action);
+  if (
+    action &&
+    typeof action === 'object' &&
+    'type' in action &&
+    (action as { type: string }).type.startsWith('iqacVerification/')
+  ) {
+    persistVerification(api.getState().iqacVerification);
+  }
+  return result;
+};
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -41,13 +56,14 @@ export const store = configureStore({
     ui: uiReducer,
     evidenceReview: evidenceReviewReducer,
     iqac: iqacReducer,
+    iqacVerification: iqacVerificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['auth/login/fulfilled'],
       },
-    }).concat(evidenceReviewPersistence, iqacPersistence),
+    }).concat(evidenceReviewPersistence, iqacPersistence, iqacVerificationPersistence),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

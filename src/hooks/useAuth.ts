@@ -1,11 +1,20 @@
 import { useAppDispatch, useAppSelector } from '@/store';
-import { loginAsync, logoutAsync, clearError, initializeAuth } from '@/store/slices/authSlice';
-import { LoginCredentials, LoginResponse, UserRole } from '@/types/auth.types';
+import {
+  loginAsync,
+  logoutAsync,
+  clearError,
+  initializeAuth,
+  startImpersonation as startImpersonationAction,
+  stopImpersonation as stopImpersonationAction,
+} from '@/store/slices/authSlice';
+import { LoginCredentials, LoginResponse, User, UserRole } from '@/types/auth.types';
 import { useCallback } from 'react';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isLoading, error } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading, error, isImpersonating, originalUser } = useAppSelector(
+    (state) => state.auth
+  );
 
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<LoginResponse> => {
@@ -35,15 +44,30 @@ export const useAuth = () => {
     dispatch(clearError());
   }, [dispatch]);
 
+  const startImpersonation = useCallback(
+    (userToView: User) => {
+      dispatch(startImpersonationAction(userToView));
+    },
+    [dispatch]
+  );
+
+  const stopImpersonation = useCallback(() => {
+    dispatch(stopImpersonationAction());
+  }, [dispatch]);
+
   return {
     user,
     isAuthenticated,
     isLoading,
     error,
+    isImpersonating,
+    originalUser,
     login,
     logout,
     initialize,
     hasRole,
     resetError,
+    startImpersonation,
+    stopImpersonation,
   };
 };
