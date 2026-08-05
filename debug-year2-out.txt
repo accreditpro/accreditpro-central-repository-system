@@ -1,0 +1,10 @@
+--- scope container ---
+no Scope label
+
+rows before: 80
+scope div count: 1
+year trigger in scope: 1 2025-26(Current)
+options: ["2025-26(Current)","2024-25","2023-24","2022-23","2021-22"]
+scope after: {"err":"no Scope label"}
+rows after: 80
+first row year cell: License Renewal Notices.pdfSoftware Licenses · 9.0 MBInfrastructureSoftware LicensesDr. Anita Sharma2025-03-24⚪Not Verifiedv1VerifyRaise Observation

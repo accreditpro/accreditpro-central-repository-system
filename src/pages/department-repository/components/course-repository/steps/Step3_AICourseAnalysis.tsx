@@ -113,7 +113,7 @@ function UnitCard({ unit, index }: { unit: CourseUnit; index: number }) {
       {/* Unit Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-muted/20 transition-colors text-left"
+        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center justify-center h-6 w-6 rounded-md bg-indigo-500/10 text-indigo-600 text-[10px] font-bold shrink-0">

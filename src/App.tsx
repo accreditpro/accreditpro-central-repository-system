@@ -29,6 +29,7 @@ import { InstitutionsPage } from '@/pages/admin/institutions/InstitutionsPage';
 import { CreateInstitutionPage } from '@/pages/admin/institutions/create/CreateInstitutionPage';
 import { TemplatesPage } from '@/pages/admin/templates/TemplatesPage';
 import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
+import { UsersPage } from '@/pages/admin/users/UsersPage';
 import { DepartmentPage } from '@/pages/department/DepartmentPage';
 import { AcademicRepositoryPage } from '@/pages/academic-repository/AcademicRepositoryPage';
 import { DepartmentRepositoryPage } from '@/pages/department-repository/DepartmentRepositoryPage';
@@ -130,7 +131,7 @@ const AppRoutes = () => {
         <Route path="institutions/create" element={<CreateInstitutionPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="users" element={<PlaceholderPage title="User Management" />} />
+        <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<PlaceholderPage title="Platform Settings" />} />
         <Route path="reports" element={<PlaceholderPage title="Reports" />} />
         <Route index element={<Navigate to="dashboard" replace />} />

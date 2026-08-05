@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { infrastructureDocumentCategories } from '../infrastructure-configs';
 import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+import { useReadOnly } from '@/hooks/useReadOnly';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Map, FileCheck, Flame, BookOpen, Monitor, Leaf, Zap, Droplets, Award, ShieldCheck, FileText, Shield,
@@ -55,6 +56,7 @@ const mockDocuments = [
 ];
 
 export const InfrastructureDocumentsView = () => {
+  const isReadOnly = useReadOnly();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -84,10 +86,12 @@ export const InfrastructureDocumentsView = () => {
           <h2 className="text-xl font-semibold">Supporting Documents</h2>
           <p className="text-sm text-muted-foreground mt-1">Manage infrastructure supporting documents and evidence</p>
         </div>
-        <Button className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
-          <Upload className="h-4 w-4" />
-          Upload Document
-        </Button>
+        {!isReadOnly && (
+          <Button className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
+            <Upload className="h-4 w-4" />
+            Upload Document
+          </Button>
+        )}
       </div>
 
       {/* Category Grid */}
@@ -107,7 +111,11 @@ export const InfrastructureDocumentsView = () => {
                   isSelected ? 'ring-2 ring-primary border-primary' : ''
                 }`}
                 onClick={() => setSelectedCategory(isSelected ? null : category.id)}
-                onDoubleClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null); setUploadDialogOpen(true); }}
+                onDoubleClick={() => {
+                  if (isReadOnly) return;
+                  setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null);
+                  setUploadDialogOpen(true);
+                }}
               >
                 <CardContent className="p-3 text-center">
                   <div className="flex justify-center mb-2">

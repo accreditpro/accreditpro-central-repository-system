@@ -31,11 +31,7 @@ export interface Activity {
 }
 
 // Mini sparkline data for stat cards
-const generateSparkline = (
-  base: number,
-  variance: number,
-  points: number = 7
-): { value: number }[] => {
+const generateSparkline = (base: number, variance: number, points: number = 7): { value: number }[] => {
   return Array.from({ length: points }, (_, i) => ({
     value: base + Math.round((Math.random() - 0.3) * variance * (1 + i * 0.1)),
   }));

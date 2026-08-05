@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, LoginResponse } from '@/types/auth.types';
+import { AuthState, LoginCredentials, LoginResponse, User } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
+import { clearImpersonation, loadImpersonation, saveImpersonation } from '@/services/impersonation.service';
 
 const initialState: AuthState = {
   user: null,
@@ -8,6 +9,8 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  isImpersonating: false,
+  originalUser: null,
 };
 
 export const loginAsync = createAsyncThunk<LoginResponse, LoginCredentials>(
@@ -39,6 +42,13 @@ export const initializeAuth = createAsyncThunk('auth/initialize', async (_, { re
   }
 });
 
+// Clears an active impersonation preview (in-memory + persisted sessionStorage).
+const resetImpersonationState = (state: AuthState) => {
+  clearImpersonation();
+  state.originalUser = null;
+  state.isImpersonating = false;
+};
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -50,6 +60,21 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.tokens = action.payload.tokens;
       state.isAuthenticated = true;
+    },
+    startImpersonation: (state, action: PayloadAction<User>) => {
+      if (!state.user) return;
+      state.originalUser = state.user;
+      state.user = action.payload;
+      state.isImpersonating = true;
+      saveImpersonation(state.originalUser, action.payload);
+    },
+    stopImpersonation: (state) => {
+      clearImpersonation();
+      if (state.originalUser) {
+        state.user = state.originalUser;
+      }
+      state.originalUser = null;
+      state.isImpersonating = false;
     },
   },
   extraReducers: (builder) => {
@@ -63,6 +88,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.tokens = action.payload.tokens;
+        resetImpersonationState(state);
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -73,9 +99,9 @@ const authSlice = createSlice({
         state.tokens = null;
         state.isAuthenticated = false;
         state.error = null;
+        resetImpersonationState(state);
       })
       .addCase(initializeAuth.pending, (state) => {
-        // Only set loading if not already authenticated (avoid flicker after login)
         if (!state.isAuthenticated) {
           state.isLoading = true;
         }
@@ -85,6 +111,12 @@ const authSlice = createSlice({
         state.tokens = action.payload.tokens;
         state.isAuthenticated = true;
         state.isLoading = false;
+        const persisted = loadImpersonation();
+        if (persisted && persisted.originalUser.id === action.payload.user.id) {
+          state.originalUser = persisted.originalUser;
+          state.user = persisted.impersonatedUser;
+          state.isImpersonating = true;
+        }
       })
       .addCase(initializeAuth.rejected, (state) => {
         state.isLoading = false;
@@ -92,5 +124,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, startImpersonation, stopImpersonation } = authSlice.actions;
 export default authSlice.reducer;

@@ -9,31 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
+import { getModuleTabActiveClasses } from './module-tab-styles';
 import { EvidencePreviewDialog } from '@/components/shared/EvidencePreviewDialog';
 import type { EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import {
@@ -205,21 +187,17 @@ interface EvidenceSectionProps {
   onDeleteEvidence: (sectionId: string, recordId: string, evidenceId: string) => void;
 }
 
-const EvidenceSection = ({
-  sectionId,
-  recordId,
-  evidenceList,
-  onUploadEvidence,
-  onDeleteEvidence,
-}: EvidenceSectionProps) => {
+const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, onDeleteEvidence }: EvidenceSectionProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewEvidence, setPreviewEvidence] = useState<EvidenceFile | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredEvidence = evidenceList.filter(d =>
-    searchQuery ? d.fileName.toLowerCase().includes(searchQuery.toLowerCase()) : true
+  const filteredEvidence = evidenceList.filter((d) =>
+    searchQuery
+      ? d.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
   );
 
   const processFiles = (files: File[]) => {
@@ -272,13 +250,10 @@ const EvidenceSection = ({
   };
 
   const getFileTypeColor = (ext: string) => {
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext))
-      return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
     if (ext === 'pdf') return 'bg-red-500/10 text-red-600 border-red-500/20';
-    if (['doc', 'docx'].includes(ext))
-      return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20';
-    if (['xls', 'xlsx'].includes(ext))
-      return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    if (['doc', 'docx'].includes(ext)) return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20';
+    if (['xls', 'xlsx'].includes(ext)) return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
     if (ext === 'zip') return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
     return 'bg-muted text-muted-foreground border-border';
   };
@@ -298,9 +273,7 @@ const EvidenceSection = ({
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-indigo-600" />
           <h3 className="text-sm font-semibold">Evidence Repository</h3>
-          <Badge variant="secondary" className="text-[10px]">
-            {evidenceList.length} files
-          </Badge>
+          <Badge variant="secondary" className="text-[10px]">{evidenceList.length} files</Badge>
         </div>
       </div>
       <Separator />
@@ -325,7 +298,7 @@ const EvidenceSection = ({
           isDragOver
             ? 'border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/10 scale-[1.01]'
             : 'border-border/40 hover:border-indigo-400/40 hover:bg-indigo-500/[0.02] hover:shadow-md',
-          uploading && 'pointer-events-none opacity-60'
+          uploading && 'pointer-events-none opacity-60',
         )}
       >
         {/* Animated background glow on drag */}
@@ -367,8 +340,8 @@ const EvidenceSection = ({
           <p className="text-sm font-semibold text-foreground/80">
             <span className="text-indigo-600 hover:text-indigo-700 cursor-pointer underline decoration-indigo-300/50 underline-offset-2">
               Click to upload
-            </span>{' '}
-            or drag and drop
+            </span>
+            {' '}or drag and drop
           </p>
           <p className="text-xs text-muted-foreground mt-1.5 mb-4">
             Supported files up to 25MB each
@@ -376,13 +349,13 @@ const EvidenceSection = ({
 
           {/* Format badges */}
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {acceptedFormats.map(fmt => (
+            {acceptedFormats.map((fmt) => (
               <span
                 key={fmt.ext}
                 className={cn(
                   'px-2.5 py-0.5 rounded-full text-[9px] font-semibold border',
                   fmt.color,
-                  'border-current/20'
+                  'border-current/20',
                 )}
               >
                 {fmt.ext}
@@ -416,7 +389,7 @@ const EvidenceSection = ({
               placeholder="Search evidence documents..."
               className="h-8 text-xs pl-9"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         )}
@@ -449,24 +422,16 @@ const EvidenceSection = ({
                   className="group relative flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card hover:border-indigo-500/30 hover:bg-indigo-500/[0.02] hover:shadow-sm transition-all"
                 >
                   {/* File type thumbnail */}
-                  <div
-                    className={cn(
-                      'shrink-0 w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden',
-                      typeColor
-                    )}
-                  >
+                  <div className={cn(
+                    'shrink-0 w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden',
+                    typeColor
+                  )}>
                     {isImage && ev.dataUrl ? (
-                      <img
-                        src={ev.dataUrl}
-                        alt={ev.fileName}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={ev.dataUrl} alt={ev.fileName} className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center">
                         <FileText className="h-5 w-5" />
-                        <span className="text-[7px] font-bold uppercase mt-0.5 leading-none">
-                          {ext}
-                        </span>
+                        <span className="text-[7px] font-bold uppercase mt-0.5 leading-none">{ext}</span>
                       </div>
                     )}
                   </div>
@@ -477,34 +442,24 @@ const EvidenceSection = ({
                       {ev.fileName}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span
-                        className={cn(
-                          'text-[9px] px-1.5 py-0.5 rounded font-semibold border',
-                          typeColor
-                        )}
-                      >
+                      <span className={cn(
+                        'text-[9px] px-1.5 py-0.5 rounded font-semibold border',
+                        typeColor
+                      )}>
                         .{ext}
                       </span>
                       <span className="text-[9px] text-muted-foreground">{ev.fileSize}</span>
                       <span className="text-[9px] text-muted-foreground">•</span>
-                      <span className="text-[9px] text-muted-foreground">
-                        {formatDate(ev.uploadedAt)}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          'text-[8px] py-0',
-                          ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                          ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
-                          ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600'
-                        )}
-                      >
+                      <span className="text-[9px] text-muted-foreground">{formatDate(ev.uploadedAt)}</span>
+                      <Badge variant="secondary" className={cn('text-[8px] py-0',
+                        ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
+                        ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
+                        ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
+                      )}>
                         {ev.status}
                       </Badge>
                     </div>
-                    <p className="text-[9px] text-muted-foreground/70 mt-0.5">
-                      Uploaded by {ev.uploadedBy}
-                    </p>
+                    <p className="text-[9px] text-muted-foreground/70 mt-0.5">Uploaded by {ev.uploadedBy}</p>
                   </div>
 
                   {/* Action buttons */}
@@ -553,25 +508,19 @@ const EvidenceSection = ({
 
       {/* Evidence Preview Dialog — Reusable, supports images + PDFs */}
       <EvidencePreviewDialog
-        evidence={
-          previewEvidence
-            ? ({
-                id: previewEvidence.id,
-                fileName: previewEvidence.fileName,
-                fileType: previewEvidence.fileType,
-                fileSize: previewEvidence.fileSize,
-                dataUrl: previewEvidence.dataUrl,
-                uploadedAt: previewEvidence.uploadedAt,
-                uploadedBy: previewEvidence.uploadedBy,
-                status: previewEvidence.status,
-                category: previewEvidence.category,
-              } as EvidencePreviewData)
-            : null
-        }
+        evidence={previewEvidence ? ({
+          id: previewEvidence.id,
+          fileName: previewEvidence.fileName,
+          fileType: previewEvidence.fileType,
+          fileSize: previewEvidence.fileSize,
+          dataUrl: previewEvidence.dataUrl,
+          uploadedAt: previewEvidence.uploadedAt,
+          uploadedBy: previewEvidence.uploadedBy,
+          status: previewEvidence.status,
+          category: previewEvidence.category,
+        } as EvidencePreviewData) : null}
         open={!!previewEvidence}
-        onOpenChange={o => {
-          if (!o) setPreviewEvidence(null);
-        }}
+        onOpenChange={(o) => { if (!o) setPreviewEvidence(null); }}
       />
     </div>
   );
@@ -589,20 +538,11 @@ interface DataSectionProps {
   onDeleteEvidence: (sectionId: string, recordId: string, evidenceId: string) => void;
 }
 
-const DataSection = ({
-  sectionId,
-  title,
-  fields,
-  addLabel,
-  stats,
-  evidenceMap,
-  onUploadEvidence,
-  onDeleteEvidence,
-}: DataSectionProps) => {
+const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, onUploadEvidence, onDeleteEvidence }: DataSectionProps) => {
   const [records, setRecords] = useState<any[]>(() =>
     Array.from({ length: Math.max(1, Math.floor((stats?.total || 5) / 3)) }, (_, i) => ({
       id: `${sectionId}-${i + 1}`,
-      ...Object.fromEntries(fields.map(f => [f.key, `Sample ${f.label} ${i + 1}`])),
+      ...Object.fromEntries(fields.map((f) => [f.key, `Sample ${f.label} ${i + 1}`])),
       academicYear: '2025-26',
       status: i % 5 === 0 ? 'Under Maintenance' : 'Available',
     }))
@@ -617,9 +557,9 @@ const DataSection = ({
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredRecords = records.filter(r =>
+  const filteredRecords = records.filter((r) =>
     searchQuery
-      ? Object.values(r).some(v => String(v).toLowerCase().includes(searchQuery.toLowerCase()))
+      ? Object.values(r).some((v) => String(v).toLowerCase().includes(searchQuery.toLowerCase()))
       : true
   );
 
@@ -628,14 +568,12 @@ const DataSection = ({
   // ===== TEMPLATE DOWNLOAD =====
   const handleDownloadTemplate = useCallback(() => {
     const headers = fields.map(f => f.label).join(',');
-    const sampleRow = fields
-      .map(f => {
-        if (f.type === 'number') return '0';
-        if (f.type === 'date') return 'YYYY-MM-DD';
-        if (f.type === 'select') return 'Option 1';
-        return `Sample ${f.label}`;
-      })
-      .join(',');
+    const sampleRow = fields.map(f => {
+      if (f.type === 'number') return '0';
+      if (f.type === 'date') return 'YYYY-MM-DD';
+      if (f.type === 'select') return 'Option 1';
+      return `Sample ${f.label}`;
+    }).join(',');
     const csvContent = `${headers}\n${sampleRow}\n`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -649,82 +587,79 @@ const DataSection = ({
   }, [fields, sectionId]);
 
   // ===== CSV UPLOAD =====
-  const handleCSVUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleCSVUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = event => {
-        const text = event.target?.result as string;
-        if (!text) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
 
-        const lines = text.split('\n').filter(line => line.trim());
-        if (lines.length < 2) return;
+      const lines = text.split('\n').filter(line => line.trim());
+      if (lines.length < 2) return;
 
-        const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
-        const csvFields = fields.map(f => f.label);
+      const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+      const csvFields = fields.map(f => f.label);
 
-        // Build a header-to-field mapping
-        const headerMap: number[] = [];
-        headers.forEach((h, idx) => {
-          const fieldIndex = csvFields.findIndex(f => f.toLowerCase() === h.toLowerCase());
-          headerMap.push(fieldIndex >= 0 ? fieldIndex : -1);
+      // Build a header-to-field mapping
+      const headerMap: number[] = [];
+      headers.forEach((h, idx) => {
+        const fieldIndex = csvFields.findIndex(f => f.toLowerCase() === h.toLowerCase());
+        headerMap.push(fieldIndex >= 0 ? fieldIndex : -1);
+      });
+
+      const previewRows: UploadPreviewRow[] = [];
+      let validCount = 0;
+      let invalidCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
+        const row: Record<string, string> = {};
+        const rowErrors: string[] = [];
+
+        // Map values to fields
+        headerMap.forEach((fieldIdx, colIdx) => {
+          if (fieldIdx >= 0) {
+            row[fields[fieldIdx].key] = values[colIdx] || '';
+          }
         });
 
-        const previewRows: UploadPreviewRow[] = [];
-        let validCount = 0;
-        let invalidCount = 0;
+        // Validate each field
+        fields.forEach((field) => {
+          const val = row[field.key]?.trim() || '';
+          if (!val) {
+            rowErrors.push(`"${field.label}" is required`);
+          }
+          if (field.type === 'number' && val && isNaN(Number(val))) {
+            rowErrors.push(`"${field.label}" must be a number`);
+          }
+          if (field.type === 'date' && val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+            rowErrors.push(`"${field.label}" must be YYYY-MM-DD format`);
+          }
+        });
 
-        for (let i = 1; i < lines.length; i++) {
-          const values = parseCSVLine(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
-          const row: Record<string, string> = {};
-          const rowErrors: string[] = [];
+        const isValid = rowErrors.length === 0;
+        if (isValid) validCount++;
+        else invalidCount++;
 
-          // Map values to fields
-          headerMap.forEach((fieldIdx, colIdx) => {
-            if (fieldIdx >= 0) {
-              row[fields[fieldIdx].key] = values[colIdx] || '';
-            }
-          });
+        previewRows.push({
+          id: `upload-${i}`,
+          data: row,
+          validationStatus: isValid ? 'valid' : 'invalid',
+          errors: rowErrors,
+        });
+      }
 
-          // Validate each field
-          fields.forEach(field => {
-            const val = row[field.key]?.trim() || '';
-            if (!val) {
-              rowErrors.push(`"${field.label}" is required`);
-            }
-            if (field.type === 'number' && val && isNaN(Number(val))) {
-              rowErrors.push(`"${field.label}" must be a number`);
-            }
-            if (field.type === 'date' && val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-              rowErrors.push(`"${field.label}" must be YYYY-MM-DD format`);
-            }
-          });
+      setUploadPreview(previewRows);
+      setUploadStats({ total: previewRows.length, valid: validCount, invalid: invalidCount });
+      setShowPreviewDialog(true);
 
-          const isValid = rowErrors.length === 0;
-          if (isValid) validCount++;
-          else invalidCount++;
-
-          previewRows.push({
-            id: `upload-${i}`,
-            data: row,
-            validationStatus: isValid ? 'valid' : 'invalid',
-            errors: rowErrors,
-          });
-        }
-
-        setUploadPreview(previewRows);
-        setUploadStats({ total: previewRows.length, valid: validCount, invalid: invalidCount });
-        setShowPreviewDialog(true);
-
-        // Reset the file input so the same file can be re-uploaded
-        if (csvInputRef.current) csvInputRef.current.value = '';
-      };
-      reader.readAsText(file);
-    },
-    [fields]
-  );
+      // Reset the file input so the same file can be re-uploaded
+      if (csvInputRef.current) csvInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  }, [fields]);
 
   // ===== SAVE VALID RECORDS FROM CSV PREVIEW =====
   const handleSaveCSVUpload = useCallback(() => {
@@ -753,24 +688,17 @@ const DataSection = ({
   }, []);
 
   // ===== MANUAL ADD RECORD =====
-  const handleManualSave = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
-      const newRecord: any = {
-        id: `manual-${Date.now()}`,
-        academicYear: '2025-26',
-        status: 'Available',
-      };
-      fields.forEach(f => {
-        newRecord[f.key] = (formData.get(f.key) as string) || '';
-      });
-      setRecords(prev => [...prev, newRecord]);
-      setShowAddDialog(false);
-    },
-    [fields]
-  );
+  const handleManualSave = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const newRecord: any = { id: `manual-${Date.now()}`, academicYear: '2025-26', status: 'Available' };
+    fields.forEach(f => {
+      newRecord[f.key] = (formData.get(f.key) as string) || '';
+    });
+    setRecords(prev => [...prev, newRecord]);
+    setShowAddDialog(false);
+  }, [fields]);
 
   return (
     <div className="space-y-4">
@@ -779,31 +707,16 @@ const DataSection = ({
         <div className="flex items-center gap-2">
           <Icon className={cn('h-4 w-4', sectionColors[sectionId] || 'text-foreground')} />
           <h3 className="text-sm font-semibold">{title}</h3>
-          <Badge variant="secondary" className="text-[10px]">
-            {records.length} records
-          </Badge>
+          <Badge variant="secondary" className="text-[10px]">{records.length} records</Badge>
           {stats && (
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-[9px]',
-                stats.active === stats.total
-                  ? 'text-emerald-600 border-emerald-500/30'
-                  : 'text-amber-600 border-amber-500/30'
-              )}
-            >
+            <Badge variant="outline" className={cn('text-[9px]', stats.active === stats.total ? 'text-emerald-600 border-emerald-500/30' : 'text-amber-600 border-amber-500/30')}>
               {stats.active}/{stats.total} Active
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
           {/* Template Download */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs h-8 gap-1.5"
-            onClick={handleDownloadTemplate}
-          >
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1.5" onClick={handleDownloadTemplate}>
             <Download className="h-3.5 w-3.5" /> Template
           </Button>
 
@@ -815,12 +728,7 @@ const DataSection = ({
             className="hidden"
             onChange={handleCSVUpload}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs h-8 gap-1.5"
-            onClick={() => csvInputRef.current?.click()}
-          >
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1.5" onClick={() => csvInputRef.current?.click()}>
             <Upload className="h-3.5 w-3.5" /> CSV
           </Button>
 
@@ -838,7 +746,7 @@ const DataSection = ({
           placeholder={`Search ${title.toLowerCase()}...`}
           className="h-8 text-xs pl-9"
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
@@ -848,42 +756,25 @@ const DataSection = ({
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="text-[10px] font-semibold">#</TableHead>
-              {fields.slice(0, 5).map(f => (
-                <TableHead key={f.key} className="text-[10px] font-semibold">
-                  {f.label}
-                </TableHead>
+              {fields.slice(0, 5).map((f) => (
+                <TableHead key={f.key} className="text-[10px] font-semibold">{f.label}</TableHead>
               ))}
               <TableHead className="text-[10px] font-semibold w-[90px]">Status</TableHead>
-              <TableHead className="text-[10px] font-semibold text-right w-[80px]">
-                Actions
-              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-right w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRecords.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={fields.slice(0, 5).length + 3}
-                  className="text-center py-8 text-xs text-muted-foreground"
-                >
+                <TableCell colSpan={fields.slice(0, 5).length + 3} className="text-center py-8 text-xs text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <Icon className="h-8 w-8 text-muted-foreground/30" />
                     <p>No {title.toLowerCase()} found. Upload a CSV or add manually.</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => csvInputRef.current?.click()}
-                      >
+                      <Button variant="outline" size="sm" className="text-xs h-7 gap-1.5" onClick={() => csvInputRef.current?.click()}>
                         <Upload className="h-3 w-3" /> Upload CSV
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => setShowAddDialog(true)}
-                      >
+                      <Button variant="outline" size="sm" className="text-xs h-7 gap-1.5" onClick={() => setShowAddDialog(true)}>
                         <Plus className="h-3 w-3" /> Add Manually
                       </Button>
                     </div>
@@ -892,47 +783,29 @@ const DataSection = ({
               </TableRow>
             ) : (
               filteredRecords.map((record, idx) => (
-                <TableRow key={record.id} className="hover:bg-muted/20">
+                <TableRow key={record.id} className="hover:bg-muted/50">
                   <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                  {fields.slice(0, 5).map(f => (
+                  {fields.slice(0, 5).map((f) => (
                     <TableCell key={f.key} className="text-xs font-medium truncate max-w-[150px]">
                       {record[f.key]}
                     </TableCell>
                   ))}
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'text-[9px]',
-                        record.status === 'Available' &&
-                          'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
-                        record.status === 'Under Maintenance' &&
-                          'bg-amber-500/10 text-amber-600 border-amber-500/30',
-                        record.status === 'Active' &&
-                          'bg-blue-500/10 text-blue-600 border-blue-500/30'
-                      )}
-                    >
-                      {record.status}
-                    </Badge>
+                    <Badge variant="outline" className={cn('text-[9px]',
+                      record.status === 'Available' && 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+                      record.status === 'Under Maintenance' && 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+                      record.status === 'Active' && 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+                    )}>{record.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-0.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => setSelectedRecord(record)}
-                      >
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedRecord(record)}>
                         <Eye className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6">
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive"
-                      >
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive">
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -945,12 +818,7 @@ const DataSection = ({
       </div>
 
       {/* ===== CSV UPLOAD PREVIEW DIALOG ===== */}
-      <Dialog
-        open={showPreviewDialog}
-        onOpenChange={open => {
-          if (!open) handleCancelUpload();
-        }}
-      >
+      <Dialog open={showPreviewDialog} onOpenChange={(open) => { if (!open) handleCancelUpload(); }}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
@@ -983,16 +851,14 @@ const DataSection = ({
               <p className="text-xs font-semibold text-red-700 mb-2 flex items-center gap-1">
                 <AlertCircle className="h-3.5 w-3.5" /> Validation Errors:
               </p>
-              {uploadPreview
-                .filter(r => r.validationStatus === 'invalid')
-                .map((r, i) => (
-                  <div key={i} className="flex items-start gap-2 mb-1">
-                    <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-[11px] text-red-600">
-                      Row {uploadPreview.indexOf(r) + 1}: {r.errors?.join('; ')}
-                    </p>
-                  </div>
-                ))}
+              {uploadPreview.filter(r => r.validationStatus === 'invalid').map((r, i) => (
+                <div key={i} className="flex items-start gap-2 mb-1">
+                  <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-red-600">
+                    Row {uploadPreview.indexOf(r) + 1}: {r.errors?.join('; ')}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
 
@@ -1003,13 +869,9 @@ const DataSection = ({
                 <TableRow className="bg-muted/30 sticky top-0">
                   <TableHead className="text-[10px] font-semibold w-8">#</TableHead>
                   {fields.map(f => (
-                    <TableHead key={f.key} className="text-[10px] font-semibold">
-                      {f.label}
-                    </TableHead>
+                    <TableHead key={f.key} className="text-[10px] font-semibold">{f.label}</TableHead>
                   ))}
-                  <TableHead className="text-[10px] font-semibold w-16 text-center">
-                    Valid
-                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold w-16 text-center">Valid</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1017,7 +879,7 @@ const DataSection = ({
                   <TableRow
                     key={row.id}
                     className={cn(
-                      'hover:bg-muted/20',
+                      'hover:bg-muted/50',
                       row.validationStatus === 'invalid' && 'bg-red-500/5'
                     )}
                   >
@@ -1046,12 +908,7 @@ const DataSection = ({
               CSV uploads never save automatically. Review and confirm to save.
             </p>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs h-8"
-                onClick={handleCancelUpload}
-              >
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleCancelUpload}>
                 Cancel
               </Button>
               <Button
@@ -1069,12 +926,7 @@ const DataSection = ({
       </Dialog>
 
       {/* ===== RECORD DETAIL DIALOG ===== */}
-      <Dialog
-        open={!!selectedRecord}
-        onOpenChange={open => {
-          if (!open) setSelectedRecord(null);
-        }}
-      >
+      <Dialog open={!!selectedRecord} onOpenChange={(open) => { if (!open) setSelectedRecord(null); }}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
@@ -1085,7 +937,7 @@ const DataSection = ({
           {selectedRecord && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                {fields.map(f => (
+                {fields.map((f) => (
                   <div key={f.key} className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
                     <p className="text-xs font-medium">{selectedRecord[f.key] || '-'}</p>
@@ -1116,7 +968,7 @@ const DataSection = ({
               </DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-3 py-4">
-              {fields.map(f => (
+              {fields.map((f) => (
                 <div key={f.key} className={cn('space-y-1', f.type === 'textarea' && 'col-span-2')}>
                   <Label className="text-xs">{f.label}</Label>
                   {f.type === 'select' ? (
@@ -1125,42 +977,22 @@ const DataSection = ({
                         <SelectValue placeholder={`Select ${f.label}`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes" className="text-xs">
-                          Yes
-                        </SelectItem>
-                        <SelectItem value="no" className="text-xs">
-                          No
-                        </SelectItem>
+                        <SelectItem value="yes" className="text-xs">Yes</SelectItem>
+                        <SelectItem value="no" className="text-xs">No</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : f.type === 'number' ? (
-                    <Input
-                      name={f.key}
-                      type="number"
-                      className="h-8 text-xs"
-                      placeholder={`Enter ${f.label}`}
-                    />
+                    <Input name={f.key} type="number" className="h-8 text-xs" placeholder={`Enter ${f.label}`} />
                   ) : f.type === 'date' ? (
                     <Input name={f.key} type="date" className="h-8 text-xs" />
                   ) : (
-                    <Input
-                      name={f.key}
-                      className="h-8 text-xs"
-                      placeholder={`Enter ${f.label}`}
-                      required
-                    />
+                    <Input name={f.key} className="h-8 text-xs" placeholder={`Enter ${f.label}`} required />
                   )}
                 </div>
               ))}
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs h-8"
-                type="button"
-                onClick={() => setShowAddDialog(false)}
-              >
+              <Button variant="outline" size="sm" className="text-xs h-8" type="button" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
               <Button size="sm" className="text-xs h-8" type="submit">
@@ -1305,30 +1137,21 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
   ],
 };
 
-export const DepartmentInfrastructureModule = ({
-  config,
-  academicYear,
-}: DepartmentInfrastructureModuleProps) => {
+export const DepartmentInfrastructureModule = ({ config, academicYear }: DepartmentInfrastructureModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   void academicYear;
-  const metrics = repositoryHealth[config.id] || {
-    dataCompleteness: 76,
-    evidenceCompleteness: 68,
-    verificationPercent: 72,
-    readinessScore: 71,
-  };
+  const activeClasses = getModuleTabActiveClasses(config.id);
+  const metrics = repositoryHealth[config.id] || { dataCompleteness: 76, evidenceCompleteness: 68, verificationPercent: 72, readinessScore: 71 };
 
   // ===== SHARED EVIDENCE STATE =====
   // Structure: { [sectionId]: { [recordId]: EvidenceFile[] } }
-  const [sectionEvidence, setSectionEvidence] = useState<
-    Record<string, Record<string, EvidenceFile[]>>
-  >({});
+  const [sectionEvidence, setSectionEvidence] = useState<Record<string, Record<string, EvidenceFile[]>>>({});
 
   const handleUploadEvidence = useCallback((secId: string, recordId: string, files: File[]) => {
-    files.forEach(file => {
+    files.forEach((file) => {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
         const sizeKB = Math.round(file.size / 1024);
         const newEvidence: EvidenceFile = {
@@ -1344,7 +1167,7 @@ export const DepartmentInfrastructureModule = ({
           status: 'uploaded',
           dataUrl,
         };
-        setSectionEvidence(prev => ({
+        setSectionEvidence((prev) => ({
           ...prev,
           [secId]: {
             ...(prev[secId] || {}),
@@ -1356,56 +1179,33 @@ export const DepartmentInfrastructureModule = ({
     });
   }, []);
 
-  const handleDeleteEvidence = useCallback(
-    (secId: string, recordId: string, evidenceId: string) => {
-      setSectionEvidence(prev => {
-        const recordEvidence = prev[secId]?.[recordId]?.filter(ev => ev.id !== evidenceId) || [];
-        return {
-          ...prev,
-          [secId]: { ...(prev[secId] || {}), [recordId]: recordEvidence },
-        };
-      });
-    },
-    []
-  );
+  const handleDeleteEvidence = useCallback((secId: string, recordId: string, evidenceId: string) => {
+    setSectionEvidence((prev) => {
+      const recordEvidence = prev[secId]?.[recordId]?.filter((ev) => ev.id !== evidenceId) || [];
+      return {
+        ...prev,
+        [secId]: { ...(prev[secId] || {}), [recordId]: recordEvidence },
+      };
+    });
+  }, []);
 
   // Gather all evidence for supporting docs
-  const allEvidence = Object.values(sectionEvidence).flatMap(secMap =>
+  const allEvidence = Object.values(sectionEvidence).flatMap((secMap) =>
     Object.values(secMap).flat()
   );
 
   const moduleScores = [
-    {
-      label: 'Data Completeness',
-      value: metrics.dataCompleteness,
-      color: 'text-amber-600 bg-amber-500/10',
-    },
-    {
-      label: 'Evidence Score',
-      value: metrics.evidenceCompleteness,
-      color: 'text-orange-600 bg-orange-500/10',
-    },
-    {
-      label: 'Verification Score',
-      value: metrics.verificationPercent,
-      color: 'text-emerald-600 bg-emerald-500/10',
-    },
-    {
-      label: 'Readiness Score',
-      value: metrics.readinessScore,
-      color: 'text-blue-600 bg-blue-500/10',
-    },
+    { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-amber-600 bg-amber-500/10' },
+    { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-orange-600 bg-orange-500/10' },
+    { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-blue-600 bg-blue-500/10' },
   ];
 
   // ===== DASHBOARD =====
   const renderDashboard = () => {
     const totalRecords = Object.values(sectionStats).reduce((sum, s) => sum + s.total, 0);
     const totalActive = Object.values(sectionStats).reduce((sum, s) => sum + s.active, 0);
-    const completionPct = Math.round(
-      (Object.values(sectionStats).filter(s => s.active === s.total).length /
-        Object.keys(sectionStats).length) *
-        100
-    );
+    const completionPct = Math.round((Object.values(sectionStats).filter(s => s.active === s.total).length / Object.keys(sectionStats).length) * 100);
 
     return (
       <div className="space-y-6">
@@ -1413,54 +1213,32 @@ export const DepartmentInfrastructureModule = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Classrooms', value: sectionStats.classrooms.total, icon: School },
-            {
-              label: 'Tutorial Rooms',
-              value: sectionStats['tutorial-rooms'].total,
-              icon: Presentation,
-            },
+            { label: 'Tutorial Rooms', value: sectionStats['tutorial-rooms'].total, icon: Presentation },
             { label: 'Laboratories', value: sectionStats.laboratories.total, icon: FlaskConical },
             { label: 'Staff Rooms', value: sectionStats['staff-rooms'].total, icon: Users },
-            {
-              label: 'Faculty Cabins',
-              value: sectionStats['faculty-cabins'].total,
-              icon: UserCircle,
-            },
-            {
-              label: 'Smart Classrooms',
-              value: sectionStats['smart-classrooms'].total,
-              icon: Monitor,
-            },
+            { label: 'Faculty Cabins', value: sectionStats['faculty-cabins'].total, icon: UserCircle },
+            { label: 'Smart Classrooms', value: sectionStats['smart-classrooms'].total, icon: Monitor },
             { label: 'ICT Classrooms', value: sectionStats['ict-classrooms'].total, icon: Wifi },
             { label: 'Lab Equipment', value: sectionStats['lab-equipment'].total, icon: Wrench },
-            {
-              label: 'Licensed Software',
-              value: sectionStats['software-licenses'].total,
-              icon: Package,
-            },
+            { label: 'Licensed Software', value: sectionStats['software-licenses'].total, icon: Package },
             { label: 'Department Assets', value: sectionStats['dept-assets'].total, icon: Archive },
             { label: 'Evidence Completion', value: `${completionPct}%`, icon: CheckCircle2 },
-            {
-              label: 'Active Facilities',
-              value: `${Math.round((totalActive / totalRecords) * 100)}%`,
-              icon: TrendingUp,
-            },
-          ]
-            .slice(0, 6)
-            .map(kpi => (
-              <Card key={kpi.label} className="hover:shadow-md transition-shadow border-border/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <kpi.icon className="h-5 w-5 text-amber-600" />
-                    <Badge variant="secondary" className="text-[9px]">
-                      <Activity className="h-3 w-3 mr-1" />
-                      AY 2025-26
-                    </Badge>
-                  </div>
-                  <div className="text-2xl font-bold">{kpi.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
-                </CardContent>
-              </Card>
-            ))}
+            { label: 'Active Facilities', value: `${Math.round((totalActive / totalRecords) * 100)}%`, icon: TrendingUp },
+          ].slice(0, 6).map((kpi) => (
+            <Card key={kpi.label} className="hover:shadow-md transition-shadow border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <kpi.icon className="h-5 w-5 text-amber-600" />
+                  <Badge variant="secondary" className="text-[9px]">
+                    <Activity className="h-3 w-3 mr-1" />
+                    AY 2025-26
+                  </Badge>
+                </div>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Summary & Analytics */}
@@ -1471,9 +1249,7 @@ export const DepartmentInfrastructureModule = ({
                 <BarChart3 className="h-4 w-4 text-amber-600" />
                 Infrastructure Summary
               </CardTitle>
-              <CardDescription>
-                Total Records: {totalRecords} | Active: {totalActive}
-              </CardDescription>
+              <CardDescription>Total Records: {totalRecords} | Active: {totalActive}</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px] pr-2">
@@ -1498,16 +1274,7 @@ export const DepartmentInfrastructureModule = ({
                           </div>
                           <Progress value={activePct} className="h-1.5" />
                         </div>
-                        <span
-                          className={cn(
-                            'text-xs font-semibold w-8 text-right',
-                            activePct >= 90
-                              ? 'text-emerald-600'
-                              : activePct >= 75
-                                ? 'text-blue-600'
-                                : 'text-amber-600'
-                          )}
-                        >
+                        <span className={cn('text-xs font-semibold w-8 text-right', activePct >= 90 ? 'text-emerald-600' : activePct >= 75 ? 'text-blue-600' : 'text-amber-600')}>
                           {activePct}%
                         </span>
                       </div>
@@ -1528,37 +1295,13 @@ export const DepartmentInfrastructureModule = ({
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  {
-                    label: 'Equipment Count',
-                    value: sectionStats['lab-equipment'].total,
-                    sub: `${Math.round((sectionStats['lab-equipment'].active / sectionStats['lab-equipment'].total) * 100)}% Working`,
-                  },
-                  {
-                    label: 'Software Licenses',
-                    value: sectionStats['software-licenses'].total,
-                    sub: `${Math.round(sectionStats['software-licenses'].total * 0.2)} Expiring Soon`,
-                  },
-                  {
-                    label: 'Assets Under AMC',
-                    value: Math.round(sectionStats['dept-assets'].total * 0.35),
-                    sub: `${Math.round(sectionStats['dept-assets'].total * 0.15)} Without AMC`,
-                  },
-                  {
-                    label: 'Equipment Due for Calibration',
-                    value: Math.round(sectionStats['lab-equipment'].total * 0.18),
-                    sub: `${Math.round(sectionStats['lab-equipment'].total * 0.12)} Calibrated`,
-                  },
-                  {
-                    label: 'Infrastructure Evidence',
-                    value: `${completionPct}%`,
-                    sub: 'Completion Rate',
-                  },
-                  {
-                    label: 'Missing Evidence',
-                    value: `${100 - completionPct}%`,
-                    sub: 'Requires Attention',
-                  },
-                ].map(stat => (
+                  { label: 'Equipment Count', value: sectionStats['lab-equipment'].total, sub: `${Math.round(sectionStats['lab-equipment'].active / sectionStats['lab-equipment'].total * 100)}% Working` },
+                  { label: 'Software Licenses', value: sectionStats['software-licenses'].total, sub: `${Math.round((sectionStats['software-licenses'].total * 0.2))} Expiring Soon` },
+                  { label: 'Assets Under AMC', value: Math.round(sectionStats['dept-assets'].total * 0.35), sub: `${Math.round(sectionStats['dept-assets'].total * 0.15)} Without AMC` },
+                  { label: 'Equipment Due for Calibration', value: Math.round(sectionStats['lab-equipment'].total * 0.18), sub: `${Math.round(sectionStats['lab-equipment'].total * 0.12)} Calibrated` },
+                  { label: 'Infrastructure Evidence', value: `${completionPct}%`, sub: 'Completion Rate' },
+                  { label: 'Missing Evidence', value: `${100 - completionPct}%`, sub: 'Requires Attention' },
+                ].map((stat) => (
                   <div key={stat.label} className="p-3 rounded-lg border border-border/50">
                     <p className="text-[10px] text-muted-foreground">{stat.label}</p>
                     <p className="text-lg font-bold">{stat.value}</p>
@@ -1578,28 +1321,24 @@ export const DepartmentInfrastructureModule = ({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-              {config.tabs
-                .filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents')
-                .map(tab => {
-                  const Icon = sectionIcons[tab.id] || FileText;
-                  const color = sectionColors[tab.id] || 'text-muted-foreground';
-                  const s = sectionStats[tab.id];
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/50 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all text-center"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                        <Icon className={cn('h-4 w-4', color)} />
-                      </div>
-                      <span className="text-[10px] font-medium leading-tight">{tab.label}</span>
-                      {s && (
-                        <span className="text-[9px] text-muted-foreground">{s.total} records</span>
-                      )}
-                    </button>
-                  );
-                })}
+              {config.tabs.filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents').map((tab) => {
+                const Icon = sectionIcons[tab.id] || FileText;
+                const color = sectionColors[tab.id] || 'text-muted-foreground';
+                const s = sectionStats[tab.id];
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/50 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all text-center"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                      <Icon className={cn('h-4 w-4', color)} />
+                    </div>
+                    <span className="text-[10px] font-medium leading-tight">{tab.label}</span>
+                    {s && <span className="text-[9px] text-muted-foreground">{s.total} records</span>}
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -1614,7 +1353,7 @@ export const DepartmentInfrastructureModule = ({
 
     // Build categories dynamically from actual uploaded evidence
     const categoryMap = new Map<string, EvidenceFile[]>();
-    allEvidence.forEach(ev => {
+    allEvidence.forEach((ev) => {
       const cat = ev.category;
       if (!categoryMap.has(cat)) categoryMap.set(cat, []);
       categoryMap.get(cat)!.push(ev);
@@ -1633,27 +1372,29 @@ export const DepartmentInfrastructureModule = ({
       { name: 'Calibration Certificates', icon: CheckCircle2 },
     ];
 
-    const categories = defaultCategories.map(cat => ({
+    const categories = defaultCategories.map((cat) => ({
       ...cat,
       count: categoryMap.get(cat.name)?.length || 0,
     }));
 
     const totalDocs = allEvidence.length;
 
-    const filteredCategories = categories.filter(cat =>
-      searchQuery ? cat.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+    const filteredCategories = categories.filter((cat) =>
+      searchQuery
+        ? cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        : true
     );
 
-    const selectedCatFiles = selectedCategory ? categoryMap.get(selectedCategory) || [] : [];
+    const selectedCatFiles = selectedCategory
+      ? categoryMap.get(selectedCategory) || []
+      : [];
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold">Supporting Documents Repository</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Evidence uploaded from all infrastructure sections appears here organized by category
-            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Evidence uploaded from all infrastructure sections appears here organized by category</p>
           </div>
         </div>
 
@@ -1668,18 +1409,13 @@ export const DepartmentInfrastructureModule = ({
 
         <div className="relative max-w-sm">
           <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search document categories..."
-            className="h-8 text-xs pl-9"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
+          <Input placeholder="Search document categories..." className="h-8 text-xs pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
 
         {/* Category Grid */}
         {!selectedCategory ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredCategories.map(cat => (
+            {filteredCategories.map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => cat.count > 0 && setSelectedCategory(cat.name)}
@@ -1693,30 +1429,19 @@ export const DepartmentInfrastructureModule = ({
                     <cat.icon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs font-medium">{cat.name}</span>
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className={cn('text-[9px]', cat.count > 0 && 'bg-amber-500/10 text-amber-600')}
-                  >
+                  <Badge variant="secondary" className={cn('text-[9px]', cat.count > 0 && 'bg-amber-500/10 text-amber-600')}>
                     {cat.count}
                   </Badge>
                 </div>
                 {cat.count > 0 ? (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {categoryMap
-                      .get(cat.name)
-                      ?.slice(0, 3)
-                      .map(ev => (
-                        <span
-                          key={ev.id}
-                          className="text-[8px] px-1.5 py-0.5 rounded bg-muted truncate max-w-[100px]"
-                        >
-                          {ev.fileName}
-                        </span>
-                      ))}
-                    {(categoryMap.get(cat.name)?.length || 0) > 3 && (
-                      <span className="text-[8px] text-muted-foreground">
-                        +{categoryMap.get(cat.name)!.length - 3} more
+                    {categoryMap.get(cat.name)?.slice(0, 3).map((ev) => (
+                      <span key={ev.id} className="text-[8px] px-1.5 py-0.5 rounded bg-muted truncate max-w-[100px]">
+                        {ev.fileName}
                       </span>
+                    ))}
+                    {(categoryMap.get(cat.name)?.length || 0) > 3 && (
+                      <span className="text-[8px] text-muted-foreground">+{categoryMap.get(cat.name)!.length - 3} more</span>
                     )}
                   </div>
                 ) : (
@@ -1729,62 +1454,36 @@ export const DepartmentInfrastructureModule = ({
           /* Category Detail View */
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setSelectedCategory(null)}
-              >
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(null)}>
                 ← Back to Categories
               </Button>
-              <Badge variant="secondary" className="text-[10px]">
-                {selectedCategory}
-              </Badge>
+              <Badge variant="secondary" className="text-[10px]">{selectedCategory}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {selectedCatFiles.map(ev => {
+              {selectedCatFiles.map((ev) => {
                 const isImage = ev.fileType === 'png' || ev.fileType === 'jpg';
                 return (
-                  <div
-                    key={ev.id}
-                    className="p-3 rounded-lg border border-border/50 hover:border-indigo-500/30 transition-all group"
-                  >
+                  <div key={ev.id} className="p-3 rounded-lg border border-border/50 hover:border-indigo-500/30 transition-all group">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                         {isImage && ev.dataUrl ? (
-                          <img
-                            src={ev.dataUrl}
-                            alt={ev.fileName}
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={ev.dataUrl} alt={ev.fileName} className="w-full h-full object-cover" />
                         ) : (
                           <FileText className="h-6 w-6 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate" title={ev.fileName}>
-                          {ev.fileName}
-                        </p>
+                        <p className="text-xs font-medium truncate" title={ev.fileName}>{ev.fileName}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] text-muted-foreground uppercase">
-                            {ev.fileType}
-                          </span>
+                          <span className="text-[9px] text-muted-foreground uppercase">{ev.fileType}</span>
                           <span className="text-[9px] text-muted-foreground">{ev.fileSize}</span>
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'text-[8px]',
-                              ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                              ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
-                              ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600'
-                            )}
-                          >
-                            {ev.status}
-                          </Badge>
+                          <Badge variant="secondary" className={cn('text-[8px]',
+                            ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
+                            ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
+                            ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
+                          )}>{ev.status}</Badge>
                         </div>
-                        <p className="text-[9px] text-muted-foreground mt-0.5">
-                          {ev.uploadedAt} • {ev.uploadedBy}
-                        </p>
+                        <p className="text-[9px] text-muted-foreground mt-0.5">{ev.uploadedAt} • {ev.uploadedBy}</p>
                       </div>
                     </div>
                   </div>
@@ -1798,18 +1497,14 @@ export const DepartmentInfrastructureModule = ({
   };
 
   const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    dashboard: LayoutDashboard,
+    'dashboard': LayoutDashboard,
     ...sectionIcons,
   };
 
   return (
     <div className="space-y-5">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-4"
-      >
+      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold tracking-tight">{config.label}</h2>
@@ -1822,15 +1517,11 @@ export const DepartmentInfrastructureModule = ({
         </div>
         {/* Score Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {moduleScores.map(metric => (
+          {moduleScores.map((metric) => (
             <div key={metric.label} className="p-3 rounded-xl border border-border/50 bg-card">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {metric.label}
-              </p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>
-                  {metric.value}%
-                </span>
+                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>{metric.value}%</span>
                 <Progress value={metric.value} className="h-1.5 flex-1" />
               </div>
             </div>
@@ -1841,7 +1532,7 @@ export const DepartmentInfrastructureModule = ({
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          {config.tabs.map(tab => {
+          {config.tabs.map((tab) => {
             const Icon = tabIcons[tab.id] || FileText;
             const isActive = activeTab === tab.id;
             return (
@@ -1850,17 +1541,18 @@ export const DepartmentInfrastructureModule = ({
                 value={tab.id}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
-                  isActive && 'ring-1 ring-amber-500/30'
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
                 )}
               >
-                <Icon className={cn('h-3.5 w-3.5', isActive && 'text-amber-600')} />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );
           })}
         </TabsList>
 
-        {config.tabs.map(tab => (
+        {config.tabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'dashboard' ? (
               renderDashboard()

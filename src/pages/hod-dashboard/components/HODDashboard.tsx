@@ -19,6 +19,7 @@ import { selectReviews } from '@/store/slices/evidenceReviewSlice';
 import { getHODYearData } from '../hod-configs';
 import { applyReviewOverrides } from './evidence-utils';
 import { AccreditationReadiness } from './AccreditationReadiness';
+import { IQACObservationsWidget } from './IQACObservationsWidget';
 
 export function HODDashboard({ academicYear }: { academicYear: string }) {
   const reviews = useAppSelector(selectReviews);
@@ -123,6 +124,9 @@ export function HODDashboard({ academicYear }: { academicYear: string }) {
 
       {/* Accreditation Readiness */}
       <AccreditationReadiness academicYear={academicYear} />
+
+      {/* IQAC Department Quality Observations */}
+      <IQACObservationsWidget />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AI Insights Panel */}

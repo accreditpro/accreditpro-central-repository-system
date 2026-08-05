@@ -1,8 +1,10 @@
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building2, Calendar, Lock } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import { setSelectedAcademicYear } from '@/store/slices/uiSlice';
 import { Dashboard } from './components/Dashboard';
 import { InstitutionReadiness } from './components/InstitutionReadiness';
@@ -15,6 +17,11 @@ import { ContinuousImprovement } from './components/ContinuousImprovement';
 import { InstitutionalReports } from './components/InstitutionalReports';
 import { AIInsights } from './components/AIInsights';
 import { SupportingDocuments } from './components/SupportingDocuments';
+import { VerificationView } from './components/verification/VerificationView';
+import { PendingVerificationView } from './components/verification/PendingVerificationView';
+import { VerifiedDocumentsView } from './components/verification/VerifiedDocumentsView';
+import { VerificationObservationsView } from './components/verification/VerificationObservationsView';
+import { VerificationReportsView } from './components/verification/VerificationReportsView';
 import { ACADEMIC_YEARS } from './iqac-data';
 
 export type ViewType =
@@ -28,7 +35,12 @@ export type ViewType =
   | 'improvement'
   | 'reports'
   | 'ai-insights'
-  | 'documents';
+  | 'documents'
+  | 'verification'
+  | 'pending-verification'
+  | 'verified-documents'
+  | 'verification-observations'
+  | 'verification-reports';
 
 const viewTitles: Record<ViewType, { title: string; description: string }> = {
   dashboard: { title: 'IQAC Dashboard', description: 'Institutional quality, readiness and accreditation monitoring at a glance' },
@@ -42,11 +54,17 @@ const viewTitles: Record<ViewType, { title: string; description: string }> = {
   reports: { title: 'Institutional Reports', description: 'Generate and export institutional reports (PDF / Excel)' },
   'ai-insights': { title: 'AI Insights', description: 'Automatically generated institutional recommendations from live data' },
   documents: { title: 'Supporting Documents', description: 'IQAC annual reports, AQAR, SSR documents, policies and meeting minutes' },
+  verification: { title: 'Repository Verification', description: 'Browse and verify departmental evidence across the institution (HOD-approved documents only)' },
+  'pending-verification': { title: 'Pending Verification', description: 'HOD-approved documents awaiting IQAC verification' },
+  'verified-documents': { title: 'Verified Documents', description: 'Evidence verified by the IQAC and institutionally accepted for accreditation' },
+  'verification-observations': { title: 'Verification Observations', description: 'Document-level observations — open, in progress, resolved and verified' },
+  'verification-reports': { title: 'Verification Reports', description: 'Generate and export verification reports (PDF / Excel)' },
 };
 
 export default function IQACDashboardPage() {
   const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
+  const { isImpersonating, user } = useAuth();
   const selectedAcademicYear = useAppSelector((state) => state.ui.selectedAcademicYear);
   const activeView = (searchParams.get('view') as ViewType) || 'dashboard';
 
@@ -65,6 +83,11 @@ export default function IQACDashboardPage() {
       case 'reports': return <InstitutionalReports />;
       case 'ai-insights': return <AIInsights />;
       case 'documents': return <SupportingDocuments />;
+      case 'verification': return <VerificationView />;
+      case 'pending-verification': return <PendingVerificationView />;
+      case 'verified-documents': return <VerifiedDocumentsView />;
+      case 'verification-observations': return <VerificationObservationsView />;
+      case 'verification-reports': return <VerificationReportsView />;
       default: return <Dashboard />;
     }
   };
@@ -74,7 +97,19 @@ export default function IQACDashboardPage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{viewInfo.title}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">{viewInfo.title}</h1>
+            {isImpersonating && user?.institution && (
+              <Badge
+                variant="outline"
+                className="gap-1 border-amber-300/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400"
+              >
+                <Building2 className="h-3 w-3" />
+                {user.institution}
+                <Lock className="h-2.5 w-2.5 opacity-70" />
+              </Badge>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground mt-1">{viewInfo.description}</p>
         </div>
 

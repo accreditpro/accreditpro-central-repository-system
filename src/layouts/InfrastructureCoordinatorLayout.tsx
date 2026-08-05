@@ -1,11 +1,15 @@
 import { Outlet } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
+import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { motion } from 'framer-motion';
 
 export const InfrastructureCoordinatorLayout = () => {
   return (
     <div className="min-h-screen bg-background">
+      {/* Impersonation banner (read-only preview by a Super Admin) */}
+      <ImpersonationBanner />
+
       {/* Main Content - No outer sidebar */}
       <div className="flex flex-col min-h-screen">
         <Header onMobileMenuOpen={() => {}} hideMobileMenuButton />

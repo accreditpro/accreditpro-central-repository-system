@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { ModuleConfig } from '../types';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import {
   ExaminationEvidenceDialog,
   MODULE_EVIDENCE_SECTIONS,
@@ -62,6 +63,7 @@ const EVIDENCE_ENABLED_MODULES = new Set([
 ]);
 
 export function DataTableModule({ config, academicYear }: DataTableModuleProps) {
+  const isReadOnly = useReadOnly();
   const { evidenceFiles, removeEvidence } = useEvidenceStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -238,10 +240,12 @@ export function DataTableModule({ config, academicYear }: DataTableModuleProps) 
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button size="sm" className="gap-2" onClick={handleAddNew}>
-            <Plus className="h-4 w-4" />
-            Add Record
-          </Button>
+          {!isReadOnly && (
+            <Button size="sm" className="gap-2" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
+              Add Record
+            </Button>
+          )}
         </div>
       </div>
 
@@ -335,29 +339,24 @@ export function DataTableModule({ config, academicYear }: DataTableModuleProps) 
                         ))}
                         {showEvidenceColumn && (
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={cn(
-                                'h-7 gap-1 text-[10px]',
-                                totalFiles > 0
-                                  ? 'text-emerald-600 hover:text-emerald-700'
-                                  : 'text-muted-foreground hover:text-foreground'
-                              )}
-                              onClick={() => openEvidenceDialog(row)}
-                            >
-                              {totalFiles > 0 ? (
-                                <>
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  {totalFiles} file{totalFiles > 1 ? 's' : ''}
-                                </>
-                              ) : (
-                                <>
-                                  <Paperclip className="h-3 w-3" />
-                                  Upload
-                                </>
-                              )}
-                            </Button>
+                            {totalFiles > 0 ? (
+                              <Badge variant="secondary" className="gap-1 text-[10px]">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                {totalFiles} file{totalFiles > 1 ? 's' : ''}
+                              </Badge>
+                            ) : isReadOnly ? (
+                              <span className="text-[10px] text-muted-foreground italic">None</span>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                onClick={() => openEvidenceDialog(row)}
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                Upload
+                              </Button>
+                            )}
                           </TableCell>
                         )}
                         <TableCell className="text-right">
@@ -371,24 +370,28 @@ export function DataTableModule({ config, academicYear }: DataTableModuleProps) 
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEdit(row)}
-                              title="Edit"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => handleDelete(row)}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {!isReadOnly && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleEdit(row)}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive"
+                                  onClick={() => handleDelete(row)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -1,20 +1,14 @@
-import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { RepositoryDashboard } from './components/RepositoryDashboard';
 import { RepositoryWorkspace } from './components/RepositoryWorkspace';
+import { getModuleNavClasses } from './components/module-tab-styles';
 import { DepartmentMissionVision } from './components/DepartmentMissionVision';
 import { DocumentsView } from './components/DocumentsView';
 import { UploadHistoryView } from './components/UploadHistoryView';
@@ -33,7 +27,6 @@ import {
   departmentInfo,
 } from './repository-configs';
 import { SidebarView } from './types';
-import { getModuleNavClasses } from './components/module-tab-styles';
 import {
   LayoutDashboard,
   Target,
@@ -66,27 +59,17 @@ const ACADEMIC_YEARS = [
   '2019-20',
 ];
 
-const sidebarItems: {
-  id: SidebarView;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  separator?: boolean;
-}[] = [
+const sidebarItems: { id: SidebarView; label: string; icon: React.ComponentType<{ className?: string }>; separator?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'mission-vision', label: 'Mission & Vision', icon: Target, separator: true },
-  { id: 'course-repository', label: 'Course Repository ⭐', icon: BookMarked },
   { id: 'academic-repository', label: 'Academic Repository', icon: GraduationCap },
+  { id: 'course-repository', label: 'Course Repository ⭐', icon: BookMarked },
   { id: 'faculty-repository', label: 'Faculty Repository', icon: Users },
   { id: 'student-repository', label: 'Student Repository', icon: BookOpen },
   { id: 'research-repository', label: 'Research Repository', icon: FlaskConical },
-  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2 },
   { id: 'student-dev-outcomes-repository', label: 'Student Dev & Outcomes', icon: UsersRound },
-  {
-    id: 'infrastructure-repository',
-    label: 'Infrastructure Repository',
-    icon: Building2,
-    separator: true,
-  },
+  { id: 'infrastructure-repository', label: 'Infrastructure Repository', icon: Building2 },
+  { id: 'alumni-repository', label: 'Alumni Repository', icon: Users2, separator: true },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
@@ -116,7 +99,6 @@ const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
 };
 
 export const DepartmentRepositoryPage = () => {
-  const { user } = useAuth();
   const [activeView, setActiveView] = useState<SidebarView>('academic-repository');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -125,20 +107,9 @@ export const DepartmentRepositoryPage = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return (
-          <RepositoryDashboard
-            onNavigate={module => setActiveView(`${module}-repository` as SidebarView)}
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId ?? 0}
-          />
-        );
+        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
       case 'mission-vision':
-        return (
-          <DepartmentMissionVision
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId ?? 0}
-          />
-        );
+        return <DepartmentMissionVision />;
       case 'course-repository':
         return <CourseRepositoryModule />;
       case 'academic-repository':
@@ -163,13 +134,7 @@ export const DepartmentRepositoryPage = () => {
       case 'profile':
         return <ProfileView />;
       default:
-        return (
-          <RepositoryDashboard
-            onNavigate={module => setActiveView(`${module}-repository` as SidebarView)}
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId ?? 0}
-          />
-        );
+        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
     }
   };
 
@@ -218,7 +183,7 @@ export const DepartmentRepositoryPage = () => {
                   <SelectValue placeholder="Select Academic Year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ACADEMIC_YEARS.map(year => (
+                  {ACADEMIC_YEARS.map((year) => (
                     <SelectItem key={year} value={year} className="text-xs">
                       {year}
                       {year === '2025-26' && (
@@ -284,18 +249,14 @@ export const DepartmentRepositoryPage = () => {
             className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             {!sidebarCollapsed && <span className="ml-2">Collapse</span>}
           </Button>
         </div>
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-hidden flex flex-col">
+      <main className="flex-1 overflow-hidden flex flex-col">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50">
           <Button
@@ -319,22 +280,19 @@ export const DepartmentRepositoryPage = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ACADEMIC_YEARS.map(year => (
-                <SelectItem key={year} value={year} className="text-xs">
-                  {year}
-                </SelectItem>
+              {ACADEMIC_YEARS.map((year) => (
+                <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden">
-          <div className="p-6 w-full max-w-full">
+        <ScrollArea className="flex-1">
+          <div className="p-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${activeView}-${selectedAcademicYear}`}
-                className="w-full max-w-full"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -344,7 +302,7 @@ export const DepartmentRepositoryPage = () => {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </ScrollArea>
       </main>
     </div>
   );

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { useAppSelector } from '@/store';
 import { selectReviews } from '@/store/slices/evidenceReviewSlice';
 import { getHODYearData } from '@/pages/hod-dashboard/hod-configs';
@@ -76,7 +77,11 @@ export default function HODLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen flex-col bg-background">
+      {/* Impersonation banner (read-only preview by a Super Admin) */}
+      <ImpersonationBanner />
+
+      <div className="flex min-h-0 flex-1">
       {/* Sidebar */}
       <aside className={`flex flex-col border-r bg-card transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
@@ -168,6 +173,7 @@ export default function HODLayout() {
           <Outlet />
         </div>
       </main>
+      </div>
     </div>
   );
 }

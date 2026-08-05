@@ -26,5 +26,5 @@ export function parseCSVLine(line: string): string[] {
  * Split CSV text into lines, filtering out empty lines.
  */
 export function splitCSVLines(text: string): string[] {
-  return text.split('\n').filter(l => l.trim().length > 0);
+  return text.split('\n').filter((l) => l.trim().length > 0);
 }

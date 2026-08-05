@@ -4,12 +4,20 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { coordinatorContext, departmentInfo, repositoryHealth } from '../repository-configs';
 import { Progress } from '@/components/ui/progress';
-import { User, Building2, GraduationCap, Calendar, Shield, Mail, Phone } from 'lucide-react';
+import {
+  User,
+  Building2,
+  GraduationCap,
+  Calendar,
+  Shield,
+  Mail,
+  Phone,
+} from 'lucide-react';
 
 export const ProfileView = () => {
   const overallReadiness = Math.round(
     Object.values(repositoryHealth).reduce((sum, m) => sum + m.readinessScore, 0) /
-      Object.values(repositoryHealth).length
+    Object.values(repositoryHealth).length
   );
 
   return (
@@ -35,10 +43,7 @@ export const ProfileView = () => {
               </div>
               <div>
                 <h3 className="text-base font-semibold">{departmentInfo.coordinatorName}</h3>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] bg-emerald-500/10 text-emerald-600 mt-1"
-                >
+                <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-600 mt-1">
                   Department Coordinator
                 </Badge>
               </div>
@@ -63,9 +68,7 @@ export const ProfileView = () => {
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-[10px] text-muted-foreground">Role</p>
-                  <p className="text-xs font-medium">
-                    {coordinatorContext.role.replace(/_/g, ' ')}
-                  </p>
+                  <p className="text-xs font-medium">{coordinatorContext.role.replace(/_/g, ' ')}</p>
                 </div>
               </div>
             </div>
@@ -76,9 +79,7 @@ export const ProfileView = () => {
         <Card className="border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold">Department Assignment</CardTitle>
-            <CardDescription className="text-xs">
-              Your assigned department and scope
-            </CardDescription>
+            <CardDescription className="text-xs">Your assigned department and scope</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -102,9 +103,7 @@ export const ProfileView = () => {
                   <p className="text-[10px] text-muted-foreground">Program Offerings</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {departmentInfo.programOfferings.map(po => (
-                      <Badge key={po} variant="outline" className="text-[9px]">
-                        {po}
-                      </Badge>
+                      <Badge key={po} variant="outline" className="text-[9px]">{po}</Badge>
                     ))}
                   </div>
                 </div>
@@ -115,9 +114,7 @@ export const ProfileView = () => {
                   <p className="text-[10px] text-muted-foreground">Specializations</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {departmentInfo.specializations.map(sp => (
-                      <Badge key={sp} variant="outline" className="text-[9px]">
-                        {sp}
-                      </Badge>
+                      <Badge key={sp} variant="outline" className="text-[9px]">{sp}</Badge>
                     ))}
                   </div>
                 </div>
@@ -133,9 +130,7 @@ export const ProfileView = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-sm font-semibold">Repository Readiness Overview</CardTitle>
-              <CardDescription className="text-xs">
-                Your department's overall accreditation readiness
-              </CardDescription>
+              <CardDescription className="text-xs">Your department's overall accreditation readiness</CardDescription>
             </div>
             <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
               Overall: {overallReadiness}%
@@ -152,8 +147,7 @@ export const ProfileView = () => {
                 </div>
                 <Progress value={metrics.readinessScore} className="h-2" />
                 <p className="text-[9px] text-muted-foreground mt-1.5">
-                  Data: {metrics.dataCompleteness}% • Evidence: {metrics.evidenceCompleteness}% •
-                  Verification: {metrics.verificationPercent}%
+                  Data: {metrics.dataCompleteness}% • Evidence: {metrics.evidenceCompleteness}% • Verification: {metrics.verificationPercent}%
                 </p>
               </div>
             ))}
@@ -165,27 +159,15 @@ export const ProfileView = () => {
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold">Permissions & Access</CardTitle>
-          <CardDescription className="text-xs">
-            What you can and cannot do as Department Coordinator
-          </CardDescription>
+          <CardDescription className="text-xs">What you can and cannot do as Department Coordinator</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <p className="text-xs font-semibold text-emerald-600">✓ Allowed Actions</p>
               <ul className="space-y-1">
-                {[
-                  'Upload Data',
-                  'Update Data',
-                  'Re-submit Data',
-                  'Upload Evidence',
-                  'Download Templates',
-                  'View Reports',
-                ].map(action => (
-                  <li
-                    key={action}
-                    className="text-[11px] text-muted-foreground flex items-center gap-1.5"
-                  >
+                {['Upload Data', 'Update Data', 'Re-submit Data', 'Upload Evidence', 'Download Templates', 'View Reports'].map(action => (
+                  <li key={action} className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     {action}
                   </li>
@@ -195,18 +177,8 @@ export const ProfileView = () => {
             <div className="space-y-2">
               <p className="text-xs font-semibold text-red-600">✗ Restricted Actions</p>
               <ul className="space-y-1">
-                {[
-                  'Verify Records',
-                  'Approve Records',
-                  'Reject Records',
-                  'Modify Master Data',
-                  'Create Programs/Departments',
-                  'Manage Users',
-                ].map(action => (
-                  <li
-                    key={action}
-                    className="text-[11px] text-muted-foreground flex items-center gap-1.5"
-                  >
+                {['Verify Records', 'Approve Records', 'Reject Records', 'Modify Master Data', 'Create Programs/Departments', 'Manage Users'].map(action => (
+                  <li key={action} className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
                     {action}
                   </li>

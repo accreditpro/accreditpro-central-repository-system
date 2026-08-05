@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { EvidencePreviewDialog, EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { evidenceReviewKey, selectReviews, setReview } from '@/store/slices/evidenceReviewSlice';
+import { addNotification } from '@/store/slices/uiSlice';
 import { getHODYearData, EvidenceItem, HOD_NAME } from '../hod-configs';
 import {
   STATUS_META,
@@ -25,6 +26,7 @@ import {
   RepoGroup,
 } from './evidence-utils';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import {
   Search,
   Eye,
@@ -48,6 +50,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export function EvidenceReview({ academicYear }: { academicYear: string }) {
+  const isReadOnly = useReadOnly();
   const dispatch = useAppDispatch();
   const reviews = useAppSelector(selectReviews);
   const [items, setItems] = useState<EvidenceItem[]>(() => getHODYearData(academicYear).evidence);
@@ -180,6 +183,19 @@ export function EvidenceReview({ academicYear }: { academicYear: string }) {
           reviewedBy: HOD_NAME,
           reviewDate: today,
         },
+      })
+    );
+    // Notify the relevant roles: approvals feed the IQAC verification queue;
+    // rejections / change requests return the evidence to the coordinator.
+    dispatch(
+      addNotification({
+        title: type === 'approve' ? 'Evidence approved by HOD' : 'Evidence returned by HOD',
+        message:
+          type === 'approve'
+            ? `"${item.documentName}" (${item.repository}) is HOD-approved — ready for IQAC verification.`
+            : `"${item.documentName}" (${item.repository}) was ${type === 'reject' ? 'rejected' : 'sent back for changes'}.`,
+        type: type === 'approve' ? 'success' : 'warning',
+        read: false,
       })
     );
     setAction(null);
@@ -427,36 +443,40 @@ export function EvidenceReview({ academicYear }: { academicYear: string }) {
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Preview" onClick={() => setPreviewData(buildPreviewData(item))}>
                                                   <Eye className="h-3.5 w-3.5" />
                                                 </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                                                  title="Approve"
-                                                  disabled={item.status === 'approved'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'approve', item }); }}
-                                                >
-                                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                                                  title="Reject"
-                                                  disabled={item.status === 'rejected'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'reject', item }); }}
-                                                >
-                                                  <XCircle className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-purple-600 hover:text-purple-700 hover:bg-purple-500/10"
-                                                  title="Request Changes"
-                                                  disabled={item.status === 'changes-requested'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'changes', item }); }}
-                                                >
-                                                  <RotateCcw className="h-3.5 w-3.5" />
-                                                </Button>
+                                                {!isReadOnly && (
+                                                  <>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                                      title="Approve"
+                                                      disabled={item.status === 'approved'}
+                                                      onClick={() => { setNote(''); setAction({ type: 'approve', item }); }}
+                                                    >
+                                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                                      title="Reject"
+                                                      disabled={item.status === 'rejected'}
+                                                      onClick={() => { setNote(''); setAction({ type: 'reject', item }); }}
+                                                    >
+                                                      <XCircle className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 text-purple-600 hover:text-purple-700 hover:bg-purple-500/10"
+                                                      title="Request Changes"
+                                                      disabled={item.status === 'changes-requested'}
+                                                      onClick={() => { setNote(''); setAction({ type: 'changes', item }); }}
+                                                    >
+                                                      <RotateCcw className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                  </>
+                                                )}
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Download" onClick={() => downloadItem(item)}>
                                                   <Download className="h-3.5 w-3.5" />
                                                 </Button>

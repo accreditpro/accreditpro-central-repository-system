@@ -954,7 +954,7 @@ export default function Step10_MarksUpload({ blueprint, data, courseDetails, aca
                       {previewData.map((student, idx) => {
                         const pct = maxMark > 0 ? Math.round((student.totalMarks / maxMark) * 100) : 0;
                         return (
-                          <TableRow key={student.rollNumber} className="hover:bg-muted/10">
+                          <TableRow key={student.rollNumber} className="hover:bg-muted/50">
                             <TableCell className="text-[10px] text-muted-foreground sticky left-0 bg-card z-10">{idx + 1}</TableCell>
                             <TableCell className="text-[10px] font-mono font-medium sticky left-[30px] bg-card z-10">
                               {student.rollNumber}

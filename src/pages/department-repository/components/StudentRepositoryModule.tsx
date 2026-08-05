@@ -1,18 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
+import { getModuleTabActiveClasses } from './module-tab-styles';
 import { StudentMOOCModule } from './StudentMOOCModule';
 import {
   Building2,
@@ -46,19 +41,11 @@ interface StudentRepositoryModuleProps {
 
 const academicYearOptions = ['2023-24', '2024-25', '2025-26', '2026-27'];
 const yearOptions = ['I Year', 'II Year', 'III Year', 'IV Year'];
-const semesterOptions = [
-  'Semester 1',
-  'Semester 2',
-  'Semester 3',
-  'Semester 4',
-  'Semester 5',
-  'Semester 6',
-  'Semester 7',
-  'Semester 8',
-];
+const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
 
 export const StudentRepositoryModule = ({ config, academicYear }: StudentRepositoryModuleProps) => {
   const [activeTab, setActiveTab] = useState(config.tabs[0]?.id || '');
+  const activeClasses = getModuleTabActiveClasses(config.id);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState(academicYear || '2025-26');
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
@@ -85,14 +72,9 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-4 w-4 text-blue-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Department
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
             </div>
-            <p
-              className="text-sm font-semibold text-white truncate"
-              title={departmentInfo.department}
-            >
+            <p className="text-sm font-semibold text-white truncate" title={departmentInfo.department}>
               {departmentInfo.department}
             </p>
           </div>
@@ -101,19 +83,15 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CalendarDays className="h-4 w-4 text-purple-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Academic Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Academic Year</span>
             </div>
             <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-purple-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {academicYearOptions.map(year => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
+                {academicYearOptions.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -123,28 +101,21 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Year
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Year</span>
             </div>
-            <Select
-              value={selectedYear}
-              onValueChange={value => {
-                setSelectedYear(value);
-                // Auto-adjust semester based on year selection
-                const yearIndex = yearOptions.indexOf(value);
-                const defaultSemester = `Semester ${yearIndex * 2 + 1}`;
-                setSelectedSemester(defaultSemester);
-              }}
-            >
+            <Select value={selectedYear} onValueChange={(value) => {
+              setSelectedYear(value);
+              // Auto-adjust semester based on year selection
+              const yearIndex = yearOptions.indexOf(value);
+              const defaultSemester = `Semester ${yearIndex * 2 + 1}`;
+              setSelectedSemester(defaultSemester);
+            }}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-emerald-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {yearOptions.map(year => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
+                {yearOptions.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -154,19 +125,15 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
           <div className="relative p-4 rounded-xl border border-border/60 bg-gradient-to-br from-slate-900/80 to-slate-800/80 dark:from-slate-800/60 dark:to-slate-900/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-amber-400" />
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
-                Semester
-              </span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Semester</span>
             </div>
             <Select value={selectedSemester} onValueChange={setSelectedSemester}>
               <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-sm font-semibold text-amber-300 shadow-none focus:ring-0 [&>svg]:text-slate-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {semesterOptions.map(sem => (
-                  <SelectItem key={sem} value={sem}>
-                    {sem}
-                  </SelectItem>
+                {semesterOptions.map((sem) => (
+                  <SelectItem key={sem} value={sem}>{sem}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -176,35 +143,18 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
         {/* Score Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            {
-              label: 'Data Completeness',
-              value: metrics.dataCompleteness,
-              color: 'text-indigo-600 bg-indigo-500/10',
-            },
-            {
-              label: 'Evidence Score',
-              value: metrics.evidenceCompleteness,
-              color: 'text-violet-600 bg-violet-500/10',
-            },
-            {
-              label: 'Verification Score',
-              value: metrics.verificationPercent,
-              color: 'text-emerald-600 bg-emerald-500/10',
-            },
-            {
-              label: 'Readiness Score',
-              value: metrics.readinessScore,
-              color: 'text-amber-600 bg-amber-500/10',
-            },
-          ].map(metric => (
-            <div key={metric.label} className="p-3 rounded-xl border border-border/50 bg-card">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {metric.label}
-              </p>
+            { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
+            { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
+            { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
+            { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
+          ].map((metric) => (
+            <div
+              key={metric.label}
+              className="p-3 rounded-xl border border-border/50 bg-card"
+            >
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>
-                  {metric.value}%
-                </span>
+                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>{metric.value}%</span>
                 <Progress value={metric.value} className="h-1.5 flex-1" />
               </div>
             </div>
@@ -215,10 +165,9 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
       {/* Context Info Banner */}
       <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 border border-border/30">
         <span className="text-xs text-muted-foreground">
-          Showing data for{' '}
-          <span className="font-semibold text-foreground">{departmentInfo.department}</span> &bull;
-          <span className="font-semibold text-foreground"> {selectedAcademicYear}</span> &bull;
-          <span className="font-semibold text-foreground"> {selectedYear}</span> &bull;
+          Showing data for <span className="font-semibold text-foreground">{departmentInfo.department}</span> &bull; 
+          <span className="font-semibold text-foreground"> {selectedAcademicYear}</span> &bull; 
+          <span className="font-semibold text-foreground"> {selectedYear}</span> &bull; 
           <span className="font-semibold text-foreground"> {selectedSemester}</span>
         </span>
       </div>
@@ -226,22 +175,27 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
-          {config.tabs.map(tab => {
+          {config.tabs.map((tab) => {
             const Icon = iconMap[tab.icon] || FileText;
+            const isActive = activeTab === tab.id;
             return (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all',
+                  isActive && activeClasses.ring,
+                  !isActive && activeClasses.hover
+                )}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className={cn('h-3.5 w-3.5', isActive && activeClasses.icon)} />
                 <span className="hidden md:inline">{tab.label}</span>
               </TabsTrigger>
             );
           })}
         </TabsList>
 
-        {config.tabs.map(tab => (
+        {config.tabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'mooc-online-certifications' ? (
               <StudentMOOCModule
@@ -249,7 +203,10 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
                 academicYear={selectedAcademicYear}
               />
             ) : (
-              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+              <RepositoryTabContent
+                tabConfig={tab}
+                repositoryId={config.id}
+              />
             )}
           </TabsContent>
         ))}

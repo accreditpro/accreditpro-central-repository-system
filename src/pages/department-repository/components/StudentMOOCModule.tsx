@@ -4,21 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
   Search,
@@ -80,144 +68,34 @@ interface EvidenceItem {
 
 const mockMOOCs: MOOCCertification[] = [
   {
-    id: '1',
-    registrationNumber: 'CS2022001',
-    studentName: 'Rahul Verma',
-    platform: 'NPTEL',
-    courseName: 'Deep Learning',
-    courseCategory: 'AI/ML',
-    conductedBy: 'IIT Madras',
-    startDate: '2025-01-15',
-    completionDate: '2025-04-10',
-    durationHours: 60,
-    grade: 'Elite + Gold',
-    score: '92%',
-    certificationStatus: 'Certified',
-    certificateId: 'NPTEL-DL-2025-001',
-    academicYear: '2025-26',
-    remarks: '',
-    status: 'Approved',
-    evidence: [
-      {
-        id: 'e1',
-        name: 'NPTEL Deep Learning Certificate.pdf',
-        type: 'pdf',
-        size: '1.5 MB',
-        uploadedDate: '2025-04-15',
-        status: 'Verified',
-        version: 'v1.0',
-      },
-    ],
+    id: '1', registrationNumber: 'CS2022001', studentName: 'Rahul Verma', platform: 'NPTEL', courseName: 'Deep Learning', courseCategory: 'AI/ML', conductedBy: 'IIT Madras',
+    startDate: '2025-01-15', completionDate: '2025-04-10', durationHours: 60, grade: 'Elite + Gold', score: '92%', certificationStatus: 'Certified', certificateId: 'NPTEL-DL-2025-001', academicYear: '2025-26', remarks: '', status: 'Approved',
+    evidence: [{ id: 'e1', name: 'NPTEL Deep Learning Certificate.pdf', type: 'pdf', size: '1.5 MB', uploadedDate: '2025-04-15', status: 'Verified', version: 'v1.0' }]
   },
   {
-    id: '2',
-    registrationNumber: 'CS2022002',
-    studentName: 'Priya Sharma',
-    platform: 'Coursera',
-    courseName: 'Google Cloud Professional Architect',
-    courseCategory: 'Cloud Computing',
-    conductedBy: 'Google',
-    startDate: '2025-02-01',
-    completionDate: '2025-05-30',
-    durationHours: 80,
-    grade: 'Pass',
-    score: '88%',
-    certificationStatus: 'Certified',
-    certificateId: 'GCPA-2025-XYZ',
-    academicYear: '2025-26',
-    remarks: '',
-    status: 'Approved',
-    evidence: [],
+    id: '2', registrationNumber: 'CS2022002', studentName: 'Priya Sharma', platform: 'Coursera', courseName: 'Google Cloud Professional Architect', courseCategory: 'Cloud Computing', conductedBy: 'Google',
+    startDate: '2025-02-01', completionDate: '2025-05-30', durationHours: 80, grade: 'Pass', score: '88%', certificationStatus: 'Certified', certificateId: 'GCPA-2025-XYZ', academicYear: '2025-26', remarks: '', status: 'Approved',
+    evidence: []
   },
   {
-    id: '3',
-    registrationNumber: 'CS2022003',
-    studentName: 'Suresh Reddy',
-    platform: 'SWAYAM',
-    courseName: 'Cyber Security',
-    courseCategory: 'Security',
-    conductedBy: 'IIT Kanpur',
-    startDate: '2025-03-01',
-    completionDate: '2025-06-15',
-    durationHours: 45,
-    grade: 'Elite',
-    score: '85%',
-    certificationStatus: 'Certified',
-    certificateId: 'SWAYAM-CS-2025',
-    academicYear: '2025-26',
-    remarks: '',
-    status: 'Uploaded',
-    evidence: [],
+    id: '3', registrationNumber: 'CS2022003', studentName: 'Suresh Reddy', platform: 'SWAYAM', courseName: 'Cyber Security', courseCategory: 'Security', conductedBy: 'IIT Kanpur',
+    startDate: '2025-03-01', completionDate: '2025-06-15', durationHours: 45, grade: 'Elite', score: '85%', certificationStatus: 'Certified', certificateId: 'SWAYAM-CS-2025', academicYear: '2025-26', remarks: '', status: 'Uploaded',
+    evidence: []
   },
   {
-    id: '4',
-    registrationNumber: 'CS2022004',
-    studentName: 'Anita Desai',
-    platform: 'edX',
-    courseName: 'Data Science with Python',
-    courseCategory: 'Data Science',
-    conductedBy: 'MIT',
-    startDate: '2025-04-01',
-    completionDate: '2025-07-20',
-    durationHours: 50,
-    grade: 'Verified',
-    score: '90%',
-    certificationStatus: 'Certified',
-    certificateId: 'EDX-DS-2025',
-    academicYear: '2025-26',
-    remarks: '',
-    status: 'Approved',
-    evidence: [],
+    id: '4', registrationNumber: 'CS2022004', studentName: 'Anita Desai', platform: 'edX', courseName: 'Data Science with Python', courseCategory: 'Data Science', conductedBy: 'MIT',
+    startDate: '2025-04-01', completionDate: '2025-07-20', durationHours: 50, grade: 'Verified', score: '90%', certificationStatus: 'Certified', certificateId: 'EDX-DS-2025', academicYear: '2025-26', remarks: '', status: 'Approved',
+    evidence: []
   },
   {
-    id: '5',
-    registrationNumber: 'CS2022005',
-    studentName: 'Arjun Nair',
-    platform: 'Microsoft Learn',
-    courseName: 'Azure AI Fundamentals',
-    courseCategory: 'AI/ML',
-    conductedBy: 'Microsoft',
-    startDate: '2025-05-01',
-    completionDate: '2025-06-20',
-    durationHours: 30,
-    grade: 'Pass',
-    score: '91%',
-    certificationStatus: 'Certified',
-    certificateId: 'MS-AI-2025-001',
-    academicYear: '2025-26',
-    remarks: '',
-    status: 'Approved',
-    evidence: [
-      {
-        id: 'e2',
-        name: 'Azure AI Certificate.pdf',
-        type: 'pdf',
-        size: '1.2 MB',
-        uploadedDate: '2025-06-25',
-        status: 'Verified',
-        version: 'v1.0',
-      },
-    ],
+    id: '5', registrationNumber: 'CS2022005', studentName: 'Arjun Nair', platform: 'Microsoft Learn', courseName: 'Azure AI Fundamentals', courseCategory: 'AI/ML', conductedBy: 'Microsoft',
+    startDate: '2025-05-01', completionDate: '2025-06-20', durationHours: 30, grade: 'Pass', score: '91%', certificationStatus: 'Certified', certificateId: 'MS-AI-2025-001', academicYear: '2025-26', remarks: '', status: 'Approved',
+    evidence: [{ id: 'e2', name: 'Azure AI Certificate.pdf', type: 'pdf', size: '1.2 MB', uploadedDate: '2025-06-25', status: 'Verified', version: 'v1.0' }]
   },
   {
-    id: '6',
-    registrationNumber: 'CS2022006',
-    studentName: 'Kavya Reddy',
-    platform: 'AWS Academy',
-    courseName: 'AWS Cloud Practitioner',
-    courseCategory: 'Cloud Computing',
-    conductedBy: 'Amazon',
-    startDate: '2025-06-01',
-    completionDate: '2025-07-30',
-    durationHours: 40,
-    grade: 'Pass',
-    score: '95%',
-    certificationStatus: 'Certified',
-    certificateId: 'AWS-CP-2025-002',
-    academicYear: '2025-26',
-    remarks: 'Completed with distinction',
-    status: 'Approved',
-    evidence: [],
+    id: '6', registrationNumber: 'CS2022006', studentName: 'Kavya Reddy', platform: 'AWS Academy', courseName: 'AWS Cloud Practitioner', courseCategory: 'Cloud Computing', conductedBy: 'Amazon',
+    startDate: '2025-06-01', completionDate: '2025-07-30', durationHours: 40, grade: 'Pass', score: '95%', certificationStatus: 'Certified', certificateId: 'AWS-CP-2025-002', academicYear: '2025-26', remarks: 'Completed with distinction', status: 'Approved',
+    evidence: []
   },
 ];
 
@@ -232,28 +110,14 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { color: string; icon: React.ReactNode }> = {
-      Approved: {
-        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-        icon: <CheckCircle2 className="h-3 w-3" />,
-      },
-      Uploaded: {
-        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        icon: <Clock className="h-3 w-3" />,
-      },
-      Draft: {
-        color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
-        icon: <AlertCircle className="h-3 w-3" />,
-      },
-      Rejected: {
-        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-        icon: <XCircle className="h-3 w-3" />,
-      },
+      'Approved': { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: <CheckCircle2 className="h-3 w-3" /> },
+      'Uploaded': { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: <Clock className="h-3 w-3" /> },
+      'Draft': { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400', icon: <AlertCircle className="h-3 w-3" /> },
+      'Rejected': { color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: <XCircle className="h-3 w-3" /> },
     };
     const variant = variants[status] || variants['Draft'];
     return (
-      <Badge
-        className={`${variant.color} flex items-center gap-1 text-[10px] font-medium px-2 py-0.5`}
-      >
+      <Badge className={`${variant.color} flex items-center gap-1 text-[10px] font-medium px-2 py-0.5`}>
         {variant.icon}
         {status}
       </Badge>
@@ -261,8 +125,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
   };
 
   const filtered = mockMOOCs.filter(m => {
-    const matchesSearch =
-      searchQuery === '' ||
+    const matchesSearch = searchQuery === '' ||
       m.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.courseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.platform.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,10 +136,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-4">
@@ -310,7 +170,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
             <Input
               placeholder="Search by student, course, or platform..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-sm"
             />
           </div>
@@ -372,21 +232,16 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                     </td>
                   </tr>
                 ) : (
-                  paginatedData.map(row => (
-                    <tr key={row.id} className="border-b hover:bg-muted/30 transition-colors">
+                  paginatedData.map((row) => (
+                    <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-mono text-[10px]">{row.registrationNumber}</td>
                       <td className="p-3 font-medium">{row.studentName}</td>
                       <td className="p-3">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] flex items-center gap-1 w-fit"
-                        >
+                        <Badge variant="outline" className="text-[10px] flex items-center gap-1 w-fit">
                           <Globe className="h-3 w-3" /> {row.platform}
                         </Badge>
                       </td>
-                      <td className="p-3 max-w-[180px] truncate" title={row.courseName}>
-                        {row.courseName}
-                      </td>
+                      <td className="p-3 max-w-[180px] truncate" title={row.courseName}>{row.courseName}</td>
                       <td className="p-3">{row.courseCategory || '-'}</td>
                       <td className="p-3 text-[10px]">{row.completionDate || '-'}</td>
                       <td className="p-3">{row.durationHours || '-'}</td>
@@ -397,12 +252,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                       </td>
                       <td className="p-3">{row.score || '-'}</td>
                       <td className="p-3">
-                        <Badge
-                          variant={
-                            row.certificationStatus === 'Certified' ? 'default' : 'secondary'
-                          }
-                          className="text-[10px]"
-                        >
+                        <Badge variant={row.certificationStatus === 'Certified' ? 'default' : 'secondary'} className="text-[10px]">
                           {row.certificationStatus}
                         </Badge>
                       </td>
@@ -412,26 +262,15 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                           size="sm"
                           variant="ghost"
                           className="h-7 text-[10px]"
-                          onClick={() => {
-                            setSelectedRecord(row.id);
-                            setShowEvidenceDialog(true);
-                          }}
+                          onClick={() => { setSelectedRecord(row.id); setShowEvidenceDialog(true); }}
                         >
                           <FileText className="h-3 w-3 mr-1" /> {row.evidence.length}
                         </Button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -445,29 +284,13 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          Showing {paginatedData.length} of {filtered.length} records
-        </p>
+        <p className="text-xs text-muted-foreground">Showing {paginatedData.length} of {filtered.length} records</p>
         <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 w-7 p-0"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(p => p - 1)}
-          >
+          <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
             <ChevronLeft className="h-3 w-3" />
           </Button>
-          <span className="text-xs px-2">
-            Page {currentPage} of {totalPages || 1}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 w-7 p-0"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage(p => p + 1)}
-          >
+          <span className="text-xs px-2">Page {currentPage} of {totalPages || 1}</span>
+          <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
             <ChevronRight className="h-3 w-3" />
           </Button>
         </div>
@@ -483,78 +306,45 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
             <div className="border rounded-lg p-4 border-dashed border-border/80 text-center">
               <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Drag & drop files here</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Supported: PDF, JPG, PNG, DOCX (Max 25 MB)
-              </p>
-              <Button size="sm" variant="outline" className="mt-3">
-                Browse Files
-              </Button>
+              <p className="text-xs text-muted-foreground mt-1">Supported: PDF, JPG, PNG, DOCX (Max 25 MB)</p>
+              <Button size="sm" variant="outline" className="mt-3">Browse Files</Button>
             </div>
 
             <Separator />
 
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase">
-                Uploaded Documents
-              </h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase">Uploaded Documents</h4>
               {selectedRecord && (
                 <div className="space-y-2">
                   {(mockMOOCs.find(m => m.id === selectedRecord)?.evidence.length ?? 0) > 0 ? (
-                    mockMOOCs
-                      .find(m => m.id === selectedRecord)
-                      ?.evidence.map(ev => (
-                        <div
-                          key={ev.id}
-                          className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/30"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4 text-red-500" />
-                            <div>
-                              <p className="text-xs font-medium">{ev.name}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {ev.size} • Uploaded {ev.uploadedDate} • {ev.version}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px]">
-                              {ev.status}
-                            </Badge>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                              <DownloadCloud className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                              <Replace className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                              <History className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0 text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                    mockMOOCs.find(m => m.id === selectedRecord)?.evidence.map((ev) => (
+                      <div key={ev.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-4 w-4 text-red-500" />
+                          <div>
+                            <p className="text-xs font-medium">{ev.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{ev.size} • Uploaded {ev.uploadedDate} • {ev.version}</p>
                           </div>
                         </div>
-                      ))
+                        <div className="flex items-center gap-1">
+                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px]">{ev.status}</Badge>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Eye className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><DownloadCloud className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Replace className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><History className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      </div>
+                    ))
                   ) : (
-                    <p className="text-xs text-muted-foreground text-center py-4">
-                      No documents uploaded yet.
-                    </p>
+                    <p className="text-xs text-muted-foreground text-center py-4">No documents uploaded yet.</p>
                   )}
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEvidenceDialog(false)}>
-              Close
-            </Button>
+            <Button variant="outline" onClick={() => setShowEvidenceDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -581,23 +371,8 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                   <SelectValue placeholder="Select platform" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    'NPTEL',
-                    'SWAYAM',
-                    'SWAYAM Plus',
-                    'Coursera',
-                    'edX',
-                    'Udemy',
-                    'Microsoft Learn',
-                    'AWS Academy',
-                    'Google Cloud Skills Boost',
-                    'Oracle University',
-                    'Cisco Networking Academy',
-                    'Other',
-                  ].map(p => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
+                  {['NPTEL', 'SWAYAM', 'SWAYAM Plus', 'Coursera', 'edX', 'Udemy', 'Microsoft Learn', 'AWS Academy', 'Google Cloud Skills Boost', 'Oracle University', 'Cisco Networking Academy', 'Other'].map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -659,9 +434,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
                 </SelectTrigger>
                 <SelectContent>
                   {['2023-24', '2024-25', '2025-26', '2026-27'].map(y => (
-                    <SelectItem key={y} value={y}>
-                      {y}
-                    </SelectItem>
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -672,9 +445,7 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
             <Button onClick={() => setShowAddDialog(false)}>Save Record</Button>
           </DialogFooter>
         </DialogContent>
@@ -698,15 +469,11 @@ export function StudentMOOCModule({ department, academicYear }: StudentMOOCModul
               <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Upload CSV File</p>
               <p className="text-xs text-muted-foreground mt-1">Drag & drop or click to browse</p>
-              <Button size="sm" variant="outline" className="mt-3">
-                Browse Files
-              </Button>
+              <Button size="sm" variant="outline" className="mt-3">Browse Files</Button>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCSVDialog(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowCSVDialog(false)}>Cancel</Button>
             <Button onClick={() => setShowCSVDialog(false)}>Upload & Preview</Button>
           </DialogFooter>
         </DialogContent>
