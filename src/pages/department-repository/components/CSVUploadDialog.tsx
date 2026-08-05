@@ -45,7 +45,11 @@ interface CSVUploadDialogProps {
   onClose: () => void;
   tabConfig: RepositoryTabConfig;
   existingData: Record<string, string>[];
-  onUploadComplete: (data: Record<string, string>[], evidenceFiles?: Record<string, File>) => void;
+  onUploadComplete: (
+    data: Record<string, string>[],
+    evidenceFiles?: Record<string, File>,
+    rawFile?: File
+  ) => void;
 }
 
 type UploadStep = 'upload' | 'mapping' | 'validate' | 'preview' | 'evidence' | 'submit';
@@ -140,6 +144,7 @@ export const CSVUploadDialog = ({
   const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [rawCsvFile, setRawCsvFile] = useState<File | null>(null);
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [step5EvidenceFiles, setStep5EvidenceFiles] = useState<Record<string, File>>({});
@@ -149,6 +154,7 @@ export const CSVUploadDialog = ({
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setRawCsvFile(file);
     setUploadedFileName(file.name);
 
     const reader = new FileReader();
@@ -583,7 +589,7 @@ export const CSVUploadDialog = ({
     } else {
       // Submit - only pass valid data
       if (validationResult && validationResult.validData.length > 0 && onUploadComplete) {
-        onUploadComplete(validationResult.validData, step5EvidenceFiles);
+        onUploadComplete(validationResult.validData, step5EvidenceFiles, rawCsvFile || undefined);
       }
       handleClose();
     }

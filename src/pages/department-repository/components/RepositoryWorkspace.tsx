@@ -6,6 +6,10 @@ import {
   AcademicRepositorySummary,
 } from '@/services/academic-repository.service';
 import { getFacultyMetrics, FacultyMetrics } from '@/services/faculty-repository.service';
+import {
+  getAlumniRepositoryHealth,
+  AlumniRepositoryHealth,
+} from '@/services/alumni-repository.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -139,6 +143,7 @@ export const RepositoryWorkspace = ({
   const { user } = useAuth();
   const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
   const [facultySummary, setFacultySummary] = useState<FacultyMetrics | null>(null);
+  const [alumniSummary, setAlumniSummary] = useState<AlumniRepositoryHealth | null>(null);
 
   // Reset active tab when config changes (e.g., switching between repositories)
   useEffect(() => {
@@ -146,7 +151,7 @@ export const RepositoryWorkspace = ({
   }, [config.id, initialTabIndex]);
 
   useEffect(() => {
-    const departmentId = user?.departmentId || 101;
+    const departmentId = user?.departmentId || 22;
     const year = academicYear || '2025-26';
 
     if (config.id === 'academic') {
@@ -156,6 +161,8 @@ export const RepositoryWorkspace = ({
         .catch(console.error);
     } else if (config.id === 'faculty') {
       getFacultyMetrics(year, departmentId).then(setFacultySummary).catch(console.error);
+    } else if (config.id === 'alumni') {
+      getAlumniRepositoryHealth(year, departmentId).then(setAlumniSummary).catch(console.error);
     }
   }, [config.id, academicYear, user]);
 
@@ -181,6 +188,14 @@ export const RepositoryWorkspace = ({
       evidenceCompleteness: facultySummary.evidenceScore,
       verificationPercent: facultySummary.verificationScore,
       readinessScore: facultySummary.readinessScore,
+    };
+  } else if (config.id === 'alumni' && alumniSummary) {
+    metrics = {
+      ...metrics,
+      dataCompleteness: alumniSummary.dataCompleteness ?? 0,
+      evidenceCompleteness: alumniSummary.evidenceCompleteness ?? 0,
+      verificationPercent: alumniSummary.verificationPercent ?? 0,
+      readinessScore: alumniSummary.readinessScore ?? 0,
     };
   }
 

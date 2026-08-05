@@ -8,6 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  getResearchRepositoryHealth,
+  getResearchDashboardSummary,
+  ResearchRepositoryHealth,
+  ResearchDashboardResponse,
+} from '@/services/research-repository.service';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo, evidenceDocuments } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
@@ -67,12 +74,39 @@ const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  void academicYear;
-  const metrics = repositoryHealth[config.id] || {
-    dataCompleteness: 74,
-    evidenceCompleteness: 60,
-    verificationPercent: 65,
-    readinessScore: 66,
+  const { user } = useAuth();
+  const [healthMetrics, setHealthMetrics] = useState<ResearchRepositoryHealth | null>(null);
+  const [dashboardData, setDashboardData] = useState<ResearchDashboardResponse | null>(null);
+
+  useEffect(() => {
+    const departmentId = user?.departmentId || 22;
+    const year = academicYear || '2025-26';
+    getResearchRepositoryHealth(year, departmentId)
+      .then(data => {
+        if (data) setHealthMetrics(data);
+      })
+      .catch(console.error);
+
+    getResearchDashboardSummary(year, departmentId)
+      .then(data => {
+        if (data) setDashboardData(data);
+      })
+      .catch(console.error);
+  }, [academicYear, user]);
+
+  const metrics = {
+    dataCompleteness: healthMetrics
+      ? (healthMetrics.dataCompleteness ?? 0)
+      : (repositoryHealth[config.id]?.dataCompleteness ?? 0),
+    evidenceCompleteness: healthMetrics
+      ? (healthMetrics.evidenceCompleteness ?? 0)
+      : (repositoryHealth[config.id]?.evidenceCompleteness ?? 0),
+    verificationPercent: healthMetrics
+      ? (healthMetrics.verificationPercent ?? 0)
+      : (repositoryHealth[config.id]?.verificationPercent ?? 0),
+    readinessScore: healthMetrics
+      ? (healthMetrics.readinessScore ?? 0)
+      : (repositoryHealth[config.id]?.readinessScore ?? 0),
   };
 
   // Score card data
@@ -99,114 +133,111 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
     },
   ];
 
+  // Helper function to find module summary count by moduleId
+  const getModuleCount = (modId: string, fallback: string = '0') => {
+    if (!dashboardData?.moduleSummary) return fallback;
+    const found = dashboardData.moduleSummary.find(
+      m => m.moduleId === modId || m.label?.toLowerCase() === modId.toLowerCase()
+    );
+    return found ? String(found.count) : fallback;
+  };
+
+  // Helper function to find module completion percentage by moduleId
+  const getModuleCompletion = (modId: string) => {
+    if (!dashboardData?.moduleSummary) return 0;
+    const found = dashboardData.moduleSummary.find(
+      m => m.moduleId === modId || m.label?.toLowerCase() === modId.toLowerCase()
+    );
+    return found?.completionPercentage ?? 0;
+  };
+
   // KPI data for dashboard
   const kpiCards = [
     {
       label: 'Faculty Journal Pubs',
-      value: '45',
+      value: getModuleCount('faculty-journal-publications', '0'),
       icon: FileText,
       color: 'text-blue-600 bg-blue-500/10',
     },
     {
       label: 'Faculty Conference Pubs',
-      value: '32',
+      value: getModuleCount('faculty-conference-publications', '0'),
       icon: FileSpreadsheet,
       color: 'text-violet-600 bg-violet-500/10',
     },
     {
       label: 'Faculty Patents',
-      value: '8',
+      value: getModuleCount('faculty-patents', '0'),
       icon: Shield,
       color: 'text-emerald-600 bg-emerald-500/10',
     },
     {
       label: 'Faculty Books/Chapters',
-      value: '12',
+      value: String(
+        Number(getModuleCount('faculty-books', '0')) +
+          Number(getModuleCount('faculty-book-chapters', '0'))
+      ),
       icon: BookOpen,
       color: 'text-amber-600 bg-amber-500/10',
     },
     {
       label: 'Sponsored Projects',
-      value: '6',
+      value: getModuleCount('faculty-sponsored-projects', '0'),
       icon: DollarSign,
       color: 'text-orange-600 bg-orange-500/10',
     },
     {
       label: 'Consultancy Projects',
-      value: '4',
+      value: getModuleCount('faculty-consultancy-projects', '0'),
       icon: Briefcase,
       color: 'text-purple-600 bg-purple-500/10',
     },
     {
       label: 'Student Publications',
-      value: '28',
+      value: String(
+        Number(getModuleCount('student-journal-publications', '0')) +
+          Number(getModuleCount('student-conference-publications', '0'))
+      ),
       icon: Users,
       color: 'text-cyan-600 bg-cyan-500/10',
     },
-    { label: 'Student Patents', value: '3', icon: Award, color: 'text-rose-600 bg-rose-500/10' },
-  ];
-
-  const totalResearchFunding = 25000000; // ₹2.5 Cr
-  const consultancyRevenue = 4500000; // ₹45 Lakhs
-
-  const recentActivities = [
     {
-      title: 'Dr. Rajesh Kumar published in IEEE Transactions',
-      date: '2 days ago',
-      type: 'Journal Publication',
-      status: 'completed',
-    },
-    {
-      title: 'Patent filed for AI-based diagnostic system',
-      date: '3 days ago',
-      type: 'Patent',
-      status: 'completed',
-    },
-    {
-      title: 'Sponsored project from DST-SERB sanctioned ₹45L',
-      date: '1 week ago',
-      type: 'Sponsored Project',
-      status: 'completed',
-    },
-    {
-      title: 'Consultancy project with ABC Industries completed',
-      date: '1 week ago',
-      type: 'Consultancy',
-      status: 'completed',
-    },
-    {
-      title: 'Student research paper accepted at ICML 2025',
-      date: '2 weeks ago',
-      type: 'Student Research',
-      status: 'in-progress',
-    },
-    {
-      title: 'Book chapter published by Springer',
-      date: '2 weeks ago',
-      type: 'Book Chapter',
-      status: 'completed',
-    },
-    {
-      title: 'Industry-sponsored research project kickoff',
-      date: '3 weeks ago',
-      type: 'Research Project',
-      status: 'in-progress',
-    },
-    {
-      title: 'Patent grant received for IoT device',
-      date: '3 weeks ago',
-      type: 'Patent',
-      status: 'completed',
+      label: 'Student Patents',
+      value: getModuleCount('student-patents', '0'),
+      icon: Award,
+      color: 'text-rose-600 bg-rose-500/10',
     },
   ];
 
-  const healthData = config.tabs
-    .filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents')
-    .map(t => ({
-      module: t.label,
-      completion: Math.floor(Math.random() * 30) + 65,
-      records: Math.floor(Math.random() * 40) + 3,
-    }));
+  const totalResearchFunding =
+    dashboardData?.financialSummary?.totalResearchFunding ?? 0;
+  const consultancyRevenue =
+    dashboardData?.financialSummary?.consultancyRevenue ?? 0;
+
+  const recentActivities =
+    dashboardData?.recentActivity && dashboardData.recentActivity.length > 0
+      ? dashboardData.recentActivity.map(a => ({
+          title: a.title || a.description || 'Research Activity',
+          date: a.date || a.timestamp || 'Recently',
+          type: a.type || 'Research',
+          status: a.status || 'completed',
+        }))
+      : [];
+
+  const healthData =
+    dashboardData?.moduleSummary && dashboardData.moduleSummary.length > 0
+      ? dashboardData.moduleSummary.map(m => ({
+          module: m.label || m.moduleId,
+          completion: m.completionPercentage ?? 0,
+          records: m.count ?? 0,
+        }))
+      : config.tabs
+          .filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents')
+          .map(t => ({
+            module: t.label,
+            completion: 0,
+            records: 0,
+          }));
 
   // Render Dashboard
   const renderDashboard = () => {
@@ -377,19 +408,19 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
         {/* Annual Summary */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Annual Summary (2025-26)</CardTitle>
+            <CardTitle className="text-base">Annual Summary ({academicYear || '2025-26'})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
               {[
-                { label: 'Journal Pubs', value: '45', icon: FileText },
-                { label: 'Conference Pubs', value: '32', icon: FileSpreadsheet },
-                { label: 'Patents Filed', value: '8', icon: Shield },
-                { label: 'Books Published', value: '5', icon: Book },
-                { label: 'Book Chapters', value: '7', icon: BookMarked },
-                { label: 'Sponsored Projects', value: '6', icon: DollarSign },
-                { label: 'Consultancy Projects', value: '4', icon: Briefcase },
-                { label: 'Research Projects', value: '10', icon: FlaskConical },
+                { label: 'Journal Pubs', value: getModuleCount('faculty-journal-publications', '0'), icon: FileText },
+                { label: 'Conference Pubs', value: getModuleCount('faculty-conference-publications', '0'), icon: FileSpreadsheet },
+                { label: 'Patents Filed', value: getModuleCount('faculty-patents', '0'), icon: Shield },
+                { label: 'Books Published', value: getModuleCount('faculty-books', '0'), icon: Book },
+                { label: 'Book Chapters', value: getModuleCount('faculty-book-chapters', '0'), icon: BookMarked },
+                { label: 'Sponsored Projects', value: getModuleCount('faculty-sponsored-projects', '0'), icon: DollarSign },
+                { label: 'Consultancy Projects', value: getModuleCount('faculty-consultancy-projects', '0'), icon: Briefcase },
+                { label: 'Research Projects', value: getModuleCount('faculty-research-projects', '0'), icon: FlaskConical },
               ].map((stat, idx) => (
                 <div
                   key={stat.label}
@@ -410,19 +441,27 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <div className="p-4 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100/50 dark:from-pink-950/20 dark:to-pink-900/10 border border-pink-200 dark:border-pink-900/30">
                 <p className="text-xs text-muted-foreground mb-1">Student Journal Pubs</p>
-                <p className="text-xl font-bold text-pink-600">18</p>
+                <p className="text-xl font-bold text-pink-600">
+                  {getModuleCount('student-journal-publications', '0')}
+                </p>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-950/20 dark:to-cyan-900/10 border border-cyan-200 dark:border-cyan-900/30">
                 <p className="text-xs text-muted-foreground mb-1">Student Conference Pubs</p>
-                <p className="text-xl font-bold text-cyan-600">10</p>
+                <p className="text-xl font-bold text-cyan-600">
+                  {getModuleCount('student-conference-publications', '0')}
+                </p>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100/50 dark:from-violet-950/20 dark:to-violet-900/10 border border-violet-200 dark:border-violet-900/30">
                 <p className="text-xs text-muted-foreground mb-1">Student Patents</p>
-                <p className="text-xl font-bold text-violet-600">3</p>
+                <p className="text-xl font-bold text-violet-600">
+                  {getModuleCount('student-patents', '0')}
+                </p>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10 border border-orange-200 dark:border-orange-900/30">
                 <p className="text-xs text-muted-foreground mb-1">Dept Project Developments</p>
-                <p className="text-xl font-bold text-orange-600">5</p>
+                <p className="text-xl font-bold text-orange-600">
+                  {getModuleCount('department-project-development', '0')}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -436,21 +475,21 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Faculty Journal Pubs', value: 82 },
-                { label: 'Faculty Conference Pubs', value: 75 },
-                { label: 'Faculty Patents', value: 68 },
-                { label: 'Faculty Books', value: 90 },
-                { label: 'Faculty Book Chapters', value: 85 },
-                { label: 'Faculty Sponsored Projects', value: 70 },
-                { label: 'Faculty Consultancy', value: 65 },
-                { label: 'Faculty Research Projects', value: 72 },
-                { label: 'Student Journal Pubs', value: 78 },
-                { label: 'Student Conference Pubs', value: 72 },
-                { label: 'Student Patents', value: 60 },
-                { label: 'Student Books', value: 88 },
-                { label: 'Student Book Chapters', value: 82 },
-                { label: 'Student Research Projects', value: 70 },
-                { label: 'Dept Project Dev', value: 75 },
+                { label: 'Faculty Journal Pubs', value: getModuleCompletion('faculty-journal-publications') },
+                { label: 'Faculty Conference Pubs', value: getModuleCompletion('faculty-conference-publications') },
+                { label: 'Faculty Patents', value: getModuleCompletion('faculty-patents') },
+                { label: 'Faculty Books', value: getModuleCompletion('faculty-books') },
+                { label: 'Faculty Book Chapters', value: getModuleCompletion('faculty-book-chapters') },
+                { label: 'Faculty Sponsored Projects', value: getModuleCompletion('faculty-sponsored-projects') },
+                { label: 'Faculty Consultancy', value: getModuleCompletion('faculty-consultancy-projects') },
+                { label: 'Faculty Research Projects', value: getModuleCompletion('faculty-research-projects') },
+                { label: 'Student Journal Pubs', value: getModuleCompletion('student-journal-publications') },
+                { label: 'Student Conference Pubs', value: getModuleCompletion('student-conference-publications') },
+                { label: 'Student Patents', value: getModuleCompletion('student-patents') },
+                { label: 'Student Books', value: getModuleCompletion('student-books') },
+                { label: 'Student Book Chapters', value: getModuleCompletion('student-book-chapters') },
+                { label: 'Student Research Projects', value: getModuleCompletion('student-research-projects') },
+                { label: 'Dept Project Dev', value: getModuleCompletion('department-project-development') },
               ].map(item => (
                 <div key={item.label} className="p-3 rounded-lg border border-border/50">
                   <div className="flex items-center justify-between mb-1.5">
@@ -684,7 +723,11 @@ export const ResearchModule = ({ config, academicYear }: ResearchModuleProps) =>
             ) : tab.id === 'supporting-documents' ? (
               renderSupportingDocs()
             ) : (
-              <RepositoryTabContent tabConfig={tab} />
+              <RepositoryTabContent
+                tabConfig={tab}
+                repositoryId={config.id}
+                academicYear={academicYear}
+              />
             )}
           </TabsContent>
         ))}

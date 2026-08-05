@@ -77,8 +77,9 @@ export default defineConfig(({ command }) => {
       port: parseInt(process.env.VITE_PORT || '3000'),
       proxy: {
         '/api': {
-          target: `http://localhost:${process.env.BACKEND_PORT || '8080'}`,
+          target: process.env.BACKEND_URL || 'https://api-stage.accreditpro.in',
           changeOrigin: true,
+          secure: true,
         },
       },
       watch: { usePolling: true, interval: 600 },

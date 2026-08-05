@@ -52,6 +52,13 @@ import {
   deleteEvidenceDocument,
   getSectionName,
 } from '@/services/alumni-repository.service';
+import {
+  getResearchModuleRecords,
+  createResearchModuleRecord,
+  updateResearchModuleRecord,
+  deleteResearchModuleRecord,
+  uploadResearchModuleCsv,
+} from '@/services/research-repository.service';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -729,14 +736,71 @@ const generateMockData = (tabConfig: RepositoryTabConfig): Record<string, string
 
 // ─── Alumni-specific helpers ──────────────────────────────────────────────────
 
-/** Map an API record (camelCase) to the table row format (CSV column names). */
+const keyAliases: Record<string, string[]> = {
+  facultyname: ['facultyname', 'faculty_name', 'facultylead', 'faculty_lead', 'facultyguide', 'faculty_guide', 'facultymentor', 'faculty_mentor', 'principalinvestigator', 'principal_investigator', 'pi', 'inventors', 'inventorname', 'inventor_name', 'authors', 'author', 'name'],
+  facultylead: ['facultylead', 'faculty_lead', 'facultyname', 'faculty_name', 'principalinvestigator', 'name'],
+  facultyguide: ['facultyguide', 'faculty_guide', 'facultymentor', 'faculty_mentor', 'facultyname', 'faculty_name', 'guide', 'name'],
+  facultymentor: ['facultymentor', 'faculty_mentor', 'facultyguide', 'faculty_guide', 'facultyname', 'faculty_name', 'guide', 'mentor', 'name'],
+  facultycoordinator: ['facultycoordinator', 'faculty_coordinator', 'teamlead', 'team_lead', 'facultyname', 'name'],
+  teamlead: ['teamlead', 'team_lead', 'facultycoordinator', 'faculty_coordinator', 'name'],
+  teammembers: ['teammembers', 'team_members', 'studentteammembers', 'student_team_members', 'members'],
+  principalinvestigator: ['principalinvestigator', 'principal_investigator', 'pi', 'facultyname', 'faculty_name', 'facultylead', 'name'],
+  studentname: ['studentname', 'student_name', 'name'],
+  hallticketnumber: ['hallticketnumber', 'hall_ticket_number', 'hallticketno', 'hallticket', 'rollnumber', 'rollno'],
+  publicationid: ['publicationid', 'publication_id', 'pubid', 'id'],
+  facultyid: ['facultyid', 'faculty_id', 'authorid', 'author_id'],
+  studentid: ['studentid', 'student_id', 'rollnumber', 'rollno', 'id'],
+  conferencetype: ['conferencetype', 'conference_type', 'type'],
+  coinventors: ['coinventors', 'co_investigators', 'coinventigators', 'co-pi', 'copi', 'otherinventors', 'other_inventors', 'studentinventors', 'student_inventors', 'coauthors', 'co_authors', 'teammembers', 'team_members'],
+  patenttype: ['patenttype', 'patent_type', 'type'],
+  status: ['status', 'patentstatus', 'patent_status'],
+  patenttitle: ['patenttitle', 'patent_title', 'title', 'titleofpatent', 'papertitle', 'paper_title', 'booktitle', 'book_title', 'chaptertitle', 'chapter_title', 'projecttitle', 'project_title', 'consultancytitle', 'consultancy_title', 'projectname', 'project_name'],
+  projecttitle: ['projecttitle', 'project_title', 'projectname', 'project_name', 'title', 'consultancytitle'],
+  projectname: ['projectname', 'project_name', 'projecttitle', 'project_title', 'title'],
+  booktitle: ['booktitle', 'book_title', 'title'],
+  chaptertitle: ['chaptertitle', 'chapter_title', 'title'],
+  chapternumber: ['chapternumber', 'chapter_number', 'chapterno', 'chapter_no'],
+  pagenumbers: ['pagenumbers', 'page_numbers', 'pages', 'page_range'],
+  consultancyamount: ['consultancyamount', 'consultancy_amount', 'consultancyvalue', 'consultancy_value', 'amount', 'value'],
+  projectdescription: ['projectdescription', 'project_description', 'description'],
+  description: ['description', 'projectdescription', 'project_description'],
+  patentnumber: ['patentnumber', 'patent_number'],
+  applicationnumber: ['applicationnumber', 'application_number'],
+  filingdate: ['filingdate', 'filing_date'],
+  publicationdate: ['publicationdate', 'publication_date'],
+  grantdate: ['grantdate', 'grant_date'],
+};
+
+/** Map an API record to the table row format (CSV column names). */
 const mapApiToRow = (
   record: Record<string, any>,
   fields: RepositoryTabConfig['fields']
 ): Record<string, string> => {
   const row: Record<string, string> = { _id: String(record.id ?? '') };
+  const sourceData = record.recordData ? { ...record, ...record.recordData } : record;
+
+  const lowercaseMap: Record<string, any> = {};
+  Object.keys(sourceData).forEach(k => {
+    lowercaseMap[k.toLowerCase()] = sourceData[k];
+  });
+
   fields.forEach(f => {
-    row[f.csvColumn] = record[f.key] != null ? String(record[f.key]) : '';
+    const keyLower = f.key.toLowerCase();
+    let val =
+      sourceData[f.key] ??
+      lowercaseMap[keyLower] ??
+      lowercaseMap[f.csvColumn.toLowerCase().replace(/[^a-z0-9]/g, '')];
+
+    if ((val == null || val === '') && keyAliases[keyLower]) {
+      for (const alias of keyAliases[keyLower]) {
+        if (lowercaseMap[alias] != null && lowercaseMap[alias] !== '') {
+          val = lowercaseMap[alias];
+          break;
+        }
+      }
+    }
+
+    row[f.csvColumn] = val != null ? String(val) : '';
   });
   return row;
 };
@@ -750,6 +814,42 @@ const mapRowToApi = (
   fields.forEach(f => {
     if (row[f.csvColumn] !== undefined && row[f.csvColumn] !== '') {
       payload[f.key] = row[f.csvColumn];
+      if (f.key === 'facultyName' || f.key === 'principalInvestigator' || f.key === 'facultyLead' || f.key === 'facultyGuide' || f.key === 'facultyMentor' || f.key === 'facultyCoordinator' || f.key === 'teamLead') {
+        payload['principalInvestigator'] = row[f.csvColumn];
+        payload['facultyLead'] = row[f.csvColumn];
+        payload['facultyGuide'] = row[f.csvColumn];
+        payload['facultyMentor'] = row[f.csvColumn];
+        payload['facultyCoordinator'] = row[f.csvColumn];
+        payload['teamLead'] = row[f.csvColumn];
+        payload['facultyName'] = row[f.csvColumn];
+        payload['inventors'] = row[f.csvColumn];
+        payload['faculty_name'] = row[f.csvColumn];
+        payload['authors'] = row[f.csvColumn];
+      }
+      if (f.key === 'description' || f.key === 'projectDescription') {
+        payload['projectDescription'] = row[f.csvColumn];
+        payload['description'] = row[f.csvColumn];
+      }
+      if (f.key === 'projectName' || f.key === 'projectTitle') {
+        payload['projectName'] = row[f.csvColumn];
+        payload['projectTitle'] = row[f.csvColumn];
+      }
+      if (f.key === 'studentTeamMembers' || f.key === 'teamMembers') {
+        payload['teamMembers'] = row[f.csvColumn];
+        payload['studentTeamMembers'] = row[f.csvColumn];
+      }
+      if (f.key === 'consultancyAmount' || f.key === 'consultancyValue') {
+        payload['consultancyValue'] = Number(row[f.csvColumn]) || row[f.csvColumn];
+        payload['consultancyAmount'] = Number(row[f.csvColumn]) || row[f.csvColumn];
+      }
+      if (f.key === 'status') {
+        payload['patentStatus'] = row[f.csvColumn];
+        payload['patent_status'] = row[f.csvColumn];
+      }
+      if (f.key === 'pages' || f.key === 'pageNumbers') {
+        payload['pages'] = row[f.csvColumn];
+        payload['pageNumbers'] = row[f.csvColumn];
+      }
     }
   });
   return payload;
@@ -764,7 +864,7 @@ export const RepositoryTabContent = ({
   const departmentId = user?.departmentId || 101;
   const year = academicYear || '2025-26';
 
-  // Determine if this is an API-integrated alumni tab
+  // Determine if this is an API-integrated tab
   const isAlumniDetails = repositoryId === 'alumni' && tabConfig.id === 'alumni-details';
   const isEmploymentCareer = repositoryId === 'alumni' && tabConfig.id === 'employment-career';
   const isHigherEducation = repositoryId === 'alumni' && tabConfig.id === 'higher-education';
@@ -775,6 +875,11 @@ export const RepositoryTabContent = ({
   const isAlumniAchievements = repositoryId === 'alumni' && tabConfig.id === 'alumni-achievements';
   const isAlumniChapters = repositoryId === 'alumni' && tabConfig.id === 'alumni-chapters';
   const isAlumniEvents = repositoryId === 'alumni' && tabConfig.id === 'alumni-events';
+  const isResearchModule =
+    repositoryId === 'research' &&
+    tabConfig.id !== 'dashboard' &&
+    tabConfig.id !== 'supporting-documents';
+
   const isApiDriven =
     isAlumniDetails ||
     isEmploymentCareer ||
@@ -784,7 +889,8 @@ export const RepositoryTabContent = ({
     isAlumniMentorship ||
     isAlumniAchievements ||
     isAlumniChapters ||
-    isAlumniEvents;
+    isAlumniEvents ||
+    isResearchModule;
 
   const sectionName = getSectionName(tabConfig.id);
 
@@ -819,7 +925,9 @@ export const RepositoryTabContent = ({
     setLoading(true);
     try {
       let response: any;
-      if (isAlumniDetails) {
+      if (isResearchModule) {
+        response = await getResearchModuleRecords(tabConfig.id, year, departmentId);
+      } else if (isAlumniDetails) {
         response = await getAlumniDetails(year, departmentId);
       } else if (isEmploymentCareer) {
         response = await getEmploymentRecords(year, departmentId);
@@ -850,6 +958,8 @@ export const RepositoryTabContent = ({
     }
   }, [
     isApiDriven,
+    isResearchModule,
+    tabConfig.id,
     isAlumniDetails,
     isEmploymentCareer,
     isHigherEducation,
@@ -998,6 +1108,25 @@ export const RepositoryTabContent = ({
 
   const handleSaveEdit = async () => {
     if (editingRow === null) return;
+
+    if (isResearchModule) {
+      const row = editFormData;
+      const recordId = row._id;
+      const payload = mapRowToApi(row, tabConfig.fields);
+      setLoading(true);
+      try {
+        await updateResearchModuleRecord(tabConfig.id, recordId, year, departmentId, payload);
+        toast.success('Record updated successfully');
+        setShowEditDialog(false);
+        setEditingRow(null);
+        fetchData();
+      } catch {
+        toast.error('Failed to update record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     if (isAlumniDetails) {
       const row = editFormData;
@@ -1193,6 +1322,22 @@ export const RepositoryTabContent = ({
   };
 
   const handleDeleteRow = async (index: number) => {
+    if (isResearchModule) {
+      const recordId = tableData[index]._id;
+      if (!recordId) return;
+      setLoading(true);
+      try {
+        await deleteResearchModuleRecord(tabConfig.id, recordId, year, departmentId);
+        toast.success('Record deleted successfully');
+        fetchData();
+      } catch {
+        toast.error('Failed to delete record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (isAlumniDetails) {
       const recordId = tableData[index]._id;
       if (!recordId) return;
@@ -1333,6 +1478,23 @@ export const RepositoryTabContent = ({
   };
 
   const handleCreateRow = async () => {
+    if (isResearchModule) {
+      const payload = mapRowToApi(createFormData, tabConfig.fields);
+      setLoading(true);
+      try {
+        await createResearchModuleRecord(tabConfig.id, year, departmentId, payload);
+        toast.success('Record created successfully');
+        setShowCreateDialog(false);
+        setCreateFormData({});
+        fetchData();
+      } catch {
+        toast.error('Failed to create record');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (isAlumniDetails) {
       const payload = mapRowToApi(createFormData, tabConfig.fields);
       setLoading(true);
@@ -1499,8 +1661,37 @@ export const RepositoryTabContent = ({
   };
 
   const handleCSVUploadComplete = useCallback(
-    async (data: Record<string, string>[], evidenceFiles?: Record<string, File>) => {
-      if (isAlumniDetails) {
+    async (
+      data: Record<string, string>[],
+      evidenceFiles?: Record<string, File>,
+      rawFile?: File
+    ) => {
+      if (isResearchModule) {
+        let fileToUpload = rawFile;
+        if (!fileToUpload) {
+          const headers = tabConfig.fields.map(f => f.csvColumn);
+          const csvRows = [headers.join(',')];
+          data.forEach(row => {
+            const values = headers.map(h => {
+              const val = row[h] || '';
+              return val.includes(',') ? `"${val}"` : val;
+            });
+            csvRows.push(values.join(','));
+          });
+          const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+          fileToUpload = new File([csvBlob], `${tabConfig.id}_upload.csv`, { type: 'text/csv' });
+        }
+        setLoading(true);
+        try {
+          await uploadResearchModuleCsv(tabConfig.id, year, departmentId, fileToUpload);
+          toast.success('CSV uploaded successfully');
+          fetchData();
+        } catch {
+          toast.error('Failed to upload CSV');
+        } finally {
+          setLoading(false);
+        }
+      } else if (isAlumniDetails) {
         // The CSVUploadDialog gives us parsed rows — we create a CSV blob and upload via API
         const headers = tabConfig.fields.map(f => f.csvColumn);
         const csvRows = [headers.join(',')];
@@ -1700,6 +1891,8 @@ export const RepositoryTabContent = ({
       setShowUploadDialog(false);
     },
     [
+      isResearchModule,
+      tabConfig.id,
       isAlumniDetails,
       isEmploymentCareer,
       isHigherEducation,
@@ -1882,20 +2075,20 @@ export const RepositoryTabContent = ({
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table className="table-fixed w-full">
+              <Table className="w-full min-w-max">
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="text-[10px] font-semibold w-8 text-center">#</TableHead>
+                    <TableHead className="text-[11px] font-semibold w-10 text-center px-2 py-2">#</TableHead>
                     {tabConfig.fields.map(field => (
                       <TableHead
                         key={field.key}
-                        className="text-[10px] font-semibold leading-tight min-w-[60px]"
+                        className="text-[11px] font-semibold whitespace-nowrap px-3 py-2"
                       >
                         {field.csvColumn}
                         {field.required && <span className="text-red-500 ml-0.5">*</span>}
                       </TableHead>
                     ))}
-                    <TableHead className="text-[10px] font-semibold text-center w-16">
+                    <TableHead className="text-[11px] font-semibold text-center w-16 px-2 py-2 whitespace-nowrap">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -1919,7 +2112,7 @@ export const RepositoryTabContent = ({
                           {index + 1}
                         </TableCell>
                         {tabConfig.fields.map(field => (
-                          <TableCell key={field.key} className="text-[10px] p-1.5 truncate">
+                          <TableCell key={field.key} className="text-xs px-3 py-2 whitespace-nowrap">
                             {field.type === 'boolean' ? (
                               <Badge
                                 variant="secondary"
