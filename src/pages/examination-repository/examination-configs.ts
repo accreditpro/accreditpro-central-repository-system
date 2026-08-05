@@ -15,7 +15,6 @@ export const examinationScheduleConfig: ModuleConfig = {
     { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Brief description of the schedule' },
     { key: 'startDate', label: 'Start Date', type: 'date', required: true },
     { key: 'endDate', label: 'End Date', type: 'date', required: true },
-    { key: 'scheduleFile', label: 'Schedule PDF', type: 'file' },
     { key: 'status', label: 'Status', type: 'select', required: true, options: ['Draft', 'Published', 'Archived'] },
   ],
   sampleData: [

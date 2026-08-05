@@ -3,13 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Search,
@@ -30,65 +24,27 @@ export function ApprovalQueue() {
   const [actionType, setActionType] = useState<string>('');
   const [comment, setComment] = useState('');
 
-  const filteredData = approvalQueueData.filter(item => {
-    return (
-      item.repository.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredData = approvalQueueData.filter((item) => {
+    return item.repository.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.section.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.submittedBy.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+      item.submittedBy.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const getValidationBadge = (status: string) => {
     switch (status) {
-      case 'valid':
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Valid
-          </Badge>
-        );
-      case 'partial':
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Partial
-          </Badge>
-        );
-      case 'invalid':
-        return (
-          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-            Invalid
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      case 'valid': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Valid</Badge>;
+      case 'partial': return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Partial</Badge>;
+      case 'invalid': return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Invalid</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return (
-          <Badge variant="destructive" className="text-xs">
-            High
-          </Badge>
-        );
-      case 'medium':
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
-            Medium
-          </Badge>
-        );
-      case 'low':
-        return (
-          <Badge variant="outline" className="text-xs">
-            Low
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="text-xs">
-            {priority}
-          </Badge>
-        );
+      case 'high': return <Badge variant="destructive" className="text-xs">High</Badge>;
+      case 'medium': return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">Medium</Badge>;
+      case 'low': return <Badge variant="outline" className="text-xs">Low</Badge>;
+      default: return <Badge variant="outline" className="text-xs">{priority}</Badge>;
     }
   };
 
@@ -101,18 +57,12 @@ export function ApprovalQueue() {
 
   const getActionTitle = () => {
     switch (actionType) {
-      case 'approve':
-        return 'Approve Submission';
-      case 'reject':
-        return 'Reject Submission';
-      case 'return':
-        return 'Return for Correction';
-      case 'comment':
-        return 'Add Comment';
-      case 'forward':
-        return 'Forward to IQAC';
-      default:
-        return 'Action';
+      case 'approve': return 'Approve Submission';
+      case 'reject': return 'Reject Submission';
+      case 'return': return 'Return for Correction';
+      case 'comment': return 'Add Comment';
+      case 'forward': return 'Forward to IQAC';
+      default: return 'Action';
     }
   };
 
@@ -177,7 +127,7 @@ export function ApprovalQueue() {
             <Input
               placeholder="Search by repository, section, or submitted by..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -205,16 +155,14 @@ export function ApprovalQueue() {
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map(item => (
-                  <tr key={item.id} className="border-b hover:bg-muted/30 transition-colors">
+                {filteredData.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3">
                       <Badge variant="outline">{item.repository}</Badge>
                     </td>
                     <td className="p-3 font-medium">{item.section}</td>
                     <td className="p-3 text-muted-foreground">{item.submittedBy}</td>
-                    <td className="p-3 text-muted-foreground">
-                      {new Date(item.submissionDate).toLocaleDateString()}
-                    </td>
+                    <td className="p-3 text-muted-foreground">{new Date(item.submissionDate).toLocaleDateString()}</td>
                     <td className="p-3">
                       <span className="text-sm">{item.evidenceCount} files</span>
                     </td>
@@ -222,49 +170,19 @@ export function ApprovalQueue() {
                     <td className="p-3">{getPriorityBadge(item.priority)}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-green-600 hover:text-green-700"
-                          onClick={() => handleAction('approve', item)}
-                          title="Approve"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-700" onClick={() => handleAction('approve', item)} title="Approve">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-600 hover:text-red-700"
-                          onClick={() => handleAction('reject', item)}
-                          title="Reject"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:text-red-700" onClick={() => handleAction('reject', item)} title="Reject">
                           <XCircle className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-amber-600 hover:text-amber-700"
-                          onClick={() => handleAction('return', item)}
-                          title="Return for Correction"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-600 hover:text-amber-700" onClick={() => handleAction('return', item)} title="Return for Correction">
                           <RotateCcw className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => handleAction('comment', item)}
-                          title="Comment"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleAction('comment', item)} title="Comment">
                           <MessageSquare className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-blue-600 hover:text-blue-700"
-                          onClick={() => handleAction('forward', item)}
-                          title="Forward to IQAC"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:text-blue-700" onClick={() => handleAction('forward', item)} title="Forward to IQAC">
                           <Send className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -286,17 +204,9 @@ export function ApprovalQueue() {
           <div className="space-y-4">
             {selectedItem && (
               <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                <p>
-                  <span className="text-muted-foreground">Repository:</span>{' '}
-                  {selectedItem.repository}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Section:</span> {selectedItem.section}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Submitted By:</span>{' '}
-                  {selectedItem.submittedBy}
-                </p>
+                <p><span className="text-muted-foreground">Repository:</span> {selectedItem.repository}</p>
+                <p><span className="text-muted-foreground">Section:</span> {selectedItem.section}</p>
+                <p><span className="text-muted-foreground">Submitted By:</span> {selectedItem.submittedBy}</p>
               </div>
             )}
             <div>
@@ -304,44 +214,29 @@ export function ApprovalQueue() {
                 {actionType === 'comment' ? 'Comment' : 'Remarks'}
               </label>
               <Textarea
-                placeholder={
-                  actionType === 'reject'
-                    ? 'Reason for rejection...'
-                    : actionType === 'return'
-                      ? 'What needs to be corrected...'
-                      : 'Add your comments...'
-                }
+                placeholder={actionType === 'reject' ? 'Reason for rejection...' : actionType === 'return' ? 'What needs to be corrected...' : 'Add your comments...'}
                 value={comment}
-                onChange={e => setComment(e.target.value)}
+                onChange={(e) => setComment(e.target.value)}
                 rows={4}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowActionDialog(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowActionDialog(false)}>Cancel</Button>
             <Button
               className={
-                actionType === 'approve'
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : actionType === 'reject'
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : actionType === 'forward'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : ''
+                actionType === 'approve' ? 'bg-green-600 hover:bg-green-700 text-white' :
+                actionType === 'reject' ? 'bg-red-600 hover:bg-red-700 text-white' :
+                actionType === 'forward' ? 'bg-blue-600 hover:bg-blue-700 text-white' :
+                ''
               }
               onClick={() => setShowActionDialog(false)}
             >
-              {actionType === 'approve'
-                ? 'Approve'
-                : actionType === 'reject'
-                  ? 'Reject'
-                  : actionType === 'return'
-                    ? 'Return'
-                    : actionType === 'forward'
-                      ? 'Forward to IQAC'
-                      : 'Submit'}
+              {actionType === 'approve' ? 'Approve' :
+               actionType === 'reject' ? 'Reject' :
+               actionType === 'return' ? 'Return' :
+               actionType === 'forward' ? 'Forward to IQAC' :
+               'Submit'}
             </Button>
           </DialogFooter>
         </DialogContent>

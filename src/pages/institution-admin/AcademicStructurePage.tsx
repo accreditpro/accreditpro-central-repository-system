@@ -573,7 +573,7 @@ const ProgramsTab = () => {
           </thead>
           <tbody>
             {programs.map((program) => (
-              <tr key={program.id} className="border-t hover:bg-muted/30">
+              <tr key={program.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
                 <td className="py-3 px-4 font-medium">
                   {program.name}
@@ -698,7 +698,7 @@ const DepartmentsTab = () => {
           </thead>
           <tbody>
             {filtered.map((dept) => (
-              <tr key={dept.id} className="border-t hover:bg-muted/30">
+              <tr key={dept.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
                 <td className="py-3 px-4 font-medium">{dept.name}</td>
                 <td className="py-3 px-4">{dept.program}</td>
@@ -1617,7 +1617,7 @@ const AcademicRegulationsTab = () => {
               className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer outline-none
                 ${dragActive
                   ? 'border-primary bg-primary/5 scale-[1.01] shadow-lg ring-2 ring-primary/20'
-                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary/40'
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/40'
                 }
                 ${form.documents.length > 0 ? 'py-6' : 'py-12'}
                 px-6`}
@@ -1762,7 +1762,7 @@ const AcademicRegulationsTab = () => {
           </thead>
           <tbody>
             {regs.map((reg) => (
-              <tr key={reg.id} className="border-t hover:bg-muted/30">
+              <tr key={reg.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
                 <td className="py-3 px-4">{reg.regulationName}</td>
                 <td className="py-3 px-4">{reg.program}</td>
@@ -2199,7 +2199,7 @@ const ProgramOfferingsTab = () => {
               </tr>
             ) : (
               filtered.map((offering) => (
-                <tr key={offering.id} className="border-t hover:bg-muted/30">
+                <tr key={offering.id} className="border-t hover:bg-muted/50">
                   <td className="py-3 px-4 font-semibold text-primary">{offering.generatedName}</td>
                   <td className="py-3 px-4">{offering.academicYear}</td>
                   <td className="py-3 px-4">{offering.program}</td>
@@ -2692,7 +2692,7 @@ const ProgramIntakeTab = () => {
               </tr>
             ) : (
               filtered.map((intake) => (
-                <tr key={intake.id} className="border-t hover:bg-muted/30">
+                <tr key={intake.id} className="border-t hover:bg-muted/50">
                   <td className="py-3 px-4 font-semibold text-primary">{intake.programOffering}</td>
                   <td className="py-3 px-4">{intake.academicYear}</td>
                   <td className="py-3 px-4 text-center font-medium">{intake.sanctionedIntake}</td>
@@ -2864,7 +2864,7 @@ const ProgramIntakeTab = () => {
                 className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-200 ${
                   dragActiveIntake
                     ? 'border-indigo-500 bg-indigo-500/5 scale-[1.01] shadow-lg shadow-indigo-500/10'
-                    : 'border-border/60 hover:border-indigo-400/50 hover:bg-muted/30'
+                    : 'border-border/60 hover:border-indigo-400/50 hover:bg-muted/50'
                 }`}
               >
                 <input

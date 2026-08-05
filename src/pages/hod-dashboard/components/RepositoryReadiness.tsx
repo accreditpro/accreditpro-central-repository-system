@@ -7,9 +7,8 @@ import { TrendingUp, Target, ShieldCheck, FileCheck } from 'lucide-react';
 export function RepositoryReadiness() {
   // Calculate weighted readiness score
   const weightedScore = readinessData.reduce((acc, item) => {
-    const avgScore =
-      (item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4;
-    return acc + (avgScore * item.weight) / 100;
+    const avgScore = (item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4;
+    return acc + (avgScore * item.weight / 100);
   }, 0);
 
   const getScoreColor = (score: number) => {
@@ -27,25 +26,10 @@ export function RepositoryReadiness() {
   };
 
   const getStatusLabel = (score: number) => {
-    if (score >= 90)
-      return {
-        label: 'Excellent',
-        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      };
-    if (score >= 75)
-      return {
-        label: 'Good',
-        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      };
-    if (score >= 60)
-      return {
-        label: 'Needs Attention',
-        color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-      };
-    return {
-      label: 'Critical',
-      color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    };
+    if (score >= 90) return { label: 'Excellent', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' };
+    if (score >= 75) return { label: 'Good', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' };
+    if (score >= 60) return { label: 'Needs Attention', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' };
+    return { label: 'Critical', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' };
   };
 
   return (
@@ -56,26 +40,8 @@ export function RepositoryReadiness() {
           <CardContent className="p-6 flex flex-col items-center justify-center">
             <div className="relative w-36 h-36">
               <svg className="w-36 h-36 transform -rotate-90" viewBox="0 0 120 120">
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="10"
-                  className="text-muted/20"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="10"
-                  className="text-primary"
-                  strokeDasharray={`${weightedScore * 3.14} 314`}
-                  strokeLinecap="round"
-                />
+                <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted/20" />
+                <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-primary" strokeDasharray={`${weightedScore * 3.14} 314`} strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold">{Math.round(weightedScore)}%</span>
@@ -94,14 +60,8 @@ export function RepositoryReadiness() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {readinessData.map(item => {
-                const avg = Math.round(
-                  (item.dataCompletion +
-                    item.evidenceCompletion +
-                    item.verification +
-                    item.approval) /
-                    4
-                );
+              {readinessData.map((item) => {
+                const avg = Math.round((item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4);
                 const status = getStatusLabel(avg);
                 return (
                   <div key={item.repository} className="p-3 border rounded-lg">
@@ -148,12 +108,7 @@ export function RepositoryReadiness() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Data Completion</p>
-              <p className="text-xl font-bold">
-                {Math.round(
-                  readinessData.reduce((a, b) => a + b.dataCompletion, 0) / readinessData.length
-                )}
-                %
-              </p>
+              <p className="text-xl font-bold">{Math.round(readinessData.reduce((a, b) => a + b.dataCompletion, 0) / readinessData.length)}%</p>
             </div>
           </CardContent>
         </Card>
@@ -164,12 +119,7 @@ export function RepositoryReadiness() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Evidence Completion</p>
-              <p className="text-xl font-bold">
-                {Math.round(
-                  readinessData.reduce((a, b) => a + b.evidenceCompletion, 0) / readinessData.length
-                )}
-                %
-              </p>
+              <p className="text-xl font-bold">{Math.round(readinessData.reduce((a, b) => a + b.evidenceCompletion, 0) / readinessData.length)}%</p>
             </div>
           </CardContent>
         </Card>
@@ -180,12 +130,7 @@ export function RepositoryReadiness() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Verification</p>
-              <p className="text-xl font-bold">
-                {Math.round(
-                  readinessData.reduce((a, b) => a + b.verification, 0) / readinessData.length
-                )}
-                %
-              </p>
+              <p className="text-xl font-bold">{Math.round(readinessData.reduce((a, b) => a + b.verification, 0) / readinessData.length)}%</p>
             </div>
           </CardContent>
         </Card>
@@ -222,33 +167,16 @@ export function RepositoryReadiness() {
                 </tr>
               </thead>
               <tbody>
-                {yearlyTrends.map(trend => {
-                  const avg = Math.round(
-                    (trend.academic +
-                      trend.faculty +
-                      trend.student +
-                      trend.research +
-                      trend.alumni) /
-                      5
-                  );
+                {yearlyTrends.map((trend) => {
+                  const avg = Math.round((trend.academic + trend.faculty + trend.student + trend.research + trend.alumni) / 5);
                   return (
-                    <tr key={trend.year} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={trend.year} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="p-3 font-medium">{trend.year}</td>
-                      <td className="p-3">
-                        <span className={getScoreColor(trend.academic)}>{trend.academic}%</span>
-                      </td>
-                      <td className="p-3">
-                        <span className={getScoreColor(trend.faculty)}>{trend.faculty}%</span>
-                      </td>
-                      <td className="p-3">
-                        <span className={getScoreColor(trend.student)}>{trend.student}%</span>
-                      </td>
-                      <td className="p-3">
-                        <span className={getScoreColor(trend.research)}>{trend.research}%</span>
-                      </td>
-                      <td className="p-3">
-                        <span className={getScoreColor(trend.alumni)}>{trend.alumni}%</span>
-                      </td>
+                      <td className="p-3"><span className={getScoreColor(trend.academic)}>{trend.academic}%</span></td>
+                      <td className="p-3"><span className={getScoreColor(trend.faculty)}>{trend.faculty}%</span></td>
+                      <td className="p-3"><span className={getScoreColor(trend.student)}>{trend.student}%</span></td>
+                      <td className="p-3"><span className={getScoreColor(trend.research)}>{trend.research}%</span></td>
+                      <td className="p-3"><span className={getScoreColor(trend.alumni)}>{trend.alumni}%</span></td>
                       <td className="p-3">
                         <Badge className={getStatusLabel(avg).color}>{avg}%</Badge>
                       </td>

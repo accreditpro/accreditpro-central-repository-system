@@ -89,11 +89,7 @@ interface SidebarGroup {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  items: {
-    id: InfrastructureView;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }[];
+  items: { id: InfrastructureView; label: string; icon: React.ComponentType<{ className?: string }> }[];
 }
 
 const sidebarGroups: SidebarGroup[] = [
@@ -150,11 +146,7 @@ const sidebarGroups: SidebarGroup[] = [
   },
 ];
 
-const bottomItems: {
-  id: InfrastructureView;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
+const bottomItems: { id: InfrastructureView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'supporting-documents', label: 'Supporting Documents', icon: FileText },
   { id: 'upload-history', label: 'Upload History', icon: Upload },
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck },
@@ -162,40 +154,11 @@ const bottomItems: {
 ];
 
 // Map tab IDs to their config and index
-const getConfigForView = (
-  view: InfrastructureView
-): { config: typeof infrastructureRepositoryConfig; tabIndex: number } | null => {
-  const infraTabs = [
-    'buildings',
-    'classrooms',
-    'laboratories',
-    'equipment',
-    'library',
-    'ict-infrastructure',
-    'hostels',
-    'sports-facilities',
-    'seminar-halls',
-    'transport',
-  ];
-  const greenTabs = [
-    'green-initiatives',
-    'energy-management',
-    'water-management',
-    'waste-management',
-    'green-audit',
-  ];
-  const safetyTabs = [
-    'fire-safety',
-    'security-infrastructure',
-    'emergency-preparedness',
-    'insurance-compliance',
-  ];
-  const utilityTabs = [
-    'power-infrastructure',
-    'water-supply',
-    'internet-network',
-    'utility-assets',
-  ];
+const getConfigForView = (view: InfrastructureView): { config: typeof infrastructureRepositoryConfig; tabIndex: number } | null => {
+  const infraTabs = ['buildings', 'classrooms', 'laboratories', 'equipment', 'library', 'ict-infrastructure', 'hostels', 'sports-facilities', 'seminar-halls', 'transport'];
+  const greenTabs = ['green-initiatives', 'energy-management', 'water-management', 'waste-management', 'green-audit'];
+  const safetyTabs = ['fire-safety', 'security-infrastructure', 'emergency-preparedness', 'insurance-compliance'];
+  const utilityTabs = ['power-infrastructure', 'water-supply', 'internet-network', 'utility-assets'];
 
   const infraIndex = infraTabs.indexOf(view);
   if (infraIndex >= 0) return { config: infrastructureRepositoryConfig, tabIndex: infraIndex };
@@ -217,10 +180,10 @@ export const InfrastructureRepositoryPage = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    Infrastructure: true,
+    'Infrastructure': true,
     'Green Campus & Sustainability': true,
     'Safety & Security': true,
-    Utilities: true,
+    'Utilities': true,
   });
 
   const toggleGroup = (title: string) => {
@@ -229,9 +192,7 @@ export const InfrastructureRepositoryPage = () => {
 
   const renderContent = () => {
     if (activeView === 'dashboard') {
-      return (
-        <InfrastructureDashboard onNavigate={tabId => setActiveView(tabId as InfrastructureView)} />
-      );
+      return <InfrastructureDashboard onNavigate={(tabId) => setActiveView(tabId as InfrastructureView)} />;
     }
     if (activeView === 'supporting-documents') {
       return <InfrastructureDocumentsView />;
@@ -249,13 +210,14 @@ export const InfrastructureRepositoryPage = () => {
     const viewConfig = getConfigForView(activeView);
     if (viewConfig) {
       return (
-        <RepositoryWorkspace config={viewConfig.config} initialTabIndex={viewConfig.tabIndex} />
+        <RepositoryWorkspace
+          config={viewConfig.config}
+          initialTabIndex={viewConfig.tabIndex}
+        />
       );
     }
 
-    return (
-      <InfrastructureDashboard onNavigate={tabId => setActiveView(tabId as InfrastructureView)} />
-    );
+    return <InfrastructureDashboard onNavigate={(tabId) => setActiveView(tabId as InfrastructureView)} />;
   };
 
   // Find the label for current view
@@ -312,11 +274,7 @@ export const InfrastructureRepositoryPage = () => {
             className="h-7 w-7 hidden lg:flex"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
 
@@ -324,12 +282,8 @@ export const InfrastructureRepositoryPage = () => {
         {!sidebarCollapsed && (
           <div className="px-4 py-3 border-b">
             <p className="text-xs font-medium text-muted-foreground">Coordinator</p>
-            <p className="text-sm font-semibold truncate">
-              {infrastructureCoordinatorContext.name}
-            </p>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {infrastructureCoordinatorContext.institution}
-            </p>
+            <p className="text-sm font-semibold truncate">{infrastructureCoordinatorContext.name}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{infrastructureCoordinatorContext.institution}</p>
           </div>
         )}
 
@@ -346,20 +300,18 @@ export const InfrastructureRepositoryPage = () => {
                 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                 activeView === 'dashboard'
                   ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
               title={sidebarCollapsed ? 'Dashboard' : undefined}
             >
-              <LayoutDashboard
-                className={cn('h-4 w-4 shrink-0', activeView === 'dashboard' && 'text-primary')}
-              />
+              <LayoutDashboard className={cn('h-4 w-4 shrink-0', activeView === 'dashboard' && 'text-primary')} />
               {!sidebarCollapsed && <span className="truncate">Dashboard</span>}
             </button>
 
             <Separator className="my-2" />
 
             {/* Module Groups */}
-            {sidebarGroups.map(group => (
+            {sidebarGroups.map((group) => (
               <div key={group.title} className="mb-1">
                 {!sidebarCollapsed ? (
                   <button
@@ -370,12 +322,7 @@ export const InfrastructureRepositoryPage = () => {
                       <group.icon className="h-3 w-3" />
                       <span className="truncate">{group.title}</span>
                     </span>
-                    <ChevronRight
-                      className={cn(
-                        'h-3 w-3 transition-transform',
-                        expandedGroups[group.title] && 'rotate-90'
-                      )}
-                    />
+                    <ChevronRight className={cn('h-3 w-3 transition-transform', expandedGroups[group.title] && 'rotate-90')} />
                   </button>
                 ) : (
                   <div className="flex justify-center py-1">
@@ -385,7 +332,7 @@ export const InfrastructureRepositoryPage = () => {
 
                 {(expandedGroups[group.title] || sidebarCollapsed) && (
                   <div className="space-y-0.5">
-                    {group.items.map(item => (
+                    {group.items.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => {
@@ -397,19 +344,12 @@ export const InfrastructureRepositoryPage = () => {
                           !sidebarCollapsed && 'pl-6',
                           activeView === item.id
                             ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                         )}
                         title={sidebarCollapsed ? item.label : undefined}
                       >
-                        <item.icon
-                          className={cn(
-                            'h-3.5 w-3.5 shrink-0',
-                            activeView === item.id && 'text-primary'
-                          )}
-                        />
-                        {!sidebarCollapsed && (
-                          <span className="truncate text-xs">{item.label}</span>
-                        )}
+                        <item.icon className={cn('h-3.5 w-3.5 shrink-0', activeView === item.id && 'text-primary')} />
+                        {!sidebarCollapsed && <span className="truncate text-xs">{item.label}</span>}
                       </button>
                     ))}
                   </div>
@@ -420,7 +360,7 @@ export const InfrastructureRepositoryPage = () => {
             <Separator className="my-2" />
 
             {/* Bottom Items */}
-            {bottomItems.map(item => (
+            {bottomItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -431,13 +371,11 @@ export const InfrastructureRepositoryPage = () => {
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                   activeView === item.id
                     ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                <item.icon
-                  className={cn('h-4 w-4 shrink-0', activeView === item.id && 'text-primary')}
-                />
+                <item.icon className={cn('h-4 w-4 shrink-0', activeView === item.id && 'text-primary')} />
                 {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
               </button>
             ))}
@@ -458,7 +396,9 @@ export const InfrastructureRepositoryPage = () => {
             <Menu className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">{getCurrentLabel()}</h1>
+            <h1 className="text-lg font-semibold">
+              {getCurrentLabel()}
+            </h1>
             <Badge variant="secondary" className="text-[10px]">
               Infrastructure Coordinator
             </Badge>

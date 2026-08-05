@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageZoomViewer } from '@/components/shared/ImageZoomViewer';
+import { DocxViewer } from '@/components/shared/DocxViewer';
 
 export interface EvidencePreviewData {
   id: string;
@@ -57,6 +58,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
   const isPdf = ext === 'pdf';
   const isPreviewable = isImage || isPdf;
   const isDoc = ['doc', 'docx'].includes(ext);
+  const isDocx = ext === 'docx';
   const isSpreadsheet = ['xls', 'xlsx'].includes(ext);
   const isArchive = ext === 'zip';
 
@@ -115,6 +117,22 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
               </a>
             </p>
           </iframe>
+        </div>
+      );
+    }
+
+    if (isDocx) {
+      return (
+        <div className={cn(
+          'rounded-xl overflow-hidden border',
+          fullScreen ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[70vh]',
+        )}>
+          <DocxViewer
+            src={evidence.dataUrl}
+            fileName={evidence.fileName}
+            variant={fullScreen ? 'minimal' : 'default'}
+            className="h-full"
+          />
         </div>
       );
     }

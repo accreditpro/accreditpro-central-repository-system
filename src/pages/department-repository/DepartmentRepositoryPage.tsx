@@ -33,6 +33,7 @@ import {
   departmentInfo,
 } from './repository-configs';
 import { SidebarView } from './types';
+import { getModuleNavClasses } from './components/module-tab-styles';
 import {
   LayoutDashboard,
   Target,
@@ -91,6 +92,18 @@ const sidebarItems: {
   { id: 'verification-status', label: 'Verification Status', icon: ShieldCheck, separator: true },
   { id: 'profile', label: 'Profile', icon: User },
 ];
+
+// Maps sidebar item ids to module ids for per-module nav tinting
+const sidebarModuleMap: Record<string, string> = {
+  'academic-repository': 'academic',
+  'course-repository': 'course',
+  'faculty-repository': 'faculty',
+  'student-repository': 'student',
+  'research-repository': 'research',
+  'student-dev-outcomes-repository': 'student-dev-outcomes',
+  'infrastructure-repository': 'infrastructure',
+  'alumni-repository': 'alumni',
+};
 
 const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
   'academic-repository': academicRepositoryConfig,
@@ -235,6 +248,7 @@ export const DepartmentRepositoryPage = () => {
               const Icon = item.icon;
               const isActive = activeView === item.id;
               const showSeparator = item.separator && index < sidebarItems.length - 1;
+              const nav = getModuleNavClasses(sidebarModuleMap[item.id] || 'primary');
 
               return (
                 <div key={item.id}>
@@ -243,9 +257,7 @@ export const DepartmentRepositoryPage = () => {
                     size="sm"
                     className={cn(
                       'w-full justify-start gap-2.5 h-9 px-3 text-xs font-medium rounded-lg transition-all',
-                      isActive &&
-                        'bg-primary/10 text-primary hover:bg-primary/15 shadow-sm border border-primary/20',
-                      !isActive && 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                      isActive ? cn(nav.active, 'shadow-sm border border-primary/20') : nav.inactive,
                       sidebarCollapsed && 'justify-center px-0'
                     )}
                     onClick={() => {
@@ -254,7 +266,7 @@ export const DepartmentRepositoryPage = () => {
                     }}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
-                    <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
+                    <Icon className={cn('h-4 w-4 shrink-0', isActive && nav.icon)} />
                     {!sidebarCollapsed && <span>{item.label}</span>}
                   </Button>
                   {showSeparator && <Separator className="my-2 opacity-50" />}

@@ -7,7 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +40,7 @@ export const BasicInfoStep = () => {
       return;
     }
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = (e) => {
       const result = e.target?.result as string;
       setLogoPreview(result);
       form.setValue('basicInfo.logo', result);
@@ -93,11 +99,7 @@ export const BasicInfoStep = () => {
                 Institution Name <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <Input
-                  placeholder="e.g., National Institute of Technology"
-                  {...field}
-                  className="h-9"
-                />
+                <Input placeholder="e.g., National Institute of Technology" {...field} className="h-9" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -118,7 +120,7 @@ export const BasicInfoStep = () => {
                   placeholder="e.g., NIT-001"
                   {...field}
                   className="h-9 uppercase"
-                  onChange={e => field.onChange(e.target.value.toUpperCase())}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                 />
               </FormControl>
               <FormMessage />
@@ -142,10 +144,8 @@ export const BasicInfoStep = () => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {INSTITUTION_CATEGORIES.map(cat => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
+                  {INSTITUTION_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -165,12 +165,7 @@ export const BasicInfoStep = () => {
                 Email <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <Input
-                  placeholder="admin@institution.edu"
-                  type="email"
-                  {...field}
-                  className="h-9"
-                />
+                <Input placeholder="admin@institution.edu" type="email" {...field} className="h-9" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -223,11 +218,7 @@ export const BasicInfoStep = () => {
               <div className="flex items-center gap-4">
                 {logoPreview ? (
                   <div className="relative">
-                    <img
-                      src={logoPreview}
-                      alt="Logo"
-                      className="h-12 w-12 rounded-lg border object-cover"
-                    />
+                    <img src={logoPreview} alt="Logo" className="h-12 w-12 rounded-lg border object-cover" />
                     <button
                       type="button"
                       onClick={removeLogo}
@@ -241,13 +232,7 @@ export const BasicInfoStep = () => {
                     <ImageIcon className="h-4 w-4 text-muted-foreground/50" />
                   </div>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowUploadDialog(true)}
-                  className="h-8 text-xs"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowUploadDialog(true)} className="h-8 text-xs">
                   <Upload className="h-3 w-3 mr-1.5" />
                   Upload Logo
                 </Button>
@@ -263,7 +248,9 @@ export const BasicInfoStep = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Upload Logo</DialogTitle>
-            <DialogDescription>Drag and drop an image or click to browse files</DialogDescription>
+            <DialogDescription>
+              Drag and drop an image or click to browse files
+            </DialogDescription>
           </DialogHeader>
 
           <div
@@ -271,22 +258,18 @@ export const BasicInfoStep = () => {
               'mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer',
               isDragging
                 ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
           >
-            <div
-              className={cn(
-                'mb-3 flex h-12 w-12 items-center justify-center rounded-full',
-                isDragging ? 'bg-primary/10' : 'bg-muted'
-              )}
-            >
-              <Upload
-                className={cn('h-5 w-5', isDragging ? 'text-primary' : 'text-muted-foreground')}
-              />
+            <div className={cn(
+              'mb-3 flex h-12 w-12 items-center justify-center rounded-full',
+              isDragging ? 'bg-primary/10' : 'bg-muted'
+            )}>
+              <Upload className={cn('h-5 w-5', isDragging ? 'text-primary' : 'text-muted-foreground')} />
             </div>
             <p className="text-sm font-medium text-center">
               {isDragging ? 'Drop your image here' : 'Drag & drop your logo here'}
@@ -307,12 +290,7 @@ export const BasicInfoStep = () => {
           </div>
 
           <div className="flex justify-end gap-2 mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowUploadDialog(false)}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>
               Cancel
             </Button>
           </div>

@@ -38,11 +38,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 
-const steps: {
-  id: UploadStep;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
+const steps: { id: UploadStep; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'download', label: 'Download Template', icon: Download },
   { id: 'upload', label: 'Upload CSV', icon: Upload },
   { id: 'validate', label: 'Validate', icon: CheckCircle2 },
@@ -58,14 +54,7 @@ const templateOptions = [
 ];
 
 // Mock preview data
-const mockPreviewHeaders = [
-  'Name',
-  'Designation',
-  'Qualification',
-  'Experience',
-  'Specialization',
-  'Publications',
-];
+const mockPreviewHeaders = ['Name', 'Designation', 'Qualification', 'Experience', 'Specialization', 'Publications'];
 const mockPreviewRows = [
   ['Dr. New Faculty', 'Professor', 'Ph.D. AI', '15', 'Deep Learning', '30'],
   ['Prof. Test User', 'Asst. Professor', 'M.Tech', '5', 'Web Dev', '8'],
@@ -146,9 +135,7 @@ export const CSVUploadEngine = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-semibold">CSV Upload Engine</CardTitle>
-              <CardDescription>
-                Upload and validate data files for your department repository
-              </CardDescription>
+              <CardDescription>Upload and validate data files for your department repository</CardDescription>
             </div>
             {currentStep !== 'download' && (
               <Button variant="ghost" size="sm" className="text-xs" onClick={handleReset}>
@@ -167,42 +154,30 @@ export const CSVUploadEngine = () => {
               return (
                 <div key={step.id} className="flex items-center flex-1 last:flex-none">
                   <div className="flex flex-col items-center">
-                    <div
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300',
-                        isCompleted && 'bg-primary border-primary text-primary-foreground',
-                        isActive && 'border-primary bg-primary/10 text-primary',
-                        !isActive &&
-                          !isCompleted &&
-                          'border-muted-foreground/30 text-muted-foreground/50'
-                      )}
-                    >
+                    <div className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300',
+                      isCompleted && 'bg-primary border-primary text-primary-foreground',
+                      isActive && 'border-primary bg-primary/10 text-primary',
+                      !isActive && !isCompleted && 'border-muted-foreground/30 text-muted-foreground/50'
+                    )}>
                       {isCompleted ? (
                         <CheckCircle2 className="h-5 w-5" />
                       ) : (
                         <StepIcon className="h-4 w-4" />
                       )}
                     </div>
-                    <span
-                      className={cn(
-                        'text-[10px] mt-1.5 font-medium text-center',
-                        isActive
-                          ? 'text-primary'
-                          : isCompleted
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
-                      )}
-                    >
+                    <span className={cn(
+                      'text-[10px] mt-1.5 font-medium text-center',
+                      isActive ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
                       {step.label}
                     </span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div
-                      className={cn(
-                        'flex-1 h-0.5 mx-2 mt-[-16px] rounded-full transition-colors',
-                        isCompleted ? 'bg-primary' : 'bg-muted-foreground/20'
-                      )}
-                    />
+                    <div className={cn(
+                      'flex-1 h-0.5 mx-2 mt-[-16px] rounded-full transition-colors',
+                      isCompleted ? 'bg-primary' : 'bg-muted-foreground/20'
+                    )} />
                   )}
                 </div>
               );
@@ -225,8 +200,7 @@ export const CSVUploadEngine = () => {
                     <FileSpreadsheet className="h-12 w-12 mx-auto text-primary/60 mb-3" />
                     <h3 className="text-sm font-semibold mb-1">Select & Download Template</h3>
                     <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                      Choose the data category and download the CSV template. Fill in your data
-                      following the template format.
+                      Choose the data category and download the CSV template. Fill in your data following the template format.
                     </p>
                   </div>
                   <div className="max-w-sm mx-auto space-y-3">
@@ -236,9 +210,7 @@ export const CSVUploadEngine = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {templateOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -259,36 +231,23 @@ export const CSVUploadEngine = () => {
                   <div
                     className={cn(
                       'border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer',
-                      isDragOver
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                      isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     )}
-                    onDragOver={e => {
-                      e.preventDefault();
-                      setIsDragOver(true);
-                    }}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                     onDragLeave={() => setIsDragOver(false)}
-                    onDrop={e => {
-                      e.preventDefault();
-                      setIsDragOver(false);
-                      handleFileUpload();
-                    }}
+                    onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileUpload(); }}
                     onClick={handleFileUpload}
                   >
                     <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <h3 className="text-sm font-semibold mb-1">Drop your CSV file here</h3>
-                    <p className="text-xs text-muted-foreground">
-                      or click to browse • Max 10MB • CSV format only
-                    </p>
+                    <p className="text-xs text-muted-foreground">or click to browse • Max 10MB • CSV format only</p>
                   </div>
                   {uploadedFile && (
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                       <FileText className="h-5 w-5 text-emerald-500" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{uploadedFile}</p>
-                        <p className="text-xs text-muted-foreground">
-                          2.1 MB • Ready for validation
-                        </p>
+                        <p className="text-xs text-muted-foreground">2.1 MB • Ready for validation</p>
                       </div>
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     </div>
@@ -303,18 +262,14 @@ export const CSVUploadEngine = () => {
                     <>
                       <RefreshCw className="h-10 w-10 mx-auto text-primary animate-spin" />
                       <h3 className="text-sm font-semibold">Validating your data...</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Checking format, required fields, and data integrity
-                      </p>
+                      <p className="text-xs text-muted-foreground">Checking format, required fields, and data integrity</p>
                       <Progress value={65} className="max-w-xs mx-auto h-2" />
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-10 w-10 mx-auto text-primary" />
                       <h3 className="text-sm font-semibold">Ready to validate</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Click below to start validation of your uploaded file
-                      </p>
+                      <p className="text-xs text-muted-foreground">Click below to start validation of your uploaded file</p>
                       <Button onClick={handleValidate}>
                         <CheckCircle2 className="h-4 w-4 mr-2" /> Start Validation
                       </Button>
@@ -349,10 +304,7 @@ export const CSVUploadEngine = () => {
                         <AlertTriangle className="h-3.5 w-3.5" /> Validation Errors
                       </h4>
                       {mockValidationErrors.map((err, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-2 p-2 rounded bg-red-500/5 border border-red-500/10 text-xs"
-                        >
+                        <div key={i} className="flex items-center gap-2 p-2 rounded bg-red-500/5 border border-red-500/10 text-xs">
                           <span className="font-mono text-red-600">Row {err.row}</span>
                           <span className="text-muted-foreground">•</span>
                           <span className="font-medium">{err.column}</span>
@@ -368,9 +320,7 @@ export const CSVUploadEngine = () => {
                       <TableHeader>
                         <TableRow>
                           {mockPreviewHeaders.map(h => (
-                            <TableHead key={h} className="text-xs">
-                              {h}
-                            </TableHead>
+                            <TableHead key={h} className="text-xs">{h}</TableHead>
                           ))}
                         </TableRow>
                       </TableHeader>
@@ -378,18 +328,14 @@ export const CSVUploadEngine = () => {
                         {mockPreviewRows.map((row, i) => (
                           <TableRow key={i}>
                             {row.map((cell, j) => (
-                              <TableCell key={j} className="text-xs">
-                                {cell}
-                              </TableCell>
+                              <TableCell key={j} className="text-xs">{cell}</TableCell>
                             ))}
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Showing first 3 of 45 valid records
-                  </p>
+                  <p className="text-[11px] text-muted-foreground text-center">Showing first 3 of 45 valid records</p>
 
                   <div className="flex justify-between">
                     <Button variant="outline" onClick={() => setCurrentStep('upload')}>
@@ -414,8 +360,7 @@ export const CSVUploadEngine = () => {
                   </motion.div>
                   <h3 className="text-lg font-semibold mb-1">Upload Submitted Successfully!</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Your file has been submitted for review. You&apos;ll be notified once it&apos;s
-                    approved.
+                    Your file has been submitted for review. You&apos;ll be notified once it&apos;s approved.
                   </p>
                   <div className="flex items-center justify-center gap-3">
                     <Button variant="outline" onClick={handleReset}>
@@ -433,9 +378,7 @@ export const CSVUploadEngine = () => {
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold">Upload History</CardTitle>
-          <CardDescription>
-            Track all your previous uploads and their approval status
-          </CardDescription>
+          <CardDescription>Track all your previous uploads and their approval status</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border overflow-x-auto">
@@ -451,24 +394,18 @@ export const CSVUploadEngine = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {uploadHistory.map(record => (
-                  <TableRow key={record.id} className="hover:bg-muted/30">
+                {uploadHistory.map((record) => (
+                  <TableRow key={record.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm font-medium truncate max-w-[200px]">
-                          {record.fileName}
-                        </span>
+                        <span className="text-sm font-medium truncate max-w-[200px]">{record.fileName}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px]">
-                        {record.category}
-                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">{record.category}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {record.uploadedAt}
-                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
                     <TableCell className="text-sm">{record.recordsCount}</TableCell>
                     <TableCell className="text-xs">
                       <span className="text-emerald-600">{record.validRecords}</span>

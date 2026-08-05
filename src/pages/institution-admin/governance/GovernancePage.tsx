@@ -86,10 +86,10 @@ import { mockCommittees, academicYearOptions, auditTrail } from './mock-data';
 // ====================== COMMITTEE DASHBOARD ======================
 const CommitteeDashboard = ({ committees }: { committees: Committee[] }) => {
   const total = committees.length;
-  const active = committees.filter(c => c.status === 'active').length;
-  const inactive = committees.filter(c => c.status === 'inactive').length;
+  const active = committees.filter((c) => c.status === 'active').length;
+  const inactive = committees.filter((c) => c.status === 'inactive').length;
   const totalMembers = committees.reduce((sum, c) => sum + c.members.length, 0);
-  const withoutMembers = committees.filter(c => c.members.length === 0).length;
+  const withoutMembers = committees.filter((c) => c.members.length === 0).length;
 
   const cards = [
     {
@@ -145,13 +145,7 @@ const CommitteeDashboard = ({ committees }: { committees: Committee[] }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
           >
-            <Card
-              className={cn(
-                'border-l-4',
-                card.border,
-                'hover:shadow-md transition-all duration-200'
-              )}
-            >
+            <Card className={cn('border-l-4', card.border, 'hover:shadow-md transition-all duration-200')}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -175,7 +169,7 @@ const CommitteeDashboard = ({ committees }: { committees: Committee[] }) => {
 const categoryColors: Record<string, string> = {
   'Academic Governance': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   'Quality Assurance': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  Examination: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  'Examination': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   'Research & Innovation': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
   'Industry & Placement': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
   'Student Development': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
@@ -210,10 +204,8 @@ const CommitteeList = ({
   onStatusFilterChange,
   onYearFilterChange,
 }: CommitteeListProps) => {
-  const filtered = committees.filter(c => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.description.toLowerCase().includes(search.toLowerCase());
+  const filtered = committees.filter((c) => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.description.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || c.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
     const matchesYear = yearFilter === 'all' || c.academicYear === yearFilter;
@@ -223,9 +215,7 @@ const CommitteeList = ({
   const memberCompletion = (committee: Committee) => {
     if (committee.members.length === 0) return 0;
     const keyRoles = ['Chairman', 'Chairperson', 'Convener', 'Coordinator', 'Member Secretary'];
-    const filledKeyRoles = keyRoles.filter(role =>
-      committee.members.some(m => m.committeeRole === role)
-    ).length;
+    const filledKeyRoles = keyRoles.filter((role) => committee.members.some((m) => m.committeeRole === role)).length;
     const keyRoleScore = Math.min(50, (filledKeyRoles / 3) * 50);
     const memberScore = Math.min(50, (committee.members.length / 5) * 50);
     return Math.round(keyRoleScore + memberScore);
@@ -252,27 +242,21 @@ const CommitteeList = ({
             <Input
               placeholder="Search by committee name..."
               value={search}
-              onChange={e => onSearchChange(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9"
             />
           </div>
           <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {COMMITTEE_CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
+              {COMMITTEE_CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
@@ -280,15 +264,11 @@ const CommitteeList = ({
             </SelectContent>
           </Select>
           <Select value={yearFilter} onValueChange={onYearFilterChange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Year" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYearOptions.map(y => (
-                <SelectItem key={y} value={y}>
-                  {y}
-                </SelectItem>
+              {academicYearOptions.map((y) => (
+                <SelectItem key={y} value={y}>{y}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -322,47 +302,34 @@ const CommitteeList = ({
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-semibold truncate">{committee.name}</h3>
                           {!committee.preset && (
-                            <Badge variant="outline" className="text-[10px] px-1">
-                              Custom
-                            </Badge>
+                            <Badge variant="outline" className="text-[10px] px-1">Custom</Badge>
                           )}
                         </div>
-                        <p
-                          className={cn(
-                            'text-[10px] font-medium mt-1 px-2 py-0.5 rounded-full inline-block',
-                            categoryColors[committee.category] || ''
-                          )}
-                        >
+                        <p className={cn(
+                          'text-[10px] font-medium mt-1 px-2 py-0.5 rounded-full inline-block',
+                          categoryColors[committee.category] || ''
+                        )}>
                           {committee.category}
                         </p>
                       </div>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem onClick={() => onEdit(committee)}>
-                            <Edit2 className="h-3.5 w-3.5 mr-2" />
-                            Edit Details
+                            <Edit2 className="h-3.5 w-3.5 mr-2" />Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {committee.status === 'active' ? (
-                            <DropdownMenuItem
-                              onClick={() => onToggleStatus(committee.id)}
-                              className="text-amber-600"
-                            >
-                              <Ban className="h-3.5 w-3.5 mr-2" />
-                              Deactivate
+                            <DropdownMenuItem onClick={() => onToggleStatus(committee.id)} className="text-amber-600">
+                              <Ban className="h-3.5 w-3.5 mr-2" />Deactivate
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem
-                              onClick={() => onToggleStatus(committee.id)}
-                              className="text-green-600"
-                            >
-                              <Play className="h-3.5 w-3.5 mr-2" />
-                              Activate
+                            <DropdownMenuItem onClick={() => onToggleStatus(committee.id)} className="text-green-600">
+                              <Play className="h-3.5 w-3.5 mr-2" />Activate
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -382,8 +349,7 @@ const CommitteeList = ({
                         variant={committee.status === 'active' ? 'default' : 'secondary'}
                         className={cn(
                           'text-[10px]',
-                          committee.status === 'active' &&
-                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          committee.status === 'active' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         )}
                       >
                         {committee.status === 'active' ? 'Active' : 'Inactive'}
@@ -417,9 +383,7 @@ const CommitteeList = ({
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground">
-              No committees found matching your filters
-            </p>
+            <p className="text-sm text-muted-foreground">No committees found matching your filters</p>
           </div>
         )}
       </CardContent>
@@ -435,12 +399,7 @@ interface CommitteeFormDialogProps {
   editCommittee?: Committee | null;
 }
 
-const CommitteeFormDialog = ({
-  open,
-  onClose,
-  onSave,
-  editCommittee,
-}: CommitteeFormDialogProps) => {
+const CommitteeFormDialog = ({ open, onClose, onSave, editCommittee }: CommitteeFormDialogProps) => {
   const [name, setName] = useState(editCommittee?.name || '');
   const [category, setCategory] = useState<CommitteeCategory | ''>(editCommittee?.category || '');
   const [description, setDescription] = useState(editCommittee?.description || '');
@@ -488,37 +447,23 @@ const CommitteeFormDialog = ({
         <DialogHeader>
           <DialogTitle>{editCommittee ? 'Edit Committee' : 'Add New Committee'}</DialogTitle>
           <DialogDescription>
-            {editCommittee
-              ? 'Update committee configuration details'
-              : 'Configure a new committee for the institution'}
+            {editCommittee ? 'Update committee configuration details' : 'Configure a new committee for the institution'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>
-              Committee Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Enter committee name"
-            />
+            <Label>Committee Name <span className="text-red-500">*</span></Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter committee name" />
           </div>
 
           <div className="space-y-2">
-            <Label>
-              Category <span className="text-red-500">*</span>
-            </Label>
-            <Select value={category} onValueChange={v => setCategory(v as CommitteeCategory)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
+            <Label>Category <span className="text-red-500">*</span></Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as CommitteeCategory)}>
+              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>
-                {COMMITTEE_CATEGORIES.map(cat => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
+                {COMMITTEE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -528,25 +473,19 @@ const CommitteeFormDialog = ({
             <Label>Description</Label>
             <Textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the committee's purpose and scope"
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>
-              Academic Year <span className="text-red-500">*</span>
-            </Label>
+            <Label>Academic Year <span className="text-red-500">*</span></Label>
             <Select value={academicYear} onValueChange={setAcademicYear}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
               <SelectContent>
-                {academicYearOptions.map(y => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
+                {academicYearOptions.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -555,27 +494,17 @@ const CommitteeFormDialog = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Effective From</Label>
-              <Input
-                type="date"
-                value={effectiveFrom}
-                onChange={e => setEffectiveFrom(e.target.value)}
-              />
+              <Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Effective To</Label>
-              <Input
-                type="date"
-                value={effectiveTo}
-                onChange={e => setEffectiveTo(e.target.value)}
-              />
+              <Input type="date" value={effectiveTo} onChange={(e) => setEffectiveTo(e.target.value)} />
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
             {editCommittee ? 'Update' : 'Create'} Committee
@@ -612,19 +541,14 @@ const MemberManagement = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showMemberDetail, setShowMemberDetail] = useState<CommitteeMember | null>(null);
 
-  const filteredMembers = committee.members.filter(m => {
-    const matchesSearch =
-      m.employeeName.toLowerCase().includes(searchMember.toLowerCase()) ||
-      m.employeeId.toLowerCase().includes(searchMember.toLowerCase());
+  const filteredMembers = committee.members.filter((m) => {
+    const matchesSearch = m.employeeName.toLowerCase().includes(searchMember.toLowerCase()) || m.employeeId.toLowerCase().includes(searchMember.toLowerCase());
     const matchesRole = roleFilter === 'all' || m.committeeRole === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const handleDownloadTemplate = () => {
-    const csvContent =
-      CSV_TEMPLATE_HEADERS.join(',') +
-      '\n' +
-      'EMP001,Dr. Ramesh Kumar,Principal,Administration,Chairman,Internal,ramesh@college.edu,9876543210';
+    const csvContent = CSV_TEMPLATE_HEADERS.join(',') + '\n' + 'EMP001,Dr. Ramesh Kumar,Principal,Administration,Chairman,Internal,ramesh@college.edu,9876543210';
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -635,112 +559,101 @@ const MemberManagement = ({
     toast.success('Template downloaded');
   };
 
-  const parseCSV = useCallback(
-    (text: string): { members: CommitteeMember[]; errors: string[] } => {
-      const lines = text
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l);
-      const errors: string[] = [];
-      const members: CommitteeMember[] = [];
+  const parseCSV = useCallback((text: string): { members: CommitteeMember[]; errors: string[] } => {
+    const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
+    const errors: string[] = [];
+    const members: CommitteeMember[] = [];
 
-      if (lines.length < 2) {
-        errors.push('CSV file is empty or has only headers');
-        return { members, errors };
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim());
-      const expectedHeaders = CSV_TEMPLATE_HEADERS;
-      const headerValid = expectedHeaders.every((h, i) => headers[i] === h);
-
-      if (!headerValid) {
-        errors.push(`Invalid CSV format. Expected headers: ${expectedHeaders.join(', ')}`);
-        return { members, errors };
-      }
-
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
-        const employeeId = cols[0] || '';
-        const employeeName = cols[1] || '';
-        const designation = cols[2] || '';
-        const department = cols[3] || '';
-        const committeeRole = cols[4] || '';
-        const memberTypeRaw = cols[5] || '';
-        const email = cols[6] || '';
-        const mobile = cols[7] || '';
-
-        const memberType = memberTypeRaw === 'External' ? 'External' : 'Internal';
-        const rowErrors: string[] = [];
-
-        if (memberType === 'Internal' && !employeeId) {
-          rowErrors.push('Employee ID is required for internal members');
-        }
-        if (!employeeName) rowErrors.push('Employee Name is required');
-        if (!committeeRole) rowErrors.push('Committee Role is required');
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          rowErrors.push('Invalid email format');
-        }
-        if (mobile && !/^[\+]?[\d\-\(\)\s]{8,15}$/.test(mobile)) {
-          rowErrors.push('Invalid mobile number format');
-        }
-
-        const duplicate = committee.members.find(
-          m => m.employeeId === employeeId && m.employeeName === employeeName
-        );
-        if (duplicate) {
-          rowErrors.push('Duplicate member already exists in this committee');
-        }
-
-        if (rowErrors.length > 0) {
-          errors.push(`Row ${i}: ${rowErrors.join('; ')}`);
-        }
-
-        members.push({
-          id: `new-${Date.now()}-${i}`,
-          employeeId,
-          employeeName,
-          designation,
-          department,
-          committeeRole,
-          memberType,
-          email,
-          mobile,
-        });
-      }
-
+    if (lines.length < 2) {
+      errors.push('CSV file is empty or has only headers');
       return { members, errors };
-    },
-    [committee.members]
-  );
+    }
 
-  const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    const headers = lines[0].split(',').map((h) => h.trim());
+    const expectedHeaders = CSV_TEMPLATE_HEADERS;
+    const headerValid = expectedHeaders.every((h, i) => headers[i] === h);
 
-      const reader = new FileReader();
-      reader.onload = event => {
-        const text = event.target?.result as string;
-        const { members, errors } = parseCSV(text);
-        setCsvPreview(members);
-        setCsvErrors(errors);
-        if (members.length > 0) {
-          setShowBulkUpload(true);
-        }
-      };
-      reader.readAsText(file);
+    if (!headerValid) {
+      errors.push(`Invalid CSV format. Expected headers: ${expectedHeaders.join(', ')}`);
+      return { members, errors };
+    }
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map((c) => c.trim());
+      const employeeId = cols[0] || '';
+      const employeeName = cols[1] || '';
+      const designation = cols[2] || '';
+      const department = cols[3] || '';
+      const committeeRole = cols[4] || '';
+      const memberTypeRaw = cols[5] || '';
+      const email = cols[6] || '';
+      const mobile = cols[7] || '';
+
+      const memberType = memberTypeRaw === 'External' ? 'External' : 'Internal';
+      const rowErrors: string[] = [];
+
+      if (memberType === 'Internal' && !employeeId) {
+        rowErrors.push('Employee ID is required for internal members');
       }
-    },
-    [parseCSV]
-  );
+      if (!employeeName) rowErrors.push('Employee Name is required');
+      if (!committeeRole) rowErrors.push('Committee Role is required');
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        rowErrors.push('Invalid email format');
+      }
+      if (mobile && !/^[\+]?[\d\-\(\)\s]{8,15}$/.test(mobile)) {
+        rowErrors.push('Invalid mobile number format');
+      }
+
+      const duplicate = committee.members.find((m) => m.employeeId === employeeId && m.employeeName === employeeName);
+      if (duplicate) {
+        rowErrors.push('Duplicate member already exists in this committee');
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push(`Row ${i}: ${rowErrors.join('; ')}`);
+      }
+
+      members.push({
+        id: `new-${Date.now()}-${i}`,
+        employeeId,
+        employeeName,
+        designation,
+        department,
+        committeeRole,
+        memberType,
+        email,
+        mobile,
+      });
+    }
+
+    return { members, errors };
+  }, [committee.members]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const { members, errors } = parseCSV(text);
+      setCsvPreview(members);
+      setCsvErrors(errors);
+      if (members.length > 0) {
+        setShowBulkUpload(true);
+      }
+    };
+    reader.readAsText(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [parseCSV]);
 
   const handleConfirmBulkUpload = () => {
-    const validMembers = csvPreview.filter(m => {
+    const validMembers = csvPreview.filter((m) => {
       const existing = committee.members.find(
-        em => em.employeeId === m.employeeId && em.employeeName === m.employeeName
+        (em) => em.employeeId === m.employeeId && em.employeeName === m.employeeName
       );
       return !existing;
     });
@@ -753,17 +666,8 @@ const MemberManagement = ({
 
   const handleExportMembers = () => {
     const headers = CSV_TEMPLATE_HEADERS;
-    const rows = committee.members.map(m =>
-      [
-        m.employeeId,
-        m.employeeName,
-        m.designation,
-        m.department,
-        m.committeeRole,
-        m.memberType,
-        m.email,
-        m.mobile,
-      ].join(',')
+    const rows = committee.members.map((m) =>
+      [m.employeeId, m.employeeName, m.designation, m.department, m.committeeRole, m.memberType, m.email, m.mobile].join(',')
     );
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -790,9 +694,7 @@ const MemberManagement = ({
     const [designation, setDesignation] = useState(member?.designation || '');
     const [department, setDepartment] = useState(member?.department || '');
     const [committeeRole, setRole] = useState(member?.committeeRole || '');
-    const [memberType, setMemberType] = useState<'Internal' | 'External'>(
-      member?.memberType || 'Internal'
-    );
+    const [memberType, setMemberType] = useState<'Internal' | 'External'>(member?.memberType || 'Internal');
     const [email, setEmail] = useState(member?.email || '');
     const [mobile, setMobile] = useState(member?.mobile || '');
 
@@ -823,68 +725,39 @@ const MemberManagement = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Employee ID</Label>
-            <Input
-              value={employeeId}
-              onChange={e => setEmpId(e.target.value)}
-              placeholder="EMP001"
-            />
+            <Input value={employeeId} onChange={(e) => setEmpId(e.target.value)} placeholder="EMP001" />
           </div>
           <div className="space-y-2">
-            <Label>
-              Employee Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={employeeName}
-              onChange={e => setEmpName(e.target.value)}
-              placeholder="Dr. John Doe"
-            />
+            <Label>Employee Name <span className="text-red-500">*</span></Label>
+            <Input value={employeeName} onChange={(e) => setEmpName(e.target.value)} placeholder="Dr. John Doe" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Designation</Label>
-            <Input
-              value={designation}
-              onChange={e => setDesignation(e.target.value)}
-              placeholder="Professor"
-            />
+            <Input value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="Professor" />
           </div>
           <div className="space-y-2">
             <Label>Department</Label>
-            <Input
-              value={department}
-              onChange={e => setDepartment(e.target.value)}
-              placeholder="CSE"
-            />
+            <Input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="CSE" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>
-              Committee Role <span className="text-red-500">*</span>
-            </Label>
+            <Label>Committee Role <span className="text-red-500">*</span></Label>
             <Select value={committeeRole} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
               <SelectContent>
-                {COMMITTEE_ROLES.map(role => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
+                {COMMITTEE_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <Label>Member Type</Label>
-            <Select
-              value={memberType}
-              onValueChange={v => setMemberType(v as 'Internal' | 'External')}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={memberType} onValueChange={(v) => setMemberType(v as 'Internal' | 'External')}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Internal">Internal</SelectItem>
                 <SelectItem value="External">External</SelectItem>
@@ -895,26 +768,15 @@ const MemberManagement = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="john@college.edu"
-            />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@college.edu" />
           </div>
           <div className="space-y-2">
             <Label>Mobile</Label>
-            <Input
-              value={mobile}
-              onChange={e => setMobile(e.target.value)}
-              placeholder="+91-9876543210"
-            />
+            <Input value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="+91-9876543210" />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
           <Button onClick={handleSubmit}>
             <Save className="h-4 w-4 mr-2" />
             {member ? 'Update' : 'Add'} Member
@@ -933,9 +795,7 @@ const MemberManagement = ({
             <Users className="h-4 w-4 text-primary" />
             Committee Members
           </h3>
-          <p className="text-xs text-muted-foreground">
-            {committee.members.length} members assigned
-          </p>
+          <p className="text-xs text-muted-foreground">{committee.members.length} members assigned</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
@@ -957,13 +817,7 @@ const MemberManagement = ({
             <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
             Export
           </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingMember(null);
-              setShowAddDialog(true);
-            }}
-          >
+          <Button size="sm" onClick={() => { setEditingMember(null); setShowAddDialog(true); }}>
             <UserPlus className="h-3.5 w-3.5 mr-1.5" />
             Add Member
           </Button>
@@ -977,20 +831,16 @@ const MemberManagement = ({
           <Input
             placeholder="Search members..."
             value={searchMember}
-            onChange={e => setSearchMember(e.target.value)}
+            onChange={(e) => setSearchMember(e.target.value)}
             className="pl-8 h-9 text-sm"
           />
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-[180px] h-9">
-            <SelectValue placeholder="Role" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[180px] h-9"><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
-            {COMMITTEE_ROLES.map(role => (
-              <SelectItem key={role} value={role}>
-                {role}
-              </SelectItem>
+            {COMMITTEE_ROLES.map((role) => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1012,16 +862,12 @@ const MemberManagement = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredMembers.map(member => (
-                <TableRow key={member.id} className="hover:bg-muted/30">
+              {filteredMembers.map((member) => (
+                <TableRow key={member.id} className="hover:bg-muted/50">
                   <TableCell className="text-xs font-mono">{member.employeeId || '-'}</TableCell>
                   <TableCell className="text-xs font-medium">{member.employeeName}</TableCell>
-                  <TableCell className="text-xs hidden md:table-cell text-muted-foreground">
-                    {member.designation}
-                  </TableCell>
-                  <TableCell className="text-xs hidden lg:table-cell text-muted-foreground">
-                    {member.department}
-                  </TableCell>
+                  <TableCell className="text-xs hidden md:table-cell text-muted-foreground">{member.designation}</TableCell>
+                  <TableCell className="text-xs hidden lg:table-cell text-muted-foreground">{member.department}</TableCell>
                   <TableCell className="text-xs">
                     <Badge variant="outline" className="text-[10px] font-normal">
                       {member.committeeRole}
@@ -1049,10 +895,7 @@ const MemberManagement = ({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => {
-                          setEditingMember(member);
-                          setShowAddDialog(true);
-                        }}
+                        onClick={() => { setEditingMember(member); setShowAddDialog(true); }}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </Button>
@@ -1078,9 +921,7 @@ const MemberManagement = ({
         <div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg">
           <Users className="h-10 w-10 text-muted-foreground/40 mb-2" />
           <p className="text-sm text-muted-foreground">No members assigned yet</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Add members manually or upload via CSV
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">Add members manually or upload via CSV</p>
         </div>
       )}
 
@@ -1094,11 +935,7 @@ const MemberManagement = ({
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                  {showMemberDetail.employeeName
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .slice(0, 2)}
+                  {showMemberDetail.employeeName.split(' ').map((n) => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{showMemberDetail.employeeName}</p>
@@ -1112,9 +949,7 @@ const MemberManagement = ({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Committee Role</p>
-                  <Badge variant="outline" className="text-xs">
-                    {showMemberDetail.committeeRole}
-                  </Badge>
+                  <Badge variant="outline" className="text-xs">{showMemberDetail.committeeRole}</Badge>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Member Type</p>
@@ -1134,9 +969,7 @@ const MemberManagement = ({
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowMemberDetail(null)}>
-                  Close
-                </Button>
+                <Button variant="outline" onClick={() => setShowMemberDetail(null)}>Close</Button>
               </DialogFooter>
             </div>
           )}
@@ -1154,7 +987,7 @@ const MemberManagement = ({
           </DialogHeader>
           <MemberForm
             member={editingMember}
-            onSave={m => {
+            onSave={(m) => {
               if (editingMember) {
                 onUpdateMember(m);
               } else {
@@ -1163,10 +996,7 @@ const MemberManagement = ({
               setShowAddDialog(false);
               setEditingMember(null);
             }}
-            onCancel={() => {
-              setShowAddDialog(false);
-              setEditingMember(null);
-            }}
+            onCancel={() => { setShowAddDialog(false); setEditingMember(null); }}
           />
         </DialogContent>
       </Dialog>
@@ -1188,9 +1018,7 @@ const MemberManagement = ({
                 Validation Errors ({csvErrors.length})
               </p>
               {csvErrors.map((err, idx) => (
-                <p key={idx} className="text-xs text-red-600 dark:text-red-400">
-                  {err}
-                </p>
+                <p key={idx} className="text-xs text-red-600 dark:text-red-400">{err}</p>
               ))}
             </div>
           )}
@@ -1200,24 +1028,18 @@ const MemberManagement = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {CSV_TEMPLATE_HEADERS.map(h => (
-                      <TableHead key={h} className="text-xs">
-                        {h}
-                      </TableHead>
+                    {CSV_TEMPLATE_HEADERS.map((h) => (
+                      <TableHead key={h} className="text-xs">{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {csvPreview.map((member, idx) => {
                     const isDuplicate = committee.members.some(
-                      m =>
-                        m.employeeId === member.employeeId && m.employeeName === member.employeeName
+                      (m) => m.employeeId === member.employeeId && m.employeeName === member.employeeName
                     );
                     return (
-                      <TableRow
-                        key={idx}
-                        className={isDuplicate ? 'bg-red-50 dark:bg-red-900/10' : ''}
-                      >
+                      <TableRow key={idx} className={isDuplicate ? 'bg-red-50 dark:bg-red-900/10' : ''}>
                         <TableCell className="text-xs">{member.employeeId || '-'}</TableCell>
                         <TableCell className="text-xs">{member.employeeName}</TableCell>
                         <TableCell className="text-xs">{member.designation}</TableCell>
@@ -1235,19 +1057,10 @@ const MemberManagement = ({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulkUpload(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowBulkUpload(false)}>Cancel</Button>
             <Button onClick={handleConfirmBulkUpload} disabled={csvPreview.length === 0}>
               <Save className="h-4 w-4 mr-2" />
-              Save{' '}
-              {csvPreview.length -
-                csvPreview.filter(m =>
-                  committee.members.some(
-                    em => em.employeeId === m.employeeId && em.employeeName === m.employeeName
-                  )
-                ).length}{' '}
-              Members
+              Save {csvPreview.length - (csvPreview.filter((m) => committee.members.some((em) => em.employeeId === m.employeeId && em.employeeName === m.employeeName)).length)} Members
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1263,17 +1076,10 @@ interface DocumentManagementProps {
   onDeleteDocument: (docId: string) => void;
 }
 
-const DocumentManagement = ({
-  committee,
-  onUploadDocument,
-  onDeleteDocument,
-}: DocumentManagementProps) => {
-  const mandatoryDocs = committee.documents.filter(d => d.mandatory);
-  const uploadedMandatory = mandatoryDocs.filter(d => d.status !== 'not_uploaded');
-  const completionPercent =
-    mandatoryDocs.length > 0
-      ? Math.round((uploadedMandatory.length / mandatoryDocs.length) * 100)
-      : 0;
+const DocumentManagement = ({ committee, onUploadDocument, onDeleteDocument }: DocumentManagementProps) => {
+  const mandatoryDocs = committee.documents.filter((d) => d.mandatory);
+  const uploadedMandatory = mandatoryDocs.filter((d) => d.status !== 'not_uploaded');
+  const completionPercent = mandatoryDocs.length > 0 ? Math.round((uploadedMandatory.length / mandatoryDocs.length) * 100) : 0;
 
   const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
     not_uploaded: { label: 'Not Uploaded', color: 'text-gray-500', dot: 'bg-gray-400' },
@@ -1305,10 +1111,14 @@ const DocumentManagement = ({
       </div>
 
       <div className="space-y-2">
-        {committee.documents.map(doc => {
+        {committee.documents.map((doc) => {
           const config = statusConfig[doc.status] || statusConfig.not_uploaded;
           return (
-            <motion.div key={doc.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div
+              key={doc.id}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
               <Card className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
@@ -1318,10 +1128,7 @@ const DocumentManagement = ({
                         <div className="flex items-center gap-2">
                           <p className="text-xs font-medium truncate">{doc.name}</p>
                           {doc.mandatory && (
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] px-1 py-0 h-4 text-red-500 border-red-200 dark:border-red-900"
-                            >
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-red-500 border-red-200 dark:border-red-900">
                               Required
                             </Badge>
                           )}
@@ -1334,9 +1141,7 @@ const DocumentManagement = ({
                           {doc.status !== 'not_uploaded' && doc.fileName && (
                             <>
                               <span className="text-[10px] text-muted-foreground">•</span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {doc.fileName}
-                              </span>
+                              <span className="text-[10px] text-muted-foreground">{doc.fileName}</span>
                             </>
                           )}
                         </div>
@@ -1344,12 +1149,7 @@ const DocumentManagement = ({
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {doc.status === 'not_uploaded' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => onUploadDocument(doc.id)}
-                        >
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onUploadDocument(doc.id)}>
                           <Upload className="h-3 w-3 mr-1" />
                           Upload
                         </Button>
@@ -1393,7 +1193,7 @@ const DocumentManagement = ({
 
 // ====================== AUDIT TRAIL ======================
 const AuditTrailSection = ({ committeeId }: { committeeId: string }) => {
-  const logs = auditTrail.filter(a => a.committeeId === committeeId);
+  const logs = auditTrail.filter((a) => a.committeeId === committeeId);
 
   if (logs.length === 0) return null;
 
@@ -1405,10 +1205,7 @@ const AuditTrailSection = ({ committeeId }: { committeeId: string }) => {
       </h3>
       <div className="space-y-1">
         {logs.map((log: any) => (
-          <div
-            key={log.id}
-            className="flex items-start gap-2 text-xs py-1.5 border-b last:border-0"
-          >
+          <div key={log.id} className="flex items-start gap-2 text-xs py-1.5 border-b last:border-0">
             <div className="h-2 w-2 mt-1 rounded-full bg-primary/40 shrink-0" />
             <div className="flex-1">
               <p className="font-medium">{log.action}</p>
@@ -1436,11 +1233,11 @@ export const GovernancePage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCommittee, setEditingCommittee] = useState<Committee | null>(null);
 
-  const selectedCommittee = committees.find(c => c.id === selectedCommitteeId);
+  const selectedCommittee = committees.find((c) => c.id === selectedCommitteeId);
 
   const handleToggleStatus = (id: string) => {
-    setCommittees(prev =>
-      prev.map(c => {
+    setCommittees((prev) =>
+      prev.map((c) => {
         if (c.id !== id) return c;
         const newStatus: CommitteeStatus = c.status === 'active' ? 'inactive' : 'active';
         toast.success(`${c.name} ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
@@ -1461,15 +1258,10 @@ export const GovernancePage = () => {
 
   const handleSaveCommittee = (data: Partial<Committee>) => {
     if (editingCommittee) {
-      setCommittees(prev =>
-        prev.map(c =>
+      setCommittees((prev) =>
+        prev.map((c) =>
           c.id === editingCommittee.id
-            ? {
-                ...c,
-                ...data,
-                modifiedAt: new Date().toISOString(),
-                modifiedBy: 'Institution Admin',
-              }
+            ? { ...c, ...data, modifiedAt: new Date().toISOString(), modifiedBy: 'Institution Admin' }
             : c
         )
       );
@@ -1485,41 +1277,16 @@ export const GovernancePage = () => {
         effectiveTo: data.effectiveTo || '',
         status: 'active',
         preset: false,
-        members: [],
-        documents: [
-          {
-            id: `doc-constitution-${Date.now()}`,
-            name: 'Committee Constitution / Office Order',
-            mandatory: true,
-            status: 'not_uploaded',
-            versions: [],
-          },
-          {
-            id: `doc-approval-${Date.now()}`,
-            name: 'Committee Approval Order',
-            mandatory: true,
-            status: 'not_uploaded',
-            versions: [],
-          },
-          {
-            id: `doc-memberlist-${Date.now()}`,
-            name: 'Committee Member List',
-            mandatory: false,
-            status: 'not_uploaded',
-            versions: [],
-          },
-          {
-            id: `doc-nomination-${Date.now()}`,
-            name: 'Government / University Nomination Letter',
-            mandatory: false,
-            status: 'not_uploaded',
-            versions: [],
-          },
-        ],
+        members: [],          documents: [
+            { id: `doc-constitution-${Date.now()}`, name: 'Committee Constitution / Office Order', mandatory: true, status: 'not_uploaded', versions: [] },
+            { id: `doc-approval-${Date.now()}`, name: 'Committee Approval Order', mandatory: true, status: 'not_uploaded', versions: [] },
+            { id: `doc-memberlist-${Date.now()}`, name: 'Committee Member List', mandatory: false, status: 'not_uploaded', versions: [] },
+            { id: `doc-nomination-${Date.now()}`, name: 'Government / University Nomination Letter', mandatory: false, status: 'not_uploaded', versions: [] },
+          ],
         createdAt: new Date().toISOString(),
         createdBy: 'Institution Admin',
       };
-      setCommittees(prev => [...prev, newCommittee]);
+      setCommittees((prev) => [...prev, newCommittee]);
       toast.success('Committee created successfully');
     }
     setShowAddDialog(false);
@@ -1528,15 +1295,10 @@ export const GovernancePage = () => {
 
   const handleAddMember = (member: CommitteeMember) => {
     if (!selectedCommittee) return;
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
-          ? {
-              ...c,
-              members: [...c.members, member],
-              modifiedAt: new Date().toISOString(),
-              modifiedBy: 'Institution Admin',
-            }
+          ? { ...c, members: [...c.members, member], modifiedAt: new Date().toISOString(), modifiedBy: 'Institution Admin' }
           : c
       )
     );
@@ -1545,10 +1307,10 @@ export const GovernancePage = () => {
 
   const handleRemoveMember = (memberId: string) => {
     if (!selectedCommittee) return;
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
-          ? { ...c, members: c.members.filter(m => m.id !== memberId) }
+          ? { ...c, members: c.members.filter((m) => m.id !== memberId) }
           : c
       )
     );
@@ -1556,10 +1318,10 @@ export const GovernancePage = () => {
 
   const handleUpdateMember = (member: CommitteeMember) => {
     if (!selectedCommittee) return;
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
-          ? { ...c, members: c.members.map(m => (m.id === member.id ? member : m)) }
+          ? { ...c, members: c.members.map((m) => (m.id === member.id ? member : m)) }
           : c
       )
     );
@@ -1568,15 +1330,10 @@ export const GovernancePage = () => {
 
   const handleBulkUpload = (members: CommitteeMember[]) => {
     if (!selectedCommittee) return;
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
-          ? {
-              ...c,
-              members: [...c.members, ...members],
-              modifiedAt: new Date().toISOString(),
-              modifiedBy: 'Institution Admin',
-            }
+          ? { ...c, members: [...c.members, ...members], modifiedAt: new Date().toISOString(), modifiedBy: 'Institution Admin' }
           : c
       )
     );
@@ -1585,12 +1342,12 @@ export const GovernancePage = () => {
   const handleUploadDocument = (docId: string) => {
     if (!selectedCommittee) return;
     // Simulate document upload
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
           ? {
               ...c,
-              documents: c.documents.map(d =>
+              documents: c.documents.map((d) =>
                 d.id === docId
                   ? {
                       ...d,
@@ -1599,27 +1356,8 @@ export const GovernancePage = () => {
                       fileSize: 1024,
                       fileType: 'pdf',
                       uploadedBy: 'Institution Admin',
-                      uploadedAt: new Date().toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                      }),
-                      versions: [
-                        ...d.versions,
-                        {
-                          id: `v${d.versions.length + 1}`,
-                          version: d.versions.length + 1,
-                          fileName: `document_${Date.now()}.pdf`,
-                          fileSize: 1024,
-                          fileType: 'pdf',
-                          uploadedBy: 'Institution Admin',
-                          uploadedAt: new Date().toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          }),
-                        },
-                      ],
+                      uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                      versions: [...d.versions, { id: `v${d.versions.length + 1}`, version: d.versions.length + 1, fileName: `document_${Date.now()}.pdf`, fileSize: 1024, fileType: 'pdf', uploadedBy: 'Institution Admin', uploadedAt: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }],
                     }
                   : d
               ),
@@ -1632,22 +1370,14 @@ export const GovernancePage = () => {
 
   const handleDeleteDocument = (docId: string) => {
     if (!selectedCommittee) return;
-    setCommittees(prev =>
-      prev.map(c =>
+    setCommittees((prev) =>
+      prev.map((c) =>
         c.id === selectedCommittee.id
           ? {
               ...c,
-              documents: c.documents.map(d =>
+              documents: c.documents.map((d) =>
                 d.id === docId
-                  ? {
-                      ...d,
-                      status: 'not_uploaded' as const,
-                      fileName: undefined,
-                      fileSize: undefined,
-                      fileType: undefined,
-                      uploadedBy: undefined,
-                      uploadedAt: undefined,
-                    }
+                  ? { ...d, status: 'not_uploaded' as const, fileName: undefined, fileSize: undefined, fileType: undefined, uploadedBy: undefined, uploadedAt: undefined }
                   : d
               ),
             }
@@ -1687,11 +1417,7 @@ export const GovernancePage = () => {
             >
               {selectedCommittee.status === 'active' ? 'Active' : 'Inactive'}
             </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEditCommittee(selectedCommittee)}
-            >
+            <Button variant="outline" size="sm" onClick={() => handleEditCommittee(selectedCommittee)}>
               <Edit2 className="h-3.5 w-3.5 mr-1.5" />
               Edit
             </Button>
@@ -1707,10 +1433,7 @@ export const GovernancePage = () => {
                 {selectedCommittee.academicYear}
               </span>
               <span className="text-muted-foreground">|</span>
-              <span>
-                Effective: {selectedCommittee.effectiveFrom || 'N/A'} to{' '}
-                {selectedCommittee.effectiveTo || 'N/A'}
-              </span>
+              <span>Effective: {selectedCommittee.effectiveFrom || 'N/A'} to {selectedCommittee.effectiveTo || 'N/A'}</span>
               <span className="text-muted-foreground">|</span>
               <span>Created by {selectedCommittee.createdBy}</span>
               {selectedCommittee.createdAt && (
@@ -1752,12 +1475,11 @@ export const GovernancePage = () => {
         <Card>
           <CardContent className="p-4">
             <AuditTrailSection committeeId={selectedCommittee.id} />
-            {selectedCommittee.documents.some(d => d.versions.length > 0) && (
+            {selectedCommittee.documents.some((d) => d.versions.length > 0) && (
               <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <RefreshCw className="h-3 w-3" />
-                  Last modified
-                  {selectedCommittee.modifiedAt ? ` on ${selectedCommittee.modifiedAt}` : ''}
+                  Last modified{selectedCommittee.modifiedAt ? ` on ${selectedCommittee.modifiedAt}` : ''}
                   {selectedCommittee.modifiedBy ? ` by ${selectedCommittee.modifiedBy}` : ''}
                 </div>
               </div>
@@ -1768,10 +1490,7 @@ export const GovernancePage = () => {
         {/* Add/Edit Committee Dialog */}
         <CommitteeFormDialog
           open={showAddDialog}
-          onClose={() => {
-            setShowAddDialog(false);
-            setEditingCommittee(null);
-          }}
+          onClose={() => { setShowAddDialog(false); setEditingCommittee(null); }}
           onSave={handleSaveCommittee}
           editCommittee={editingCommittee}
         />
@@ -1789,12 +1508,7 @@ export const GovernancePage = () => {
             Configure statutory, academic, administrative, and quality-related committees
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingCommittee(null);
-            setShowAddDialog(true);
-          }}
-        >
+        <Button onClick={() => { setEditingCommittee(null); setShowAddDialog(true); }}>
           <Plus className="h-4 w-4 mr-2" />
           Add Committee
         </Button>
@@ -1822,10 +1536,7 @@ export const GovernancePage = () => {
       {/* Add/Edit Committee Dialog */}
       <CommitteeFormDialog
         open={showAddDialog}
-        onClose={() => {
-          setShowAddDialog(false);
-          setEditingCommittee(null);
-        }}
+        onClose={() => { setShowAddDialog(false); setEditingCommittee(null); }}
         onSave={handleSaveCommittee}
         editCommittee={editingCommittee}
       />

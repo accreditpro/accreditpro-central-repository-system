@@ -3,20 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Search,
@@ -41,9 +29,8 @@ export function EvidenceReview() {
   const [showViewer, setShowViewer] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
 
-  const filteredData = evidenceData.filter(item => {
-    const matchesSearch =
-      item.documentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredData = evidenceData.filter((item) => {
+    const matchesSearch = item.documentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.section.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
@@ -53,45 +40,20 @@ export function EvidenceReview() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Pending
-          </Badge>
-        );
-      case 'approved':
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Approved
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-            Rejected
-          </Badge>
-        );
-      case 'changes-requested':
-        return (
-          <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-            Changes Requested
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      case 'pending': return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</Badge>;
+      case 'approved': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Approved</Badge>;
+      case 'rejected': return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Rejected</Badge>;
+      case 'changes-requested': return <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">Changes Requested</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getFileIcon = (fileType: string) => {
     switch (fileType) {
-      case 'pdf':
-        return <FileText className="h-4 w-4 text-red-500" />;
-      case 'image':
-        return <Image className="h-4 w-4 text-blue-500" />;
-      case 'excel':
-        return <FileSpreadsheet className="h-4 w-4 text-green-500" />;
-      default:
-        return <FileText className="h-4 w-4 text-gray-500" />;
+      case 'pdf': return <FileText className="h-4 w-4 text-red-500" />;
+      case 'image': return <Image className="h-4 w-4 text-blue-500" />;
+      case 'excel': return <FileSpreadsheet className="h-4 w-4 text-green-500" />;
+      default: return <FileText className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -113,7 +75,7 @@ export function EvidenceReview() {
               <Input
                 placeholder="Search documents, sections, or uploaded by..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
             </div>
@@ -173,14 +135,12 @@ export function EvidenceReview() {
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map(item => (
-                  <tr key={item.id} className="border-b hover:bg-muted/30 transition-colors">
+                {filteredData.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         {getFileIcon(item.fileType)}
-                        <span className="font-medium truncate max-w-[200px]">
-                          {item.documentName}
-                        </span>
+                        <span className="font-medium truncate max-w-[200px]">{item.documentName}</span>
                       </div>
                     </td>
                     <td className="p-3">
@@ -189,45 +149,22 @@ export function EvidenceReview() {
                     <td className="p-3 text-muted-foreground">{item.section}</td>
                     <td className="p-3 text-muted-foreground">{item.uploadedBy}</td>
                     <td className="p-3 text-muted-foreground text-xs">{item.documentCategory}</td>
-                    <td className="p-3 text-muted-foreground">
-                      {new Date(item.uploadDate).toLocaleDateString()}
-                    </td>
+                    <td className="p-3 text-muted-foreground">{new Date(item.uploadDate).toLocaleDateString()}</td>
                     <td className="p-3">{getStatusBadge(item.status)}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => handleAction('preview', item)}
-                          title="Preview"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleAction('preview', item)} title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
                         {item.status === 'pending' && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-green-600 hover:text-green-700"
-                              title="Approve"
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-700" title="Approve">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-600 hover:text-red-700"
-                              title="Reject"
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:text-red-700" title="Reject">
                               <XCircle className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-purple-600 hover:text-purple-700"
-                              title="Request Changes"
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-purple-600 hover:text-purple-700" title="Request Changes">
                               <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
                           </>
@@ -235,12 +172,7 @@ export function EvidenceReview() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Download">
                           <Download className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          title="Version History"
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Version History">
                           <History className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -268,9 +200,7 @@ export function EvidenceReview() {
               <div className="text-center">
                 <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">Document Preview</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {selectedDocument?.documentName}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{selectedDocument?.documentName}</p>
               </div>
             </div>
             {/* Details Panel */}
@@ -292,10 +222,7 @@ export function EvidenceReview() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date</span>
-                    <span>
-                      {selectedDocument &&
-                        new Date(selectedDocument.uploadDate).toLocaleDateString()}
-                    </span>
+                    <span>{selectedDocument && new Date(selectedDocument.uploadDate).toLocaleDateString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>
@@ -308,7 +235,7 @@ export function EvidenceReview() {
                 <Textarea
                   placeholder="Add review notes..."
                   value={reviewNote}
-                  onChange={e => setReviewNote(e.target.value)}
+                  onChange={(e) => setReviewNote(e.target.value)}
                   rows={4}
                 />
               </div>
@@ -317,27 +244,18 @@ export function EvidenceReview() {
                 <div className="space-y-2">
                   <div className="text-xs p-2 bg-muted/50 rounded">
                     <p className="font-medium">v1.0 - Original Upload</p>
-                    <p className="text-muted-foreground">
-                      {selectedDocument &&
-                        new Date(selectedDocument.uploadDate).toLocaleDateString()}
-                    </p>
+                    <p className="text-muted-foreground">{selectedDocument && new Date(selectedDocument.uploadDate).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowViewer(false)}>
-              Close
-            </Button>
+            <Button variant="outline" onClick={() => setShowViewer(false)}>Close</Button>
             {selectedDocument?.status === 'pending' && (
               <>
-                <Button variant="destructive" size="sm">
-                  Reject
-                </Button>
-                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                  Approve
-                </Button>
+                <Button variant="destructive" size="sm">Reject</Button>
+                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm">Approve</Button>
               </>
             )}
           </DialogFooter>
