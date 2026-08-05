@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { analyticsData, yearlyTrends } from '../hod-configs';
+import { getHODYearData, yearlyTrends } from '../hod-configs';
 import {
   Users,
   GraduationCap,
@@ -15,7 +15,9 @@ import {
   Minus,
 } from 'lucide-react';
 
-export function DepartmentAnalytics() {
+export function DepartmentAnalytics({ academicYear }: { academicYear: string }) {
+  const analyticsData = getHODYearData(academicYear).analytics;
+
   const statsCards = [
     { label: 'Total Faculty', value: analyticsData.facultyCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30', trend: '+3', trendUp: true },
     { label: 'Total Students', value: analyticsData.students, icon: GraduationCap, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', trend: '+45', trendUp: true },

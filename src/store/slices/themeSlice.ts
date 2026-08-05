@@ -28,7 +28,7 @@ const themeSlice = createSlice({
       localStorage.setItem('accreditpro-theme', action.payload);
       document.documentElement.classList.toggle('dark', action.payload === 'dark');
     },
-    toggleTheme: state => {
+    toggleTheme: (state) => {
       const newMode = state.mode === 'light' ? 'dark' : 'light';
       state.mode = newMode;
       localStorage.setItem('accreditpro-theme', newMode);

@@ -14,6 +14,7 @@ import { StudentDevelopmentCoordinatorLayout } from '@/layouts/StudentDevelopmen
 import { ExaminationOfficerLayout } from '@/layouts/ExaminationOfficerLayout';
 import HODLayout from '@/layouts/HODLayout';
 import PrincipalLayout from '@/layouts/PrincipalLayout';
+import IQACLayout from '@/layouts/IQACLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicRoute } from '@/routes/PublicRoute';
@@ -38,6 +39,7 @@ import StudentDevelopmentRepositoryPage from '@/pages/student-development-reposi
 import { ExaminationRepositoryPage } from '@/pages/examination-repository/ExaminationRepositoryPage';
 import HODDashboardPage from '@/pages/hod-dashboard/HODDashboardPage';
 import PrincipalDashboardPage from '@/pages/principal-dashboard/PrincipalDashboardPage';
+import IQACDashboardPage from '@/pages/iqac-dashboard/IQACDashboardPage';
 import SupportingDocumentsPage from '@/pages/institution-admin/supporting-documents/SupportingDocumentsPage';
 import { AssessmentAndOBEPage } from '@/pages/institution-admin/assessment-and-obe/AssessmentAndOBEPage';
 
@@ -46,7 +48,7 @@ import { InstitutionDashboard } from '@/pages/institution-admin/InstitutionDashb
 import { InstitutionProfilePage } from '@/pages/institution-admin/InstitutionProfilePage';
 import { AcademicStructurePage } from '@/pages/institution-admin/AcademicStructurePage';
 import { UserManagementPage } from '@/pages/institution-admin/UserManagementPage';
-import { GovernancePage } from '@/pages/institution-admin/governance/GovernancePage'
+import { GovernancePage } from '@/pages/institution-admin/AdminPages';
 import {
   RoleManagementPage,
   RepositoryMonitoringPage,
@@ -228,6 +230,18 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<PrincipalDashboardPage />} />
+      </Route>
+
+      {/* IQAC Coordinator Routes */}
+      <Route
+        path="/app/iqac-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.IQAC_COORDINATOR]}>
+            <IQACLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<IQACDashboardPage />} />
       </Route>
 
       {/* App Routes - All authenticated users */}

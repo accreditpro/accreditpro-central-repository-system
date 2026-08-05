@@ -19,12 +19,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
-import {
-  academicPerformance,
-  departmentScores,
-  fiveYearTrends,
-  institutionStats,
-} from '../principal-configs';
+import { academicPerformance, departmentScores, fiveYearTrends, institutionStats } from '../principal-configs';
 
 interface DomainAnalyticsProps {
   domain: string;
@@ -79,61 +74,29 @@ function AcademicPerformance() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 px-2 font-medium text-muted-foreground">Dept</th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Pass %
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Avg SGPA
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Avg CGPA
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Backlogs
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Grad Rate
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Distinctions
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Gold Medals
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Univ. Ranks
-                  </th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Pass %</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Avg SGPA</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Avg CGPA</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Backlogs</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Grad Rate</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Distinctions</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Gold Medals</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Univ. Ranks</th>
                 </tr>
               </thead>
               <tbody>
-                {academicPerformance.departments.map(dept => (
+                {academicPerformance.departments.map((dept) => (
                   <tr key={dept.name} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-2 font-medium">{dept.name}</td>
                     <td className="text-center py-2 px-2">
-                      <span
-                        className={
-                          dept.passPercentage >= 90
-                            ? 'text-green-600'
-                            : dept.passPercentage >= 80
-                              ? 'text-yellow-600'
-                              : 'text-red-600'
-                        }
-                      >
+                      <span className={dept.passPercentage >= 90 ? 'text-green-600' : dept.passPercentage >= 80 ? 'text-yellow-600' : 'text-red-600'}>
                         {dept.passPercentage}%
                       </span>
                     </td>
                     <td className="text-center py-2 px-2">{dept.avgSGPA}</td>
                     <td className="text-center py-2 px-2">{dept.avgCGPA}</td>
                     <td className="text-center py-2 px-2">
-                      <span
-                        className={
-                          dept.backlogs <= 5
-                            ? 'text-green-600'
-                            : dept.backlogs <= 10
-                              ? 'text-yellow-600'
-                              : 'text-red-600'
-                        }
-                      >
+                      <span className={dept.backlogs <= 5 ? 'text-green-600' : dept.backlogs <= 10 ? 'text-yellow-600' : 'text-red-600'}>
                         {dept.backlogs}
                       </span>
                     </td>
@@ -158,9 +121,7 @@ function AcademicPerformance() {
               <div key={year} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-16">{year}</span>
                 <Progress value={fiveYearTrends.passPercentage[idx]} className="h-3 flex-1" />
-                <span className="text-xs font-semibold w-10">
-                  {fiveYearTrends.passPercentage[idx]}%
-                </span>
+                <span className="text-xs font-semibold w-10">{fiveYearTrends.passPercentage[idx]}%</span>
               </div>
             ))}
           </div>
@@ -186,7 +147,7 @@ function StudentSuccess() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3">
-        {metrics.map(m => (
+        {metrics.map((m) => (
           <Card key={m.label}>
             <CardContent className="p-3 text-center">
               <p className="text-lg font-bold">{m.value}</p>
@@ -205,13 +166,8 @@ function StudentSuccess() {
             {fiveYearTrends.years.map((year, idx) => (
               <div key={year} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-16">{year}</span>
-                <Progress
-                  value={(fiveYearTrends.students[idx] / 5000) * 100}
-                  className="h-3 flex-1"
-                />
-                <span className="text-xs font-semibold w-12">
-                  {fiveYearTrends.students[idx].toLocaleString()}
-                </span>
+                <Progress value={(fiveYearTrends.students[idx] / 5000) * 100} className="h-3 flex-1" />
+                <span className="text-xs font-semibold w-12">{fiveYearTrends.students[idx].toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -247,7 +203,7 @@ function FacultyExcellence() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {metrics.map(m => (
+        {metrics.map((m) => (
           <Card key={m.label}>
             <CardContent className="p-3">
               <m.icon className="h-4 w-4 text-primary mb-1" />
@@ -269,22 +225,16 @@ function FacultyExcellence() {
                   <th className="text-left py-2 px-2 font-medium text-muted-foreground">Dept</th>
                   <th className="text-center py-2 px-2 font-medium text-muted-foreground">Total</th>
                   <th className="text-center py-2 px-2 font-medium text-muted-foreground">PhD</th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Publications
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Student:Faculty
-                  </th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Publications</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Student:Faculty</th>
                 </tr>
               </thead>
               <tbody>
-                {deptFaculty.map(d => (
+                {deptFaculty.map((d) => (
                   <tr key={d.dept} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-2 font-medium">{d.dept}</td>
                     <td className="text-center py-2 px-2">{d.total}</td>
-                    <td className="text-center py-2 px-2">
-                      {d.phd} ({Math.round((d.phd / d.total) * 100)}%)
-                    </td>
+                    <td className="text-center py-2 px-2">{d.phd} ({Math.round((d.phd / d.total) * 100)}%)</td>
                     <td className="text-center py-2 px-2">{d.publications}</td>
                     <td className="text-center py-2 px-2">{d.ratio}</td>
                   </tr>
@@ -312,14 +262,12 @@ function ResearchPerformance() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {metrics.map(m => (
+        {metrics.map((m) => (
           <Card key={m.label}>
             <CardContent className="p-3">
               <p className="text-lg font-bold">{m.value}</p>
               <p className="text-[10px] text-muted-foreground">{m.label}</p>
-              <Badge variant="outline" className="text-[9px] text-green-600 mt-1">
-                {m.trend}
-              </Badge>
+              <Badge variant="outline" className="text-[9px] text-green-600 mt-1">{m.trend}</Badge>
             </CardContent>
           </Card>
         ))}
@@ -330,7 +278,7 @@ function ResearchPerformance() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {departmentScores.map(dept => {
+            {departmentScores.map((dept) => {
               const researchScore = Math.round(dept.verification * 0.9);
               return (
                 <div key={dept.id} className="flex items-center gap-3">
@@ -352,13 +300,8 @@ function ResearchPerformance() {
             {fiveYearTrends.years.map((year, idx) => (
               <div key={year} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-16">{year}</span>
-                <Progress
-                  value={(fiveYearTrends.publications[idx] / 500) * 100}
-                  className="h-3 flex-1"
-                />
-                <span className="text-xs font-semibold w-8">
-                  {fiveYearTrends.publications[idx]}
-                </span>
+                <Progress value={(fiveYearTrends.publications[idx] / 500) * 100} className="h-3 flex-1" />
+                <span className="text-xs font-semibold w-8">{fiveYearTrends.publications[idx]}</span>
               </div>
             ))}
           </div>
@@ -370,103 +313,23 @@ function ResearchPerformance() {
 
 function PlacementPerformance() {
   const deptPlacements = [
-    {
-      dept: 'CSE',
-      rate: 95,
-      highest: '42 LPA',
-      average: '9.2 LPA',
-      recruiters: 45,
-      internships: 120,
-    },
-    {
-      dept: 'ECE',
-      rate: 84,
-      highest: '28 LPA',
-      average: '7.1 LPA',
-      recruiters: 32,
-      internships: 85,
-    },
-    {
-      dept: 'EEE',
-      rate: 72,
-      highest: '18 LPA',
-      average: '5.8 LPA',
-      recruiters: 22,
-      internships: 60,
-    },
-    {
-      dept: 'MECH',
-      rate: 78,
-      highest: '22 LPA',
-      average: '6.2 LPA',
-      recruiters: 28,
-      internships: 70,
-    },
-    {
-      dept: 'CIVIL',
-      rate: 54,
-      highest: '12 LPA',
-      average: '4.5 LPA',
-      recruiters: 15,
-      internships: 40,
-    },
-    {
-      dept: 'IT',
-      rate: 92,
-      highest: '38 LPA',
-      average: '8.8 LPA',
-      recruiters: 42,
-      internships: 110,
-    },
-    {
-      dept: 'AIML',
-      rate: 88,
-      highest: '35 LPA',
-      average: '8.2 LPA',
-      recruiters: 38,
-      internships: 95,
-    },
-    {
-      dept: 'DS',
-      rate: 82,
-      highest: '32 LPA',
-      average: '7.5 LPA',
-      recruiters: 30,
-      internships: 80,
-    },
+    { dept: 'CSE', rate: 95, highest: '42 LPA', average: '9.2 LPA', recruiters: 45, internships: 120 },
+    { dept: 'ECE', rate: 84, highest: '28 LPA', average: '7.1 LPA', recruiters: 32, internships: 85 },
+    { dept: 'EEE', rate: 72, highest: '18 LPA', average: '5.8 LPA', recruiters: 22, internships: 60 },
+    { dept: 'MECH', rate: 78, highest: '22 LPA', average: '6.2 LPA', recruiters: 28, internships: 70 },
+    { dept: 'CIVIL', rate: 54, highest: '12 LPA', average: '4.5 LPA', recruiters: 15, internships: 40 },
+    { dept: 'IT', rate: 92, highest: '38 LPA', average: '8.8 LPA', recruiters: 42, internships: 110 },
+    { dept: 'AIML', rate: 88, highest: '35 LPA', average: '8.2 LPA', recruiters: 38, internships: 95 },
+    { dept: 'DS', rate: 82, highest: '32 LPA', average: '7.5 LPA', recruiters: 30, internships: 80 },
   ];
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          icon={Briefcase}
-          label="Overall Placement"
-          value={`${institutionStats.placementRate}%`}
-          trend="+2%"
-          positive
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Highest Package"
-          value={institutionStats.highestPackage}
-          trend="+₹4 LPA"
-          positive
-        />
-        <StatCard
-          icon={Award}
-          label="Average Package"
-          value={institutionStats.averagePackage}
-          trend="+₹0.6 LPA"
-          positive
-        />
-        <StatCard
-          icon={Users}
-          label="Recruiters"
-          value={`${institutionStats.recruiters}`}
-          trend="+18"
-          positive
-        />
+        <StatCard icon={Briefcase} label="Overall Placement" value={`${institutionStats.placementRate}%`} trend="+2%" positive />
+        <StatCard icon={TrendingUp} label="Highest Package" value={institutionStats.highestPackage} trend="+₹4 LPA" positive />
+        <StatCard icon={Award} label="Average Package" value={institutionStats.averagePackage} trend="+₹0.6 LPA" positive />
+        <StatCard icon={Users} label="Recruiters" value={`${institutionStats.recruiters}`} trend="+18" positive />
       </div>
       <Card>
         <CardHeader className="pb-3">
@@ -479,34 +342,18 @@ function PlacementPerformance() {
                 <tr className="border-b">
                   <th className="text-left py-2 px-2 font-medium text-muted-foreground">Dept</th>
                   <th className="text-center py-2 px-2 font-medium text-muted-foreground">Rate</th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Highest
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Average
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Recruiters
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Internships
-                  </th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Highest</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Average</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Recruiters</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Internships</th>
                 </tr>
               </thead>
               <tbody>
-                {deptPlacements.map(d => (
+                {deptPlacements.map((d) => (
                   <tr key={d.dept} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-2 font-medium">{d.dept}</td>
                     <td className="text-center py-2 px-2">
-                      <span
-                        className={
-                          d.rate >= 85
-                            ? 'text-green-600'
-                            : d.rate >= 70
-                              ? 'text-yellow-600'
-                              : 'text-red-600'
-                        }
-                      >
+                      <span className={d.rate >= 85 ? 'text-green-600' : d.rate >= 70 ? 'text-yellow-600' : 'text-red-600'}>
                         {d.rate}%
                       </span>
                     </td>
@@ -531,9 +378,7 @@ function PlacementPerformance() {
               <div key={year} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-16">{year}</span>
                 <Progress value={fiveYearTrends.placements[idx]} className="h-3 flex-1" />
-                <span className="text-xs font-semibold w-10">
-                  {fiveYearTrends.placements[idx]}%
-                </span>
+                <span className="text-xs font-semibold w-10">{fiveYearTrends.placements[idx]}%</span>
               </div>
             ))}
           </div>
@@ -558,7 +403,7 @@ function InfrastructureOverview() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {infraItems.map(item => (
+        {infraItems.map((item) => (
           <Card key={item.label}>
             <CardContent className="p-3 text-center">
               <p className="text-lg font-bold">{item.value}</p>
@@ -577,17 +422,7 @@ function InfrastructureOverview() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[
-              'Buildings & Classrooms',
-              'Laboratories',
-              'Library & Resources',
-              'ICT Infrastructure',
-              'Utilities & Maintenance',
-              'Hostels',
-              'Sports',
-              'Safety & Security',
-              'Green Campus',
-            ].map((item, idx) => {
+            {['Buildings & Classrooms', 'Laboratories', 'Library & Resources', 'ICT Infrastructure', 'Utilities & Maintenance', 'Hostels', 'Sports', 'Safety & Security', 'Green Campus'].map((item, idx) => {
               const value = 75 + Math.round(Math.random() * 20);
               return (
                 <div key={item} className="flex items-center gap-3">
@@ -627,7 +462,7 @@ function FinancialOverview() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {financialData.map(item => (
+        {financialData.map((item) => (
           <Card key={item.label}>
             <CardContent className="p-3 text-center">
               <p className="text-lg font-bold">{item.value}</p>
@@ -650,30 +485,20 @@ function FinancialOverview() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 px-2 font-medium text-muted-foreground">Dept</th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Allocated (₹ Cr)
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Utilized (₹ Cr)
-                  </th>
-                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">
-                    Utilization %
-                  </th>
-                  <th className="text-left py-2 px-2 font-medium text-muted-foreground w-24">
-                    Progress
-                  </th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Allocated (₹ Cr)</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Utilized (₹ Cr)</th>
+                  <th className="text-center py-2 px-2 font-medium text-muted-foreground">Utilization %</th>
+                  <th className="text-left py-2 px-2 font-medium text-muted-foreground w-24">Progress</th>
                 </tr>
               </thead>
               <tbody>
-                {deptBudget.map(d => (
+                {deptBudget.map((d) => (
                   <tr key={d.dept} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-2 font-medium">{d.dept}</td>
                     <td className="text-center py-2 px-2">{d.allocated}</td>
                     <td className="text-center py-2 px-2">{d.utilized}</td>
                     <td className="text-center py-2 px-2 font-semibold">{d.percentage}%</td>
-                    <td className="py-2 px-2">
-                      <Progress value={d.percentage} className="h-2" />
-                    </td>
+                    <td className="py-2 px-2"><Progress value={d.percentage} className="h-2" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -690,10 +515,7 @@ function FinancialOverview() {
             {fiveYearTrends.years.map((year, idx) => (
               <div key={year} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-16">{year}</span>
-                <Progress
-                  value={(fiveYearTrends.revenue[idx] / 140) * 100}
-                  className="h-3 flex-1"
-                />
+                <Progress value={(fiveYearTrends.revenue[idx] / 140) * 100} className="h-3 flex-1" />
                 <span className="text-xs font-semibold w-8">{fiveYearTrends.revenue[idx]}</span>
               </div>
             ))}
@@ -715,14 +537,12 @@ function ExaminationAnalytics() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {examData.map(item => (
+        {examData.map((item) => (
           <Card key={item.label}>
             <CardContent className="p-3 text-center">
               <p className="text-lg font-bold">{item.value}</p>
               <p className="text-xs font-medium">{item.label}</p>
-              <Badge variant="outline" className="text-[9px] text-green-600 mt-1">
-                {item.trend}
-              </Badge>
+              <Badge variant="outline" className="text-[9px] text-green-600 mt-1">{item.trend}</Badge>
             </CardContent>
           </Card>
         ))}
@@ -736,15 +556,12 @@ function ExaminationAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {academicPerformance.departments.map(dept => (
+            {academicPerformance.departments.map((dept) => (
               <div key={dept.name} className="flex items-center gap-3">
                 <span className="text-xs font-medium w-12">{dept.name}</span>
                 <Progress value={dept.passPercentage} className="h-2.5 flex-1" />
                 <span className="text-xs font-semibold w-10">{dept.passPercentage}%</span>
-                <Badge
-                  variant="outline"
-                  className={`text-[9px] ${dept.backlogs <= 5 ? 'text-green-600' : dept.backlogs <= 10 ? 'text-yellow-600' : 'text-red-600'}`}
-                >
+                <Badge variant="outline" className={`text-[9px] ${dept.backlogs <= 5 ? 'text-green-600' : dept.backlogs <= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
                   {dept.backlogs} backlogs
                 </Badge>
               </div>
@@ -784,22 +601,14 @@ function StudentDevelopment() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">
-                    Activity
-                  </th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                    Participants
-                  </th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                    Events
-                  </th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                    Achievements
-                  </th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Activity</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Participants</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Events</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Achievements</th>
                 </tr>
               </thead>
               <tbody>
-                {activities.map(a => (
+                {activities.map((a) => (
                   <tr key={a.name} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-3 font-medium">{a.name}</td>
                     <td className="text-center py-2 px-3">{a.participants}</td>
@@ -820,31 +629,11 @@ function ComplianceStatus() {
   const complianceItems = [
     { name: 'AICTE Approval', status: 'valid', expiry: '2025-06-30', action: 'Renewal in 45 days' },
     { name: 'UGC Recognition', status: 'valid', expiry: '2026-03-31', action: 'No action needed' },
-    {
-      name: 'Autonomous Status',
-      status: 'valid',
-      expiry: '2027-08-15',
-      action: 'No action needed',
-    },
-    {
-      name: 'NBA Accreditation (CSE)',
-      status: 'valid',
-      expiry: '2025-12-31',
-      action: 'Prepare for renewal',
-    },
-    {
-      name: 'NBA Accreditation (ECE)',
-      status: 'pending',
-      expiry: '-',
-      action: 'Application submitted',
-    },
+    { name: 'Autonomous Status', status: 'valid', expiry: '2027-08-15', action: 'No action needed' },
+    { name: 'NBA Accreditation (CSE)', status: 'valid', expiry: '2025-12-31', action: 'Prepare for renewal' },
+    { name: 'NBA Accreditation (ECE)', status: 'pending', expiry: '-', action: 'Application submitted' },
     { name: 'NAAC Accreditation', status: 'valid', expiry: '2026-09-30', action: 'Prepare SSR' },
-    {
-      name: 'Fire Safety Certificate',
-      status: 'expiring',
-      expiry: '2024-05-15',
-      action: 'Urgent renewal',
-    },
+    { name: 'Fire Safety Certificate', status: 'expiring', expiry: '2024-05-15', action: 'Urgent renewal' },
     { name: 'Building Safety', status: 'valid', expiry: '2025-11-30', action: 'No action needed' },
   ];
 
@@ -889,28 +678,18 @@ function ComplianceStatus() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">
-                    Approval/Certificate
-                  </th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">
-                    Expiry
-                  </th>
-                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">
-                    Action Required
-                  </th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Approval/Certificate</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-center py-2 px-3 font-medium text-muted-foreground">Expiry</th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Action Required</th>
                 </tr>
               </thead>
               <tbody>
-                {complianceItems.map(item => (
+                {complianceItems.map((item) => (
                   <tr key={item.name} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-2 px-3 font-medium">{item.name}</td>
                     <td className="text-center py-2 px-3">
-                      <Badge
-                        className={`text-[9px] ${item.status === 'valid' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : item.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'}`}
-                      >
+                      <Badge className={`text-[9px] ${item.status === 'valid' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : item.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'}`}>
                         {item.status}
                       </Badge>
                     </td>
@@ -928,19 +707,7 @@ function ComplianceStatus() {
 }
 
 // Reusable Stat Card
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  trend,
-  positive,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  trend: string;
-  positive?: boolean;
-}) {
+function StatCard({ icon: Icon, label, value, trend, positive }: { icon: React.ElementType; label: string; value: string; trend: string; positive?: boolean }) {
   return (
     <Card>
       <CardContent className="p-3">
@@ -948,16 +715,8 @@ function StatCard({
         <p className="text-lg font-bold">{value}</p>
         <p className="text-[10px] text-muted-foreground">{label}</p>
         <div className="flex items-center gap-1 mt-1">
-          {positive ? (
-            <TrendingUp className="h-3 w-3 text-green-600" />
-          ) : (
-            <TrendingDown className="h-3 w-3 text-red-600" />
-          )}
-          <span
-            className={`text-[10px] font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}
-          >
-            {trend}
-          </span>
+          {positive ? <TrendingUp className="h-3 w-3 text-green-600" /> : <TrendingDown className="h-3 w-3 text-red-600" />}
+          <span className={`text-[10px] font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}>{trend}</span>
         </div>
       </CardContent>
     </Card>

@@ -15,9 +15,10 @@ import {
   Send,
   Filter,
 } from 'lucide-react';
-import { activityTimelineData } from '../hod-configs';
+import { getHODYearData } from '../hod-configs';
 
-export function ActivityTimeline() {
+export function ActivityTimeline({ academicYear }: { academicYear: string }) {
+  const activityTimelineData = getHODYearData(academicYear).activities;
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [repositoryFilter, setRepositoryFilter] = useState<string>('all');

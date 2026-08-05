@@ -75,6 +75,8 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
       case 'approved': return 'bg-emerald-500/10 text-emerald-600';
       case 'under-review': return 'bg-amber-500/10 text-amber-600';
       case 'uploaded': return 'bg-blue-500/10 text-blue-600';
+      case 'rejected': return 'bg-red-500/10 text-red-600';
+      case 'changes-requested': return 'bg-purple-500/10 text-purple-600';
       default: return 'bg-muted text-muted-foreground';
     }
   };
