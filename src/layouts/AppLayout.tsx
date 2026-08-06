@@ -73,11 +73,12 @@ export const AppLayout = () => {
         )}
       >
         <Header onMobileMenuOpen={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="flex-1 flex flex-col"
           >
             <Outlet />
           </motion.div>

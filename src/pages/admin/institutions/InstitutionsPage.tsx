@@ -242,9 +242,14 @@ export const InstitutionsPage = () => {
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                setViewDialog({ open: true, institution: row });
+                try {
+                  const fullDetails = await institutionService.getInstitutionById(row.id);
+                  setViewDialog({ open: true, institution: fullDetails || row });
+                } catch {
+                  setViewDialog({ open: true, institution: row });
+                }
               }}
             >
               <Eye className="h-3.5 w-3.5" />
@@ -252,9 +257,14 @@ export const InstitutionsPage = () => {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-xs gap-2 cursor-pointer"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                setEditDialog({ open: true, institution: row });
+                try {
+                  const fullDetails = await institutionService.getInstitutionById(row.id);
+                  setEditDialog({ open: true, institution: fullDetails || row });
+                } catch {
+                  setEditDialog({ open: true, institution: row });
+                }
               }}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -321,73 +331,77 @@ export const InstitutionsPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="flex-1 flex flex-col justify-between space-y-6"
     >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Institutions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage registered institutions and their accreditation status
-          </p>
+      <div className="space-y-6 flex-1">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Institutions</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage registered institutions and their accreditation status
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <Upload className="h-3.5 w-3.5" />
+              Import
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
+            <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => navigate('/admin/institutions/create')}>
+              <Plus className="h-3.5 w-3.5" />
+              Add Institution
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
-            <Upload className="h-3.5 w-3.5" />
-            Import
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
-            <Download className="h-3.5 w-3.5" />
-            Export
-          </Button>
-          <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => navigate('/admin/institutions/create')}>
-            <Plus className="h-3.5 w-3.5" />
-            Add Institution
-          </Button>
-        </div>
+
+        {/* Filters */}
+        <InstitutionFilters
+          filters={filters}
+          onFilterChange={setFilters}
+          states={institutionService.getStates()}
+          categories={institutionService.getCategories()}
+        />
+
+        {/* Summary */}
+        {!loading && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px]">
+              {pagination.total} institution{pagination.total !== 1 ? 's' : ''} found
+            </Badge>
+            {sort && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                Sorted by {sort.key} ({sort.direction})
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Table */}
+        <DataTable
+          columns={columns}
+          data={institutions}
+          loading={loading}
+          sort={sort}
+          onSort={setSort}
+          rowKey={(row) => row.id}
+          emptyTitle="No institutions found"
+          emptyDescription="Try adjusting your search or filter criteria to find institutions."
+        />
       </div>
 
-      {/* Filters */}
-      <InstitutionFilters
-        filters={filters}
-        onFilterChange={setFilters}
-        states={institutionService.getStates()}
-        categories={institutionService.getCategories()}
-      />
-
-      {/* Summary */}
-      {!loading && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-[10px]">
-            {pagination.total} institution{pagination.total !== 1 ? 's' : ''} found
-          </Badge>
-          {sort && (
-            <Badge variant="outline" className="text-[10px] gap-1">
-              Sorted by {sort.key} ({sort.direction})
-            </Badge>
-          )}
-        </div>
-      )}
-
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={institutions}
-        loading={loading}
-        sort={sort}
-        onSort={setSort}
-        rowKey={(row) => row.id}
-        emptyTitle="No institutions found"
-        emptyDescription="Try adjusting your search or filter criteria to find institutions."
-      />
-
-      {/* Pagination */}
+      {/* Pagination Footer - Pushed to bottom */}
       {!loading && pagination.total > 0 && (
-        <DataTablePagination
-          pagination={pagination}
-          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 }))}
-        />
+        <div className="mt-auto pt-4 border-t border-border/40">
+          <DataTablePagination
+            pagination={pagination}
+            onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            onPageSizeChange={(pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 }))}
+          />
+        </div>
       )}
 
       {/* View Details Dialog */}

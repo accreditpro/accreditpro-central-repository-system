@@ -42,8 +42,9 @@ const getRoleBasedRedirect = (role: UserRole): string => {
       return '/app/hod-dashboard';
     case UserRole.PRINCIPAL:
       return '/app/principal-dashboard';
-    case UserRole.INSTITUTION_ADMIN:
     case UserRole.IQAC_COORDINATOR:
+      return '/app/iqac-dashboard';
+    case UserRole.INSTITUTION_ADMIN:
       return '/app/dashboard';
     default:
       return '/app/dashboard';
@@ -93,24 +94,7 @@ const Login = () => {
     }
   };
 
-  const fillDemoCredentials = (email: string) => {
-    setValue('email', email);
-    setValue('password', 'admin123');
-  };
-
-  const demoAccounts = [
-    { label: 'Super Admin', email: 'superadmin@accreditpro.com', role: 'Platform Admin' },
-    { label: 'Institution Admin', email: 'institution@accreditpro.com', role: 'University Admin' },
-    { label: 'IQAC Coordinator', email: 'iqac@accreditpro.com', role: 'Quality Assurance' },
-    { label: 'Principal', email: 'principal@accreditpro.com', role: 'Academic Head' },
-    { label: 'Dept. Coordinator', email: 'department@accreditpro.com', role: 'Department Lead' },
-    { label: 'Infra. Coordinator', email: 'infrastructure@accreditpro.com', role: 'Infrastructure' },
-    { label: 'Finance Coordinator', email: 'finance@accreditpro.com', role: 'Finance' },
-    { label: 'TPO Coordinator', email: 'tpo@accreditpro.com', role: 'Placements' },
-    { label: 'Student Dev. Coordinator', email: 'studentdev@accreditpro.com', role: 'Student Activities' },
-    { label: 'Examination Officer', email: 'examination@accreditpro.com', role: 'Examinations' },
-    { label: 'Head of Department', email: 'hod@accreditpro.com', role: 'Department Quality' },
-  ];
+          {/* Footer */}
 
   return (
     <div className="w-full">
@@ -254,39 +238,6 @@ const Login = () => {
               )}
             </Button>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground font-medium">Demo Accounts</span>
-            </div>
-          </div>
-
-          {/* Demo Credentials */}
-          <div className="space-y-2">
-            {demoAccounts.map((account) => (
-              <button
-                key={account.email}
-                type="button"
-                onClick={() => fillDemoCredentials(account.email)}
-                disabled={isLoading || loginState === 'success'}
-                className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-left transition-all hover:bg-muted/50 hover:border-border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                    {account.label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{account.role}</span>
-                </div>
-                <span className="text-xs text-muted-foreground font-mono bg-background px-2 py-0.5 rounded border">
-                  admin123
-                </span>
-              </button>
-            ))}
-          </div>
 
           {/* Footer */}
           <p className="mt-6 text-center text-xs text-muted-foreground">

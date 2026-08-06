@@ -66,33 +66,53 @@ export function EditInstitutionDialog({
 
   // Pre-fill the wizard from the institution record every time it opens
   useEffect(() => {
+    let isMounted = true;
     if (institution && open) {
-      form.reset({
-        basicInfo: {
-          name: institution.name,
-          code: institution.code,
-          category: CATEGORY_LABEL_MAP[institution.category] ?? institution.category,
-          email: institution.email || '',
-          phone: institution.phone || '',
-          website: institution.website || '',
-          logo: institution.logo || '',
-        },
-        address: {
-          addressLine1: institution.addressLine1 || '',
-          addressLine2: institution.addressLine2 || '',
-          state: institution.state,
-          district: institution.district || institution.city || '',
-          pincode: institution.pincode || '',
-        },
-        admin: {
-          name: institution.admin?.name || '',
-          email: institution.admin?.email || '',
-          mobile: institution.admin?.mobile || '',
-        },
-      });
-      setCurrentStep(1);
-      setSaving(false);
+      const loadDetails = async () => {
+        let dataToUse = institution;
+        try {
+          const fresh = await institutionService.getInstitutionById(institution.id);
+          if (fresh && isMounted) {
+            dataToUse = fresh;
+          }
+        } catch {
+          // Fall back to passed institution prop
+        }
+
+        if (isMounted) {
+          form.reset({
+            basicInfo: {
+              name: dataToUse.name || '',
+              code: dataToUse.code || '',
+              category: CATEGORY_LABEL_MAP[dataToUse.category] ?? dataToUse.category ?? '',
+              email: dataToUse.email || '',
+              phone: dataToUse.phone || '',
+              website: dataToUse.website || '',
+              logo: dataToUse.logo || '',
+            },
+            address: {
+              addressLine1: dataToUse.addressLine1 || '',
+              addressLine2: dataToUse.addressLine2 || '',
+              state: dataToUse.state || '',
+              district: dataToUse.district || dataToUse.city || '',
+              pincode: dataToUse.pincode || '',
+            },
+            admin: {
+              name: dataToUse.admin?.name || '',
+              email: dataToUse.admin?.email || '',
+              mobile: dataToUse.admin?.mobile || '',
+            },
+          });
+          setCurrentStep(1);
+          setSaving(false);
+        }
+      };
+
+      loadDetails();
     }
+    return () => {
+      isMounted = false;
+    };
   }, [institution, open, form]);
 
   const stepSchemas = [

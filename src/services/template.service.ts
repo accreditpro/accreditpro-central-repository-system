@@ -36,15 +36,44 @@ class TemplateService {
    * (TitleCase) which is converted to UPPER_CASE for the API query param.
    */
   async getTemplates(category?: TemplateCategory): Promise<Template[]> {
-    const params: Record<string, string> = {};
-    if (category) {
-      params.category = CATEGORY_TO_API[category];
+    try {
+      const params: Record<string, string> = {};
+      if (category && CATEGORY_TO_API[category]) {
+        params.category = CATEGORY_TO_API[category];
+      }
+      const raw = await apiService.get<any>('/admin/templates', { params });
+
+      let items: any[] = [];
+      if (Array.isArray(raw)) {
+        items = raw;
+      } else if (raw && Array.isArray(raw.data)) {
+        items = raw.data;
+      } else if (raw && Array.isArray(raw.content)) {
+        items = raw.content;
+      }
+
+      return items.map((t: any, idx: number) => {
+        const rawStatus = String(t.status || 'ACTIVE').toLowerCase();
+        const normStatus: any = rawStatus === 'inactive' ? 'inactive' : rawStatus === 'draft' ? 'draft' : 'active';
+        return {
+          id: Number(t.id || idx + 1),
+          name: t.name || t.templateName || 'Unnamed Template',
+          category: t.category ? categoryFromApi(String(t.category)) : (category || 'Academic'),
+          version: String(t.version || t.versionNumber || '1.0'),
+          uploadedBy: t.uploadedBy || t.uploadedByName || t.uploader?.name || 'Super Admin',
+          uploadedDate: t.uploadedDate || t.createdAt || t.updatedAt || new Date().toISOString().split('T')[0],
+          status: normStatus,
+          fileType: (t.fileType || t.extension || 'CSV').toLowerCase() as any,
+          fileSize: t.fileSize || t.size || '15 KB',
+          description: t.description || '',
+          downloads: t.downloads ?? t.downloadCount ?? 0,
+          versionHistory: Array.isArray(t.versionHistory) ? t.versionHistory : [],
+        };
+      });
+    } catch (error) {
+      console.warn('API error fetching templates, returning empty list:', error);
+      return [];
     }
-    const response = await apiService.get<Template[]>('/admin/templates', { params });
-    return response.map(t => ({
-      ...t,
-      category: categoryFromApi(t.category as string),
-    }));
   }
 
   /**
@@ -115,9 +144,27 @@ class TemplateService {
     };
   }
 
-  async deactivateTemplate(_id: number): Promise<void> {
-    // Mock — real API will be integrated later
-    await new Promise(resolve => setTimeout(resolve, 300));
+  /**
+   * PATCH /api/admin/templates/{id}/status
+   *
+   * Updates template status (ACTIVE | INACTIVE)
+   */
+  async updateTemplateStatus(id: number, status: 'active' | 'inactive'): Promise<Template> {
+    const apiStatus = status === 'active' ? 'ACTIVE' : 'INACTIVE';
+    const response = await apiService.patch<Template>(`/admin/templates/${id}/status`, {
+      status: apiStatus,
+    });
+    return {
+      ...response,
+      category: categoryFromApi(response.category as string),
+    };
+  }
+
+  async deactivateTemplate(id: number, currentStatus: TemplateStatus = 'active'): Promise<void> {
+    const targetStatus = currentStatus === 'active' ? 'INACTIVE' : 'ACTIVE';
+    await apiService.patch(`/admin/templates/${id}/status`, {
+      status: targetStatus,
+    });
   }
 
   /**

@@ -17,13 +17,25 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  institutionGrowthData,
-  categoryDistributionData,
-  repositoryCompletionData,
+  institutionGrowthData as defaultInstitutionGrowthData,
+  categoryDistributionData as defaultCategoryDistributionData,
+  repositoryCompletionData as defaultRepositoryCompletionData,
 } from './mock-data';
 import { Badge } from '@/components/ui/badge';
+import {
+  InstitutionGrowthData,
+  CategoryDistributionData,
+  RepositoryCompletionData,
+  TopInstitutionData,
+} from './types';
 
-export const InstitutionGrowthChart = () => {
+interface InstitutionGrowthChartProps {
+  data?: InstitutionGrowthData[];
+}
+
+export const InstitutionGrowthChart = ({ data }: InstitutionGrowthChartProps) => {
+  const chartData = data && data.length > 0 ? data : defaultInstitutionGrowthData;
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
@@ -42,7 +54,7 @@ export const InstitutionGrowthChart = () => {
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={institutionGrowthData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
@@ -105,7 +117,14 @@ export const InstitutionGrowthChart = () => {
   );
 };
 
-export const CategoryDistributionChart = () => {
+interface CategoryDistributionChartProps {
+  data?: CategoryDistributionData[];
+}
+
+export const CategoryDistributionChart = ({ data }: CategoryDistributionChartProps) => {
+  const chartData = data && data.length > 0 ? data : defaultCategoryDistributionData;
+  const totalCount = chartData.reduce((acc, curr) => acc + (curr.value || 0), 0);
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
@@ -117,7 +136,7 @@ export const CategoryDistributionChart = () => {
             </CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
-            248 total
+            {totalCount} total
           </Badge>
         </div>
       </CardHeader>
@@ -126,7 +145,7 @@ export const CategoryDistributionChart = () => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={categoryDistributionData}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -135,8 +154,8 @@ export const CategoryDistributionChart = () => {
                 dataKey="value"
                 stroke="none"
               >
-                {categoryDistributionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill || `hsl(var(--chart-${(index % 5) + 1}))`} />
                 ))}
               </Pie>
               <Tooltip
@@ -165,7 +184,13 @@ export const CategoryDistributionChart = () => {
   );
 };
 
-export const RepositoryCompletionChart = () => {
+interface RepositoryCompletionChartProps {
+  data?: RepositoryCompletionData[];
+}
+
+export const RepositoryCompletionChart = ({ data }: RepositoryCompletionChartProps) => {
+  const chartData = data && data.length > 0 ? data : defaultRepositoryCompletionData;
+
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
@@ -177,14 +202,14 @@ export const RepositoryCompletionChart = () => {
             </CardDescription>
           </div>
           <Badge variant="secondary" className="text-[10px] font-medium">
-            Last 8 weeks
+            Last {chartData.length} weeks
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="pt-2">
         <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={repositoryCompletionData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
               <XAxis
                 dataKey="week"
@@ -240,14 +265,22 @@ export const RepositoryCompletionChart = () => {
   );
 };
 
-export const TopInstitutionsChart = () => {
-  const data = [
+interface TopInstitutionsChartProps {
+  data?: TopInstitutionData[] | { name: string; score: number }[];
+}
+
+export const TopInstitutionsChart = ({ data }: TopInstitutionsChartProps) => {
+  const defaultData = [
     { name: 'NIT Trichy', score: 94 },
     { name: 'AIIMS', score: 91 },
     { name: 'IIM-B', score: 88 },
     { name: 'JNU', score: 85 },
     { name: 'NLSIU', score: 82 },
   ];
+
+  const chartData = data && data.length > 0
+    ? data.map(item => 'score' in item ? item : { name: item.name, score: item.repositoryCompletion })
+    : defaultData;
 
   return (
     <Card className="border-border/50">
