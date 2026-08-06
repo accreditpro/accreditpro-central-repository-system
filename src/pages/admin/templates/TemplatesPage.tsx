@@ -172,7 +172,7 @@ export const TemplatesPage = () => {
 
   const handleDeactivate = async (template: Template) => {
     try {
-      await templateService.deactivateTemplate(template.id);
+      await templateService.deactivateTemplate(template.id, template.status);
       toast.success(`Template ${template.status === 'active' ? 'deactivated' : 'activated'} successfully`);
       fetchTemplates();
     } catch {
@@ -196,13 +196,14 @@ export const TemplatesPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const getStatusBadge = (status: TemplateStatus) => {
-    const config: Record<TemplateStatus, { label: string; className: string }> = {
+  const getStatusBadge = (status?: string) => {
+    const s = String(status || 'active').toLowerCase();
+    const config: Record<string, { label: string; className: string }> = {
       active: { label: 'Active', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
       inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
       draft: { label: 'Draft', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
     };
-    const { label, className } = config[status];
+    const { label, className } = config[s] || config.active;
     return (
       <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium', className)}>
         {label}
@@ -210,8 +211,9 @@ export const TemplatesPage = () => {
     );
   };
 
-  const getFileIcon = (fileType: string) => {
-    return fileType === 'xlsx' ? (
+  const getFileIcon = (fileType?: string) => {
+    const ft = String(fileType || '').toLowerCase();
+    return ft === 'xlsx' || ft === 'excel' ? (
       <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
         <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
       </div>

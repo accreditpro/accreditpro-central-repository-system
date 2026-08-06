@@ -14,7 +14,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8080",
+            "url": "https://api-stage.accreditpro.in",
             "description": "Generated server url"
         }
     ],
@@ -55,6 +55,10 @@
         {
             "name": "DC - Master Data",
             "description": "Dropdown options and reference data for Department Coordinator"
+        },
+        {
+            "name": "Health",
+            "description": "Application health check endpoints"
         },
         {
             "name": "DC - Academic Repository - Add-on Programs",
@@ -167,6 +171,14 @@
         {
             "name": "Institution Admin - Authentication",
             "description": "Institution admin login, logout, and profile"
+        },
+        {
+            "name": "Actuator",
+            "description": "Monitor and interact",
+            "externalDocs": {
+                "description": "Spring Boot Actuator Web API Documentation",
+                "url": "https://docs.spring.io/spring-boot/docs/current/actuator-api/html/"
+            }
         },
         {
             "name": "Institution Admin - Settings",
@@ -17797,6 +17809,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/workshops-guest-lectures/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Workshops & Guest Lectures via CSV",
+                "operationId": "uploadWorkshopCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/upload": {
             "post": {
                 "tags": [
@@ -18000,6 +18070,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/student-clubs/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Student Clubs via CSV",
+                "operationId": "uploadStudentClubCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/student-chapters": {
             "get": {
                 "tags": [
@@ -18116,6 +18244,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/student-chapters/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Student Chapters via CSV",
+                "operationId": "uploadStudentChapterCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/professional-memberships": {
             "get": {
                 "tags": [
@@ -18225,6 +18411,64 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseSdoProfessionalMembership"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/department-coordinator/student-dev-outcomes/professional-memberships/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Professional Memberships via CSV",
+                "operationId": "uploadProfessionalMembershipCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
                                 }
                             }
                         }
@@ -18356,6 +18600,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/professional-events/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Professional Events via CSV",
+                "operationId": "uploadProfessionalEventCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/placements": {
             "get": {
                 "tags": [
@@ -18480,6 +18782,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/placements/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Placements via CSV",
+                "operationId": "uploadPlacementCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/nss-activities": {
             "get": {
                 "tags": [
@@ -18596,6 +18956,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/nss-activities/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload NSS Activities via CSV",
+                "operationId": "uploadNssActivityCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/ncc-activities": {
             "get": {
                 "tags": [
@@ -18705,6 +19123,64 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseSdoNccActivity"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/department-coordinator/student-dev-outcomes/ncc-activities/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload NCC Activities via CSV",
+                "operationId": "uploadNccActivityCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
                                 }
                             }
                         }
@@ -18836,6 +19312,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/moocs-swayam-nptel/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload MOOCs/SWAYAM/NPTEL via CSV",
+                "operationId": "uploadMoocCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/internships": {
             "get": {
                 "tags": [
@@ -18960,6 +19494,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/internships/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Internships via CSV",
+                "operationId": "uploadInternshipCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/industrial-visits": {
             "get": {
                 "tags": [
@@ -19061,6 +19653,64 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseSdoIndustrialVisit"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/department-coordinator/student-dev-outcomes/industrial-visits/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Industrial Visits via CSV",
+                "operationId": "uploadIndustrialVisitCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
                                 }
                             }
                         }
@@ -19177,6 +19827,64 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseSdoHigherEducation"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/department-coordinator/student-dev-outcomes/higher-studies/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Higher Studies via CSV",
+                "operationId": "uploadHigherEducationCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
                                 }
                             }
                         }
@@ -19387,6 +20095,64 @@
                 }
             }
         },
+        "/api/v1/department-coordinator/student-dev-outcomes/entrepreneurship/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Entrepreneurship via CSV",
+                "operationId": "uploadEntrepreneurshipCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/student-dev-outcomes/competitions-hackathons": {
             "get": {
                 "tags": [
@@ -19504,6 +20270,64 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseSdoCompetition"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/department-coordinator/student-dev-outcomes/competitions-hackathons/upload": {
+            "post": {
+                "tags": [
+                    "DC - Student Dev & Outcomes"
+                ],
+                "summary": "Upload Competitions & Hackathons via CSV",
+                "operationId": "uploadCompetitionCsv",
+                "parameters": [
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
                                 }
                             }
                         }
@@ -24231,7 +25055,7 @@
                 ],
                 "summary": "Upload Higher Education Records via CSV",
                 "description": "Upload higher education records CSV",
-                "operationId": "uploadHigherEducationCsv",
+                "operationId": "uploadHigherEducationCsv_1",
                 "parameters": [
                     {
                         "name": "departmentId",
@@ -29552,6 +30376,66 @@
                 }
             }
         },
+        "/actuator/startup": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'startup'",
+                "operationId": "startup",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'startup'",
+                "operationId": "startup_2",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/department-coordinator/faculty-repository/faculty-evidence/documents/versions/{versionId}/status": {
             "patch": {
                 "tags": [
@@ -31721,20 +32605,30 @@
                 ],
                 "summary": "Download Academic Projects Template",
                 "operationId": "downloadAcademicProjectsTemplate",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "query",
+                        "description": "Department ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "academicYear",
+                        "in": "query",
+                        "description": "Academic year",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string",
-                                        "format": "byte"
-                                    }
-                                }
-                            }
-                        }
+                        "description": "OK"
                     }
                 }
             }
@@ -35884,6 +36778,50 @@
                 }
             }
         },
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Application health check",
+                "description": "Checks the health of the whole application including database connectivity, JVM uptime and memory usage. Returns 200 when healthy and 503 when unhealthy.",
+                "operationId": "healthCheck_1",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Application health check",
+                "description": "Checks the health of the whole application including database connectivity, JVM uptime and memory usage. Returns 200 when healthy and 503 when unhealthy.",
+                "operationId": "healthCheck_2",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/me": {
             "get": {
                 "tags": [
@@ -36556,6 +37494,220 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiResponseListActivityHeatmapData"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator root web endpoint",
+                "operationId": "links",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "$ref": "#/components/schemas/Link"
+                                        }
+                                    }
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "$ref": "#/components/schemas/Link"
+                                        }
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "$ref": "#/components/schemas/Link"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator/metrics": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'metrics'",
+                "operationId": "metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator/metrics/{requiredMetricName}": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'metrics-requiredMetricName'",
+                "operationId": "metrics-requiredMetricName",
+                "parameters": [
+                    {
+                        "name": "requiredMetricName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator/info": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'info'",
+                "operationId": "info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator/health": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'health'",
+                "operationId": "health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/actuator/health/**": {
+            "get": {
+                "tags": [
+                    "Actuator"
+                ],
+                "summary": "Actuator web endpoint 'health-path'",
+                "operationId": "health-path",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/vnd.spring-boot.actuator.v3+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/vnd.spring-boot.actuator.v2+json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
                                 }
                             }
                         }
@@ -48423,19 +49575,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -48456,6 +49595,19 @@
                             "$ref": "#/components/schemas/SortObject"
                         }
                     },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
+                    },
                     "empty": {
                         "type": "boolean"
                     }
@@ -48464,20 +49616,6 @@
             "PageableObject": {
                 "type": "object",
                 "properties": {
-                    "unpaged": {
-                        "type": "boolean"
-                    },
-                    "paged": {
-                        "type": "boolean"
-                    },
-                    "pageNumber": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "pageSize": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "offset": {
                         "type": "integer",
                         "format": "int64"
@@ -48487,6 +49625,20 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "pageNumber": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "paged": {
+                        "type": "boolean"
+                    },
+                    "unpaged": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -48539,19 +49691,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -48571,6 +49710,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -48936,19 +50088,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -48968,6 +50107,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49003,19 +50155,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49035,6 +50174,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49070,19 +50222,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49102,6 +50241,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49137,19 +50289,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49169,6 +50308,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49204,19 +50356,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49236,6 +50375,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49271,19 +50423,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49303,6 +50442,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49338,19 +50490,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49370,6 +50509,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49405,19 +50557,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49437,6 +50576,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49472,19 +50624,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49504,6 +50643,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49539,19 +50691,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49571,6 +50710,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49606,19 +50758,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49638,6 +50777,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49673,19 +50825,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49705,6 +50844,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49740,19 +50892,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49772,6 +50911,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49807,19 +50959,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49839,6 +50978,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -49874,19 +51026,6 @@
                         "type": "integer",
                         "format": "int32"
                     },
-                    "pageable": {
-                        "$ref": "#/components/schemas/PageableObject"
-                    },
-                    "last": {
-                        "type": "boolean"
-                    },
-                    "first": {
-                        "type": "boolean"
-                    },
-                    "numberOfElements": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
                     "size": {
                         "type": "integer",
                         "format": "int32"
@@ -49906,6 +51045,19 @@
                         "items": {
                             "$ref": "#/components/schemas/SortObject"
                         }
+                    },
+                    "numberOfElements": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageable": {
+                        "$ref": "#/components/schemas/PageableObject"
+                    },
+                    "last": {
+                        "type": "boolean"
+                    },
+                    "first": {
+                        "type": "boolean"
                     },
                     "empty": {
                         "type": "boolean"
@@ -54131,6 +55283,17 @@
                     "timestamp": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "Link": {
+                "type": "object",
+                "properties": {
+                    "href": {
+                        "type": "string"
+                    },
+                    "templated": {
+                        "type": "boolean"
                     }
                 }
             }

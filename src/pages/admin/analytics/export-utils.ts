@@ -11,26 +11,40 @@ import {
   recentActivityData,
 } from './mock-data';
 
-function getExportData() {
+interface LiveExportData {
+  cards?: AnalyticsCard[];
+  growthData?: InstitutionGrowthData[];
+  topInstitutions?: TopInstitutionData[];
+  completionData?: RepositoryCompletionData[];
+  recentActivity?: RecentActivityItem[];
+}
+
+function getExportData(liveData?: LiveExportData) {
+  const cards = liveData?.cards && liveData.cards.length > 0 ? liveData.cards : analyticsCards;
+  const growth = liveData?.growthData && liveData.growthData.length > 0 ? liveData.growthData : institutionGrowthData;
+  const topInst = liveData?.topInstitutions && liveData.topInstitutions.length > 0 ? liveData.topInstitutions : topInstitutionsData;
+  const completion = liveData?.completionData && liveData.completionData.length > 0 ? liveData.completionData : repositoryCompletionData;
+  const activity = liveData?.recentActivity && liveData.recentActivity.length > 0 ? liveData.recentActivity : recentActivityData;
+
   return {
-    summary: analyticsCards.map((card) => ({
+    summary: cards.map((card) => ({
       Metric: card.title,
       Value: String(card.value),
       'Change (%)': card.change,
     })),
-    growth: institutionGrowthData.map((item) => ({
+    growth: growth.map((item) => ({
       Month: item.month,
       Institutions: item.institutions,
       Users: item.users,
     })),
-    topInstitutions: topInstitutionsData.map((item) => ({
+    topInstitutions: topInst.map((item) => ({
       Institution: item.name,
       State: item.state,
       Users: item.users,
       Documents: item.documents,
       'Completion (%)': item.completion,
     })),
-    repositoryCompletion: repositoryCompletionData.map((item) => ({
+    repositoryCompletion: completion.map((item) => ({
       Institution: item.institution,
       'Academic (%)': item.academic,
       'Faculty (%)': item.faculty,
@@ -38,7 +52,7 @@ function getExportData() {
       'Research (%)': item.research,
       'Infrastructure (%)': item.infrastructure,
     })),
-    recentActivity: recentActivityData.map((item) => ({
+    recentActivity: activity.map((item) => ({
       Action: item.action,
       User: item.user,
       Institution: item.institution,
@@ -48,8 +62,8 @@ function getExportData() {
   };
 }
 
-export function exportToCSV() {
-  const data = getExportData();
+export function exportToCSV(liveData?: LiveExportData) {
+  const data = getExportData(liveData);
   let csv = '';
 
   // Summary
@@ -87,8 +101,8 @@ export function exportToCSV() {
   saveAs(blob, `analytics-report-${new Date().toISOString().split('T')[0]}.csv`);
 }
 
-export function exportToExcel() {
-  const data = getExportData();
+export function exportToExcel(liveData?: LiveExportData) {
+  const data = getExportData(liveData);
   const workbook = XLSX.utils.book_new();
 
   const summarySheet = XLSX.utils.json_to_sheet(data.summary);
@@ -111,9 +125,9 @@ export function exportToExcel() {
   saveAs(blob, `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-export function exportToPDF() {
+export function exportToPDF(liveData?: LiveExportData) {
   const doc = new jsPDF();
-  const data = getExportData();
+  const data = getExportData(liveData);
 
   // Title
   doc.setFontSize(20);
@@ -175,16 +189,16 @@ export function exportToPDF() {
   doc.save(`analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
-export function handleExport(format: ExportFormat) {
+export function handleExport(format: ExportFormat, liveData?: LiveExportData) {
   switch (format) {
     case 'csv':
-      exportToCSV();
+      exportToCSV(liveData);
       break;
     case 'excel':
-      exportToExcel();
+      exportToExcel(liveData);
       break;
     case 'pdf':
-      exportToPDF();
+      exportToPDF(liveData);
       break;
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Download, FileText, Sheet, FileDown, BarChart3, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import {
 } from './Charts';
 import { RecentActivity } from './RecentActivity';
 import { handleExport } from './export-utils';
+import { adminService } from '@/services/admin.service';
 import {
   analyticsCards,
   institutionGrowthData,
@@ -30,19 +31,98 @@ import {
   activityHeatmapData,
   recentActivityData,
 } from './mock-data';
-import { ExportFormat } from './types';
+import {
+  AnalyticsCard,
+  InstitutionGrowthData,
+  InstitutionDistributionData,
+  TopInstitutionData,
+  RepositoryCompletionData,
+  ActivityHeatmapData,
+  RecentActivityItem,
+  ExportFormat,
+} from './types';
+import { toast } from 'sonner';
 
 export function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('12months');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
+  // Live state with fallbacks to mock data
+  const [cards, setCards] = useState<AnalyticsCard[]>(analyticsCards);
+  const [growthData, setGrowthData] = useState<InstitutionGrowthData[]>(institutionGrowthData);
+  const [distributionData, setDistributionData] = useState<InstitutionDistributionData[]>(institutionDistributionData);
+  const [topInstitutions, setTopInstitutions] = useState<TopInstitutionData[]>(topInstitutionsData);
+  const [completionData, setCompletionData] = useState<RepositoryCompletionData[]>(repositoryCompletionData);
+  const [heatmapData, setHeatmapData] = useState<ActivityHeatmapData[]>(activityHeatmapData);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>(recentActivityData);
+
+  const fetchAnalyticsData = useCallback(async (range: string) => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1500);
+    try {
+      // 1. Stat cards summary
+      const summaryCards = await adminService.getAnalyticsSummary(range).catch(() => null);
+      if (summaryCards && summaryCards.length > 0) {
+        setCards(summaryCards);
+      }
+
+      // 2. Institution Growth
+      const growth = await adminService.getAnalyticsInstitutionGrowth(range).catch(() => null);
+      if (growth && growth.length > 0) {
+        setGrowthData(growth);
+      }
+
+      // 3. Category Distribution
+      const distribution = await adminService.getAnalyticsDistribution(range).catch(() => null);
+      if (distribution && distribution.length > 0) {
+        setDistributionData(distribution);
+      }
+
+      // 4. Top Institutions
+      const topInst = await adminService.getAnalyticsTopInstitutions(range).catch(() => null);
+      if (topInst && topInst.length > 0) {
+        setTopInstitutions(topInst as any);
+      }
+
+      // 5. Repository Completion
+      const completion = await adminService.getAnalyticsRepositoryCompletion(range).catch(() => null);
+      if (completion && completion.length > 0) {
+        setCompletionData(completion);
+      }
+
+      // 6. Activity Heatmap
+      const heatmap = await adminService.getAnalyticsActivityHeatmap(range).catch(() => null);
+      if (heatmap && heatmap.length > 0) {
+        setHeatmapData(heatmap);
+      }
+
+      // 7. Recent Activity
+      const activity = await adminService.getAnalyticsRecentActivity(range).catch(() => null);
+      if (activity && activity.length > 0) {
+        setRecentActivity(activity);
+      }
+    } catch {
+      toast.error('Failed to refresh analytics data');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAnalyticsData(timeRange);
+  }, [timeRange, fetchAnalyticsData]);
+
+  const handleRefresh = () => {
+    fetchAnalyticsData(timeRange);
   };
 
   const onExport = (format: ExportFormat) => {
-    handleExport(format);
+    handleExport(format, {
+      cards,
+      growthData,
+      topInstitutions,
+      completionData,
+      recentActivity,
+    });
   };
 
   return (
@@ -118,29 +198,29 @@ export function AnalyticsPage() {
         </div>
       </motion.div>
 
-      {/* Stat Cards */}
-      <StatCards cards={analyticsCards} />
+      {/* Stat Cards - Clean 5-column row */}
+      <StatCards cards={cards.slice(0, 5)} />
 
       {/* Charts Row 1: Growth + Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <InstitutionGrowthChart data={institutionGrowthData} />
+          <InstitutionGrowthChart data={growthData} />
         </div>
         <div>
-          <InstitutionDistributionChart data={institutionDistributionData} />
+          <InstitutionDistributionChart data={distributionData} />
         </div>
       </div>
 
       {/* Charts Row 2: Top Institutions + Repository Completion */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TopInstitutionsChart data={topInstitutionsData} />
-        <RepositoryCompletionChart data={repositoryCompletionData} />
+        <TopInstitutionsChart data={topInstitutions} />
+        <RepositoryCompletionChart data={completionData} />
       </div>
 
       {/* Charts Row 3: Heatmap + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ActivityHeatmap data={activityHeatmapData} />
-        <RecentActivity data={recentActivityData} />
+        <ActivityHeatmap data={heatmapData} />
+        <RecentActivity data={recentActivity} />
       </div>
     </div>
   );

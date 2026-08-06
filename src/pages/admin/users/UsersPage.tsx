@@ -65,6 +65,7 @@ import {
   Mail,
   Phone,
   CalendarClock,
+  CheckCircle2,
 } from 'lucide-react';
 
 const statusColors: Record<PlatformUserStatus, string> = {
@@ -266,16 +267,71 @@ const StepIndicator = ({ step, steps }: { step: number; steps: { num: number; ti
 // Create Platform (AccreditPro) User Wizard
 // ============================================================================
 
+interface CreatedUserInfo {
+  name: string;
+  email: string;
+  temporaryPassword?: string;
+}
+
+const SuccessCreatedUserDialog = ({
+  data,
+  onClose,
+}: {
+  data: CreatedUserInfo | null;
+  onClose: () => void;
+}) => {
+  if (!data) return null;
+  return (
+    <Dialog open={!!data} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-5 w-5" />
+            User Created Successfully
+          </DialogTitle>
+          <DialogDescription>
+            Account for <strong>{data.name}</strong> ({data.email}) has been created.
+          </DialogDescription>
+        </DialogHeader>
+
+        {data.temporaryPassword ? (
+          <CredentialsCard username={data.email} password={data.temporaryPassword} />
+        ) : (
+          <Card className="bg-amber-500/10 border-amber-500/30">
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                ⚠️ Temporary Password Missing in Backend Response
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                The user was created successfully, but the backend response did not include a <code className="text-foreground">temporaryPassword</code> field. Please ask the backend developer to return <code className="text-foreground">temporaryPassword</code> in the <code className="text-foreground">POST /api/admin/users</code> response payload.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        <DialogFooter>
+          <Button onClick={onClose} className="w-full">
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ============================================================================
+// Create Platform (AccreditPro) User Wizard
+// ============================================================================
+
 interface CreatePlatformUserDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (info: CreatedUserInfo) => void;
 }
 
 const CreatePlatformUserDialog = ({ open, onClose, onCreated }: CreatePlatformUserDialogProps) => {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -283,14 +339,10 @@ const CreatePlatformUserDialog = ({ open, onClose, onCreated }: CreatePlatformUs
     roleKey: 'SUPER_ADMIN',
   });
 
-  const generatedUsername = form.email.split('@')[0] || 'user';
-
   useEffect(() => {
     if (open) {
       setStep(1);
       setForm({ name: '', email: '', mobile: '', roleKey: 'SUPER_ADMIN' });
-      // Stable per dialog session — must not change between renders.
-      setGeneratedPassword(`Temp@${Math.random().toString(36).slice(2, 8)}`);
     }
   }, [open]);
 
@@ -315,9 +367,13 @@ const CreatePlatformUserDialog = ({ open, onClose, onCreated }: CreatePlatformUs
         institution: 'AccreditPro Platform',
         department: '-',
       };
-      await userService.createUser(input, { username: generatedUsername, password: generatedPassword });
-      toast.success(`${input.name} added as an AccreditPro user`);
-      onCreated();
+      const res = await userService.createUser(input);
+      toast.success(`${input.name} created successfully`);
+      onCreated({
+        name: input.name,
+        email: input.email,
+        temporaryPassword: res.temporaryPassword,
+      });
       onClose();
     } catch {
       toast.error('Failed to create platform user');
@@ -388,8 +444,15 @@ const CreatePlatformUserDialog = ({ open, onClose, onCreated }: CreatePlatformUs
                 ))}
               </div>
 
-              <CredentialsCard username={generatedUsername} password={generatedPassword} />
-              <p className="text-xs text-amber-600">⚠️ User will be required to change password on first login</p>
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-3 text-center">
+                  <KeyRound className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xs font-medium">Temporary Password</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Will be generated and returned by the backend upon user creation.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
@@ -429,14 +492,13 @@ const CreatePlatformUserDialog = ({ open, onClose, onCreated }: CreatePlatformUs
 interface CreateCollegeUserDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (info: CreatedUserInfo) => void;
 }
 
 const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUserDialogProps) => {
   const [step, setStep] = useState(1);
   const [institutions, setInstitutions] = useState<{ id: string; name: string; code: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -446,14 +508,10 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
     department: '',
   });
 
-  const generatedUsername = form.email.split('@')[0] || 'user';
-
   useEffect(() => {
     if (open) {
       setStep(1);
       setForm({ name: '', email: '', mobile: '', roleKey: '', institutionId: '', department: '' });
-      // Stable per dialog session — must not change between renders.
-      setGeneratedPassword(`Temp@${Math.random().toString(36).slice(2, 8)}`);
       userService.getInstitutionsForPicker().then(setInstitutions).catch(() => setInstitutions([]));
     }
   }, [open]);
@@ -481,9 +539,13 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
         institution: selectedInstitution.name,
         department: form.roleKey === 'DEPARTMENT_COORDINATOR' ? form.department : '-',
       };
-      await userService.createUser(input, { username: generatedUsername, password: generatedPassword });
-      toast.success(`${input.name} added to ${selectedInstitution.name}`);
-      onCreated();
+      const res = await userService.createUser(input);
+      toast.success(`${input.name} created successfully`);
+      onCreated({
+        name: input.name,
+        email: input.email,
+        temporaryPassword: res.temporaryPassword,
+      });
       onClose();
     } catch {
       toast.error('Failed to create college user');
@@ -539,7 +601,7 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
                   <SelectContent className="max-h-[200px]">
                     {institutions.map((inst) => (
                       <SelectItem key={inst.id} value={inst.id} className="text-xs">
-                        {inst.name}
+                        {inst.name} ({inst.code})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -552,11 +614,11 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
                 <RolePicker
                   options={COLLEGE_ROLE_OPTIONS}
                   selected={form.roleKey}
-                  onSelect={(roleKey) => setForm({ ...form, roleKey, department: '' })}
+                  onSelect={(roleKey) => setForm({ ...form, roleKey })}
                 />
               </div>
 
-              {/* Department (only for dept coordinators) */}
+              {/* Department (if Department Coordinator) */}
               {form.roleKey === 'DEPARTMENT_COORDINATOR' && (
                 <div className="space-y-2">
                   <Label>Department</Label>
@@ -568,8 +630,10 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEPARTMENT_OPTIONS.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      {DEPARTMENT_OPTIONS.map((dept) => (
+                        <SelectItem key={dept} value={dept} className="text-xs">
+                          {dept}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -597,8 +661,15 @@ const CreateCollegeUserDialog = ({ open, onClose, onCreated }: CreateCollegeUser
                 ))}
               </div>
 
-              <CredentialsCard username={generatedUsername} password={generatedPassword} />
-              <p className="text-xs text-amber-600">⚠️ User will be required to change password on first login</p>
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-3 text-center">
+                  <KeyRound className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xs font-medium">Temporary Password</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Will be generated and returned by the backend upon user creation.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
@@ -811,6 +882,7 @@ export const UsersPage = () => {
   const [showCollegeDialog, setShowCollegeDialog] = useState(false);
   const [viewUser, setViewUser] = useState<PlatformUser | null>(null);
   const [resetUser, setResetUser] = useState<PlatformUser | null>(null);
+  const [createdUserInfo, setCreatedUserInfo] = useState<CreatedUserInfo | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -861,9 +933,10 @@ export const UsersPage = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleUserCreated = useCallback(() => {
+  const handleUserCreated = useCallback((info: CreatedUserInfo) => {
     fetchUsers();
     refreshStats();
+    setCreatedUserInfo(info);
   }, [fetchUsers, refreshStats]);
 
   const handleStatusChange = async (user: PlatformUser, status: PlatformUserStatus) => {
@@ -1162,6 +1235,7 @@ export const UsersPage = () => {
       />
       <ViewUserDialog user={viewUser} onClose={() => setViewUser(null)} />
       <ResetPasswordDialog user={resetUser} onClose={() => setResetUser(null)} />
+      <SuccessCreatedUserDialog data={createdUserInfo} onClose={() => setCreatedUserInfo(null)} />
     </motion.div>
   );
 };
