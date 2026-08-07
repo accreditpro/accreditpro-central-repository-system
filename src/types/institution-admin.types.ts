@@ -2,13 +2,19 @@
  * Response shape for GET /api/v1/app/academic-structure/summary
  */
 export interface ProgramDistribution {
-  programName: string;
-  departmentCount: number;
+  programName?: string;
+  name?: string;
+  departmentCount?: number;
+  departments?: number;
 }
 
 export interface IntakeTrend {
-  year: string;
-  count: number;
+  departmentName?: string;
+  name?: string;
+  offeringCount?: number;
+  offerings?: number;
+  year?: string;
+  count?: number;
 }
 
 export interface AcademicStructureSummary {
@@ -17,7 +23,7 @@ export interface AcademicStructureSummary {
   departments: number;
   specializations: number;
   regulations: number;
-  policiesSettings: number;
+  policiesSettings?: number;
   programOfferings: number;
   totalIntakeCurrentYear: number;
   programDistribution: ProgramDistribution[];
@@ -100,6 +106,7 @@ export interface CreateUserRequest {
 
 /** Request body for PUT /api/v1/app/users/{id} */
 export interface UpdateUserRequest {
+  name?: string;
   firstName?: string;
   lastName?: string;
   email?: string;

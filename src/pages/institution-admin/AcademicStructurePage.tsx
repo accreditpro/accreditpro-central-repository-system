@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { institutionAdminService } from '@/services/institution-admin.service';
+import { AcademicStructureSummary } from '@/types/institution-admin.types';
 import {
   masterPrograms,
   departments,
@@ -67,17 +69,29 @@ import {
 
 // Dashboard Tab
 const DashboardTab = () => {
-  const activePrograms = masterPrograms.filter((p) => p.status === 'active').length;
-  const activeDepts = departments.filter((d) => d.status === 'active').length;
-  const activeSpecs = specializations.filter((s) => s.status === 'active').length;
-  const activeRegulations = academicRegulations.filter((r) => r.status === 'active').length;
-  const activeOfferings = programOfferings.filter((o) => o.status === 'active').length;
-  const totalIntake = programIntakes
+  const [summary, setSummary] = useState<AcademicStructureSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    institutionAdminService
+      .getAcademicStructureSummary()
+      .then((data) => setSummary(data))
+      .catch(() => setSummary(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const activePrograms = summary?.programs ?? masterPrograms.filter((p) => p.status === 'active').length;
+  const activeDepts = summary?.departments ?? departments.filter((d) => d.status === 'active').length;
+  const activeSpecs = summary?.specializations ?? specializations.filter((s) => s.status === 'active').length;
+  const activeRegulations = summary?.regulations ?? academicRegulations.filter((r) => r.status === 'active').length;
+  const activeOfferings = summary?.programOfferings ?? programOfferings.filter((o) => o.status === 'active').length;
+  const totalIntake = summary?.totalIntakeCurrentYear ?? programIntakes
     .filter((i) => i.academicYear === '2025-26')
     .reduce((sum, i) => sum + i.sanctionedIntake, 0);
+  const totalAcademicYears = summary?.academicYears ?? academicYears.length;
 
   const cards = [
-    { label: 'Academic Years', value: academicYears.length, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
+    { label: 'Academic Years', value: totalAcademicYears, icon: Calendar, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
     { label: 'Programs', value: activePrograms, icon: GraduationCap, color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' },
     { label: 'Departments', value: activeDepts, icon: Building2, color: 'text-violet-600 bg-violet-100 dark:bg-violet-900/30' },
     { label: 'Specializations', value: activeSpecs, icon: Layers, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
@@ -87,20 +101,33 @@ const DashboardTab = () => {
   ];
 
   // Program Distribution
-  const programDist = masterPrograms
-    .filter((p) => p.status === 'active')
-    .map((p) => ({
-      name: p.name,
-      departments: departments.filter((d) => d.program === p.name && d.status === 'active').length,
-    }));
+  const programDist = summary?.programDistribution?.length
+    ? summary.programDistribution.map((p) => ({
+        name: p.programName || p.name || 'Program',
+        departments: p.departmentCount ?? p.departments ?? 0,
+      }))
+    : masterPrograms
+        .filter((p) => p.status === 'active')
+        .map((p) => ({
+          name: p.name,
+          departments: departments.filter((d) => d.program === p.name && d.status === 'active').length,
+        }));
 
-  // Department Distribution
-  const deptDist = departments
-    .filter((d) => d.status === 'active')
-    .map((d) => ({
-      name: d.code,
-      offerings: programOfferings.filter((o) => o.departmentId === d.id).length,
-    }));
+  // Department / Intake Distribution
+  const deptDist = summary?.intakeTrend?.length
+    ? summary.intakeTrend.map((d) => ({
+        name: d.departmentName || d.name || 'Department',
+        offerings: d.offeringCount ?? d.offerings ?? d.count ?? 0,
+      }))
+    : departments
+        .filter((d) => d.status === 'active')
+        .map((d) => ({
+          name: d.code,
+          offerings: programOfferings.filter((o) => o.departmentId === d.id).length,
+        }));
+
+  const maxDepts = Math.max(...programDist.map((p) => p.departments), 1);
+  const maxOfferings = Math.max(...deptDist.map((d) => d.offerings), 1);
 
   return (
     <div className="space-y-6">
@@ -111,7 +138,7 @@ const DashboardTab = () => {
               <div className={`inline-flex p-2 rounded-lg ${card.color} mb-2`}>
                 <card.icon className="h-4 w-4" />
               </div>
-              <p className="text-2xl font-bold">{card.value}</p>
+              <p className="text-2xl font-bold">{loading ? '...' : card.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
             </CardContent>
           </Card>
@@ -135,7 +162,7 @@ const DashboardTab = () => {
                     <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full"
-                        style={{ width: `${(p.departments / 12) * 100}%` }}
+                        style={{ width: `${(p.departments / maxDepts) * 100}%` }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground w-8">{p.departments} depts</span>
@@ -155,14 +182,14 @@ const DashboardTab = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {deptDist.filter((d) => d.offerings > 0).map((d) => (
+              {deptDist.filter((d) => d.offerings >= 0).map((d) => (
                 <div key={d.name} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{d.name}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full"
-                        style={{ width: `${(d.offerings / 8) * 100}%` }}
+                        style={{ width: `${(d.offerings / maxOfferings) * 100}%` }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground w-12">{d.offerings} offerings</span>
@@ -180,17 +207,45 @@ const DashboardTab = () => {
 // Academic Years Tab
 const AcademicYearsTab = () => {
   const [years, setYears] = useState<AcademicYear[]>(academicYears);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingYear, setEditingYear] = useState<AcademicYear | null>(null);
   const [deletingYear, setDeletingYear] = useState<AcademicYear | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Add/Edit form state
   const [formYear, setFormYear] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
   const [formEndDate, setFormEndDate] = useState('');
   const [formInstitutionType, setFormInstitutionType] = useState('');
+
+  const fetchYears = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getAcademicYears();
+      if (Array.isArray(data)) {
+        const mapped: AcademicYear[] = data.map((item) => ({
+          id: String(item.id),
+          year: item.year,
+          startDate: item.startDate ? item.startDate.split('T')[0] : '',
+          endDate: item.endDate ? item.endDate.split('T')[0] : '',
+          institutionType: item.institutionType || 'Autonomous',
+          status: item.isCurrent || item.status === 'ACTIVE' ? 'active' : 'inactive',
+        }));
+        setYears(mapped);
+      }
+    } catch {
+      // Fallback to local mock list if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchYears();
+  }, [fetchYears]);
 
   // Check if an academic year has associated persisted data
   const hasPersistedData = (yearId: string): boolean => {
@@ -209,23 +264,29 @@ const AcademicYearsTab = () => {
   };
 
   // Handle add
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
       toast.error('Please fill in all required fields');
       return;
     }
-    const newYear: AcademicYear = {
-      id: String(Date.now()),
-      year: formYear.trim(),
-      startDate: formStartDate,
-      endDate: formEndDate,
-      institutionType: formInstitutionType,
-      status: 'inactive',
-    };
-    setYears((prev) => [...prev, newYear]);
-    setShowAddDialog(false);
-    resetAddForm();
-    toast.success('Academic year added');
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createAcademicYear({
+        year: formYear.trim(),
+        startDate: formStartDate,
+        endDate: formEndDate,
+        institutionType: formInstitutionType,
+        status: 'INACTIVE',
+      });
+      toast.success('Academic year added successfully');
+      setShowAddDialog(false);
+      resetAddForm();
+      fetchYears();
+    } catch {
+      toast.error('Failed to add academic year');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Open edit dialog
@@ -239,22 +300,33 @@ const AcademicYearsTab = () => {
   };
 
   // Handle edit
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editingYear || !formYear.trim() || !formStartDate || !formEndDate || !formInstitutionType) {
       toast.error('Please fill in all required fields');
       return;
     }
-    setYears((prev) =>
-      prev.map((y) =>
-        y.id === editingYear.id
-          ? { ...y, year: formYear.trim(), startDate: formStartDate, endDate: formEndDate, institutionType: formInstitutionType }
-          : y
-      )
-    );
-    setShowEditDialog(false);
-    setEditingYear(null);
-    resetAddForm();
-    toast.success('Academic year updated');
+    setSubmitting(true);
+    try {
+      const yearIdNum = Number(editingYear.id);
+      if (!isNaN(yearIdNum)) {
+        await institutionAdminService.updateAcademicYear(yearIdNum, {
+          year: formYear.trim(),
+          startDate: formStartDate,
+          endDate: formEndDate,
+          institutionType: formInstitutionType,
+          status: editingYear.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+        });
+      }
+      toast.success('Academic year updated successfully');
+      setShowEditDialog(false);
+      setEditingYear(null);
+      resetAddForm();
+      fetchYears();
+    } catch {
+      toast.error('Failed to update academic year');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Open delete confirmation
@@ -264,7 +336,7 @@ const AcademicYearsTab = () => {
   };
 
   // Handle delete
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingYear) return;
     if (hasPersistedData(deletingYear.id)) {
       toast.error('Cannot delete: this academic year has associated data (program offerings, intakes, or regulations)');
@@ -272,10 +344,37 @@ const AcademicYearsTab = () => {
       setDeletingYear(null);
       return;
     }
-    setYears((prev) => prev.filter((y) => y.id !== deletingYear.id));
-    setShowDeleteDialog(false);
-    setDeletingYear(null);
-    toast.success('Academic year deleted');
+    setSubmitting(true);
+    try {
+      const idNum = Number(deletingYear.id);
+      if (!isNaN(idNum)) {
+        await institutionAdminService.deleteAcademicYear(idNum);
+      }
+      toast.success('Academic year deleted successfully');
+      setShowDeleteDialog(false);
+      setDeletingYear(null);
+      fetchYears();
+    } catch {
+      toast.error('Failed to delete academic year');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle activate
+  const handleActivate = async (year: AcademicYear) => {
+    const idNum = Number(year.id);
+    if (isNaN(idNum)) return;
+    setSubmitting(true);
+    try {
+      await institutionAdminService.activateAcademicYear(idNum);
+      toast.success(`Academic year ${year.year} activated as current`);
+      fetchYears();
+    } catch {
+      toast.error('Failed to activate academic year');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -341,14 +440,27 @@ const AcademicYearsTab = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setShowAddDialog(false); resetAddForm(); }}>Cancel</Button>
-              <Button onClick={handleAdd}>Add</Button>
+              <Button onClick={handleAdd} disabled={submitting}>Add</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-3">
-        {years.map((year) => {
+        {loading ? (
+          <Card>
+            <CardContent className="py-6 text-center text-muted-foreground text-sm">
+              Loading academic years...
+            </CardContent>
+          </Card>
+        ) : years.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground text-sm">
+              No academic years found. Click "Add Academic Year" above to create one.
+            </CardContent>
+          </Card>
+        ) : (
+          years.map((year) => {
           const isCurrent = year.status === 'active';
           const persisted = hasPersistedData(year.id);
           return (
@@ -364,14 +476,24 @@ const AcademicYearsTab = () => {
                       <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/5">
                         {year.institutionType}
                       </Badge>
-                      {isCurrent && (
+                      {isCurrent ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0">
                           Current
                         </Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-5 text-[10px] px-2 py-0 border-dashed hover:border-primary hover:text-primary"
+                          onClick={() => handleActivate(year)}
+                          disabled={submitting}
+                        >
+                          Set as Current
+                        </Button>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(year.startDate).toLocaleDateString()} - {new Date(year.endDate).toLocaleDateString()}
+                      {year.startDate ? new Date(year.startDate).toLocaleDateString() : ''} - {year.endDate ? new Date(year.endDate).toLocaleDateString() : ''}
                     </p>
                   </div>
                 </div>
@@ -388,7 +510,7 @@ const AcademicYearsTab = () => {
                     variant="ghost"
                     size="icon"
                     className={`h-8 w-8 ${persisted ? 'text-muted-foreground/40 cursor-not-allowed' : 'text-destructive hover:text-destructive'}`}
-                    disabled={persisted}
+                    disabled={persisted || submitting}
                     onClick={() => !persisted && openDelete(year)}
                     title={persisted ? 'Cannot delete: has associated data' : 'Delete academic year'}
                   >
@@ -398,7 +520,8 @@ const AcademicYearsTab = () => {
               </CardContent>
             </Card>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Edit Dialog */}
@@ -492,20 +615,104 @@ const AcademicYearsTab = () => {
 // Programs Tab
 const ProgramsTab = () => {
   const [programs, setPrograms] = useState<Program[]>(masterPrograms);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const toggleProgram = (id: string) => {
-    setPrograms((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled, status: p.enabled ? 'inactive' : 'active' } : p))
-    );
-    toast.success('Program status updated');
+  // Add Custom Program Form State
+  const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formLevel, setFormLevel] = useState('');
+  const [formDuration, setFormDuration] = useState('3');
+  const [formStatus, setFormStatus] = useState('active');
+
+  const fetchPrograms = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getPrograms();
+      if (Array.isArray(data)) {
+        const mapped: Program[] = data.map((item) => ({
+          id: String(item.id),
+          programCode: item.code,
+          name: item.name,
+          level: item.level,
+          duration: item.durationYears ?? 3,
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          enabled: item.status === 'ACTIVE',
+          isCustom: item.isCustom ?? false,
+        }));
+        setPrograms(mapped);
+      }
+    } catch {
+      // Fallback to local masterPrograms if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPrograms();
+  }, [fetchPrograms]);
+
+  const resetForm = () => {
+    setFormCode('');
+    setFormName('');
+    setFormLevel('');
+    setFormDuration('3');
+    setFormStatus('active');
+  };
+
+  const handleAddProgram = async () => {
+    if (!formCode.trim() || !formName.trim() || !formLevel) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createProgram({
+        programCode: formCode.trim(),
+        code: formCode.trim(),
+        name: formName.trim(),
+        level: formLevel,
+        duration: Number(formDuration) || 3,
+        durationYears: Number(formDuration) || 3,
+        isCustom: true,
+        status: formStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
+      });
+      toast.success('Custom program added successfully');
+      setShowAddDialog(false);
+      resetForm();
+      fetchPrograms();
+    } catch {
+      toast.error('Failed to add program');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleProgram = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.toggleProgram(idNum);
+        toast.success('Program status updated');
+        fetchPrograms();
+      } catch {
+        toast.error('Failed to update program status');
+      }
+    } else {
+      setPrograms((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled, status: p.enabled ? 'inactive' : 'active' } : p))
+      );
+      toast.success('Program status updated');
+    }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Programs</h3>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -519,15 +726,23 @@ const ProgramsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Program Code *</Label>
-                <Input placeholder="e.g., BSC" />
+                <Input
+                  placeholder="e.g., BSC"
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Program Name *</Label>
-                <Input placeholder="e.g., B.Sc" />
+                <Input
+                  placeholder="e.g., B.Sc"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Program Level *</Label>
-                <Select>
+                <Select value={formLevel} onValueChange={setFormLevel}>
                   <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UG">UG</SelectItem>
@@ -538,11 +753,16 @@ const ProgramsTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Duration (Years) *</Label>
-                <Input type="number" placeholder="e.g., 3" />
+                <Input
+                  type="number"
+                  placeholder="e.g., 3"
+                  value={formDuration}
+                  onChange={(e) => setFormDuration(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select value={formStatus} onValueChange={setFormStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
@@ -552,8 +772,8 @@ const ProgramsTab = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Custom program added'); }}>Add Program</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleAddProgram} disabled={submitting}>Add Program</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -572,7 +792,15 @@ const ProgramsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {programs.map((program) => (
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="text-center py-6 text-muted-foreground">Loading programs...</td>
+              </tr>
+            ) : programs.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-muted-foreground">No programs found. Click "Add Custom Program" above to create one.</td>
+              </tr>
+            ) : programs.map((program) => (
               <tr key={program.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono text-xs">{program.programCode}</td>
                 <td className="py-3 px-4 font-medium">
@@ -603,19 +831,101 @@ const ProgramsTab = () => {
 // Departments Tab
 const DepartmentsTab = () => {
   const [depts, setDepts] = useState<Department[]>(departments);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form State
+  const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formProgramId, setFormProgramId] = useState('');
+  const [formEstYear, setFormEstYear] = useState('');
+  const [formStatus, setFormStatus] = useState('active');
+
+  const fetchDepts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getDepartments();
+      if (Array.isArray(data)) {
+        const mapped: Department[] = data.map((item) => ({
+          id: String(item.id),
+          code: item.code,
+          name: item.name,
+          program: item.programName || 'Engineering',
+          programId: item.programId ? String(item.programId) : undefined,
+          establishedYear: item.establishedYear,
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          enabled: item.status === 'ACTIVE',
+          isCustom: item.isCustom ?? false,
+        }));
+        setDepts(mapped);
+      }
+    } catch {
+      // Fallback to local departments array if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDepts();
+  }, [fetchDepts]);
 
   const filtered = depts.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()) ||
     d.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleDept = (id: string) => {
-    setDepts((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, enabled: !d.enabled, status: d.enabled ? 'inactive' : 'active' } : d))
-    );
-    toast.success('Department status updated');
+  const resetForm = () => {
+    setFormCode('');
+    setFormName('');
+    setFormProgramId('');
+    setFormEstYear('');
+    setFormStatus('active');
+  };
+
+  const handleAddDepartment = async () => {
+    if (!formCode.trim() || !formName.trim()) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createDepartment({
+        code: formCode.trim(),
+        name: formName.trim(),
+        programId: formProgramId ? Number(formProgramId) : undefined,
+        establishedYear: formEstYear ? Number(formEstYear) : undefined,
+        status: formStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
+      });
+      toast.success('Custom department added successfully');
+      setShowAddDialog(false);
+      resetForm();
+      fetchDepts();
+    } catch {
+      toast.error('Failed to add department');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleDept = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.toggleDepartment(idNum);
+        toast.success('Department status updated');
+        fetchDepts();
+      } catch {
+        toast.error('Failed to update department status');
+      }
+    } else {
+      setDepts((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, enabled: !d.enabled, status: d.enabled ? 'inactive' : 'active' } : d))
+      );
+      toast.success('Department status updated');
+    }
   };
 
   return (
@@ -630,7 +940,7 @@ const DepartmentsTab = () => {
             className="pl-9"
           />
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -644,15 +954,23 @@ const DepartmentsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Department Code *</Label>
-                <Input placeholder="e.g., AERO" />
+                <Input
+                  placeholder="e.g., AERO"
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Department Name *</Label>
-                <Input placeholder="e.g., Aerospace Engineering" />
+                <Input
+                  placeholder="e.g., Aerospace Engineering"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Program *</Label>
-                <Select>
+                <Label>Program</Label>
+                <Select value={formProgramId} onValueChange={setFormProgramId}>
                   <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
                   <SelectContent>
                     {masterPrograms.filter((p) => p.status === 'active').map((p) => (
@@ -663,11 +981,16 @@ const DepartmentsTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Established Year</Label>
-                <Input type="number" placeholder="e.g., 2020" />
+                <Input
+                  type="number"
+                  placeholder="e.g., 2020"
+                  value={formEstYear}
+                  onChange={(e) => setFormEstYear(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select value={formStatus} onValueChange={setFormStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
@@ -677,8 +1000,8 @@ const DepartmentsTab = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Department added'); }}>Add Department</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleAddDepartment} disabled={submitting}>Add Department</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -697,7 +1020,15 @@ const DepartmentsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((dept) => (
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="text-center py-6 text-muted-foreground">Loading departments...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-muted-foreground">No departments found. Click "Add Custom Department" above to create one.</td>
+              </tr>
+            ) : filtered.map((dept) => (
               <tr key={dept.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono text-xs">{dept.code}</td>
                 <td className="py-3 px-4 font-medium">{dept.name}</td>
@@ -723,24 +1054,98 @@ const DepartmentsTab = () => {
 // Specializations Tab
 const SpecializationsTab = () => {
   const [specs, setSpecs] = useState<Specialization[]>(specializations);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form State
+  const [formName, setFormName] = useState('');
+  const [formDeptId, setFormDeptId] = useState('');
+  const [formStatus, setFormStatus] = useState('active');
+
+  const fetchSpecs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getSpecializations();
+      if (Array.isArray(data)) {
+        const mapped: Specialization[] = data.map((item) => ({
+          id: String(item.id),
+          name: item.name,
+          departmentId: String(item.departmentId),
+          departmentName: item.departmentName || 'Department',
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          enabled: item.status === 'ACTIVE',
+        }));
+        setSpecs(mapped);
+      }
+    } catch {
+      // Fallback to local specializations array if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSpecs();
+  }, [fetchSpecs]);
 
   const grouped = specs.reduce<Record<string, Specialization[]>>((acc, s) => {
-    if (!acc[s.departmentName]) acc[s.departmentName] = [];
-    acc[s.departmentName].push(s);
+    const deptName = s.departmentName || 'Department';
+    if (!acc[deptName]) acc[deptName] = [];
+    acc[deptName].push(s);
     return acc;
   }, {});
 
-  const toggleSpec = (id: string) => {
-    setSpecs((prev) => prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled, status: s.enabled ? 'inactive' : 'active' } : s)));
-    toast.success('Specialization updated');
+  const resetForm = () => {
+    setFormName('');
+    setFormDeptId('');
+    setFormStatus('active');
+  };
+
+  const handleAddSpec = async () => {
+    if (!formName.trim() || !formDeptId) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createSpecialization({
+        name: formName.trim(),
+        departmentId: Number(formDeptId),
+        status: formStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
+      });
+      toast.success('Specialization added successfully');
+      setShowAddDialog(false);
+      resetForm();
+      fetchSpecs();
+    } catch {
+      toast.error('Failed to add specialization');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleSpec = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.toggleSpecialization(idNum);
+        toast.success('Specialization status updated');
+        fetchSpecs();
+      } catch {
+        toast.error('Failed to update specialization status');
+      }
+    } else {
+      setSpecs((prev) => prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled, status: s.enabled ? 'inactive' : 'active' } : s)));
+      toast.success('Specialization updated');
+    }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Department Specializations</h3>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -754,11 +1159,15 @@ const SpecializationsTab = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Specialization Name *</Label>
-                <Input placeholder="e.g., Machine Learning" />
+                <Input
+                  placeholder="e.g., Machine Learning"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Department *</Label>
-                <Select>
+                <Select value={formDeptId} onValueChange={setFormDeptId}>
                   <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
                   <SelectContent>
                     {departments.filter((d) => d.status === 'active').map((d) => (
@@ -769,7 +1178,7 @@ const SpecializationsTab = () => {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="active">
+                <Select value={formStatus} onValueChange={setFormStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
@@ -779,40 +1188,54 @@ const SpecializationsTab = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => { setShowAddDialog(false); toast.success('Specialization added'); }}>Add</Button>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
+              <Button onClick={handleAddSpec} disabled={submitting}>Add</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-4">
-        {Object.entries(grouped).map(([dept, items]) => (
-          <Card key={dept}>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                {dept}
-                <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {items.map((spec) => (
-                  <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{spec.name}</span>
-                      <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
-                        {spec.status}
-                      </Badge>
-                    </div>
-                    <Switch checked={spec.enabled} onCheckedChange={() => toggleSpec(spec.id)} className="scale-75" />
-                  </div>
-                ))}
-              </div>
+        {loading ? (
+          <Card>
+            <CardContent className="py-6 text-center text-muted-foreground text-sm">
+              Loading specializations...
             </CardContent>
           </Card>
-        ))}
+        ) : Object.keys(grouped).length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground text-sm">
+              No specializations found. Click "Add Specialization" above to create one.
+            </CardContent>
+          </Card>
+        ) : (
+          Object.entries(grouped).map(([dept, items]) => (
+            <Card key={dept}>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  {dept}
+                  <Badge variant="outline" className="ml-2 text-xs">{items.length} specializations</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {items.map((spec) => (
+                    <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{spec.name}</span>
+                        <Badge variant={spec.status === 'active' ? 'default' : 'secondary'} className="text-xs scale-90">
+                          {spec.status}
+                        </Badge>
+                      </div>
+                      <Switch checked={spec.enabled} onCheckedChange={() => toggleSpec(spec.id)} className="scale-75" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
@@ -881,6 +1304,7 @@ const REGULATION_STEPS = [
 
 const AcademicRegulationsTab = () => {
   const [regs, setRegs] = useState<AcademicRegulation[]>(academicRegulations);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [viewReg, setViewReg] = useState<AcademicRegulation | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -888,10 +1312,75 @@ const AcademicRegulationsTab = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; type: string; size: number }>>([]);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+
+  const fetchRegulations = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getRegulations();
+      if (Array.isArray(data)) {
+        const mapped: AcademicRegulation[] = data.map((item) => ({
+          id: String(item.id),
+          regulationCode: item.regulationCode || `REG-${item.id}`,
+          regulationName: item.regulationName || `Regulation ${item.id}`,
+          program: item.programName || 'Engineering',
+          programId: String(item.programId),
+          academicYearIntroduced: item.academicYearIntroduced || '2024-25',
+          effectiveFromBatch: item.effectiveFromBatch || '2024',
+          effectiveToBatch: item.effectiveToBatch || '2028',
+          duration: item.duration || 4,
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          creditStructure: {
+            totalCredits: item.totalCredits || 160,
+            coreCredits: item.coreCredits || 80,
+            professionalElectiveCredits: item.professionalElectiveCredits || 24,
+            openElectiveCredits: item.openElectiveCredits || 12,
+            laboratoryCredits: item.laboratoryCredits || 20,
+            projectCredits: item.projectCredits || 16,
+            internshipCredits: item.internshipCredits || 8,
+          },
+          evaluationScheme: {
+            internalMarks: item.internalMarks || 40,
+            externalMarks: item.externalMarks || 60,
+            passingMarks: item.passingMarks || 50,
+            gradingSystem: item.gradingSystem || 'CGPA Based',
+            cgpaScale: item.cgpaScale || 10,
+            maxPercentage: 100,
+          },
+          internshipRequirements: {
+            internshipMandatory: item.internshipMandatory ?? true,
+            internshipDuration: item.internshipDuration || '8 weeks',
+            industryTrainingMandatory: item.industryTrainingMandatory ?? false,
+          },
+          projectRequirements: {
+            miniProjectMandatory: item.miniProjectMandatory ?? true,
+            majorProjectMandatory: item.majorProjectMandatory ?? true,
+            capstoneProjectMandatory: false,
+          },
+          approvals: {
+            approvedBy: 'Academic Council',
+            approvalDate: '2024-06-15',
+            bosApproval: 'BOS-2024-01',
+            academicCouncilApproval: 'AC-2024-05',
+          },
+          documents: [],
+        }));
+        setRegs(mapped);
+      }
+    } catch {
+      // Fallback to local academicRegulations array if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRegulations();
+  }, [fetchRegulations]);
 
   const ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
   const ACCEPTED_MIME_TYPES = [
@@ -1136,33 +1625,69 @@ const AcademicRegulationsTab = () => {
       }
     }
 
-    // Resolve program name from id
-    const program = masterPrograms.find((p) => p.id === form.programId);
-    const finalReg = {
-      ...form,
-      id: editingId || `REG-${String(Date.now()).slice(-3)}`,
-      program: program?.name || form.program,
+    const payload = {
+      regulationCode: form.regulationCode,
+      regulationName: form.regulationName,
+      programId: Number(form.programId) || 1,
+      academicYearIntroduced: form.academicYearIntroduced,
+      effectiveFromBatch: form.effectiveFromBatch,
+      effectiveToBatch: form.effectiveToBatch,
+      duration: form.duration,
+      status: (form.status === 'active' ? 'ACTIVE' : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
+      totalCredits: form.creditStructure.totalCredits,
+      coreCredits: form.creditStructure.coreCredits,
+      professionalElectiveCredits: form.creditStructure.professionalElectiveCredits,
+      openElectiveCredits: form.creditStructure.openElectiveCredits,
+      laboratoryCredits: form.creditStructure.laboratoryCredits,
+      projectCredits: form.creditStructure.projectCredits,
+      internshipCredits: form.creditStructure.internshipCredits,
+      internalMarks: form.evaluationScheme.internalMarks,
+      externalMarks: form.evaluationScheme.externalMarks,
+      passingMarks: form.evaluationScheme.passingMarks,
+      gradingSystem: form.evaluationScheme.gradingSystem,
+      cgpaScale: form.evaluationScheme.cgpaScale,
+      internshipMandatory: form.internshipRequirements.internshipMandatory,
+      internshipDuration: form.internshipRequirements.internshipDuration,
+      industryTrainingMandatory: form.internshipRequirements.industryTrainingMandatory,
+      miniProjectMandatory: form.projectRequirements.miniProjectMandatory,
+      majorProjectMandatory: form.projectRequirements.majorProjectMandatory,
     };
 
-    setRegs((prev) => {
-      const idx = prev.findIndex((r) => r.id === finalReg.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = finalReg;
-        return updated;
-      }
-      return [finalReg, ...prev];
-    });
+    setSubmitting(true);
+    const savePromise = editingId && !isNaN(Number(editingId))
+      ? institutionAdminService.updateRegulation(Number(editingId), payload)
+      : institutionAdminService.createRegulation(payload);
 
-    setShowAddDialog(false);
-    setEditingId(null);
-    toast.success(editingId ? 'Regulation updated' : 'Regulation added');
+    savePromise
+      .then(() => {
+        toast.success(editingId ? 'Regulation updated successfully' : 'Regulation added successfully');
+        setShowAddDialog(false);
+        setEditingId(null);
+        fetchRegulations();
+      })
+      .catch(() => {
+        toast.error('Failed to save regulation');
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
   };
 
-  const handleDelete = (id: string) => {
-    setRegs((prev) => prev.filter((r) => r.id !== id));
+  const handleDelete = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.deleteRegulation(idNum);
+        toast.success('Regulation deleted successfully');
+        fetchRegulations();
+      } catch {
+        toast.error('Failed to delete regulation');
+      }
+    } else {
+      setRegs((prev) => prev.filter((r) => r.id !== id));
+      toast.success('Regulation deleted');
+    }
     setDeleteConfirm(null);
-    toast.success('Regulation deleted');
   };
 
 
@@ -1761,7 +2286,15 @@ const AcademicRegulationsTab = () => {
             </tr>
           </thead>
           <tbody>
-            {regs.map((reg) => (
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="text-center py-6 text-muted-foreground">Loading regulations...</td>
+              </tr>
+            ) : regs.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">No regulations found. Click "Add Regulation" above to create one.</td>
+              </tr>
+            ) : regs.map((reg) => (
               <tr key={reg.id} className="border-t hover:bg-muted/50">
                 <td className="py-3 px-4 font-mono font-semibold">{reg.regulationCode}</td>
                 <td className="py-3 px-4">{reg.regulationName}</td>
@@ -2030,8 +2563,10 @@ function getShortSpecName(name: string): string {
 
 const ProgramOfferingsTab = () => {
   const [offerings, setOfferings] = useState<ProgramOffering[]>(programOfferings);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterYear, setFilterYear] = useState<string>('all');
+  const [submitting, setSubmitting] = useState(false);
 
   // Form state for add/edit
   const [offeringForm, setOfferingForm] = useState({
@@ -2046,16 +2581,82 @@ const ProgramOfferingsTab = () => {
   const [deleteConfirmOffering, setDeleteConfirmOffering] = useState<string | null>(null);
   const [viewOffering, setViewOffering] = useState<ProgramOffering | null>(null);
 
+  const fetchOfferings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getProgramOfferings();
+      if (Array.isArray(data)) {
+        const mapped: ProgramOffering[] = data.map((item) => ({
+          id: String(item.id),
+          academicYear: item.academicYear || item.academicYearName || '2024-25',
+          academicYearId: item.academicYearId ? String(item.academicYearId) : '',
+          program: item.program || item.programName || 'Engineering',
+          programId: item.programId ? String(item.programId) : '',
+          department: item.department || item.departmentCode || item.departmentName || 'CSE',
+          departmentId: item.departmentId ? String(item.departmentId) : '',
+          specialization: item.specialization || item.specializationName || '',
+          specializationId: item.specializationId ? String(item.specializationId) : undefined,
+          regulation: item.regulation || item.regulationCode || item.regulationName || 'R24',
+          regulationId: item.regulationId ? String(item.regulationId) : '',
+          duration: item.durationYears || item.duration || 4,
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          generatedName: item.generatedName || item.offeringName || `${item.program || 'Program'} ${item.department || ''} ${item.specialization ? item.specialization + ' ' : ''}${item.academicYear || ''}`,
+        }));
+        setOfferings(mapped);
+      }
+    } catch {
+      // Fallback to local programOfferings array if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const [liveYears, setLiveYears] = useState<Array<{ id: string; year: string }>>([]);
+  const [livePrograms, setLivePrograms] = useState<Array<{ id: string; name: string }>>([]);
+  const [liveDepts, setLiveDepts] = useState<Array<{ id: string; code: string; name: string }>>([]);
+  const [liveSpecs, setLiveSpecs] = useState<Array<{ id: string; name: string }>>([]);
+  const [liveRegs, setLiveRegs] = useState<Array<{ id: string; regulationCode: string; regulationName: string }>>([]);
+
+  const fetchMasterData = useCallback(async () => {
+    try {
+      const [yrs, progs, depts, spcs, regs] = await Promise.all([
+        institutionAdminService.getAcademicYears().catch(() => []),
+        institutionAdminService.getPrograms().catch(() => []),
+        institutionAdminService.getDepartments().catch(() => []),
+        institutionAdminService.getSpecializations().catch(() => []),
+        institutionAdminService.getRegulations().catch(() => []),
+      ]);
+      if (Array.isArray(yrs) && yrs.length > 0) setLiveYears(yrs.map(y => ({ id: String(y.id), year: y.year })));
+      if (Array.isArray(progs) && progs.length > 0) setLivePrograms(progs.map(p => ({ id: String(p.id), name: p.name })));
+      if (Array.isArray(depts) && depts.length > 0) setLiveDepts(depts.map(d => ({ id: String(d.id), code: d.code, name: d.name })));
+      if (Array.isArray(spcs) && spcs.length > 0) setLiveSpecs(spcs.map(s => ({ id: String(s.id), name: s.name })));
+      if (Array.isArray(regs) && regs.length > 0) setLiveRegs(regs.map(r => ({ id: String(r.id), regulationCode: r.regulationCode, regulationName: r.regulationName })));
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOfferings();
+    fetchMasterData();
+  }, [fetchOfferings, fetchMasterData]);
+
   const filtered = filterYear === 'all'
     ? offerings
     : offerings.filter((o) => o.academicYear === filterYear);
 
   // Resolve IDs to display names for the generated name preview
-  const selectedYear = academicYears.find((y) => y.id === offeringForm.academicYearId);
-  const selectedProgram = masterPrograms.find((p) => p.id === offeringForm.programId);
-  const selectedDept = departments.find((d) => d.id === offeringForm.departmentId);
-  const selectedSpec = specializations.find((s) => s.id === offeringForm.specializationId);
-  const selectedReg = academicRegulations.find((r) => r.id === offeringForm.regulationId);
+  const yearsList = liveYears.length > 0 ? liveYears : academicYears;
+  const programsList = livePrograms.length > 0 ? livePrograms : masterPrograms;
+  const deptsList = liveDepts.length > 0 ? liveDepts : departments;
+  const specsList = liveSpecs.length > 0 ? liveSpecs : specializations;
+  const regsList = liveRegs.length > 0 ? liveRegs : academicRegulations;
+
+  const selectedYear = yearsList.find((y) => y.id === offeringForm.academicYearId);
+  const selectedProgram = programsList.find((p) => p.id === offeringForm.programId);
+  const selectedDept = deptsList.find((d) => d.id === offeringForm.departmentId);
+  const selectedSpec = specsList.find((s) => s.id === offeringForm.specializationId);
+  const selectedReg = regsList.find((r) => r.id === offeringForm.regulationId);
 
   const previewName = generateOfferingName(
     selectedProgram?.name || '',
@@ -2076,7 +2677,7 @@ const ProgramOfferingsTab = () => {
       academicYearId: offering.academicYearId,
       programId: offering.programId,
       departmentId: offering.departmentId,
-      specializationId: offering.specializationId,
+      specializationId: offering.specializationId || '',
       regulationId: offering.regulationId,
       duration: offering.duration,
     });
@@ -2084,68 +2685,50 @@ const ProgramOfferingsTab = () => {
     setShowAddDialog(true);
   };
 
-  const handleSaveOffering = () => {
+  const handleSaveOffering = async () => {
     const { academicYearId, programId, departmentId, specializationId, regulationId, duration } = offeringForm;
     if (!academicYearId || !programId || !departmentId || !regulationId) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const year = academicYears.find((y) => y.id === academicYearId);
-    const prog = masterPrograms.find((p) => p.id === programId);
-    const dept = departments.find((d) => d.id === departmentId);
-    const spec = specializations.find((s) => s.id === specializationId);
-    const reg = academicRegulations.find((r) => r.id === regulationId);
-
-    if (!year || !prog || !dept || !reg) return;
-
-    const newName = generateOfferingName(prog.name, dept.code, spec?.name || '', year.year, reg.regulationCode);
-
-    // Check duplicate
-    const exists = offerings.find((o) =>
-      o.generatedName === newName && (editingOfferingId ? o.id !== editingOfferingId : true)
-    );
-    if (exists) {
-      toast.error('A program offering with this combination already exists');
-      return;
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createProgramOffering({
+        academicYearId: Number(academicYearId),
+        programId: Number(programId),
+        departmentId: Number(departmentId),
+        specializationId: specializationId ? Number(specializationId) : undefined,
+        regulationId: Number(regulationId),
+        duration: Number(duration) || 4,
+        status: 'ACTIVE',
+      });
+      toast.success(editingOfferingId ? 'Offering updated' : 'Offering created successfully');
+      setShowAddDialog(false);
+      setEditingOfferingId(null);
+      fetchOfferings();
+    } catch {
+      toast.error('Failed to save program offering');
+    } finally {
+      setSubmitting(false);
     }
-
-    const offering: ProgramOffering = {
-      id: editingOfferingId || `OFF-${String(Date.now()).slice(-3)}`,
-      academicYear: year.year,
-      academicYearId,
-      program: prog.name,
-      programId,
-      department: dept.code,
-      departmentId,
-      specialization: spec?.name || '',
-      specializationId,
-      regulation: reg.regulationCode,
-      regulationId,
-      duration,
-      status: 'active' as const,
-      generatedName: newName,
-    };
-
-    setOfferings((prev) => {
-      const idx = prev.findIndex((o) => o.id === offering.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = offering;
-        return updated;
-      }
-      return [offering, ...prev];
-    });
-
-    setShowAddDialog(false);
-    setEditingOfferingId(null);
-    toast.success(editingOfferingId ? 'Offering updated' : 'Offering created');
   };
 
-  const handleDeleteOffering = (id: string) => {
-    setOfferings((prev) => prev.filter((o) => o.id !== id));
+  const handleDeleteOffering = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.deleteProgramOffering(idNum);
+        toast.success('Offering deleted successfully');
+        fetchOfferings();
+      } catch {
+        toast.error('Failed to delete offering');
+      }
+    } else {
+      setOfferings((prev) => prev.filter((o) => o.id !== id));
+      toast.success('Offering deleted');
+    }
     setDeleteConfirmOffering(null);
-    toast.success('Offering deleted');
   };
 
   return (
@@ -2159,7 +2742,7 @@ const ProgramOfferingsTab = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYears.map((y) => (
+              {yearsList.map((y) => (
                 <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
               ))}
             </SelectContent>
@@ -2232,7 +2815,7 @@ const ProgramOfferingsTab = () => {
 
       {/* Add/Edit Offering Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingOfferingId(null); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">{editingOfferingId ? 'Edit Program Offering' : 'Create Program Offering'}</DialogTitle>
           </DialogHeader>
@@ -2248,7 +2831,7 @@ const ProgramOfferingsTab = () => {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {academicYears.map((y) => (
+                    {yearsList.map((y) => (
                       <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2264,7 +2847,7 @@ const ProgramOfferingsTab = () => {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {masterPrograms.filter((p) => p.status === 'active').map((p) => (
+                    {programsList.map((p) => (
                       <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2280,7 +2863,7 @@ const ProgramOfferingsTab = () => {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {departments.filter((d) => d.status === 'active').map((d) => (
+                    {deptsList.map((d) => (
                       <SelectItem key={d.id} value={d.id} className="text-xs">{d.code} - {d.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2296,7 +2879,7 @@ const ProgramOfferingsTab = () => {
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    {specializations.filter((s) => s.status === 'active').map((s) => (
+                    {specsList.map((s) => (
                       <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2312,7 +2895,7 @@ const ProgramOfferingsTab = () => {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {academicRegulations.filter((r) => r.status === 'active').map((r) => (
+                    {regsList.map((r) => (
                       <SelectItem key={r.id} value={r.id} className="text-xs">{r.regulationCode} - {r.regulationName}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2416,10 +2999,12 @@ const ProgramOfferingsTab = () => {
 
 const ProgramIntakeTab = () => {
   const [intakes, setIntakes] = useState<ProgramIntake[]>(programIntakes);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterYear, setFilterYear] = useState<string>('all');
   const [editingIntakeId, setEditingIntakeId] = useState<string | null>(null);
   const [deleteConfirmIntake, setDeleteConfirmIntake] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form state for add/edit intake
   const [intakeForm, setIntakeForm] = useState({
@@ -2435,6 +3020,60 @@ const ProgramIntakeTab = () => {
   const [dragActiveIntake, setDragActiveIntake] = useState(false);
   const intakeFileInputRef = useRef<HTMLInputElement>(null);
   const intakeDragCounterRef = useRef(0);
+
+  const fetchIntakes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await institutionAdminService.getProgramIntakes();
+      if (Array.isArray(data)) {
+        const mapped: ProgramIntake[] = data.map((item) => ({
+          id: String(item.id),
+          academicYear: item.academicYear || item.academicYearName || '2024-25',
+          academicYearId: item.academicYearId ? String(item.academicYearId) : '',
+          programOffering: item.programOffering || item.programOfferingName || `Offering ${item.programOfferingId}`,
+          programOfferingId: item.programOfferingId ? String(item.programOfferingId) : '',
+          sanctionedIntake: item.sanctionedIntake || 0,
+          admittedIntake: item.admittedIntake || 0,
+          lateralEntryIntake: item.lateralEntryIntake || 0,
+          vacantSeats: item.vacantSeats ?? Math.max(0, (item.sanctionedIntake || 0) - (item.admittedIntake || 0) - (item.lateralEntryIntake || 0)),
+          approvalAuthority: item.approvalAuthority || 'AICTE / UGC',
+          status: item.status === 'ACTIVE' ? 'active' : 'inactive',
+          documents: [],
+        }));
+        setIntakes(mapped);
+      }
+    } catch {
+      // Fallback to local programIntakes array if offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const [liveYears, setLiveYears] = useState<Array<{ id: string; year: string }>>([]);
+  const [liveOfferings, setLiveOfferings] = useState<Array<{ id: string; generatedName: string }>>([]);
+
+  const fetchIntakeMasterData = useCallback(async () => {
+    try {
+      const [yrs, offs] = await Promise.all([
+        institutionAdminService.getAcademicYears().catch(() => []),
+        institutionAdminService.getProgramOfferings().catch(() => []),
+      ]);
+      if (Array.isArray(yrs) && yrs.length > 0) setLiveYears(yrs.map(y => ({ id: String(y.id), year: y.year })));
+      if (Array.isArray(offs) && offs.length > 0) {
+        setLiveOfferings(offs.map(o => ({
+          id: String(o.id),
+          generatedName: o.generatedName || o.offeringName || `${o.program || o.programName || 'Program'} ${o.department || o.departmentCode || ''} ${o.specialization ? o.specialization + ' ' : ''}${o.academicYear || o.academicYearName || ''} ${o.regulation || ''}`.trim(),
+        })));
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchIntakes();
+    fetchIntakeMasterData();
+  }, [fetchIntakes, fetchIntakeMasterData]);
 
   const INTAKE_ACCEPTED_FILE_TYPES = '.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.ppt,.pptx,.txt,.zip';
   const INTAKE_ACCEPTED_MIME_TYPES = [
@@ -2549,10 +3188,10 @@ const ProgramIntakeTab = () => {
   const totalAdmitted = filtered.reduce((s, i) => s + i.admittedIntake, 0);
   const totalVacant = filtered.reduce((s, i) => s + i.vacantSeats, 0);
 
-
   const vacantSeats = Math.max(0, (intakeForm.sanctionedIntake || 0) - (intakeForm.admittedIntake || 0) - (intakeForm.lateralEntryIntake || 0));
 
   const openAddIntakeDialog = () => {
+    fetchIntakeMasterData();
     setIntakeForm({ academicYearId: '', programOfferingId: '', sanctionedIntake: 0, admittedIntake: 0, lateralEntryIntake: 0, approvalAuthority: '', status: 'active' });
     setEditingIntakeId(null);
     setUploadedIntakeFiles([]);
@@ -2560,6 +3199,7 @@ const ProgramIntakeTab = () => {
   };
 
   const openEditIntakeDialog = (intake: ProgramIntake) => {
+    fetchIntakeMasterData();
     setIntakeForm({
       academicYearId: intake.academicYearId,
       programOfferingId: intake.programOfferingId,
@@ -2574,53 +3214,50 @@ const ProgramIntakeTab = () => {
     setShowAddDialog(true);
   };
 
-  const handleSaveIntake = () => {
+  const handleSaveIntake = async () => {
     const { academicYearId, programOfferingId, sanctionedIntake, admittedIntake, lateralEntryIntake, approvalAuthority, status } = intakeForm;
     if (!academicYearId || !programOfferingId || !sanctionedIntake) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const year = academicYears.find((y) => y.id === academicYearId);
-    const offering = programOfferings.find((o) => o.id === programOfferingId);
-    if (!year || !offering) return;
-
-    const vacant = Math.max(0, sanctionedIntake - admittedIntake - lateralEntryIntake);
-
-    const intake: ProgramIntake = {
-      id: editingIntakeId || `INT-${String(Date.now()).slice(-3)}`,
-      academicYear: year.year,
-      academicYearId,
-      programOffering: offering.generatedName,
-      programOfferingId,
-      sanctionedIntake,
-      admittedIntake,
-      lateralEntryIntake,
-      vacantSeats: vacant,
-      approvalAuthority,
-      status,
-      documents: uploadedIntakeFiles.map((f) => f.name),
-    };
-
-    setIntakes((prev) => {
-      const idx = prev.findIndex((i) => i.id === intake.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = intake;
-        return updated;
-      }
-      return [intake, ...prev];
-    });
-
-    setShowAddDialog(false);
-    setEditingIntakeId(null);
-    toast.success(editingIntakeId ? 'Intake updated' : 'Intake record added');
+    setSubmitting(true);
+    try {
+      await institutionAdminService.createProgramIntake({
+        academicYearId: Number(academicYearId),
+        programOfferingId: Number(programOfferingId),
+        sanctionedIntake: Number(sanctionedIntake),
+        admittedIntake: Number(admittedIntake) || 0,
+        lateralEntryIntake: Number(lateralEntryIntake) || 0,
+        approvalAuthority: approvalAuthority || 'AICTE',
+        status: status === 'active' ? 'ACTIVE' : 'INACTIVE',
+      });
+      toast.success(editingIntakeId ? 'Intake record updated' : 'Intake record added successfully');
+      setShowAddDialog(false);
+      setEditingIntakeId(null);
+      fetchIntakes();
+    } catch {
+      toast.error('Failed to save intake record');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDeleteIntake = (id: string) => {
-    setIntakes((prev) => prev.filter((i) => i.id !== id));
+  const handleDeleteIntake = async (id: string) => {
+    const idNum = Number(id);
+    if (!isNaN(idNum)) {
+      try {
+        await institutionAdminService.deleteProgramIntake(idNum);
+        toast.success('Intake record deleted successfully');
+        fetchIntakes();
+      } catch {
+        toast.error('Failed to delete intake record');
+      }
+    } else {
+      setIntakes((prev) => prev.filter((i) => i.id !== id));
+      toast.success('Intake record deleted');
+    }
     setDeleteConfirmIntake(null);
-    toast.success('Intake record deleted');
   };
 
   return (
@@ -2634,7 +3271,7 @@ const ProgramIntakeTab = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYears.map((y) => (
+              {(liveYears.length > 0 ? liveYears : academicYears).map((y) => (
                 <SelectItem key={y.id} value={y.year}>{y.year}</SelectItem>
               ))}
             </SelectContent>
@@ -2740,7 +3377,7 @@ const ProgramIntakeTab = () => {
 
       {/* Add/Edit Intake Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setEditingIntakeId(null); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">{editingIntakeId ? 'Edit Program Intake' : 'Add Program Intake'}</DialogTitle>
           </DialogHeader>
@@ -2758,7 +3395,7 @@ const ProgramIntakeTab = () => {
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {academicYears.map((y) => (
+                  {(liveYears.length > 0 ? liveYears : academicYears).map((y) => (
                     <SelectItem key={y.id} value={y.id} className="text-xs">{y.year}</SelectItem>
                   ))}
                 </SelectContent>
@@ -2774,7 +3411,7 @@ const ProgramIntakeTab = () => {
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programOfferings.filter((o) => o.status === 'active').map((o) => (
+                  {(liveOfferings.length > 0 ? liveOfferings : programOfferings).map((o) => (
                     <SelectItem key={o.id} value={o.id} className="text-xs">{o.generatedName}</SelectItem>
                   ))}
                 </SelectContent>

@@ -184,12 +184,14 @@ export interface ProgramApiResponse {
 
 /** Request body for POST /api/v1/app/programs */
 export interface CreateProgramRequest {
-  programCode: string;
+  code?: string;
+  programCode?: string;
   name: string;
-  level: 'UG' | 'PG' | 'Doctoral';
-  duration: number;
-  isCustom: boolean;
-  status: 'ACTIVE' | 'INACTIVE';
+  level: string;
+  duration?: number;
+  durationYears?: number;
+  isCustom?: boolean;
+  status?: 'ACTIVE' | 'INACTIVE';
 }
 
 /** Response shape from POST /api/v1/app/programs (returns `duration` not `durationYears`) */
@@ -423,18 +425,28 @@ export interface CreateProgramIntakeResponse {
 /** A single program offering as returned by the backend */
 export interface ProgramOfferingApiResponse {
   id: number;
-  academicYearId: number;
-  programId: number;
-  departmentId: number;
-  specializationId: number;
-  regulationId: number;
-  durationYears: number;
+  academicYearId?: number;
+  programId?: number;
+  departmentId?: number;
+  specializationId?: number;
+  regulationId?: number;
+  durationYears?: number;
+  duration?: number;
   status: 'ACTIVE' | 'INACTIVE';
-  generatedName: string;
-  program: string;
-  department: string;
-  specialization: string;
-  regulation: string;
+  generatedName?: string;
+  offeringName?: string;
+  academicYear?: string;
+  academicYearName?: string;
+  program?: string;
+  programName?: string;
+  department?: string;
+  departmentName?: string;
+  departmentCode?: string;
+  specialization?: string;
+  specializationName?: string;
+  regulation?: string;
+  regulationCode?: string;
+  regulationName?: string;
 }
 
 /** Request body for POST /api/v1/app/program-offerings */
@@ -642,6 +654,14 @@ class InstitutionAdminService {
   }
 
   /**
+   * Toggle specialization active status.
+   * PATCH /api/v1/app/specializations/{id}/toggle
+   */
+  async toggleSpecialization(id: number): Promise<Record<string, unknown>> {
+    return apiService.patch<Record<string, unknown>>(`/v1/app/specializations/${id}/toggle`);
+  }
+
+  /**
    * Delete a specialization by ID.
    * DELETE /api/v1/app/specializations/{id}
    */
@@ -676,6 +696,14 @@ class InstitutionAdminService {
     data: Record<string, string>
   ): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/departments/${id}/status`, data);
+  }
+
+  /**
+   * Toggle department active status.
+   * PATCH /api/v1/app/departments/{id}/toggle
+   */
+  async toggleDepartment(id: number): Promise<Record<string, unknown>> {
+    return apiService.patch<Record<string, unknown>>(`/v1/app/departments/${id}/toggle`);
   }
 
   /**
@@ -716,6 +744,14 @@ class InstitutionAdminService {
   }
 
   /**
+   * Toggle program active status.
+   * PATCH /api/v1/app/programs/{id}/toggle
+   */
+  async toggleProgram(id: number): Promise<Record<string, unknown>> {
+    return apiService.patch<Record<string, unknown>>(`/v1/app/programs/${id}/toggle`);
+  }
+
+  /**
    * Delete a program by ID.
    * DELETE /api/v1/app/programs/{id}
    */
@@ -747,6 +783,14 @@ class InstitutionAdminService {
    */
   async activateAcademicYear(id: number): Promise<Record<string, unknown>> {
     return apiService.patch<Record<string, unknown>>(`/v1/app/academic-years/${id}/activate`);
+  }
+
+  /**
+   * Update an academic year by ID.
+   * PUT /api/v1/app/academic-years/{id}
+   */
+  async updateAcademicYear(id: number, data: CreateAcademicYearRequest): Promise<AcademicYearApiResponse> {
+    return apiService.put<AcademicYearApiResponse>(`/v1/app/academic-years/${id}`, data);
   }
 
   /**
@@ -792,6 +836,25 @@ class InstitutionAdminService {
    */
   async getRegulationById(id: number): Promise<RegulationApiResponse> {
     return apiService.get<RegulationApiResponse>(`/v1/app/regulations/${id}`);
+  }
+
+  /**
+   * Update an existing regulation.
+   * PUT /api/v1/app/regulations/{id}
+   */
+  async updateRegulation(
+    id: number,
+    data: CreateRegulationRequest
+  ): Promise<RegulationApiResponse> {
+    return apiService.put<RegulationApiResponse>(`/v1/app/regulations/${id}`, data);
+  }
+
+  /**
+   * Delete a regulation by ID.
+   * DELETE /api/v1/app/regulations/{id}
+   */
+  async deleteRegulation(id: number): Promise<Record<string, unknown>> {
+    return apiService.delete<Record<string, unknown>>(`/v1/app/regulations/${id}`);
   }
 
   // ── Program Offerings ──

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { GovernancePage } from './governance/GovernancePage';
+import { RoleInfo } from './types';
+import { institutionAdminService } from '@/services/institution-admin.service';
 
 export { GovernancePage };
 
@@ -35,6 +37,33 @@ import { roles, repositoryMetrics, departmentReadiness, activityLogs } from './m
 
 // ==================== ROLE MANAGEMENT ====================
 export const RoleManagementPage = () => {
+  const [rolesList, setRolesList] = useState<RoleInfo[]>(roles);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    institutionAdminService.getRoles()
+      .then((res) => {
+        const rawList = Array.isArray(res)
+          ? res
+          : (Array.isArray((res as any)?.data)
+              ? (res as any).data
+              : []);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          setRolesList(
+            rawList.map((r: any) => ({
+              name: r.name || r.roleDisplayName || r.role || 'Role',
+              usersAssigned: r.usersAssigned ?? r.userCount ?? 0,
+              permissions: Array.isArray(r.permissions) ? r.permissions : [],
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        // Fallback to local mock data if offline
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -42,41 +71,51 @@ export const RoleManagementPage = () => {
         <p className="text-muted-foreground">View roles, assigned users, and permissions</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {roles.map((role, idx) => (
-          <motion.div
-            key={role.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-          >
-            <Card className="h-full hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    {role.name}
-                  </CardTitle>
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {role.usersAssigned}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground mb-2">Permissions</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {role.permissions.map((perm) => (
-                    <Badge key={perm} variant="outline" className="text-xs font-normal">
-                      {perm}
+      {loading ? (
+        <div className="py-12 text-center text-sm text-muted-foreground">
+          Loading roles...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {rolesList.map((role, idx) => (
+            <motion.div
+              key={role.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <Card className="h-full hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      {role.name}
+                    </CardTitle>
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {role.usersAssigned} {role.usersAssigned === 1 ? 'user' : 'users'}
                     </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground mb-2">Permissions</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {role.permissions && role.permissions.length > 0 ? (
+                      role.permissions.map((perm) => (
+                        <Badge key={perm} variant="outline" className="text-xs font-normal">
+                          {perm}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No specific permissions listed</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
