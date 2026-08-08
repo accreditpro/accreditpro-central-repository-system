@@ -35,6 +35,16 @@ export const UserProfileMenu = ({ user }: UserProfileMenuProps) => {
       IQAC_COORDINATOR: 'IQAC Coordinator',
       PRINCIPAL: 'Principal',
       DEPARTMENT_COORDINATOR: 'Dept. Coordinator',
+      INFRASTRUCTURE_COORDINATOR: 'Infrastructure Coordinator',
+      FINANCE_COORDINATOR: 'Finance Coordinator',
+      TPO_COORDINATOR: 'TPO Coordinator',
+      PLACEMENT_OFFICER: 'Placement Officer',
+      STUDENT_DEVELOPMENT_COORDINATOR: 'Student Development Coordinator',
+      EXAMINATION_OFFICER: 'Examination Officer',
+      HEAD_OF_DEPARTMENT: 'Head of Department',
+      HOD: 'Head of Department',
+      RESEARCH_COORDINATOR: 'Research Coordinator',
+      COMPLIANCE_OFFICER: 'Compliance Officer',
     };
     return roleLabels[role] || role;
   };
