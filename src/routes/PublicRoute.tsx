@@ -17,12 +17,14 @@ const getRoleBasedRedirect = (role?: UserRole): string => {
     case UserRole.FINANCE_COORDINATOR:
       return '/app/finance-repository';
     case UserRole.TPO_COORDINATOR:
+    case UserRole.PLACEMENT_OFFICER:
       return '/app/tpo-repository';
     case UserRole.STUDENT_DEVELOPMENT_COORDINATOR:
       return '/app/student-development-repository';
     case UserRole.EXAMINATION_OFFICER:
       return '/app/examination-repository';
     case UserRole.HEAD_OF_DEPARTMENT:
+    case UserRole.HOD:
       return '/app/hod-dashboard';
     case UserRole.PRINCIPAL:
       return '/app/principal-dashboard';
