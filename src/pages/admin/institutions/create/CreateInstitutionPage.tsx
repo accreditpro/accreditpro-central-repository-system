@@ -55,9 +55,8 @@ interface CreatedInstitution {
   };
 }
 
-// Mock API - creates the institution via the shared service so it appears in the list
-const mockCreateInstitution = async (data: CreateInstitutionFormData): Promise<CreatedInstitution> => {
-  const generatedPassword = `Acc@${Math.random().toString(36).slice(2, 8)}`;
+const createInstitutionApi = async (data: CreateInstitutionFormData): Promise<CreatedInstitution> => {
+  const generatedFallback = `Acc@${Math.random().toString(36).slice(2, 8)}`;
   const created = await institutionService.createInstitution({
     name: data.basicInfo.name,
     code: data.basicInfo.code,
@@ -76,6 +75,7 @@ const mockCreateInstitution = async (data: CreateInstitutionFormData): Promise<C
       email: data.admin.email,
       mobile: data.admin.mobile,
     },
+    logo: data.basicInfo.logo,
   });
   return {
     id: created.id,
@@ -83,7 +83,7 @@ const mockCreateInstitution = async (data: CreateInstitutionFormData): Promise<C
     admin: {
       name: data.admin.name,
       email: data.admin.email,
-      password: generatedPassword,
+      password: created.admin?.temporaryPassword || created.admin?.password || generatedFallback,
     },
   };
 };
@@ -170,7 +170,7 @@ export const CreateInstitutionPage = () => {
     setIsSubmitting(true);
     try {
       const data = form.getValues();
-      const result = await mockCreateInstitution(data);
+      const result = await createInstitutionApi(data);
       setCreatedInstitution(result);
       setShowSuccessDialog(true);
     } catch {

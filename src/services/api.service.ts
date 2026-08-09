@@ -146,8 +146,8 @@ class ApiService {
    * Attempts to extract the filename from Content-Disposition headers;
    * falls back to the provided `filename` param or a default name.
    */
-  async download(url: string, filename?: string): Promise<void> {
-    const response = await this.instance.get(url, { responseType: 'blob' });
+  async download(url: string, filename?: string, params?: Record<string, any>): Promise<void> {
+    const response = await this.instance.get(url, { responseType: 'blob', params });
 
     // Try to extract filename from Content-Disposition header
     const disposition = response.headers['content-disposition'];
