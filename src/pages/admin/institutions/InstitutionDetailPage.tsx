@@ -167,7 +167,63 @@ export const InstitutionDetailPage = () => {
     );
   }
 
-  const { institution, adminUser, iqacUser, principalUser, academicEntities } = response;
+  const rawInst = (response as any).institution || response;
+  const institution = {
+    id: rawInst.id,
+    name: rawInst.name || rawInst.basicInfo?.name || '',
+    code: rawInst.code || rawInst.basicInfo?.code || '',
+    category: rawInst.category || rawInst.basicInfo?.category || 'Engineering',
+    state: rawInst.state || rawInst.address?.state || '',
+    city: rawInst.city || rawInst.address?.city || rawInst.address?.district || rawInst.district || '',
+    addressLine1: rawInst.addressLine1 || rawInst.address?.addressLine1 || '',
+    addressLine2: rawInst.addressLine2 || rawInst.address?.addressLine2 || '',
+    pincode: rawInst.pincode || rawInst.address?.pincode || '',
+    email: rawInst.email || rawInst.basicInfo?.email || '',
+    phone: rawInst.phone || rawInst.basicInfo?.phone || '',
+    website: rawInst.website || rawInst.basicInfo?.website || '',
+    logoUrl: rawInst.logoUrl || rawInst.logo || rawInst.basicInfo?.logo || '',
+    status: rawInst.status || 'ACTIVE',
+    usersCount: (response as any).usersCreated ?? rawInst.usersCount ?? 0,
+    repositoryCompletion: rawInst.repositoryCompletion ?? 0,
+    documentsUploaded: rawInst.documentsUploaded ?? 0,
+    createdAt: rawInst.createdAt || new Date().toISOString(),
+  };
+
+  const rawAdmin = (response as any).adminUser || (response as any).admin || rawInst.admin || {};
+  const adminUser = {
+    name: rawAdmin.name || 'Admin',
+    email: rawAdmin.email || '',
+    mobile: rawAdmin.mobile || '',
+    role: rawAdmin.role || 'INSTITUTION_ADMIN',
+    temporaryPassword: rawAdmin.temporaryPassword,
+    requiresPasswordChange: rawAdmin.requiresPasswordChange ?? false,
+  };
+
+  const rawIqac = (response as any).iqacUser || {};
+  const iqacUser = {
+    name: rawIqac.name || adminUser.name,
+    email: rawIqac.email || adminUser.email,
+    mobile: rawIqac.mobile || adminUser.mobile,
+    role: rawIqac.role || 'IQAC_COORDINATOR',
+    temporaryPassword: rawIqac.temporaryPassword,
+    requiresPasswordChange: rawIqac.requiresPasswordChange ?? false,
+  };
+
+  const rawPrincipal = (response as any).principalUser || {};
+  const principalUser = {
+    name: rawPrincipal.name || adminUser.name,
+    email: rawPrincipal.email || adminUser.email,
+    mobile: rawPrincipal.mobile || adminUser.mobile,
+    role: rawPrincipal.role || 'PRINCIPAL',
+    temporaryPassword: rawPrincipal.temporaryPassword,
+    requiresPasswordChange: rawPrincipal.requiresPasswordChange ?? false,
+  };
+
+  const academicEntities = (response as any).academicEntities || {
+    academicYears: [],
+    programs: [],
+    departments: [],
+  };
 
   const statusConfig: Record<
     string,

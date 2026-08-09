@@ -64,49 +64,57 @@ type LoadState = 'loading' | 'ready' | 'error';
  * For the logo: the API returns logoUrl, while the form expects a logo field.
  * We use logoUrl from the response as the form's logo value.
  */
-const mapResponseToFormData = (res: CreateInstitutionResponse): CreateInstitutionFormData => ({
-  basicInfo: {
-    name: res.institution.name,
-    code: res.institution.code,
-    category: res.institution.category,
-    email: res.institution.email || '',
-    phone: res.institution.phone || '',
-    website: res.institution.website || '',
-    logo: res.institution.logoUrl || '',
-  },
-  address: {
-    addressLine1: res.institution.addressLine1 || '',
-    addressLine2: res.institution.addressLine2 || '',
-    state: res.institution.state,
-    district: res.institution.city,
-    pincode: res.institution.pincode || '',
-  },
-  academicConfig: {
-    programs: DEFAULT_PROGRAMS,
-    departments: DEFAULT_DEPARTMENTS,
-  },
-  academicYears: {
-    academicYears: res.academicEntities.academicYears?.map(y => y.year) || DEFAULT_ACADEMIC_YEARS,
-  },
-  admin: {
-    name: res.adminUser.name,
-    email: res.adminUser.email,
-    mobile: res.adminUser.mobile || '',
-    autoGeneratePassword: true,
-  },
-  iqacCoordinator: {
-    name: res.iqacUser.name,
-    email: res.iqacUser.email,
-    mobile: res.iqacUser.mobile || '',
-    autoGeneratePassword: true,
-  },
-  principal: {
-    name: res.principalUser.name,
-    email: res.principalUser.email,
-    mobile: res.principalUser.mobile || '',
-    autoGeneratePassword: true,
-  },
-});
+const mapResponseToFormData = (res: any): CreateInstitutionFormData => {
+  const inst = res?.institution || res?.basicInfo || res || {};
+  const addr = res?.address || res?.institution || res || {};
+  const adm = res?.adminUser || res?.admin || {};
+  const iqac = res?.iqacUser || adm;
+  const princ = res?.principalUser || adm;
+
+  return {
+    basicInfo: {
+      name: inst.name || '',
+      code: inst.code || '',
+      category: inst.category || '',
+      email: inst.email || '',
+      phone: inst.phone || '',
+      website: inst.website || '',
+      logo: inst.logoUrl || inst.logo || '',
+    },
+    address: {
+      addressLine1: addr.addressLine1 || '',
+      addressLine2: addr.addressLine2 || '',
+      state: addr.state || '',
+      district: addr.district || addr.city || '',
+      pincode: addr.pincode || '',
+    },
+    academicConfig: {
+      programs: DEFAULT_PROGRAMS,
+      departments: DEFAULT_DEPARTMENTS,
+    },
+    academicYears: {
+      academicYears: res?.academicEntities?.academicYears?.map((y: any) => y.year) || DEFAULT_ACADEMIC_YEARS,
+    },
+    admin: {
+      name: adm.name || '',
+      email: adm.email || '',
+      mobile: adm.mobile || '',
+      autoGeneratePassword: true,
+    },
+    iqacCoordinator: {
+      name: iqac.name || '',
+      email: iqac.email || '',
+      mobile: iqac.mobile || '',
+      autoGeneratePassword: true,
+    },
+    principal: {
+      name: princ.name || '',
+      email: princ.email || '',
+      mobile: princ.mobile || '',
+      autoGeneratePassword: true,
+    },
+  };
+};
 
 export const EditInstitutionPage = () => {
   const { id } = useParams<{ id: string }>();
