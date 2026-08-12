@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useReadOnly } from '@/hooks/useReadOnly';
+import { academicRepositoryService } from '@/services/academic-repository.service';
 import {
   Award,
   Download,
@@ -25,6 +37,7 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   FileText,
   X,
   Eye,
@@ -35,6 +48,64 @@ import {
   GraduationCap,
   BookOpen,
 } from 'lucide-react';
+
+function cleanYear(y: string): string {
+  const s = (y || '').trim().toLowerCase();
+  if (s.includes('1') || s.includes('1st') || s.includes('i year') || s === 'i') return '1';
+  if (s.includes('2') || s.includes('2nd') || s.includes('ii year') || s === 'ii') return '2';
+  if (s.includes('3') || s.includes('3rd') || s.includes('iii year') || s === 'iii') return '3';
+  if (s.includes('4') || s.includes('4th') || s.includes('iv year') || s === 'iv') return '4';
+  return s;
+}
+
+function cleanSem(s: string): string {
+  const str = (s || '').trim().toLowerCase();
+  const match = str.match(/\d+/);
+  return match ? match[0] : str;
+}
+
+function formatTimeTo24h(timeStr: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    const parts = trimmed.split(':');
+    const h = parts[0].padStart(2, '0');
+    const m = parts[1].padStart(2, '0');
+    const s = (parts[2] || '00').padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2].padStart(2, '0');
+    const second = (match[3] || '00').padStart(2, '0');
+    const period = match[4].toUpperCase();
+    if (period === 'PM' && hour < 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, '0')}:${minute}:${second}`;
+  }
+  return trimmed;
+}
+
+function formatDateToISO(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+    if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().split('T')[0];
+  }
+  return trimmed;
+}
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -76,9 +147,15 @@ interface AddOnProgramRecord {
 }
 
 interface ProgramEvidenceItem {
+  id?: number | string;
   status: 'not-uploaded' | 'uploaded';
   fileName?: string;
   uploadedAt?: string;
+  uploadedBy?: string;
+  fileSize?: number;
+  fileType?: string;
+  verificationStatus?: string;
+  fileUrl?: string;
 }
 
 interface ProgramEvidenceMap {
@@ -90,6 +167,7 @@ interface ProgramEvidenceMap {
 interface AddOnProgramsModuleProps {
   department: string;
   academicYear: string;
+  departmentId?: number;
 }
 
 const YEARS_OF_STUDY = ['I Year', 'II Year', 'III Year', 'IV Year'];
@@ -103,10 +181,28 @@ const SEMESTERS_MAP: Record<string, string[]> = {
 // Evidence types for per-program documents
 type EvidenceDocType = 'geoTaggedPhotos' | 'registeredStudentsList' | 'attendedStudentsList';
 
-export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsModuleProps) => {
+const DOC_TYPE_TO_SERVER_NAME: Record<EvidenceDocType, string> = {
+  geoTaggedPhotos: 'Geo-tagged Photos of Session',
+  registeredStudentsList: 'Registered Students List',
+  attendedStudentsList: 'Attended Students List',
+};
+
+function mapServerDocTypeToFrontendKey(serverDocType?: string): EvidenceDocType | null {
+  if (!serverDocType) return null;
+  const lower = serverDocType.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (lower.includes('geotagged') || lower.includes('photo') || lower.includes('session')) return 'geoTaggedPhotos';
+  if (lower.includes('registered') || lower.includes('enroll')) return 'registeredStudentsList';
+  if (lower.includes('attended') || lower.includes('attend')) return 'attendedStudentsList';
+  return null;
+}
+
+export const AddOnProgramsModule = ({ department, academicYear, departmentId = 1 }: AddOnProgramsModuleProps) => {
+  const { user } = useAuth();
+  const { isReadOnly } = useReadOnly();
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
   const [programs, setPrograms] = useState<AddOnProgramRecord[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCertification, setFilterCertification] = useState<string>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -119,12 +215,149 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
   // Per-program evidence state
   const [programEvidenceMap, setProgramEvidenceMap] = useState<Record<string, ProgramEvidenceMap>>({});
-  const [previewDialog, setPreviewDialog] = useState<{ open: boolean; programId: string; docType: EvidenceDocType; fileName: string } | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [previewDialog, setPreviewDialog] = useState<{
+    open: boolean;
+    programId: string;
+    docType: EvidenceDocType;
+    fileName: string;
+    fileUrl?: string;
+    fileType?: string;
+    fileSize?: string;
+    uploadedAt?: string;
+  } | null>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | number | null>(null);
   const [uploadDialog, setUploadDialog] = useState<{ open: boolean; programId: string; docType: EvidenceDocType } | null>(null);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
+  const [downloadingEvidenceId, setDownloadingEvidenceId] = useState<string | number | null>(null);
+  const [deleteTargetEvidence, setDeleteTargetEvidence] = useState<{
+    evidenceId: number | string;
+    programId: string;
+    programName: string;
+    docType: EvidenceDocType;
+    fileName: string;
+  } | null>(null);
+  const [isDeletingEvidence, setIsDeletingEvidence] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const dropZoneInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch Add-on Programs via API
+  const fetchPrograms = useCallback(async () => {
+    if (!academicYear) return;
+    setLoading(true);
+    try {
+      const res = await academicRepositoryService.getAddOnPrograms(
+        academicYear,
+        departmentId || 1
+      );
+
+      let rawList: any[] = [];
+      if (Array.isArray(res)) {
+        rawList = res;
+      } else if (res && Array.isArray(res.content)) {
+        rawList = res.content;
+      } else if (res && Array.isArray(res.data)) {
+        rawList = res.data;
+      } else if (res && res.data && Array.isArray(res.data.content)) {
+        rawList = res.data.content;
+      }
+
+      const mapped: AddOnProgramRecord[] = rawList.map((item: any) => ({
+        id: String(item.id || `prog-${Date.now()}`),
+        department: department,
+        year: item.yearOfStudy || item.year || selectedYear,
+        semester: item.semester || selectedSemester,
+        topic: item.topic || '',
+        fromDate: item.fromDate || '',
+        toDate: item.toDate || '',
+        timeFrom: item.timeFrom || '',
+        timeTo: item.timeTo || '',
+        coordinator: item.coordinator || '',
+        duration: item.duration || '',
+        studentsEnrolled: String(item.studentsEnrolled ?? 0),
+        studentsParticipated: String(item.studentsParticipated ?? 0),
+        certificationProvided: item.certificationProvided === true || item.certificationProvided === 'Yes' ? 'Yes' : 'No',
+        certificatesIssued: String(item.certificatesIssued ?? 0),
+      }));
+
+      setPrograms(mapped);
+    } catch (err: any) {
+      console.error('Failed to fetch add-on programs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [academicYear, departmentId, department, selectedYear, selectedSemester]);
+
+  // Fetch Evidence Documents from live API
+  const fetchEvidence = useCallback(async () => {
+    if (!departmentId || !academicYear) return;
+    setEvidenceLoading(true);
+    try {
+      const res = await academicRepositoryService.getEvidenceDocuments(academicYear, departmentId, {
+        sectionName: 'add-on-programs',
+        size: 1000,
+      });
+
+      let items: any[] = [];
+      if (Array.isArray(res)) {
+        items = res;
+      } else if (res && Array.isArray(res.content)) {
+        items = res.content;
+      } else if (res && res.data && Array.isArray(res.data.content)) {
+        items = res.data.content;
+      } else if (res && res.data && Array.isArray(res.data)) {
+        items = res.data;
+      }
+
+      const newMap: Record<string, ProgramEvidenceMap> = {};
+
+      items.forEach((item: any) => {
+        const programId = item.recordId != null ? String(item.recordId) : '';
+        if (!programId) return;
+
+        const docKey = mapServerDocTypeToFrontendKey(item.documentType || item.documentName);
+        if (!docKey) return;
+
+        if (!newMap[programId]) {
+          newMap[programId] = {
+            geoTaggedPhotos: { status: 'not-uploaded' },
+            registeredStudentsList: { status: 'not-uploaded' },
+            attendedStudentsList: { status: 'not-uploaded' },
+          };
+        }
+
+        const uploadedDate = item.uploadedAt || item.createdAt;
+        const formattedDate = uploadedDate
+          ? new Date(uploadedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '';
+
+        newMap[programId][docKey] = {
+          id: item.id,
+          status: 'uploaded',
+          fileName: item.fileName || item.documentName || `${DOC_TYPE_TO_SERVER_NAME[docKey]}.pdf`,
+          uploadedAt: formattedDate,
+          uploadedBy: item.uploadedBy || '',
+          fileSize: item.fileSize,
+          fileType: item.fileType || item.fileName?.split('.').pop() || 'pdf',
+          verificationStatus: item.verificationStatus || 'PENDING',
+          fileUrl: item.fileUrl || item.downloadUrl,
+        };
+      });
+
+      setProgramEvidenceMap(newMap);
+    } catch (err: any) {
+      console.warn('Failed to fetch add-on programs evidence:', err);
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [academicYear, departmentId]);
+
+  useEffect(() => {
+    fetchPrograms();
+    fetchEvidence();
+  }, [fetchPrograms, fetchEvidence]);
 
   // New program form state
   const [newProgram, setNewProgram] = useState({
@@ -261,68 +494,200 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     setSelectedFile(file);
   }, [uploadDialog, validateFile]);
 
-  const handleConfirmUpload = useCallback(() => {
+  // Upload Evidence Document to backend
+  const handleConfirmUpload = useCallback(async () => {
     if (!selectedFile || !uploadDialog) return;
 
     const { programId, docType } = uploadDialog;
-    const now = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    setProgramEvidenceMap((prev) => ({
-      ...prev,
-      [programId]: {
-        ...(prev[programId] || {
-          geoTaggedPhotos: { status: 'not-uploaded' },
-          registeredStudentsList: { status: 'not-uploaded' },
-          attendedStudentsList: { status: 'not-uploaded' },
-        }),
-        [docType]: {
-          status: 'uploaded' as const,
-          fileName: selectedFile.name,
-          uploadedAt: now,
-        },
-      },
-    }));
-
-    setUploadDialog(null);
-    setSelectedFile(null);
+    setIsUploadingEvidence(true);
     setUploadError(null);
-  }, [selectedFile, uploadDialog]);
 
-  const handlePreviewEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
+    try {
+      const serverDocTypeName = DOC_TYPE_TO_SERVER_NAME[docType];
+
+      await academicRepositoryService.uploadEvidenceDocument(
+        departmentId || 1,
+        user?.id || 1,
+        selectedFile,
+        {
+          academicYear,
+          yearOfStudy: selectedYear,
+          semester: selectedSemester,
+          sectionName: 'add-on-programs',
+          recordId: Number(programId),
+          documentType: serverDocTypeName,
+        }
+      );
+
+      await fetchEvidence();
+      setUploadDialog(null);
+      setSelectedFile(null);
+      setUploadError(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('Failed to upload evidence document:', err);
+      setUploadError(err?.response?.data?.message || err?.message || 'Failed to upload evidence document');
+    } finally {
+      setIsUploadingEvidence(false);
+    }
+  }, [selectedFile, uploadDialog, departmentId, user?.id, academicYear, selectedYear, selectedSemester, fetchEvidence]);
+
+  // Preview Evidence Document (fetches blob from API)
+  const handlePreviewEvidence = useCallback(async (programId: string, docType: EvidenceDocType) => {
     const ev = programEvidenceMap[programId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      setPreviewDialog({ open: true, programId, docType, fileName: ev.fileName });
+    if (!ev || ev.status !== 'uploaded' || !ev.fileName) return;
+
+    const ext = ev.fileName.split('.').pop()?.toLowerCase() || ev.fileType?.toLowerCase() || 'pdf';
+    const fileSizeStr = ev.fileSize ? `${Math.round(ev.fileSize / 1024)} KB` : undefined;
+
+    let url = ev.fileUrl;
+    if (!url && ev.id) {
+      setPreviewLoadingId(ev.id);
+      try {
+        const blob = await academicRepositoryService.getEvidenceBlob(ev.id);
+        const mimeType = ext === 'pdf'
+          ? 'application/pdf'
+          : ext === 'png'
+          ? 'image/png'
+          : ext === 'jpg' || ext === 'jpeg'
+          ? 'image/jpeg'
+          : blob.type;
+        const typedBlob = new Blob([blob], { type: mimeType || 'application/octet-stream' });
+        url = URL.createObjectURL(typedBlob);
+
+        setProgramEvidenceMap((prev) => ({
+          ...prev,
+          [programId]: {
+            ...prev[programId],
+            [docType]: {
+              ...prev[programId]?.[docType],
+              fileUrl: url,
+            },
+          },
+        }));
+      } catch (err: any) {
+        console.warn('Could not fetch blob for preview:', err);
+      } finally {
+        setPreviewLoadingId(null);
+      }
+    }
+
+    setPreviewDialog({
+      open: true,
+      programId,
+      docType,
+      fileName: ev.fileName,
+      fileUrl: url,
+      fileType: ext,
+      fileSize: fileSizeStr,
+      uploadedAt: ev.uploadedAt,
+    });
+  }, [programEvidenceMap]);
+
+  // Download Evidence Document from backend
+  const handleDownloadEvidence = useCallback(async (programId: string, docType: EvidenceDocType) => {
+    const ev = programEvidenceMap[programId]?.[docType];
+    if (!ev || ev.status !== 'uploaded') return;
+
+    const fileName = ev.fileName || `${DOC_TYPE_TO_SERVER_NAME[docType]}.pdf`;
+
+    if (ev.id) {
+      setDownloadingEvidenceId(ev.id);
+      try {
+        await academicRepositoryService.downloadEvidenceDocument(ev.id, fileName);
+      } catch (err: any) {
+        console.error('Download evidence failed:', err);
+        if (ev.fileUrl) {
+          window.open(ev.fileUrl, '_blank');
+        } else {
+          alert('Failed to download document');
+        }
+      } finally {
+        setDownloadingEvidenceId(null);
+      }
+    } else if (ev.fileUrl) {
+      window.open(ev.fileUrl, '_blank');
     }
   }, [programEvidenceMap]);
 
-  const handleDownloadEvidence = useCallback((programId: string, docType: EvidenceDocType) => {
-    const ev = programEvidenceMap[programId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      // Simulate download
-      const link = document.createElement('a');
-      link.href = '#';
-      link.download = ev.fileName;
-      link.click();
+  // Delete Evidence Handlers
+  const handleDeleteEvidenceClick = useCallback((program: AddOnProgramRecord, docType: EvidenceDocType) => {
+    const ev = programEvidenceMap[program.id]?.[docType];
+    if (ev && ev.status === 'uploaded' && ev.id) {
+      setDeleteTargetEvidence({
+        evidenceId: ev.id,
+        programId: program.id,
+        programName: program.topic,
+        docType,
+        fileName: ev.fileName || DOC_TYPE_TO_SERVER_NAME[docType],
+      });
     }
   }, [programEvidenceMap]);
+
+  const handleConfirmDeleteEvidence = useCallback(async () => {
+    if (!deleteTargetEvidence) return;
+    setIsDeletingEvidence(true);
+    try {
+      await academicRepositoryService.deleteEvidenceDocument(
+        deleteTargetEvidence.evidenceId,
+        departmentId || 1
+      );
+      await fetchEvidence();
+      setDeleteTargetEvidence(null);
+    } catch (err: any) {
+      console.error('Failed to delete evidence document:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete evidence document');
+    } finally {
+      setIsDeletingEvidence(false);
+    }
+  }, [deleteTargetEvidence, departmentId, fetchEvidence]);
+
+  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
-    const header = 'Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
-    const sampleRows = [
-      `${department},${selectedYear},${selectedSemester},Python for Data Science,2025-01-15,2025-01-20,09:00,12:00,Dr. Anita Sharma,30 Hours,120,115,Yes,110`,
-      `${department},${selectedYear},${selectedSemester},AWS Cloud Practitioner,2025-02-01,2025-02-10,14:00,17:00,Mr. Anil Reddy,40 Hours,80,75,Yes,70`,
-      `${department},${selectedYear},${selectedSemester},Soft Skills & Communication,2025-02-15,2025-02-20,10:00,13:00,Dr. Priya Sharma,20 Hours,150,140,No,0`,
-    ];
-    const csv = [header, ...sampleRows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const currentPrograms = programs.filter(
+      (p) => p.year === selectedYear && p.semester === selectedSemester
+    );
+    const headers = 'Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
+
+    let csvRows: string[] = [];
+    if (currentPrograms.length > 0) {
+      csvRows = currentPrograms.map((p) => {
+        const escape = (str: string) => `"${(str || '').replace(/"/g, '""')}"`;
+        return [
+          escape(p.topic),
+          escape(p.fromDate),
+          escape(p.toDate),
+          escape(p.timeFrom),
+          escape(p.timeTo),
+          escape(p.coordinator),
+          escape(p.duration),
+          p.studentsEnrolled || '0',
+          p.studentsParticipated || '0',
+          p.certificationProvided,
+          p.certificatesIssued || '0',
+        ].join(',');
+      });
+    } else {
+      csvRows.push('"Python for Data Science","2026-01-15","2026-01-20","09:00","12:00","Dr. Anita Sharma","30 Hours",120,115,Yes,110');
+      csvRows.push('"AWS Cloud Practitioner","2026-02-01","2026-02-10","14:00","17:00","Mr. Anil Reddy","40 Hours",80,75,Yes,70');
+    }
+
+    const csvContent = [headers, ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `addon_programs_template_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}.csv`;
+    a.download = `addon_programs_${academicYear}_${selectedYear.replace(/\s+/g, '_')}_${selectedSemester.replace(/\s+/g, '_')}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [department, selectedYear, selectedSemester]);
+  }, [programs, selectedYear, selectedSemester, academicYear]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
@@ -330,10 +695,14 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
       const file = e.target.files?.[0];
       if (!file) return;
 
+      setSelectedCsvFile(file);
+
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
         const lines = text.split(/\r?\n/).filter((line) => line.trim());
+        if (lines.length < 2) return;
+
         const headers = parseCSVLine(lines[0]);
 
         const parsed: AddOnProgramRecord[] = [];
@@ -344,53 +713,58 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           const values = parseCSVLine(lines[i]);
           const row: Record<string, string> = {};
           headers.forEach((h, idx) => {
-            row[h] = values[idx] || '';
+            row[h.trim()] = values[idx]?.trim() || '';
           });
+
+          const getField = (...keys: string[]) => {
+            for (const key of keys) {
+              for (const [k, v] of Object.entries(row)) {
+                if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === key.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+                  return v;
+                }
+              }
+            }
+            return '';
+          };
+
+          const topic = getField('Topic', 'Program Name', 'Course Name', 'ProgramTopic');
+          const fromDate = getField('From Date', 'FromDate', 'Start Date', 'StartDate');
+          const toDate = getField('To Date', 'ToDate', 'End Date', 'EndDate');
+          const timeFrom = getField('Time From', 'TimeFrom', 'StartTime');
+          const timeTo = getField('Time To', 'TimeTo', 'EndTime');
+          const coordinator = getField('Coordinator', 'Instructor', 'Faculty', 'Program Coordinator');
+          const duration = getField('Duration', 'Hours');
+          const studentsEnrolled = getField('Students Enrolled', 'Enrolled', 'StudentsEnrolled') || '0';
+          const studentsParticipated = getField('Students Participated', 'Participated', 'StudentsParticipated') || '0';
+          const certRaw = getField('Certification Provided', 'Certification', 'Cert');
+          const certificationProvided: 'Yes' | 'No' = certRaw.toLowerCase() === 'yes' || certRaw.toLowerCase() === 'true' ? 'Yes' : 'No';
+          const certificatesIssued = getField('Certificates Issued', 'Issued', 'CertificatesIssued') || '0';
+          const yearVal = getField('Year', 'Year of Study', 'YearOfStudy') || selectedYear;
+          const semVal = getField('Semester', 'Sem') || selectedSemester;
 
           const errors: string[] = [];
 
-          // Validation
-          if (row['Department'] && row['Department'] !== department) {
-            errors.push(`Department "${row['Department']}" does not match "${department}"`);
-          }
-          if (!row['Topic']) {
-            errors.push('Topic is mandatory');
-          }
-          if (!row['From Date']) {
-            errors.push('From Date is mandatory');
-          }
-          if (!row['To Date']) {
-            errors.push('To Date is mandatory');
-          }
-          if (!row['Coordinator']) {
-            errors.push('Coordinator is mandatory');
-          }
-          if (row['Certification Provided'] && !['Yes', 'No'].includes(row['Certification Provided'])) {
-            errors.push('Certification Provided must be Yes or No');
-          }
-
-          const yearVal = row['Year'] || selectedYear;
-          const semVal = row['Semester'] || selectedSemester;
-          if (!YEARS_OF_STUDY.includes(yearVal)) {
-            errors.push(`Year "${yearVal}" is not valid`);
-          }
+          if (!topic) errors.push('Topic is mandatory');
+          if (!fromDate) errors.push('From Date is mandatory');
+          if (!toDate) errors.push('To Date is mandatory');
+          if (!coordinator) errors.push('Coordinator is mandatory');
 
           const programRecord: AddOnProgramRecord = {
-            id: `upload-${i}`,
-            department: row['Department'] || department,
+            id: `upload-${Date.now()}-${i}`,
+            department,
             year: yearVal,
             semester: semVal,
-            topic: row['Topic'] || '',
-            fromDate: row['From Date'] || '',
-            toDate: row['To Date'] || '',
-            timeFrom: row['Time From'] || '',
-            timeTo: row['Time To'] || '',
-            coordinator: row['Coordinator'] || '',
-            duration: row['Duration'] || '',
-            studentsEnrolled: row['Students Enrolled'] || '0',
-            studentsParticipated: row['Students Participated'] || '0',
-            certificationProvided: (row['Certification Provided'] === 'Yes' ? 'Yes' : 'No'),
-            certificatesIssued: row['Certificates Issued'] || '0',
+            topic,
+            fromDate,
+            toDate,
+            timeFrom,
+            timeTo,
+            coordinator,
+            duration,
+            studentsEnrolled,
+            studentsParticipated,
+            certificationProvided,
+            certificatesIssued,
             validationStatus: errors.length > 0 ? 'invalid' : 'valid',
             errors: errors.length > 0 ? errors : undefined,
           };
@@ -414,63 +788,118 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
     [department, selectedYear, selectedSemester]
   );
 
-  // Import uploaded programs (only valid ones)
-  const handleImportUploaded = useCallback(() => {
+  // Import uploaded programs via live API
+  const handleImportUploaded = useCallback(async () => {
     const validPrograms = uploadPreview.filter((p) => p.validationStatus === 'valid');
-    const newPrograms = validPrograms.map((p, idx) => ({
-      ...p,
-      id: `program-${Date.now()}-${idx}`,
-      validationStatus: undefined as AddOnProgramRecord['validationStatus'],
-      errors: undefined,
-    }));
-    setPrograms((prev) => [...prev, ...newPrograms]);
-    // Auto-switch to the year/semester of the first imported record so user can see results
-    if (newPrograms.length > 0) {
-      const firstProgram = newPrograms[0];
-      if (firstProgram.year && YEARS_OF_STUDY.includes(firstProgram.year)) {
-        setSelectedYear(firstProgram.year);
+    if (validPrograms.length === 0) return;
+
+    setIsImporting(true);
+    try {
+      const targetYear = validPrograms[0]?.year || selectedYear;
+      const targetSem = validPrograms[0]?.semester || selectedSemester;
+
+      const programsPayload = validPrograms.map((p) => ({
+        academicYear,
+        yearOfStudy: p.year || targetYear,
+        semester: p.semester || targetSem,
+        topic: p.topic,
+        coordinator: p.coordinator,
+        fromDate: formatDateToISO(p.fromDate) || undefined,
+        toDate: formatDateToISO(p.toDate) || undefined,
+        timeFrom: formatTimeTo24h(p.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(p.timeTo) || undefined,
+        duration: p.duration || undefined,
+        studentsEnrolled: p.studentsEnrolled ? parseInt(p.studentsEnrolled) : 0,
+        studentsParticipated: p.studentsParticipated ? parseInt(p.studentsParticipated) : 0,
+        certificationProvided: p.certificationProvided === 'Yes',
+        certificatesIssued: p.certificatesIssued ? parseInt(p.certificatesIssued) : 0,
+      }));
+
+      await academicRepositoryService.bulkSaveAddOnPrograms(departmentId || 1, {
+        academicYear,
+        yearOfStudy: targetYear,
+        semester: targetSem,
+        programs: programsPayload,
+      });
+
+      if (targetYear && YEARS_OF_STUDY.includes(targetYear)) {
+        setSelectedYear(targetYear);
       }
-      if (firstProgram.semester) {
-        setSelectedSemester(firstProgram.semester);
+      if (targetSem) {
+        setSelectedSemester(targetSem);
       }
+
+      await fetchPrograms();
+      setShowUploadDialog(false);
+      setUploadPreview([]);
+      setUploadStats(null);
+      setSelectedCsvFile(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('Failed to import add-on programs:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to import add-on programs');
+    } finally {
+      setIsImporting(false);
     }
-    setShowUploadDialog(false);
-    setUploadPreview([]);
-    setUploadStats(null);
-  }, [uploadPreview]);
+  }, [uploadPreview, academicYear, departmentId, selectedYear, selectedSemester, fetchPrograms]);
 
-  // Add program manually
-  const handleAddProgram = useCallback(() => {
-    if (!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator) return;
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteTargetProgram, setDeleteTargetProgram] = useState<AddOnProgramRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const program: AddOnProgramRecord = {
-      id: editingProgram ? editingProgram.id : `program-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      topic: newProgram.topic,
-      fromDate: newProgram.fromDate,
-      toDate: newProgram.toDate,
-      timeFrom: newProgram.timeFrom,
-      timeTo: newProgram.timeTo,
-      coordinator: newProgram.coordinator,
-      duration: newProgram.duration,
-      studentsEnrolled: newProgram.studentsEnrolled || '0',
-      studentsParticipated: newProgram.studentsParticipated || '0',
-      certificationProvided: newProgram.certificationProvided,
-      certificatesIssued: newProgram.certificatesIssued || '0',
-    };
+  // Add/Edit program handlers via live API
+  const handleAddProgram = useCallback(async () => {
+    if (!newProgram.topic || !newProgram.coordinator) return;
 
-    if (editingProgram) {
-      setPrograms((prev) => prev.map((p) => (p.id === editingProgram.id ? program : p)));
-    } else {
-      setPrograms((prev) => [...prev, program]);
+    setSubmitting(true);
+    try {
+      const payload = {
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        topic: newProgram.topic,
+        coordinator: newProgram.coordinator,
+        fromDate: formatDateToISO(newProgram.fromDate) || undefined,
+        toDate: formatDateToISO(newProgram.toDate) || undefined,
+        timeFrom: formatTimeTo24h(newProgram.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(newProgram.timeTo) || undefined,
+        duration: newProgram.duration || undefined,
+        studentsEnrolled: newProgram.studentsEnrolled ? parseInt(newProgram.studentsEnrolled) : 0,
+        studentsParticipated: newProgram.studentsParticipated ? parseInt(newProgram.studentsParticipated) : 0,
+        certificationProvided: newProgram.certificationProvided === 'Yes',
+        certificatesIssued: newProgram.certificatesIssued ? parseInt(newProgram.certificatesIssued) : 0,
+      };
+
+      if (editingProgram && editingProgram.id) {
+        await academicRepositoryService.updateAddOnProgram(editingProgram.id, departmentId || 1, payload);
+      } else {
+        await academicRepositoryService.createAddOnProgram(departmentId || 1, payload);
+      }
+
+      await fetchPrograms();
+      setNewProgram({
+        topic: '',
+        fromDate: '',
+        toDate: '',
+        timeFrom: '',
+        timeTo: '',
+        coordinator: '',
+        duration: '',
+        studentsEnrolled: '',
+        studentsParticipated: '',
+        certificationProvided: 'Yes',
+        certificatesIssued: '',
+      });
+      setShowAddDialog(false);
+      setEditingProgram(null);
+    } catch (err: any) {
+      console.error('Failed to save add-on program:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to save add-on program');
+    } finally {
+      setSubmitting(false);
     }
-
-    setNewProgram({ topic: '', fromDate: '', toDate: '', timeFrom: '', timeTo: '', coordinator: '', duration: '', studentsEnrolled: '', studentsParticipated: '', certificationProvided: 'Yes', certificatesIssued: '' });
-    setShowAddDialog(false);
-    setEditingProgram(null);
-  }, [newProgram, department, selectedYear, selectedSemester, editingProgram]);
+  }, [newProgram, editingProgram, departmentId, academicYear, selectedYear, selectedSemester, fetchPrograms]);
 
   // Edit program
   const handleEditProgram = useCallback((program: AddOnProgramRecord) => {
@@ -492,15 +921,67 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
   }, []);
 
   // Delete program
-  const handleDeleteProgram = useCallback((id: string) => {
-    setPrograms((prev) => prev.filter((p) => p.id !== id));
+  const handleDeleteProgram = useCallback((program: AddOnProgramRecord) => {
+    setDeleteTargetProgram(program);
   }, []);
 
+  // Confirm delete handler via live API
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTargetProgram) return;
+    setIsDeleting(true);
+    try {
+      await academicRepositoryService.deleteAddOnProgram(deleteTargetProgram.id, departmentId || 1);
+      await fetchPrograms();
+      setDeleteTargetProgram(null);
+    } catch (err: any) {
+      console.error('Failed to delete add-on program:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete add-on program');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteTargetProgram, departmentId, fetchPrograms]);
+
   // Save Programs
-  const handleSavePrograms = useCallback(() => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-  }, []);
+  const handleSavePrograms = useCallback(async () => {
+    setIsBulkSaving(true);
+    try {
+      const forCurrentYearSem = programs.filter(
+        (p) => p.year === selectedYear && p.semester === selectedSemester
+      );
+      const programsPayload = forCurrentYearSem.map((p) => ({
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        topic: p.topic,
+        coordinator: p.coordinator,
+        fromDate: formatDateToISO(p.fromDate) || undefined,
+        toDate: formatDateToISO(p.toDate) || undefined,
+        timeFrom: formatTimeTo24h(p.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(p.timeTo) || undefined,
+        duration: p.duration || undefined,
+        studentsEnrolled: p.studentsEnrolled ? parseInt(p.studentsEnrolled) : 0,
+        studentsParticipated: p.studentsParticipated ? parseInt(p.studentsParticipated) : 0,
+        certificationProvided: p.certificationProvided === 'Yes',
+        certificatesIssued: p.certificatesIssued ? parseInt(p.certificatesIssued) : 0,
+      }));
+
+      await academicRepositoryService.bulkSaveAddOnPrograms(departmentId || 1, {
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        programs: programsPayload,
+      });
+
+      await fetchPrograms();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('Failed to bulk save add-on programs:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to save add-on programs');
+    } finally {
+      setIsBulkSaving(false);
+    }
+  }, [programs, selectedYear, selectedSemester, academicYear, departmentId, fetchPrograms]);
 
   const totalProgramsForYearSem = programs.filter(
     (p) => p.year === selectedYear && p.semester === selectedSemester
@@ -606,11 +1087,20 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               <Button
                 size="sm"
                 onClick={handleSavePrograms}
-                disabled={totalProgramsForYearSem === 0}
+                disabled={totalProgramsForYearSem === 0 || isBulkSaving}
                 className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
               >
-                <Save className="h-3.5 w-3.5" />
-                Save Programs
+                {isBulkSaving ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    Save Programs
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -676,7 +1166,12 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {filteredPrograms.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <RefreshCw className="h-6 w-6 animate-spin text-emerald-500 mb-3" />
+              <p className="text-sm text-muted-foreground font-medium">Loading add-on programs...</p>
+            </div>
+          ) : filteredPrograms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Award className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground font-medium">No programs added yet</p>
@@ -728,7 +1223,7 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditProgram(program)}>
                             <Edit2 className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteProgram(program.id)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteProgram(program)}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -821,17 +1316,25 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                                 variant="outline"
                                 size="sm"
                                 className="h-7 px-2 text-[10px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                disabled={previewLoadingId === item.data.id}
                                 onClick={() => handlePreviewEvidence(program.id, item.key)}
                               >
-                                <Eye className="h-3 w-3" /> Preview
+                                {previewLoadingId === item.data.id
+                                  ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                  : <Eye className="h-3 w-3" />}
+                                {previewLoadingId === item.data.id ? 'Loading...' : 'Preview'}
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="h-7 px-2 text-[10px] gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                disabled={downloadingEvidenceId === item.data.id}
                                 onClick={() => handleDownloadEvidence(program.id, item.key)}
                               >
-                                <DownloadCloud className="h-3 w-3" /> Download
+                                {downloadingEvidenceId === item.data.id
+                                  ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                  : <DownloadCloud className="h-3 w-3" />}
+                                {downloadingEvidenceId === item.data.id ? 'Downloading...' : 'Download'}
                               </Button>
                               <Button
                                 variant="outline"
@@ -840,6 +1343,14 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                                 onClick={() => handleUploadEvidence(program.id, item.key)}
                               >
                                 <RefreshCw className="h-3 w-3" /> Re-upload
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => handleDeleteEvidenceClick(program, item.key)}
+                              >
+                                <Trash2 className="h-3 w-3" /> Delete
                               </Button>
                             </>
                           ) : (
@@ -886,11 +1397,11 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
       {/* Add/Edit Program Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setEditingProgram(null); } }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-6 overflow-hidden">
+          <DialogHeader className="shrink-0 pb-2">
             <DialogTitle className="text-base">{editingProgram ? 'Edit Program' : 'Add Program'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2 min-h-0">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Department</Label>
@@ -1034,16 +1545,16 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingProgram(null); }}>
+          <DialogFooter className="shrink-0 pt-3 border-t mt-2">
+            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingProgram(null); }} disabled={submitting}>
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleAddProgram}
-              disabled={!newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator}
+              disabled={submitting || !newProgram.topic || !newProgram.fromDate || !newProgram.toDate || !newProgram.coordinator}
             >
-              {editingProgram ? 'Update Program' : 'Add Program'}
+              {submitting ? 'Saving...' : editingProgram ? 'Update Program' : 'Add Program'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1051,17 +1562,17 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-5xl max-h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col p-6 overflow-hidden">
+          <DialogHeader className="shrink-0 pb-2">
             <DialogTitle className="text-base flex items-center gap-2">
               <Upload className="h-4 w-4" />
               CSV Upload Preview
             </DialogTitle>
           </DialogHeader>
           {uploadStats && (
-            <div className="space-y-4">
+            <div className="space-y-3 flex-1 flex flex-col min-h-0">
               {/* Upload Stats */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 shrink-0">
                 <Card className="flex-1 border-border/50">
                   <CardContent className="p-3 text-center">
                     <p className="text-lg font-bold">{uploadStats.total}</p>
@@ -1083,26 +1594,26 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               </div>
 
               {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shrink-0">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
+                  <p className="text-xs text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
                 </div>
               )}
 
               {/* Preview Table */}
-              <ScrollArea className="max-h-[400px] border rounded-lg">
-                <Table>
-                  <TableHeader>
+              <div className="flex-1 overflow-x-auto overflow-y-auto border rounded-lg min-h-0 max-h-[45vh]">
+                <Table className="min-w-[850px]">
+                  <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-sm">
                     <TableRow className="bg-muted/30">
                       <TableHead className="text-xs font-semibold w-8">#</TableHead>
-                      <TableHead className="text-xs font-semibold">Topic</TableHead>
-                      <TableHead className="text-xs font-semibold">From</TableHead>
-                      <TableHead className="text-xs font-semibold">To</TableHead>
-                      <TableHead className="text-xs font-semibold">Coordinator</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Duration</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Enrolled</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Cert.</TableHead>
-                      <TableHead className="text-xs font-semibold text-center">Valid</TableHead>
+                      <TableHead className="text-xs font-semibold whitespace-nowrap">Topic</TableHead>
+                      <TableHead className="text-xs font-semibold whitespace-nowrap">From</TableHead>
+                      <TableHead className="text-xs font-semibold whitespace-nowrap">To</TableHead>
+                      <TableHead className="text-xs font-semibold whitespace-nowrap">Coordinator</TableHead>
+                      <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Duration</TableHead>
+                      <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Enrolled</TableHead>
+                      <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Cert.</TableHead>
+                      <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Valid</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1115,12 +1626,12 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                       >
                         <TableCell className="text-xs">{idx + 1}</TableCell>
                         <TableCell className="text-xs font-medium max-w-[150px] truncate">{program.topic}</TableCell>
-                        <TableCell className="text-xs">{program.fromDate}</TableCell>
-                        <TableCell className="text-xs">{program.toDate}</TableCell>
-                        <TableCell className="text-xs">{program.coordinator}</TableCell>
-                        <TableCell className="text-xs text-center">{program.duration}</TableCell>
-                        <TableCell className="text-xs text-center">{program.studentsEnrolled}</TableCell>
-                        <TableCell className="text-xs text-center">{program.certificationProvided}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{program.fromDate}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{program.toDate}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{program.coordinator}</TableCell>
+                        <TableCell className="text-xs text-center whitespace-nowrap">{program.duration}</TableCell>
+                        <TableCell className="text-xs text-center whitespace-nowrap">{program.studentsEnrolled}</TableCell>
+                        <TableCell className="text-xs text-center whitespace-nowrap">{program.certificationProvided}</TableCell>
                         <TableCell className="text-center">
                           {program.validationStatus === 'valid' ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
@@ -1137,13 +1648,13 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
                     ))}
                   </TableBody>
                 </Table>
-              </ScrollArea>
+              </div>
 
               {/* Validation Errors Summary */}
               {uploadStats.invalid > 0 && (
-                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 shrink-0">
                   <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
-                  <div className="space-y-1">
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
                     {uploadPreview
                       .filter((p) => p.validationStatus === 'invalid')
                       .map((p, idx) => (
@@ -1159,16 +1670,24 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               )}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>
+          <DialogFooter className="mt-4 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)} disabled={isImporting}>
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleImportUploaded}
-              disabled={!uploadStats || uploadStats.valid === 0}
+              disabled={!uploadStats || uploadStats.valid === 0 || isImporting}
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
             >
-              Import {uploadStats?.valid || 0} Valid Records
+              {isImporting ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                `Import ${uploadStats?.valid || 0} Valid Records`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1282,11 +1801,15 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
               </Button>
               <Button
                 size="sm"
-                disabled={!selectedFile || !!uploadError}
+                disabled={!selectedFile || !!uploadError || isUploadingEvidence}
                 onClick={handleConfirmUpload}
                 className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
               >
-                <Upload className="h-3.5 w-3.5" /> Upload File
+                {isUploadingEvidence ? (
+                  <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Uploading...</>
+                ) : (
+                  <><Upload className="h-3.5 w-3.5" /> Upload File</>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1296,30 +1819,60 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
       {/* Evidence Preview Dialog */}
       {previewDialog && (
         <Dialog open={previewDialog.open} onOpenChange={(open) => { if (!open) setPreviewDialog(null); }}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-sm font-semibold">Document Preview</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="rounded-lg border p-6 bg-muted/20 flex flex-col items-center justify-center gap-3">
-                <FileText className="h-12 w-12 text-emerald-600/60" />
-                <p className="text-sm font-medium">{previewDialog.fileName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {previewDialog.docType === 'geoTaggedPhotos' && 'Geo-tagged Photos of Session'}
-                  {previewDialog.docType === 'registeredStudentsList' && 'Registered Students List'}
-                  {previewDialog.docType === 'attendedStudentsList' && 'Attended Students List'}
-                </p>
-                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                  Uploaded Successfully
-                </Badge>
-              </div>
+              {/* Render actual file preview */}
+              {previewDialog.fileUrl ? (
+                previewDialog.fileType === 'pdf' ? (
+                  <iframe
+                    src={previewDialog.fileUrl}
+                    className="w-full rounded-lg border"
+                    style={{ height: '480px' }}
+                    title={previewDialog.fileName}
+                  />
+                ) : (['png', 'jpg', 'jpeg', 'webp', 'heic'].includes(previewDialog.fileType || '')) ? (
+                  <img
+                    src={previewDialog.fileUrl}
+                    alt={previewDialog.fileName}
+                    className="w-full rounded-lg border object-contain max-h-[480px]"
+                  />
+                ) : (
+                  <div className="rounded-lg border p-6 bg-muted/20 flex flex-col items-center justify-center gap-3">
+                    <FileText className="h-12 w-12 text-emerald-600/60" />
+                    <p className="text-sm font-medium">{previewDialog.fileName}</p>
+                    <p className="text-xs text-muted-foreground">Preview not available. Download to view.</p>
+                  </div>
+                )
+              ) : (
+                <div className="rounded-lg border p-6 bg-muted/20 flex flex-col items-center justify-center gap-3">
+                  <FileText className="h-12 w-12 text-emerald-600/60" />
+                  <p className="text-sm font-medium">{previewDialog.fileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {previewDialog.docType === 'geoTaggedPhotos' && 'Geo-tagged Photos of Session'}
+                    {previewDialog.docType === 'registeredStudentsList' && 'Registered Students List'}
+                    {previewDialog.docType === 'attendedStudentsList' && 'Attended Students List'}
+                  </p>
+                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                    Uploaded Successfully
+                  </Badge>
+                </div>
+              )}
+              {/* File info row */}
+              {(previewDialog.fileSize || previewDialog.uploadedAt) && (
+                <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+                  {previewDialog.fileSize && <span>Size: {previewDialog.fileSize}</span>}
+                  {previewDialog.uploadedAt && <span>Uploaded: {previewDialog.uploadedAt}</span>}
+                </div>
+              )}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPreviewDialog(null)}>
                   Close
                 </Button>
                 <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" onClick={() => {
                   handleDownloadEvidence(previewDialog.programId, previewDialog.docType);
-                  setPreviewDialog(null);
                 }}>
                   <DownloadCloud className="h-3.5 w-3.5" /> Download
                 </Button>
@@ -1328,6 +1881,87 @@ export const AddOnProgramsModule = ({ department, academicYear }: AddOnProgramsM
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Evidence Confirmation Dialog */}
+      <AlertDialog open={!!deleteTargetEvidence} onOpenChange={(open) => !open && setDeleteTargetEvidence(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 mt-0.5">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="space-y-1">
+                <AlertDialogTitle className="text-base font-semibold">
+                  Delete Evidence Document
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground">
+                  Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTargetEvidence?.fileName}"</span> from <span className="font-semibold text-foreground">{deleteTargetEvidence?.programName}</span>? This cannot be undone.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeletingEvidence} onClick={() => setDeleteTargetEvidence(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeletingEvidence}
+              onClick={handleConfirmDeleteEvidence}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
+            >
+              {isDeletingEvidence ? (
+                <><Trash2 className="h-3.5 w-3.5 animate-spin" /> Deleting...</>
+              ) : (
+                'Delete Document'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={!!deleteTargetProgram} onOpenChange={(open) => !open && setDeleteTargetProgram(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 mt-0.5">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="space-y-1">
+                <AlertDialogTitle className="text-base font-semibold">
+                  Delete Add-on Program
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground">
+                  Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTargetProgram?.topic}"</span>? This program will be permanently removed.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeleting} onClick={() => setDeleteTargetProgram(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Trash2 className="h-3.5 w-3.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Program'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

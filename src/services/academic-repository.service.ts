@@ -131,6 +131,28 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/academic-calendar/bulk?${query.toString()}`, data);
   }
 
+  async uploadCalendarCsv(
+    departmentId: number,
+    file: File,
+    academicYear: string,
+    yearOfStudy: string,
+    semester: string
+  ): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('academicYear', academicYear);
+    formData.append('yearOfStudy', yearOfStudy);
+    formData.append('semester', semester);
+
+    const query = new URLSearchParams();
+    query.set('departmentId', String(departmentId));
+
+    return apiService.post<any>(
+      `${this.baseUrl}/academic-calendar/upload-csv?${query.toString()}`,
+      formData
+    );
+  }
+
   // --- Value Added Courses APIs ---
 
   async getValueAddedCourses(academicYear: string, departmentId: number): Promise<any> {
@@ -164,6 +186,28 @@ class AcademicRepositoryService {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.delete<any>(`${this.baseUrl}/value-added-courses/${id}?${query.toString()}`);
+  }
+
+  async uploadValueAddedCoursesCsv(
+    departmentId: number,
+    file: File,
+    academicYear: string,
+    yearOfStudy: string,
+    semester: string
+  ): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('academicYear', academicYear);
+    formData.append('yearOfStudy', yearOfStudy);
+    formData.append('semester', semester);
+
+    const query = new URLSearchParams();
+    query.set('departmentId', String(departmentId));
+
+    return apiService.post<any>(
+      `${this.baseUrl}/value-added-courses/upload-csv?${query.toString()}`,
+      formData
+    );
   }
 
   async bulkSaveValueAddedCourses(
@@ -208,6 +252,30 @@ class AcademicRepositoryService {
     const query = new URLSearchParams();
     query.set('departmentId', String(departmentId));
     return apiService.delete<any>(`${this.baseUrl}/timetable/${id}?${query.toString()}`);
+  }
+
+  async uploadTimetableCsv(
+    departmentId: number,
+    file: File,
+    academicYear: string,
+    yearOfStudy: string,
+    semester: string,
+    section: string
+  ): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('academicYear', academicYear);
+    formData.append('yearOfStudy', yearOfStudy);
+    formData.append('semester', semester);
+    formData.append('section', section);
+
+    const query = new URLSearchParams();
+    query.set('departmentId', String(departmentId));
+
+    return apiService.post<any>(
+      `${this.baseUrl}/timetable/upload-csv?${query.toString()}`,
+      formData
+    );
   }
 
   async bulkSaveTimetable(
@@ -257,6 +325,28 @@ class AcademicRepositoryService {
     return apiService.delete<any>(`${this.baseUrl}/addon-programs/${id}?${query.toString()}`);
   }
 
+  async uploadAddonProgramsCsv(
+    departmentId: number,
+    file: File,
+    academicYear: string,
+    yearOfStudy: string,
+    semester: string
+  ): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('academicYear', academicYear);
+    formData.append('yearOfStudy', yearOfStudy);
+    formData.append('semester', semester);
+
+    const query = new URLSearchParams();
+    query.set('departmentId', String(departmentId));
+
+    return apiService.post<any>(
+      `${this.baseUrl}/addon-programs/upload-csv?${query.toString()}`,
+      formData
+    );
+  }
+
   async bulkSaveAddOnPrograms(
     departmentId: number,
     data: { academicYear: string; yearOfStudy: string; semester: string; programs: any[] }
@@ -303,8 +393,12 @@ class AcademicRepositoryService {
     return apiService.post<any>(`${this.baseUrl}/evidence/upload?${query.toString()}`, formData);
   }
 
-  async downloadEvidenceDocument(id: number | string): Promise<any> {
-    return apiService.get<any>(`${this.baseUrl}/evidence/${id}/download`);
+  async downloadEvidenceDocument(id: number | string, filename?: string): Promise<void> {
+    return apiService.download(`${this.baseUrl}/evidence/${id}/download`, filename);
+  }
+
+  async getEvidenceBlob(id: number | string): Promise<Blob> {
+    return apiService.getBlob(`${this.baseUrl}/evidence/${id}/download`);
   }
 
   async deleteEvidenceDocument(id: number | string, departmentId: number): Promise<any> {

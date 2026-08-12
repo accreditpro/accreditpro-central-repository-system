@@ -1,6 +1,11 @@
 Course Name,From Date,To Date,Time From,Time To,Course Instructor,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued
-Advanced Python Programming,2025-08-01,2025-08-30,14:00,16:00,Dr. Alan Turing,30 hrs,60,55,Yes,55
-Full Stack Web Development,2025-09-05,2025-10-15,10:00,13:00,Prof. Grace Hopper,40 hrs,120,110,Yes,110
-Introduction to Machine Learning,2025-11-01,2025-12-10,09:00,11:00,Dr. Geoffrey Hinton,35 hrs,80,75,Yes,75
-Cybersecurity Fundamentals,2026-01-15,2026-02-28,15:00,17:00,Alice Smith,45 hrs,50,48,Yes,48
-Cloud Architecture with AWS,2026-03-01,2026-04-10,11:00,13:00,Bob Jones,30 hrs,90,85,Yes,85
+Advanced SQL & Database Optimization,2026-12-01,2026-12-15,09:00 AM,11:00 AM,Dr. Verma,30 hrs,100,95,Yes,90
+Financial Market Regulations,2027-01-10,2027-02-10,03:00 PM,05:00 PM,Prof. Iyer,40 hrs,60,58,Yes,58
+Introduction to UI/UX Design,2027-01-15,2027-01-30,11:00 AM,01:00 PM,Ms. Kapoor,30 hrs,150,130,Yes,125
+Cloud Native Architecture,2027-02-05,2027-03-05,10:00 AM,12:00 PM,Dr. Singh,45 hrs,90,85,Yes,82
+Blockchain and Smart Contracts,2027-02-15,2027-03-15,02:00 PM,04:00 PM,Mr. Kumar,40 hrs,75,60,Yes,55
+Cybersecurity Basics,2027-03-01,2027-03-10,09:00 AM,12:00 PM,Prof. Das,30 hrs,200,180,No,0
+Automated Code Review Techniques,2027-03-15,2027-03-30,04:00 PM,06:00 PM,Dr. Menon,30 hrs,50,48,Yes,48
+Frontend Performance with React,2027-04-01,2027-04-20,01:00 PM,03:00 PM,Mr. Joshi,35 hrs,110,100,Yes,95
+Monorepo Management with Bun & pnpm,2027-04-10,2027-04-25,10:00 AM,12:00 PM,Dr. Ahuja,30 hrs,40,35,Yes,35
+Artificial Intelligence in Education,2027-05-01,2027-05-15,02:00 PM,05:00 PM,Prof. Nair,45 hrs,130,125,Yes,120

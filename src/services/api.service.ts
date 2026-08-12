@@ -178,6 +178,24 @@ class ApiService {
     document.body.removeChild(anchor);
     window.URL.revokeObjectURL(blobUrl);
   }
+
+  /**
+   * Fetch a resource as a Blob (useful for in-browser preview / ObjectURLs).
+   */
+  async getBlob(url: string, params?: Record<string, any>): Promise<Blob> {
+    const response = await this.instance.get(url, { responseType: 'blob', params });
+    const blob = response.data;
+    if (blob && blob.type === 'application/json') {
+      try {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Error fetching document preview');
+      } catch (e) {
+        throw new Error('Failed to fetch document preview');
+      }
+    }
+    return blob;
+  }
 }
 
 export const apiService = new ApiService();

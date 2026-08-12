@@ -17,10 +17,64 @@ class DashboardService {
    */
   async getDashboard(params: DashboardQueryParams): Promise<DashboardData> {
     const query = new URLSearchParams();
-    query.set('academicYear', params.academicYear);
-    query.set('departmentId', String(params.departmentId));
+    if (params.academicYear) query.set('academicYear', params.academicYear);
+    if (params.departmentId) query.set('departmentId', String(params.departmentId));
 
-    return apiService.get<DashboardData>(`${this.baseUrl}?${query.toString()}`);
+    const res = await apiService.get<any>(`${this.baseUrl}?${query.toString()}`);
+    return (res?.data ?? res) as DashboardData;
+  }
+
+  /**
+   * GET /api/v1/department-coordinator/dashboard/complete
+   */
+  async getCompleteDashboard(params: DashboardQueryParams): Promise<DashboardData> {
+    const query = new URLSearchParams();
+    if (params.academicYear) query.set('academicYear', params.academicYear);
+    if (params.departmentId) query.set('departmentId', String(params.departmentId));
+
+    const res = await apiService.get<any>(`${this.baseUrl}/complete?${query.toString()}`);
+    return (res?.data ?? res) as DashboardData;
+  }
+
+  /**
+   * GET /api/v1/department-coordinator/dashboard/metrics/kpi
+   */
+  async getKPISummary(params: DashboardQueryParams): Promise<any> {
+    const query = new URLSearchParams();
+    if (params.academicYear) query.set('academicYear', params.academicYear);
+    if (params.departmentId) query.set('departmentId', String(params.departmentId));
+
+    return apiService.get<any>(`${this.baseUrl}/metrics/kpi?${query.toString()}`);
+  }
+
+  /**
+   * GET /api/v1/department-coordinator/dashboard/metrics/health
+   */
+  async getRepositoryHealthMetrics(params: DashboardQueryParams): Promise<any> {
+    const query = new URLSearchParams();
+    if (params.academicYear) query.set('academicYear', params.academicYear);
+    if (params.departmentId) query.set('departmentId', String(params.departmentId));
+
+    return apiService.get<any>(`${this.baseUrl}/metrics/health?${query.toString()}`);
+  }
+
+  /**
+   * GET /api/v1/department-coordinator/master-data/academic-years
+   */
+  async getAcademicYears(): Promise<string[]> {
+    const res = await apiService.get<any>('/v1/department-coordinator/master-data/academic-years');
+    const data = res?.data ?? res;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.academicYears)) return data.academicYears;
+    return [];
+  }
+
+  /**
+   * GET /api/v1/department-coordinator/master-data/department-info
+   */
+  async getDepartmentInfo(departmentId: number | string): Promise<any> {
+    const res = await apiService.get<any>(`/v1/department-coordinator/master-data/department-info?departmentId=${departmentId}`);
+    return res?.data ?? res;
   }
 }
 

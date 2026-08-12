@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
@@ -21,6 +22,10 @@ import { StudentRepositoryModule } from './StudentRepositoryModule';
 import { StudentDevOutcomesModule } from './StudentDevOutcomesModule';
 import { DepartmentInfrastructureModule } from './DepartmentInfrastructureModule';
 import { ResearchModule } from './ResearchModule';
+import {
+  academicRepositoryService,
+  AcademicRepositorySummary,
+} from '@/services/academic-repository.service';
 import {
   GraduationCap,
   Users,
@@ -123,17 +128,73 @@ interface RepositoryWorkspaceProps {
   config: RepositoryModuleConfig;
   initialTabIndex?: number;
   academicYear?: string;
+  departmentId?: number;
+  departmentName?: string;
 }
 
-export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: RepositoryWorkspaceProps) => {
+export const RepositoryWorkspace = ({
+  config,
+  initialTabIndex,
+  academicYear = '2025-26',
+  departmentId = 1,
+  departmentName,
+}: RepositoryWorkspaceProps) => {
+  const currentDepartment = departmentName || departmentInfo.department;
   const [activeTab, setActiveTab] = useState(config.tabs[initialTabIndex ?? 0]?.id || '');
-  const metrics = repositoryHealth[config.id];
   const activeClasses = getModuleTabActiveClasses(config.id);
+
+  // Live summary for Academic Repository score cards
+  const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (config.id === 'academic') {
+      setLoadingMetrics(true);
+      academicRepositoryService
+        .getDashboardSummary(academicYear, departmentId)
+        .then((res) => {
+          if (isMounted && res) {
+            setAcademicSummary(res);
+          }
+        })
+        .catch((err) => {
+          console.warn('Live academic summary fetch error:', err);
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingMetrics(false);
+          }
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [config.id, academicYear, departmentId]);
 
   // Reset active tab when config changes (e.g., switching between repositories)
   useEffect(() => {
     setActiveTab(config.tabs[initialTabIndex ?? 0]?.id || '');
   }, [config.id, initialTabIndex]);
+
+  // Derive score cards metrics
+  const scoreMetrics = useMemo(() => {
+    if (config.id === 'academic') {
+      return {
+        dataCompleteness: academicSummary?.dataCompleteness ?? 0,
+        evidenceCompleteness: academicSummary?.evidenceScore ?? 0,
+        verificationPercent: academicSummary?.verificationScore ?? 0,
+        readinessScore: academicSummary?.readinessScore ?? 0,
+      };
+    }
+    const fallback = repositoryHealth[config.id] || {
+      dataCompleteness: 0,
+      evidenceCompleteness: 0,
+      verificationPercent: 0,
+      readinessScore: 0,
+    };
+    return fallback;
+  }, [config.id, academicSummary]);
 
   // Render Student Repository with its own dedicated module (with Department/Year/Semester selectors)
   if (config.id === 'student') {
@@ -173,10 +234,10 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
         {/* Score Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
-            { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
-            { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
-            { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
+            { label: 'Data Completeness', value: scoreMetrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
+            { label: 'Evidence Score', value: scoreMetrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
+            { label: 'Verification Score', value: scoreMetrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
+            { label: 'Readiness Score', value: scoreMetrics.readinessScore, color: 'text-amber-600 bg-amber-500/10' },
           ].map((metric) => (
             <div
               key={metric.label}
@@ -184,8 +245,17 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
             >
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>{metric.value}%</span>
-                <Progress value={metric.value} className="h-1.5 flex-1" />
+                {config.id === 'academic' && loadingMetrics && !academicSummary ? (
+                  <div className="flex items-center gap-2 w-full">
+                    <Skeleton className="h-6 w-12" />
+                    <Skeleton className="h-1.5 flex-1" />
+                  </div>
+                ) : (
+                  <>
+                    <span className={cn('text-xl font-bold', metric.color.split(' ')[0])}>{metric.value}%</span>
+                    <Progress value={metric.value} className="h-1.5 flex-1" />
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -219,52 +289,56 @@ export const RepositoryWorkspace = ({ config, initialTabIndex, academicYear }: R
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
             {tab.id === 'academic-calendar' && config.id === 'academic' ? (
               <AcademicCalendarModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
+                departmentId={departmentId || 1}
               />
             ) : tab.id === 'add-on-programs' && config.id === 'academic' ? (
               <AddOnProgramsModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
+                departmentId={departmentId || 1}
               />
             ) : tab.id === 'value-added-courses' && config.id === 'academic' ? (
               <ValueAddedCoursesModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
+                departmentId={departmentId || 1}
               />
             ) : tab.id === 'academic-timetable' && config.id === 'academic' ? (
               <AcademicTimetableModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
+                departmentId={departmentId || 1}
               />
             ) : tab.id === 'faculty-profiles' && config.id === 'faculty' ? (
               <FacultyProfileModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : tab.id === 'faculty-qualifications' && config.id === 'faculty' ? (
               <FacultyQualificationModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : tab.id === 'faculty-employment' && config.id === 'faculty' ? (
               <FacultyEmploymentModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : tab.id === 'faculty-profession-practice' && config.id === 'faculty' ? (
               <FacultyProfessionPracticeModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : tab.id === 'faculty-evidence' && config.id === 'faculty' ? (
               <FacultyEvidenceModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : tab.id === 'faculty-professional-development' && config.id === 'faculty' ? (
               <FacultyProfessionalDevelopmentModule
-                department={departmentInfo.department}
+                department={currentDepartment}
                 academicYear={academicYear || '2025-26'}
               />
             ) : (

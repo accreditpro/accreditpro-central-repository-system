@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { useReadOnly } from '@/hooks/useReadOnly';
+import { academicRepositoryService } from '@/services/academic-repository.service';
 import {
   BookOpen,
   Download,
@@ -25,6 +39,7 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   FileText,
   X,
   Eye,
@@ -34,6 +49,49 @@ import {
   CalendarDays,
   GraduationCap,
 } from 'lucide-react';
+
+function formatTimeTo24h(timeStr: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    const parts = trimmed.split(':');
+    const h = parts[0].padStart(2, '0');
+    const m = parts[1].padStart(2, '0');
+    const s = (parts[2] || '00').padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2].padStart(2, '0');
+    const second = (match[3] || '00').padStart(2, '0');
+    const period = match[4].toUpperCase();
+    if (period === 'PM' && hour < 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, '0')}:${minute}:${second}`;
+  }
+  return trimmed;
+}
+
+function formatDateToISO(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+    if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().split('T')[0];
+  }
+  return trimmed;
+}
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -75,9 +133,15 @@ interface ValueAddedCourseRecord {
 }
 
 interface CourseEvidenceItem {
+  id?: number | string;
   status: 'not-uploaded' | 'uploaded';
   fileName?: string;
   uploadedAt?: string;
+  uploadedBy?: string;
+  fileSize?: number;
+  fileType?: string;
+  verificationStatus?: string;
+  fileUrl?: string;
 }
 
 interface CourseEvidenceMap {
@@ -89,6 +153,7 @@ interface CourseEvidenceMap {
 interface ValueAddedCoursesModuleProps {
   department: string;
   academicYear: string;
+  departmentId?: number;
 }
 
 const YEARS_OF_STUDY = ['I Year', 'II Year', 'III Year', 'IV Year'];
@@ -102,10 +167,57 @@ const SEMESTERS_MAP: Record<string, string[]> = {
 // Evidence types for per-course documents
 type EvidenceDocType = 'geoTaggedPhotos' | 'registeredStudentsList' | 'attendedStudentsList';
 
-export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAddedCoursesModuleProps) => {
+const DOC_TYPE_TO_SERVER_NAME: Record<EvidenceDocType, string> = {
+  geoTaggedPhotos: 'Geo-tagged Photos of Session',
+  registeredStudentsList: 'Registered Students List',
+  attendedStudentsList: 'Attended Students List',
+};
+
+function mapServerDocTypeToFrontendKey(docType: string): EvidenceDocType | null {
+  if (!docType) return null;
+  const lower = docType.toLowerCase().replace(/[-_\s]/g, '');
+  if (lower.includes('photo') || lower.includes('geotag')) return 'geoTaggedPhotos';
+  if (lower.includes('register') || lower.includes('enroll')) return 'registeredStudentsList';
+  if (lower.includes('attend')) return 'attendedStudentsList';
+  return null;
+}
+
+function cleanYear(y: string): string {
+  let str = (y || '').toLowerCase().trim();
+  str = str.replace(/\b1st\b|\bfirst\b|\bi\b/g, 'i');
+  str = str.replace(/\b2nd\b|\bsecond\b|\bii\b/g, 'ii');
+  str = str.replace(/\b3rd\b|\bthird\b|\biii\b/g, 'iii');
+  str = str.replace(/\b4th\b|\bfourth\b|\biv\b/g, 'iv');
+  str = str.replace(/\s+year/g, '').trim();
+  return str;
+}
+
+function cleanSem(s: string): string {
+  let str = (s || '').toLowerCase().trim();
+  str = str.replace(/\b(viii|8th|8)\b/g, '8');
+  str = str.replace(/\b(vii|7th|7)\b/g, '7');
+  str = str.replace(/\b(vi|6th|6)\b/g, '6');
+  str = str.replace(/\b(v|5th|5)\b/g, '5');
+  str = str.replace(/\b(iv|4th|4)\b/g, '4');
+  str = str.replace(/\b(iii|3rd|3)\b/g, '3');
+  str = str.replace(/\b(ii|2nd|2)\b/g, '2');
+  str = str.replace(/\b(i|1st|1)\b/g, '1');
+  str = str.replace(/^(semester|sem)\s*/i, '').trim();
+  return str;
+}
+
+export const ValueAddedCoursesModule = ({
+  department,
+  academicYear,
+  departmentId = 1,
+}: ValueAddedCoursesModuleProps) => {
+  const { user } = useAuth();
+  const isReadOnly = useReadOnly();
+
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
   const [courses, setCourses] = useState<ValueAddedCourseRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCertification, setFilterCertification] = useState<string>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -118,8 +230,29 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
 
   // Per-course evidence state
   const [courseEvidenceMap, setCourseEvidenceMap] = useState<Record<string, CourseEvidenceMap>>({});
-  const [previewDialog, setPreviewDialog] = useState<{ open: boolean; courseId: string; docType: EvidenceDocType; fileName: string } | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [previewDialog, setPreviewDialog] = useState<{
+    open: boolean;
+    courseId: string;
+    docType: EvidenceDocType;
+    fileName: string;
+    fileUrl?: string;
+    fileType?: string;
+    fileSize?: string;
+    uploadedAt?: string;
+  } | null>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | number | null>(null);
   const [uploadEvidenceDialog, setUploadEvidenceDialog] = useState<{ open: boolean; courseId: string; docType: EvidenceDocType } | null>(null);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
+  const [downloadingEvidenceId, setDownloadingEvidenceId] = useState<string | number | null>(null);
+  const [deleteTargetEvidence, setDeleteTargetEvidence] = useState<{
+    evidenceId: number | string;
+    courseId: string;
+    courseName: string;
+    docType: EvidenceDocType;
+    fileName: string;
+  } | null>(null);
+  const [isDeletingEvidence, setIsDeletingEvidence] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -140,6 +273,118 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     certificatesIssued: '',
   });
 
+  // Fetch Value Added Courses from live API
+  const fetchCourses = useCallback(async () => {
+    if (!departmentId || !academicYear) return;
+    setLoading(true);
+    try {
+      const res = await academicRepositoryService.getValueAddedCourses(academicYear, departmentId);
+      let items: any[] = [];
+      if (Array.isArray(res)) {
+        items = res;
+      } else if (res && Array.isArray(res.content)) {
+        items = res.content;
+      } else if (res && res.data && Array.isArray(res.data.content)) {
+        items = res.data.content;
+      } else if (res && res.data && Array.isArray(res.data)) {
+        items = res.data;
+      }
+
+      const mapped: ValueAddedCourseRecord[] = items.map((item: any) => ({
+        id: String(item.id),
+        department: item.department || department,
+        year: item.yearOfStudy || item.year || selectedYear,
+        semester: item.semester || selectedSemester,
+        courseName: item.courseName || '',
+        fromDate: item.fromDate || '',
+        toDate: item.toDate || '',
+        timeFrom: typeof item.timeFrom === 'string' ? item.timeFrom : (item.timeFrom ? `${String(item.timeFrom.hour).padStart(2, '0')}:${String(item.timeFrom.minute).padStart(2, '0')}` : ''),
+        timeTo: typeof item.timeTo === 'string' ? item.timeTo : (item.timeTo ? `${String(item.timeTo.hour).padStart(2, '0')}:${String(item.timeTo.minute).padStart(2, '0')}` : ''),
+        courseInstructor: item.courseInstructor || '',
+        duration: item.duration || '',
+        studentsEnrolled: item.studentsEnrolled != null ? String(item.studentsEnrolled) : '0',
+        studentsParticipated: item.studentsParticipated != null ? String(item.studentsParticipated) : '0',
+        certificationProvided: (item.certificationProvided === true || item.certificationProvided === 'Yes') ? 'Yes' : 'No',
+        certificatesIssued: item.certificatesIssued != null ? String(item.certificatesIssued) : '0',
+      }));
+      setCourses(mapped);
+    } catch (err: any) {
+      console.error('Failed to fetch value added courses:', err);
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [academicYear, departmentId, department, selectedYear, selectedSemester]);
+
+  // Fetch Evidence Documents from live API
+  const fetchEvidence = useCallback(async () => {
+    if (!departmentId || !academicYear) return;
+    setEvidenceLoading(true);
+    try {
+      const res = await academicRepositoryService.getEvidenceDocuments(academicYear, departmentId, {
+        sectionName: 'value-added-courses',
+        size: 1000,
+      });
+
+      let items: any[] = [];
+      if (Array.isArray(res)) {
+        items = res;
+      } else if (res && Array.isArray(res.content)) {
+        items = res.content;
+      } else if (res && res.data && Array.isArray(res.data.content)) {
+        items = res.data.content;
+      } else if (res && res.data && Array.isArray(res.data)) {
+        items = res.data;
+      }
+
+      const newMap: Record<string, CourseEvidenceMap> = {};
+
+      items.forEach((item: any) => {
+        const courseId = item.recordId != null ? String(item.recordId) : '';
+        if (!courseId) return;
+
+        const docKey = mapServerDocTypeToFrontendKey(item.documentType || item.documentName);
+        if (!docKey) return;
+
+        if (!newMap[courseId]) {
+          newMap[courseId] = {
+            geoTaggedPhotos: { status: 'not-uploaded' },
+            registeredStudentsList: { status: 'not-uploaded' },
+            attendedStudentsList: { status: 'not-uploaded' },
+          };
+        }
+
+        const uploadedDate = item.uploadedAt || item.createdAt;
+        const formattedDate = uploadedDate
+          ? new Date(uploadedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '';
+
+        newMap[courseId][docKey] = {
+          id: item.id,
+          status: 'uploaded',
+          fileName: item.fileName || item.documentName || `${DOC_TYPE_TO_SERVER_NAME[docKey]}.pdf`,
+          uploadedAt: formattedDate,
+          uploadedBy: item.uploadedBy || '',
+          fileSize: item.fileSize,
+          fileType: item.fileType || item.fileName?.split('.').pop() || 'pdf',
+          verificationStatus: item.verificationStatus || 'PENDING',
+          fileUrl: item.fileUrl || item.downloadUrl,
+        };
+      });
+
+      setCourseEvidenceMap(newMap);
+    } catch (err: any) {
+      console.warn('Failed to fetch value added courses evidence:', err);
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [academicYear, departmentId]);
+
+  useEffect(() => {
+    fetchCourses();
+    fetchEvidence();
+  }, [fetchCourses, fetchEvidence]);
+
   // Update semester when year changes
   const handleYearChange = (year: string) => {
     setSelectedYear(year);
@@ -152,7 +397,7 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
   // Filtered courses for selected year/semester
   const filteredCourses = useMemo(() => {
     let filtered = courses.filter(
-      (c) => c.year === selectedYear && c.semester === selectedSemester
+      (c) => cleanYear(c.year) === cleanYear(selectedYear) && cleanSem(c.semester) === cleanSem(selectedSemester)
     );
 
     if (searchQuery) {
@@ -258,54 +503,165 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     setSelectedFile(file);
   }, [uploadEvidenceDialog, validateFile]);
 
-  const handleConfirmUpload = useCallback(() => {
+  // Upload Evidence Document to backend
+  const handleConfirmUpload = useCallback(async () => {
     if (!selectedFile || !uploadEvidenceDialog) return;
 
     const { courseId, docType } = uploadEvidenceDialog;
-    const now = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    setCourseEvidenceMap((prev) => ({
-      ...prev,
-      [courseId]: {
-        ...(prev[courseId] || {
-          geoTaggedPhotos: { status: 'not-uploaded' },
-          registeredStudentsList: { status: 'not-uploaded' },
-          attendedStudentsList: { status: 'not-uploaded' },
-        }),
-        [docType]: {
-          status: 'uploaded' as const,
-          fileName: selectedFile.name,
-          uploadedAt: now,
-        },
-      },
-    }));
-
-    setUploadEvidenceDialog(null);
-    setSelectedFile(null);
+    setIsUploadingEvidence(true);
     setUploadError(null);
-  }, [selectedFile, uploadEvidenceDialog]);
 
-  const handlePreviewEvidence = useCallback((courseId: string, docType: EvidenceDocType) => {
+    try {
+      const serverDocTypeName = DOC_TYPE_TO_SERVER_NAME[docType];
+
+      await academicRepositoryService.uploadEvidenceDocument(
+        departmentId || 1,
+        user?.id || 1,
+        selectedFile,
+        {
+          academicYear,
+          yearOfStudy: selectedYear,
+          semester: selectedSemester,
+          sectionName: 'value-added-courses',
+          recordId: Number(courseId),
+          documentType: serverDocTypeName,
+        }
+      );
+
+      await fetchEvidence();
+      setUploadEvidenceDialog(null);
+      setSelectedFile(null);
+      setUploadError(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('Failed to upload evidence document:', err);
+      setUploadError(err?.response?.data?.message || err?.message || 'Failed to upload evidence document');
+    } finally {
+      setIsUploadingEvidence(false);
+    }
+  }, [selectedFile, uploadEvidenceDialog, departmentId, user?.id, academicYear, selectedYear, selectedSemester, fetchEvidence]);
+
+  // Preview Evidence Document
+  const handlePreviewEvidence = useCallback(async (courseId: string, docType: EvidenceDocType) => {
     const ev = courseEvidenceMap[courseId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      setPreviewDialog({ open: true, courseId, docType, fileName: ev.fileName });
+    if (!ev || ev.status !== 'uploaded' || !ev.fileName) return;
+
+    const ext = ev.fileName.split('.').pop()?.toLowerCase() || ev.fileType?.toLowerCase() || 'pdf';
+    const fileSizeStr = ev.fileSize ? `${Math.round(ev.fileSize / 1024)} KB` : undefined;
+
+    let url = ev.fileUrl;
+    if (!url && ev.id) {
+      setPreviewLoadingId(ev.id);
+      try {
+        const blob = await academicRepositoryService.getEvidenceBlob(ev.id);
+        const mimeType = ext === 'pdf'
+          ? 'application/pdf'
+          : ext === 'png'
+          ? 'image/png'
+          : ext === 'jpg' || ext === 'jpeg'
+          ? 'image/jpeg'
+          : blob.type;
+        const typedBlob = new Blob([blob], { type: mimeType || 'application/octet-stream' });
+        url = URL.createObjectURL(typedBlob);
+
+        setCourseEvidenceMap((prev) => ({
+          ...prev,
+          [courseId]: {
+            ...prev[courseId],
+            [docType]: {
+              ...prev[courseId]?.[docType],
+              fileUrl: url,
+            },
+          },
+        }));
+      } catch (err: any) {
+        console.warn('Could not fetch blob for preview:', err);
+      } finally {
+        setPreviewLoadingId(null);
+      }
+    }
+
+    setPreviewDialog({
+      open: true,
+      courseId,
+      docType,
+      fileName: ev.fileName,
+      fileUrl: url,
+      fileType: ext,
+      fileSize: fileSizeStr,
+      uploadedAt: ev.uploadedAt,
+    });
+  }, [courseEvidenceMap]);
+
+  // Download Evidence Document from backend
+  const handleDownloadEvidence = useCallback(async (courseId: string, docType: EvidenceDocType) => {
+    const ev = courseEvidenceMap[courseId]?.[docType];
+    if (!ev || ev.status !== 'uploaded') return;
+
+    const fileName = ev.fileName || `${DOC_TYPE_TO_SERVER_NAME[docType]}.pdf`;
+
+    if (ev.id) {
+      setDownloadingEvidenceId(ev.id);
+      try {
+        await academicRepositoryService.downloadEvidenceDocument(ev.id, fileName);
+      } catch (err: any) {
+        console.error('Download evidence failed:', err);
+        if (ev.fileUrl) {
+          window.open(ev.fileUrl, '_blank');
+        } else {
+          alert('Failed to download document');
+        }
+      } finally {
+        setDownloadingEvidenceId(null);
+      }
+    } else if (ev.fileUrl) {
+      window.open(ev.fileUrl, '_blank');
     }
   }, [courseEvidenceMap]);
 
-  const handleDownloadEvidence = useCallback((courseId: string, docType: EvidenceDocType) => {
-    const ev = courseEvidenceMap[courseId]?.[docType];
-    if (ev?.status === 'uploaded' && ev.fileName) {
-      const link = document.createElement('a');
-      link.href = '#';
-      link.download = ev.fileName;
-      link.click();
+  // Delete Evidence Handlers
+  const handleDeleteEvidenceClick = useCallback((course: ValueAddedCourseRecord, docType: EvidenceDocType) => {
+    const ev = courseEvidenceMap[course.id]?.[docType];
+    if (ev && ev.status === 'uploaded' && ev.id) {
+      setDeleteTargetEvidence({
+        evidenceId: ev.id,
+        courseId: course.id,
+        courseName: course.courseName,
+        docType,
+        fileName: ev.fileName || DOC_TYPE_TO_SERVER_NAME[docType],
+      });
     }
   }, [courseEvidenceMap]);
+
+  const handleConfirmDeleteEvidence = useCallback(async () => {
+    if (!deleteTargetEvidence) return;
+    setIsDeletingEvidence(true);
+    try {
+      await academicRepositoryService.deleteEvidenceDocument(
+        deleteTargetEvidence.evidenceId,
+        departmentId || 1
+      );
+      await fetchEvidence();
+      setDeleteTargetEvidence(null);
+    } catch (err: any) {
+      console.error('Failed to delete evidence document:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete evidence document');
+    } finally {
+      setIsDeletingEvidence(false);
+    }
+  }, [deleteTargetEvidence, departmentId, fetchEvidence]);
+
+  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   // CSV Upload handler
   const handleCSVUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setSelectedCsvFile(file);
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -358,48 +714,107 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [department, selectedYear, selectedSemester]);
 
-  const handleImportUploaded = useCallback(() => {
+  const handleImportUploaded = useCallback(async () => {
     const validRecords = uploadPreview.filter((r) => r.validationStatus === 'valid');
-    setCourses((prev) => [...prev, ...validRecords]);
-    setShowUploadDialog(false);
-    setUploadPreview([]);
-    setUploadStats(null);
-  }, [uploadPreview]);
+    if (validRecords.length === 0) return;
 
-  // Add/Edit course handlers
-  const handleAddCourse = useCallback(() => {
+    setIsImporting(true);
+    try {
+      const coursesPayload = validRecords.map((r) => ({
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        courseName: r.courseName,
+        courseInstructor: r.courseInstructor,
+        fromDate: formatDateToISO(r.fromDate) || undefined,
+        toDate: formatDateToISO(r.toDate) || undefined,
+        timeFrom: formatTimeTo24h(r.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(r.timeTo) || undefined,
+        duration: r.duration || undefined,
+        studentsEnrolled: r.studentsEnrolled ? parseInt(r.studentsEnrolled) : 0,
+        studentsParticipated: r.studentsParticipated ? parseInt(r.studentsParticipated) : 0,
+        certificationProvided: r.certificationProvided === 'Yes',
+        certificatesIssued: r.certificatesIssued ? parseInt(r.certificatesIssued) : 0,
+      }));
+
+      await academicRepositoryService.bulkSaveValueAddedCourses(departmentId, {
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        courses: coursesPayload,
+      });
+
+      await fetchCourses();
+      setShowUploadDialog(false);
+      setUploadPreview([]);
+      setUploadStats(null);
+      setSelectedCsvFile(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err: any) {
+      console.error('Failed to import CSV value added courses:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to import courses from CSV');
+    } finally {
+      setIsImporting(false);
+    }
+  }, [uploadPreview, departmentId, academicYear, selectedYear, selectedSemester, fetchCourses]);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteTargetCourse, setDeleteTargetCourse] = useState<ValueAddedCourseRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Add/Edit course handlers via live API
+  const handleAddCourse = useCallback(async () => {
     if (!newCourse.courseName || !newCourse.courseInstructor) return;
 
-    const record: ValueAddedCourseRecord = {
-      id: editingCourse?.id || `vac-${Date.now()}`,
-      department,
-      year: selectedYear,
-      semester: selectedSemester,
-      ...newCourse,
-    };
+    setSubmitting(true);
+    try {
+      const payload = {
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        courseName: newCourse.courseName,
+        courseInstructor: newCourse.courseInstructor,
+        fromDate: formatDateToISO(newCourse.fromDate) || undefined,
+        toDate: formatDateToISO(newCourse.toDate) || undefined,
+        timeFrom: formatTimeTo24h(newCourse.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(newCourse.timeTo) || undefined,
+        duration: newCourse.duration || undefined,
+        studentsEnrolled: newCourse.studentsEnrolled ? parseInt(newCourse.studentsEnrolled) : 0,
+        studentsParticipated: newCourse.studentsParticipated ? parseInt(newCourse.studentsParticipated) : 0,
+        certificationProvided: newCourse.certificationProvided === 'Yes',
+        certificatesIssued: newCourse.certificatesIssued ? parseInt(newCourse.certificatesIssued) : 0,
+      };
 
-    if (editingCourse) {
-      setCourses((prev) => prev.map((c) => (c.id === editingCourse.id ? record : c)));
+      if (editingCourse && editingCourse.id) {
+        await academicRepositoryService.updateValueAddedCourse(editingCourse.id, departmentId, payload);
+      } else {
+        await academicRepositoryService.createValueAddedCourse(departmentId, payload);
+      }
+
+      await fetchCourses();
+      setNewCourse({
+        courseName: '',
+        fromDate: '',
+        toDate: '',
+        timeFrom: '',
+        timeTo: '',
+        courseInstructor: '',
+        duration: '',
+        studentsEnrolled: '',
+        studentsParticipated: '',
+        certificationProvided: 'Yes',
+        certificatesIssued: '',
+      });
+      setShowAddDialog(false);
       setEditingCourse(null);
-    } else {
-      setCourses((prev) => [...prev, record]);
+    } catch (err: any) {
+      console.error('Failed to save value added course:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to save value added course');
+    } finally {
+      setSubmitting(false);
     }
-
-    setNewCourse({
-      courseName: '',
-      fromDate: '',
-      toDate: '',
-      timeFrom: '',
-      timeTo: '',
-      courseInstructor: '',
-      duration: '',
-      studentsEnrolled: '',
-      studentsParticipated: '',
-      certificationProvided: 'Yes',
-      certificatesIssued: '',
-    });
-    setShowAddDialog(false);
-  }, [newCourse, editingCourse, department, selectedYear, selectedSemester]);
+  }, [newCourse, editingCourse, departmentId, academicYear, selectedYear, selectedSemester, fetchCourses]);
 
   const handleEditCourse = useCallback((course: ValueAddedCourseRecord) => {
     setEditingCourse(course);
@@ -419,27 +834,102 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
     setShowAddDialog(true);
   }, []);
 
-  const handleDeleteCourse = useCallback((id: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  // Confirm delete handler via live API
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTargetCourse) return;
+    setIsDeleting(true);
+    try {
+      await academicRepositoryService.deleteValueAddedCourse(deleteTargetCourse.id, departmentId);
+      await fetchCourses();
+      setDeleteTargetCourse(null);
+    } catch (err: any) {
+      console.error('Failed to delete value added course:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete value added course');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteTargetCourse, departmentId, fetchCourses]);
 
-  const handleSave = useCallback(() => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2000);
-  }, []);
+  const handleSave = useCallback(async () => {
+    setIsBulkSaving(true);
+    try {
+      const forCurrentYearSem = courses.filter(
+        (c) => c.year === selectedYear && c.semester === selectedSemester
+      );
+      const coursesPayload = forCurrentYearSem.map((r) => ({
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        courseName: r.courseName,
+        courseInstructor: r.courseInstructor,
+        fromDate: formatDateToISO(r.fromDate) || undefined,
+        toDate: formatDateToISO(r.toDate) || undefined,
+        timeFrom: formatTimeTo24h(r.timeFrom) || undefined,
+        timeTo: formatTimeTo24h(r.timeTo) || undefined,
+        duration: r.duration || undefined,
+        studentsEnrolled: r.studentsEnrolled ? parseInt(r.studentsEnrolled) : 0,
+        studentsParticipated: r.studentsParticipated ? parseInt(r.studentsParticipated) : 0,
+        certificationProvided: r.certificationProvided === 'Yes',
+        certificatesIssued: r.certificatesIssued ? parseInt(r.certificatesIssued) : 0,
+      }));
+
+      await academicRepositoryService.bulkSaveValueAddedCourses(departmentId, {
+        academicYear,
+        yearOfStudy: selectedYear,
+        semester: selectedSemester,
+        courses: coursesPayload,
+      });
+
+      await fetchCourses();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err: any) {
+      console.error('Failed to bulk save courses:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to save courses');
+    } finally {
+      setIsBulkSaving(false);
+    }
+  }, [courses, selectedYear, selectedSemester, academicYear, departmentId, fetchCourses]);
 
   const handleDownloadTemplate = useCallback(() => {
+    const currentCourses = courses.filter(
+      (c) => c.year === selectedYear && c.semester === selectedSemester
+    );
     const headers = 'Course Name,From Date,To Date,Time From,Time To,Course Instructor,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued';
-    const sample = 'Python for Data Science,01-Jan-2025,15-Jan-2025,10:00,12:00,Dr. Smith,30 hrs,45,42,Yes,42';
-    const csv = `${headers}\n${sample}`;
-    const blob = new Blob([csv], { type: 'text/csv' });
+    
+    let csvRows: string[] = [];
+    if (currentCourses.length > 0) {
+      csvRows = currentCourses.map((c) => {
+        const escape = (str: string) => `"${(str || '').replace(/"/g, '""')}"`;
+        return [
+          escape(c.courseName),
+          escape(c.fromDate),
+          escape(c.toDate),
+          escape(c.timeFrom),
+          escape(c.timeTo),
+          escape(c.courseInstructor),
+          escape(c.duration),
+          c.studentsEnrolled || '0',
+          c.studentsParticipated || '0',
+          c.certificationProvided,
+          c.certificatesIssued || '0',
+        ].join(',');
+      });
+    } else {
+      csvRows.push('"Python for Data Science","2025-08-01","2025-08-15","10:00","12:00","Dr. Smith","30 hrs",45,42,Yes,42');
+    }
+
+    const csvContent = [headers, ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'value_added_courses_template.csv';
+    link.download = `value_added_courses_${academicYear}_${selectedYear.replace(/\s+/g, '_')}_${selectedSemester.replace(/\s+/g, '_')}.csv`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, []);
+  }, [courses, selectedYear, selectedSemester, academicYear]);
 
   const totalCoursesForYearSem = courses.filter(
     (c) => c.year === selectedYear && c.semester === selectedSemester
@@ -615,7 +1105,44 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {filteredCourses.length === 0 ? (
+          {loading ? (
+            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+              <Table className="min-w-[1100px]">
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-xs font-semibold w-8 sticky left-0 bg-muted/30 z-10">#</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">Course Name</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">Instructor</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">From Date</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">To Date</TableHead>
+                    <TableHead className="text-xs font-semibold whitespace-nowrap">Duration</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Enrolled</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Participated</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Cert.</TableHead>
+                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Issued</TableHead>
+                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap sticky right-0 bg-muted/30 z-10">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : filteredCourses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <BookOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground font-medium">No courses added yet</p>
@@ -660,12 +1187,23 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                       <TableCell className="text-xs text-center whitespace-nowrap font-semibold">{course.certificatesIssued || '-'}</TableCell>
                       <TableCell className="text-right sticky right-0 bg-background z-10">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditCourse(course)}>
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteCourse(course.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {isReadOnly ? (
+                            <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                          ) : (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditCourse(course)}>
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleteTargetCourse(course)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -750,18 +1288,30 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                               <Button
                                 variant="outline"
                                 size="sm"
+                                disabled={previewLoadingId === item.data.id}
                                 className="h-7 px-2 text-[10px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
                                 onClick={() => handlePreviewEvidence(course.id, item.key)}
                               >
-                                <Eye className="h-3 w-3" /> Preview
+                                {previewLoadingId === item.data.id ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Eye className="h-3 w-3" />
+                                )}
+                                Preview
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
+                                disabled={downloadingEvidenceId === item.data.id}
                                 className="h-7 px-2 text-[10px] gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                                 onClick={() => handleDownloadEvidence(course.id, item.key)}
                               >
-                                <DownloadCloud className="h-3 w-3" /> Download
+                                {downloadingEvidenceId === item.data.id ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <DownloadCloud className="h-3 w-3" />
+                                )}
+                                Download
                               </Button>
                               <Button
                                 variant="outline"
@@ -770,6 +1320,14 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                                 onClick={() => handleUploadEvidence(course.id, item.key)}
                               >
                                 <RefreshCw className="h-3 w-3" /> Re-upload
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => handleDeleteEvidenceClick(course, item.key)}
+                              >
+                                <Trash2 className="h-3 w-3" /> Delete
                               </Button>
                             </>
                           ) : (
@@ -916,11 +1474,11 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingCourse(null); }}>
+            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setEditingCourse(null); }} disabled={submitting}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddCourse} disabled={!newCourse.courseName || !newCourse.courseInstructor}>
-              {editingCourse ? 'Update Course' : 'Add Course'}
+            <Button size="sm" onClick={handleAddCourse} disabled={submitting || !newCourse.courseName || !newCourse.courseInstructor}>
+              {submitting ? 'Saving...' : editingCourse ? 'Update Course' : 'Add Course'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -928,12 +1486,12 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
 
       {/* CSV Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6 overflow-hidden">
+          <DialogHeader className="shrink-0 pb-2">
             <DialogTitle className="text-sm font-semibold">CSV Upload Preview</DialogTitle>
           </DialogHeader>
           {uploadStats && (
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-4 mb-3 shrink-0">
               <Badge variant="outline" className="text-xs">Total: {uploadStats.total}</Badge>
               <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
                 Valid: {uploadStats.valid}
@@ -945,18 +1503,18 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
               )}
             </div>
           )}
-          <ScrollArea className="max-h-[50vh]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[10px]">Status</TableHead>
-                  <TableHead className="text-[10px]">Course Name</TableHead>
-                  <TableHead className="text-[10px]">Instructor</TableHead>
-                  <TableHead className="text-[10px]">From</TableHead>
-                  <TableHead className="text-[10px]">To</TableHead>
-                  <TableHead className="text-[10px]">Enrolled</TableHead>
-                  <TableHead className="text-[10px]">Cert.</TableHead>
-                  <TableHead className="text-[10px]">Errors</TableHead>
+          <div className="flex-1 overflow-x-auto overflow-y-auto border rounded-md min-h-0 max-h-[55vh]">
+            <Table className="min-w-[850px]">
+              <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-sm">
+                <TableRow className="bg-muted/30">
+                  <TableHead className="text-[10px] w-12 whitespace-nowrap">Status</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">Course Name</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">Instructor</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">From</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">To</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">Enrolled</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">Cert.</TableHead>
+                  <TableHead className="text-[10px] whitespace-nowrap">Errors</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -969,28 +1527,36 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
                         <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                       )}
                     </TableCell>
-                    <TableCell className="text-[11px]">{row.courseName}</TableCell>
-                    <TableCell className="text-[11px]">{row.courseInstructor}</TableCell>
-                    <TableCell className="text-[11px]">{row.fromDate}</TableCell>
-                    <TableCell className="text-[11px]">{row.toDate}</TableCell>
-                    <TableCell className="text-[11px]">{row.studentsEnrolled}</TableCell>
-                    <TableCell className="text-[11px]">{row.certificationProvided}</TableCell>
-                    <TableCell className="text-[11px] text-red-600">{row.errors?.join(', ')}</TableCell>
+                    <TableCell className="text-[11px] font-medium whitespace-nowrap">{row.courseName}</TableCell>
+                    <TableCell className="text-[11px] whitespace-nowrap">{row.courseInstructor}</TableCell>
+                    <TableCell className="text-[11px] whitespace-nowrap">{row.fromDate}</TableCell>
+                    <TableCell className="text-[11px] whitespace-nowrap">{row.toDate}</TableCell>
+                    <TableCell className="text-[11px] whitespace-nowrap">{row.studentsEnrolled}</TableCell>
+                    <TableCell className="text-[11px] whitespace-nowrap">{row.certificationProvided}</TableCell>
+                    <TableCell className="text-[11px] text-red-600 whitespace-nowrap">{row.errors?.join(', ')}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>
+          </div>
+          <DialogFooter className="mt-4 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)} disabled={isImporting}>
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleImportUploaded}
-              disabled={!uploadStats || uploadStats.valid === 0}
+              disabled={!uploadStats || uploadStats.valid === 0 || isImporting}
+              className="gap-1.5"
             >
-              Import {uploadStats?.valid || 0} Valid Records
+              {isImporting ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                `Import ${uploadStats?.valid || 0} Valid Records`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1099,16 +1665,31 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
               )}
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setUploadEvidenceDialog(null); setSelectedFile(null); setUploadError(null); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isUploadingEvidence}
+                onClick={() => { setUploadEvidenceDialog(null); setSelectedFile(null); setUploadError(null); }}
+              >
                 Cancel
               </Button>
               <Button
                 size="sm"
-                disabled={!selectedFile || !!uploadError}
+                disabled={!selectedFile || !!uploadError || isUploadingEvidence}
                 onClick={handleConfirmUpload}
                 className="gap-1.5 bg-violet-600 hover:bg-violet-700"
               >
-                <Upload className="h-3.5 w-3.5" /> Upload File
+                {isUploadingEvidence ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload File
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1124,25 +1705,55 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
             </DialogHeader>
             <div className="space-y-4">
               <div className="rounded-lg border p-6 bg-muted/20 flex flex-col items-center justify-center gap-3">
-                <FileText className="h-12 w-12 text-violet-600/60" />
-                <p className="text-sm font-medium">{previewDialog.fileName}</p>
+                {previewDialog.fileUrl && (previewDialog.fileType === 'png' || previewDialog.fileType === 'jpg' || previewDialog.fileType === 'jpeg' || previewDialog.fileType === 'webp') ? (
+                  <img
+                    src={previewDialog.fileUrl}
+                    alt={previewDialog.fileName}
+                    className="max-h-60 max-w-full rounded object-contain border"
+                  />
+                ) : previewDialog.fileUrl && previewDialog.fileType === 'pdf' ? (
+                  <iframe
+                    src={previewDialog.fileUrl}
+                    title={previewDialog.fileName}
+                    className="w-full h-72 rounded border bg-white"
+                  />
+                ) : (
+                  <FileText className="h-12 w-12 text-violet-600/60" />
+                )}
+                <p className="text-sm font-medium text-center">{previewDialog.fileName}</p>
                 <p className="text-xs text-muted-foreground">
                   {previewDialog.docType === 'geoTaggedPhotos' && 'Geo-tagged Photos of Session'}
                   {previewDialog.docType === 'registeredStudentsList' && 'Registered Students List'}
                   {previewDialog.docType === 'attendedStudentsList' && 'Attended Students List'}
                 </p>
-                <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/20">
-                  Uploaded Successfully
-                </Badge>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/20">
+                    Uploaded Successfully
+                  </Badge>
+                  {previewDialog.fileSize && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {previewDialog.fileSize}
+                    </Badge>
+                  )}
+                  {previewDialog.uploadedAt && (
+                    <span className="text-[11px] text-muted-foreground">
+                      • {previewDialog.uploadedAt}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPreviewDialog(null)}>
                   Close
                 </Button>
-                <Button size="sm" className="gap-1.5 bg-violet-600 hover:bg-violet-700" onClick={() => {
-                  handleDownloadEvidence(previewDialog.courseId, previewDialog.docType);
-                  setPreviewDialog(null);
-                }}>
+                <Button
+                  size="sm"
+                  className="gap-1.5 bg-violet-600 hover:bg-violet-700"
+                  onClick={() => {
+                    handleDownloadEvidence(previewDialog.courseId, previewDialog.docType);
+                    setPreviewDialog(null);
+                  }}
+                >
                   <DownloadCloud className="h-3.5 w-3.5" /> Download
                 </Button>
               </div>
@@ -1150,6 +1761,93 @@ export const ValueAddedCoursesModule = ({ department, academicYear }: ValueAdded
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Evidence Confirmation Alert Dialog */}
+      <AlertDialog open={!!deleteTargetEvidence} onOpenChange={(open) => !open && setDeleteTargetEvidence(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 mt-0.5">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="space-y-1">
+                <AlertDialogTitle className="text-base font-semibold">
+                  Delete Evidence Document
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground">
+                  Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTargetEvidence?.fileName}"</span> for course <span className="font-semibold text-foreground">"{deleteTargetEvidence?.courseName}"</span>? This action cannot be undone.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeletingEvidence} onClick={() => setDeleteTargetEvidence(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeletingEvidence}
+              onClick={handleConfirmDeleteEvidence}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
+            >
+              {isDeletingEvidence ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete Document
+                </>
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Course Confirmation Alert Dialog */}
+      <AlertDialog open={!!deleteTargetCourse} onOpenChange={(open) => !open && setDeleteTargetCourse(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 mt-0.5">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="space-y-1">
+                <AlertDialogTitle className="text-base font-semibold">
+                  Delete Value Added Course
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground">
+                  Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTargetCourse?.courseName}"</span>? This course will be permanently removed.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel disabled={isDeleting} onClick={() => setDeleteTargetCourse(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Trash2 className="h-3.5 w-3.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Course'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

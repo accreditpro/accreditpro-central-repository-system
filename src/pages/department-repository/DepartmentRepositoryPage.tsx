@@ -26,6 +26,7 @@ import {
   departmentInfrastructureConfig,
   departmentInfo,
 } from './repository-configs';
+import { useAuth } from '@/hooks/useAuth';
 import { SidebarView } from './types';
 import {
   LayoutDashboard,
@@ -99,6 +100,7 @@ const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
 };
 
 export const DepartmentRepositoryPage = () => {
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<SidebarView>('academic-repository');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -107,9 +109,20 @@ export const DepartmentRepositoryPage = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
+        return (
+          <RepositoryDashboard
+            academicYear={selectedAcademicYear}
+            departmentId={user?.departmentId || 1}
+            onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)}
+          />
+        );
       case 'mission-vision':
-        return <DepartmentMissionVision />;
+        return (
+          <DepartmentMissionVision
+            academicYear={selectedAcademicYear}
+            departmentId={user?.departmentId || 1}
+          />
+        );
       case 'course-repository':
         return <CourseRepositoryModule />;
       case 'academic-repository':
@@ -123,6 +136,8 @@ export const DepartmentRepositoryPage = () => {
           <RepositoryWorkspace
             config={repositoryConfigMap[activeView]}
             academicYear={selectedAcademicYear}
+            departmentId={user?.departmentId || 1}
+            departmentName={user?.department || departmentInfo.department}
           />
         );
       case 'documents':
@@ -134,7 +149,13 @@ export const DepartmentRepositoryPage = () => {
       case 'profile':
         return <ProfileView />;
       default:
-        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
+        return (
+          <RepositoryDashboard
+            academicYear={selectedAcademicYear}
+            departmentId={user?.departmentId || 1}
+            onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)}
+          />
+        );
     }
   };
 
@@ -167,7 +188,7 @@ export const DepartmentRepositoryPage = () => {
         <div className={cn('p-4 border-b border-border/50', sidebarCollapsed && 'p-2')}>
           {!sidebarCollapsed ? (
             <div className="space-y-2">
-              <h2 className="text-sm font-bold tracking-tight">{departmentInfo.department}</h2>
+              <h2 className="text-sm font-bold tracking-tight">{user?.department || departmentInfo.department}</h2>
               <div className="flex items-center gap-1.5">
                 <Badge
                   variant="outline"
@@ -272,7 +293,7 @@ export const DepartmentRepositoryPage = () => {
               {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
             </p>
             <p className="text-[10px] text-muted-foreground">
-              {departmentInfo.department} • {selectedAcademicYear}
+              {user?.department || departmentInfo.department} • {selectedAcademicYear}
             </p>
           </div>
           <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
