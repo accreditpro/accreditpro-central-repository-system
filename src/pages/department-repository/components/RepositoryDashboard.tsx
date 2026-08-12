@@ -1,12 +1,16 @@
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { dashboardKPIs, repositoryHealth, uploadHistory, allRepositoryConfigs, departmentInfo } from '../repository-configs';
+import { allRepositoryConfigs } from '../repository-configs';
 import { RepositoryModule } from '../types';
 import { PendingIQACObservations } from './PendingIQACObservations';
+import { dashboardService } from '@/services/dashboard.service';
+import type { DashboardData } from '@/types/dashboard.types';
 import {
   GraduationCap,
   Users,
@@ -39,13 +43,266 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 interface RepositoryDashboardProps {
   onNavigate: (module: RepositoryModule) => void;
+  academicYear?: string;
+  departmentId?: number;
 }
 
-export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) => {
-  const overallReadiness = Math.round(
-    Object.values(repositoryHealth).reduce((sum, m) => sum + m.readinessScore, 0) /
-    Object.values(repositoryHealth).length
-  );
+export const RepositoryDashboard = ({ onNavigate, academicYear, departmentId = 1 }: RepositoryDashboardProps) => {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDashboard = async () => {
+      setLoading(true);
+      try {
+        const data = await dashboardService.getDashboard({
+          academicYear: academicYear || '2025-26',
+          departmentId,
+        });
+        if (isMounted && data) {
+          setDashboardData(data);
+        }
+      } catch (err) {
+        console.warn('Live dashboard fetch error:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDashboard();
+    return () => {
+      isMounted = false;
+    };
+  }, [academicYear, departmentId]);
+
+  // Merge live KPIs
+  const displayKPIs = useMemo(() => {
+    if (!dashboardData) return [];
+
+    const list: Array<{
+      id: string;
+      label: string;
+      value: number | string;
+      suffix?: string;
+      trend: number;
+      trendLabel: string;
+      icon: string;
+      color: string;
+    }> = [];
+
+    if (dashboardData.repositoryKpis && dashboardData.repositoryKpis.length > 0) {
+      dashboardData.repositoryKpis.forEach((kpi, idx) => {
+        list.push({
+          id: `repo-${idx}`,
+          label: kpi.label,
+          value: kpi.value,
+          suffix: kpi.suffix ?? '%',
+          trend: kpi.trend ?? 0,
+          trendLabel: kpi.trendLabel || 'vs last month',
+          icon: kpi.icon || 'FileText',
+          color: kpi.color || 'bg-blue-500/10 text-blue-600',
+        });
+      });
+    }
+
+    if (dashboardData.pendingKpis && dashboardData.pendingKpis.length > 0) {
+      dashboardData.pendingKpis.forEach((kpi, idx) => {
+        list.push({
+          id: `pending-${idx}`,
+          label: kpi.label,
+          value: kpi.value,
+          suffix: kpi.suffix || '',
+          trend: kpi.trend ?? 0,
+          trendLabel: kpi.trendLabel || 'vs last week',
+          icon: kpi.icon || 'Clock',
+          color: kpi.color || 'bg-amber-500/10 text-amber-600',
+        });
+      });
+    }
+
+    if (dashboardData.overallReadinessKpi) {
+      const kpi = dashboardData.overallReadinessKpi;
+      list.push({
+        id: 'readiness-score',
+        label: kpi.label || 'Readiness Score',
+        value: kpi.value,
+        suffix: kpi.suffix ?? '%',
+        trend: kpi.trend ?? 0,
+        trendLabel: kpi.trendLabel || 'improvement',
+        icon: kpi.icon || 'Target',
+        color: kpi.color || 'bg-emerald-500/10 text-emerald-600',
+      });
+    }
+
+    return list;
+  }, [dashboardData]);
+
+  // Department Information
+  const displayDeptInfo = useMemo(() => {
+    if (dashboardData?.departmentInfo) {
+      const d = dashboardData.departmentInfo;
+      return {
+        department: d.code ? `${d.name} (${d.code})` : d.name || '—',
+        programCount: d.programOfferingsCount ?? 0,
+        specializations:
+          d.specializations && d.specializations.length > 0 ? d.specializations.join(', ') : '—',
+        coordinatorName: d.coordinator || '—',
+        academicYear: d.academicYear || academicYear || '—',
+      };
+    }
+    return {
+      department: '—',
+      programCount: 0,
+      specializations: '—',
+      coordinatorName: '—',
+      academicYear: academicYear || '—',
+    };
+  }, [dashboardData, academicYear]);
+
+  // Repository Health Mapping
+  const displayHealth = useMemo(() => {
+    if (dashboardData?.repositoryHealth?.repositories && dashboardData.repositoryHealth.repositories.length > 0) {
+      const map: Record<string, {
+        dataCompleteness: number;
+        evidenceCompleteness: number;
+        verificationPercent: number;
+        readinessScore: number;
+      }> = {};
+      dashboardData.repositoryHealth.repositories.forEach((repo) => {
+        const key =
+          repo.repositoryType ||
+          repo.label.toLowerCase().replace(/ repository/g, '').replace(/\s+/g, '-');
+        map[key] = {
+          dataCompleteness: repo.dataCompleteness ?? 0,
+          evidenceCompleteness: repo.evidenceCompleteness ?? 0,
+          verificationPercent: repo.verificationPercent ?? 0,
+          readinessScore: repo.readiness ?? 0,
+        };
+      });
+      return map;
+    }
+    return {};
+  }, [dashboardData]);
+
+  const overallReadiness = useMemo(() => {
+    if (dashboardData?.repositoryHealth?.overallReadiness !== undefined) {
+      return Math.round(dashboardData.repositoryHealth.overallReadiness);
+    }
+    const scores = Object.values(displayHealth).map(m => m.readinessScore);
+    if (scores.length > 0) {
+      return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+    return 0;
+  }, [dashboardData, displayHealth]);
+
+  // Recent Uploads Mapping
+  const displayUploads = useMemo(() => {
+    if (dashboardData?.recentUploads?.uploads && dashboardData.recentUploads.uploads.length > 0) {
+      return dashboardData.recentUploads.uploads.map((u) => ({
+        id: String(u.id),
+        fileName: u.fileName,
+        repository: u.repository,
+        recordsCount: u.recordsCount,
+        uploadedAt: u.uploadedDate,
+        status: u.status,
+      }));
+    }
+    return [];
+  }, [dashboardData]);
+
+  const totalUploadsCount = useMemo(() => {
+    return dashboardData?.recentUploads?.totalCount ?? displayUploads.length;
+  }, [dashboardData, displayUploads]);
+
+  // Render Skeleton when loading and no data yet
+  if (loading && !dashboardData) {
+    return (
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Department Repository Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Overview of repository data, evidence, and verification status
+          </p>
+        </div>
+
+        {/* KPI Skeletons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-7 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-9 w-9 rounded-xl" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Dept Info Skeleton */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-3.5 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <Skeleton className="h-9 w-9 rounded-lg" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-2.5 w-16" />
+                    <Skeleton className="h-3.5 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Health Skeleton */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1.5">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-3.5 w-72" />
+              </div>
+              <Skeleton className="h-6 w-32 rounded-md" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-border/50 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <div className="space-y-1 flex-1">
+                      <Skeleton className="h-3.5 w-24" />
+                      <Skeleton className="h-2.5 w-16" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-2 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,49 +315,51 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
       </motion.div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {dashboardKPIs.map((kpi, index) => {
-          const Icon = iconMap[kpi.icon] || FileText;
-          const isPositive = kpi.trend >= 0;
-          return (
-            <motion.div
-              key={kpi.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.04 }}
-            >
-              <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-300 hover:border-primary/20 cursor-pointer group">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                        {kpi.label}
-                      </p>
-                      <p className="text-xl font-bold tracking-tight">
-                        {kpi.value}{kpi.suffix || ''}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        {isPositive ? (
-                          <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3 text-red-500" />
-                        )}
-                        <span className={cn('text-[10px] font-medium', isPositive ? 'text-emerald-500' : 'text-red-500')}>
-                          {isPositive ? '+' : ''}{kpi.trend}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">{kpi.trendLabel}</span>
+      {displayKPIs.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {displayKPIs.map((kpi, index) => {
+            const Icon = iconMap[kpi.icon] || FileText;
+            const isPositive = kpi.trend >= 0;
+            return (
+              <motion.div
+                key={kpi.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.04 }}
+              >
+                <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-300 hover:border-primary/20 cursor-pointer group">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                          {kpi.label}
+                        </p>
+                        <p className="text-xl font-bold tracking-tight">
+                          {kpi.value}{kpi.suffix || ''}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          {isPositive ? (
+                            <TrendingUp className="h-3 w-3 text-emerald-500" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className={cn('text-[10px] font-medium', isPositive ? 'text-emerald-500' : 'text-red-500')}>
+                            {isPositive ? '+' : ''}{kpi.trend}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{kpi.trendLabel}</span>
+                        </div>
+                      </div>
+                      <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', kpi.color)}>
+                        <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', kpi.color)}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Department Information */}
       <motion.div
@@ -121,7 +380,7 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Department</p>
-                  <p className="text-xs font-semibold">{departmentInfo.department}</p>
+                  <p className="text-xs font-semibold">{displayDeptInfo.department}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -130,7 +389,7 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Program Offerings</p>
-                  <p className="text-xs font-semibold">{departmentInfo.programOfferings.length} programs</p>
+                  <p className="text-xs font-semibold">{displayDeptInfo.programCount} programs</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -139,7 +398,7 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Specializations</p>
-                  <p className="text-xs font-semibold">{departmentInfo.specializations.join(', ')}</p>
+                  <p className="text-xs font-semibold">{displayDeptInfo.specializations}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -148,7 +407,7 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Coordinator</p>
-                  <p className="text-xs font-semibold">{departmentInfo.coordinatorName}</p>
+                  <p className="text-xs font-semibold">{displayDeptInfo.coordinatorName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -157,7 +416,7 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Academic Year</p>
-                  <p className="text-xs font-semibold">{departmentInfo.academicYear}</p>
+                  <p className="text-xs font-semibold">{displayDeptInfo.academicYear}</p>
                 </div>
               </div>
             </div>
@@ -186,7 +445,12 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {allRepositoryConfigs.map((config) => {
-                const metrics = repositoryHealth[config.id];
+                const metrics = displayHealth[config.id] || {
+                  dataCompleteness: 0,
+                  evidenceCompleteness: 0,
+                  verificationPercent: 0,
+                  readinessScore: 0,
+                };
                 const Icon = iconMap[config.icon] || FileText;
                 return (
                   <div
@@ -277,44 +541,51 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
                   <CardTitle className="text-base font-semibold">Recent Uploads</CardTitle>
                   <CardDescription>Latest CSV uploads across all repositories</CardDescription>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">{uploadHistory.length} total</Badge>
+                <Badge variant="secondary" className="text-[10px]">{totalUploadsCount} total</Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {uploadHistory.slice(0, 5).map((upload) => (
-                  <div
-                    key={upload.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10">
-                      <Upload className="h-4 w-4 text-indigo-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{upload.fileName}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">{upload.repository}</Badge>
-                        <span className="text-[11px] text-muted-foreground">{upload.recordsCount} records</span>
-                        <span className="text-[11px] text-muted-foreground">•</span>
-                        <span className="text-[11px] text-muted-foreground">{upload.uploadedAt.split(' ')[0]}</span>
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        'text-[10px] shrink-0',
-                        upload.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                        upload.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                        upload.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                      )}
+              {displayUploads.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Upload className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                  <p className="text-xs font-medium text-muted-foreground">No recent uploads for this academic year</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {displayUploads.slice(0, 5).map((upload) => (
+                    <div
+                      key={upload.id}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
                     >
-                      {upload.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                      {upload.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {upload.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10">
+                        <Upload className="h-4 w-4 text-indigo-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{upload.fileName}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">{upload.repository}</Badge>
+                          <span className="text-[11px] text-muted-foreground">{upload.recordsCount} records</span>
+                          <span className="text-[11px] text-muted-foreground">•</span>
+                          <span className="text-[11px] text-muted-foreground">{upload.uploadedAt ? upload.uploadedAt.split(' ')[0] : '—'}</span>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          'text-[10px] shrink-0',
+                          upload.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
+                          upload.status === 'pending' && 'bg-amber-500/10 text-amber-600',
+                          upload.status === 'rejected' && 'bg-red-500/10 text-red-600',
+                        )}
+                      >
+                        {upload.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                        {upload.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                        {upload.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -344,11 +615,10 @@ export const RepositoryDashboard = ({ onNavigate }: RepositoryDashboardProps) =>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {Object.entries(repositoryHealth).map(([key, metrics]) => {
-                const config = allRepositoryConfigs.find(c => c.id === key);
-                if (!config) return null;
+              {allRepositoryConfigs.map((config) => {
+                const metrics = displayHealth[config.id] || { readinessScore: 0 };
                 return (
-                  <div key={key} className="p-4 rounded-xl border border-border/50 text-center">
+                  <div key={config.id} className="p-4 rounded-xl border border-border/50 text-center">
                     <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
                       {config.label.replace(' Repository', '')} Readiness
                     </p>
