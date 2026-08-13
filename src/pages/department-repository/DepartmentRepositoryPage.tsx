@@ -277,7 +277,7 @@ export const DepartmentRepositoryPage = () => {
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden flex flex-col">
+      <main className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50">
           <Button
@@ -309,8 +309,8 @@ export const DepartmentRepositoryPage = () => {
         </div>
 
         {/* Content Area */}
-        <ScrollArea className="flex-1">
-          <div className="p-6">
+        <div className="flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
+          <div className="p-6 w-full min-w-0 max-w-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${activeView}-${selectedAcademicYear}`}
@@ -318,12 +318,13 @@ export const DepartmentRepositoryPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
+                className="w-full min-w-0 max-w-full"
               >
                 {renderContent()}
               </motion.div>
             </AnimatePresence>
           </div>
-        </ScrollArea>
+        </div>
       </main>
     </div>
   );

@@ -107,9 +107,37 @@
   background: hsl(var(--muted-foreground) / 0.5);
 }
 
+/* Enhanced Table Scrollbar */
+.table-scroll-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
+}
+
+.table-scroll-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.25);
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.35);
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.65);
+}
+
 /* Smooth transitions */
 .transition-sidebar {
   transition:
     margin-left 0.3s ease,
     width 0.3s ease;
 }
+
