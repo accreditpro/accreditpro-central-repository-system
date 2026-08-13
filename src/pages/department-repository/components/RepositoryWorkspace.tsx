@@ -27,6 +27,10 @@ import {
   AcademicRepositorySummary,
 } from '@/services/academic-repository.service';
 import {
+  getFacultyRepositoryHealthMetrics,
+  FacultyRepositoryMetrics,
+} from '@/services/faculty-repository.service';
+import {
   GraduationCap,
   Users,
   Users2,
@@ -145,6 +149,8 @@ export const RepositoryWorkspace = ({
 
   // Live summary for Academic Repository score cards
   const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
+  // Live metrics for Faculty Repository score cards
+  const [facultyMetrics, setFacultyMetrics] = useState<FacultyRepositoryMetrics | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
 
   useEffect(() => {
@@ -160,6 +166,22 @@ export const RepositoryWorkspace = ({
         })
         .catch((err) => {
           console.warn('Live academic summary fetch error:', err);
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingMetrics(false);
+          }
+        });
+    } else if (config.id === 'faculty') {
+      setLoadingMetrics(true);
+      getFacultyRepositoryHealthMetrics(academicYear, departmentId)
+        .then((res) => {
+          if (isMounted && res) {
+            setFacultyMetrics(res);
+          }
+        })
+        .catch((err) => {
+          console.warn('Live faculty metrics fetch error:', err);
         })
         .finally(() => {
           if (isMounted) {
@@ -187,6 +209,14 @@ export const RepositoryWorkspace = ({
         readinessScore: academicSummary?.readinessScore ?? 0,
       };
     }
+    if (config.id === 'faculty') {
+      return {
+        dataCompleteness: facultyMetrics?.dataCompleteness ?? repositoryHealth.faculty?.dataCompleteness ?? 0,
+        evidenceCompleteness: facultyMetrics?.evidenceScore ?? repositoryHealth.faculty?.evidenceCompleteness ?? 0,
+        verificationPercent: facultyMetrics?.verificationScore ?? repositoryHealth.faculty?.verificationPercent ?? 0,
+        readinessScore: facultyMetrics?.readinessScore ?? repositoryHealth.faculty?.readinessScore ?? 0,
+      };
+    }
     const fallback = repositoryHealth[config.id] || {
       dataCompleteness: 0,
       evidenceCompleteness: 0,
@@ -194,7 +224,7 @@ export const RepositoryWorkspace = ({
       readinessScore: 0,
     };
     return fallback;
-  }, [config.id, academicSummary]);
+  }, [config.id, academicSummary, facultyMetrics]);
 
   // Render Student Repository with its own dedicated module (with Department/Year/Semester selectors)
   if (config.id === 'student') {
@@ -217,7 +247,7 @@ export const RepositoryWorkspace = ({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 w-full min-w-0 max-w-full">
       {/* Repository Header */}
       <motion.div
         initial={{ opacity: 0, y: -5 }}
@@ -245,7 +275,7 @@ export const RepositoryWorkspace = ({
             >
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{metric.label}</p>
               <div className="flex items-center gap-2 mt-1">
-                {config.id === 'academic' && loadingMetrics && !academicSummary ? (
+                {loadingMetrics && !academicSummary && !facultyMetrics ? (
                   <div className="flex items-center gap-2 w-full">
                     <Skeleton className="h-6 w-12" />
                     <Skeleton className="h-1.5 flex-1" />
@@ -263,7 +293,7 @@ export const RepositoryWorkspace = ({
       </motion.div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 max-w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
           {config.tabs.map((tab) => {
             const Icon = iconMap[tab.icon] || FileText;
@@ -286,7 +316,7 @@ export const RepositoryWorkspace = ({
         </TabsList>
 
         {config.tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-4">
+          <TabsContent key={tab.id} value={tab.id} className="mt-4 w-full min-w-0 max-w-full">
             {tab.id === 'academic-calendar' && config.id === 'academic' ? (
               <AcademicCalendarModule
                 department={currentDepartment}
