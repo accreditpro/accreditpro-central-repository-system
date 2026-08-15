@@ -38,14 +38,17 @@ import {
   Send,
   Paperclip,
   XCircle,
+  Loader2,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CSVUploadDialogProps {
   open: boolean;
   onClose: () => void;
   tabConfig: RepositoryTabConfig;
   existingData: Record<string, string>[];
-  onUploadComplete?: (data: Record<string, string>[]) => void;
+  onUploadComplete?: (data: Record<string, string>[], file?: File | null) => Promise<void> | void;
+  onUploadFile?: (file: File, validData?: Record<string, string>[]) => Promise<any>;
 }
 
 type UploadStep = 'upload' | 'mapping' | 'validate' | 'preview' | 'evidence' | 'submit';
@@ -99,6 +102,64 @@ function computeConfidence(csvCol: string, fieldCol: string): number {
   return 0;
 }
 
+// Date normalizer to standard ISO YYYY-MM-DD
+export function normalizeDateToISO(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+  // DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  const dmyMatch = trimmed.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, '0');
+    const month = dmyMatch[2].padStart(2, '0');
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  // YYYY/MM/DD or YYYY.MM.DD
+  const ymdMatch = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (ymdMatch) {
+    const year = ymdMatch[1];
+    const month = ymdMatch[2].padStart(2, '0');
+    const day = ymdMatch[3].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Fallback: try JavaScript Date parse
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  return trimmed;
+}
+
+// Generate normalized CSV File from rows and expected headers
+function generateCSVFileFromRows(
+  rows: Record<string, string>[],
+  headers: string[],
+  fileName: string
+): File {
+  const escapeCSV = (val: any) => {
+    const s = String(val ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
+  const headerLine = headers.map(escapeCSV).join(',');
+  const dataLines = rows.map(row => headers.map(h => escapeCSV(row[h] ?? '')).join(','));
+  const csvContent = [headerLine, ...dataLines].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  return new File([blob], fileName || 'upload.csv', { type: 'text/csv' });
+}
+
 // Parse a single CSV line handling quoted fields
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -119,19 +180,23 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUploadComplete }: CSVUploadDialogProps) => {
+export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUploadComplete, onUploadFile }: CSVUploadDialogProps) => {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
   const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setUploadedFile(file);
     setUploadedFileName(file.name);
 
     const reader = new FileReader();
@@ -197,27 +262,44 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       case 'qualifications':
         return row['Employee ID'] && row['Degree'] ? `${row['Employee ID']}|${row['Degree']}` : null;
       case 'certifications':
-        return row['Employee ID'] && row['Certification Name'] ? `${row['Employee ID']}|${row['Certification Name']}` : null;
       case 'student-profile':
-        return row['Student Registration Number'] || null;
-      case 'admission-info':
-        return row['Student Registration Number'] && row['Admission Year'] ? `${row['Student Registration Number']}|${row['Admission Year']}` : null;
+        return row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'] || null;
+      case 'admission-info': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const yr = row['Admission Year'] || row['admissionYear'];
+        return reg && yr ? `${reg}|${yr}` : reg || null;
+      }
       case 'student-diversity':
-        return row['Student Registration Number'] || null;
-      case 'academic-performance':
-        return row['Student Registration Number'] && row['Semester'] ? `${row['Student Registration Number']}|${row['Semester']}` : null;
-      case 'student-progression':
-        return row['Student Registration Number'] && row['Academic Year'] ? `${row['Student Registration Number']}|${row['Academic Year']}` : null;
-      case 'scholarship-freeship':
-        return row['Student Registration Number'] && row['Scholarship Name'] ? `${row['Student Registration Number']}|${row['Scholarship Name']}` : null;
-      case 'mooc-online-certifications':
-        return row['Student Registration Number'] && row['Course Name'] ? `${row['Student Registration Number']}|${row['Course Name']}` : null;
-      case 'student-achievements':
-        return row['Student Registration Number'] && row['Achievement Name'] ? `${row['Student Registration Number']}|${row['Achievement Name']}` : null;
+        return row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'] || null;
+      case 'academic-performance': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const sem = row['Semester'] || row['semester'];
+        return reg && sem ? `${reg}|${sem}` : reg || null;
+      }
+      case 'student-progression': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const yr = row['Academic Year'] || row['academicYear'];
+        return reg && yr ? `${reg}|${yr}` : reg || null;
+      }
+      case 'scholarship-freeship': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const sch = row['Scholarship Name'] || row['scholarshipName'];
+        return reg && sch ? `${reg}|${sch}` : reg || null;
+      }
+      case 'mooc-online-certifications': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const crs = row['Course Name'] || row['courseName'];
+        return reg && crs ? `${reg}|${crs}` : reg || null;
+      }
+      case 'student-achievements': {
+        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
+        const ach = row['Achievement Name'] || row['achievementName'];
+        return reg && ach ? `${reg}|${ach}` : reg || null;
+      }
       case 'publications':
-        return row['Publication Title'] || null;
+        return row['Publication Title'] || row['title'] || null;
       case 'patents':
-        return row['Application Number'] || null;
+        return row['Application Number'] || row['applicationNumber'] || null;
       default: {
         const firstField = Object.keys(row)[0];
         return firstField ? row[firstField] : null;
@@ -260,7 +342,15 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       const mappedRow: Record<string, string> = {};
       columnMappings.forEach(mapping => {
         if (mapping.csvColumn && mapping.status !== 'unmapped') {
-          mappedRow[mapping.mappedField] = row[mapping.csvColumn] || '';
+          let val = row[mapping.csvColumn] || '';
+          const fieldDef = tabConfig.fields.find(f => f.csvColumn === mapping.mappedField);
+          if (fieldDef?.type === 'date' && val) {
+            val = normalizeDateToISO(val);
+          }
+          if (fieldDef?.key === 'aadhaarNumber' && val && val.length > 10) {
+            val = val.slice(0, 10);
+          }
+          mappedRow[mapping.mappedField] = val;
         } else {
           mappedRow[mapping.mappedField] = '';
         }
@@ -361,6 +451,23 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         }
       }
 
+      // Validate date fields
+      tabConfig.fields.forEach(field => {
+        if (field.type === 'date') {
+          const value = row[field.csvColumn]?.trim() || '';
+          if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            errors.push({
+              row: rowIndex + 1,
+              column: field.csvColumn,
+              value,
+              message: `Invalid date format for "${field.csvColumn}". Expected YYYY-MM-DD`,
+              severity: 'error',
+            });
+            rowHasError = true;
+          }
+        }
+      });
+
       // Validate boolean fields
       tabConfig.fields.forEach(field => {
         if (field.type === 'boolean') {
@@ -410,7 +517,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 'mapping') {
       const result = performValidation();
       setValidationResult(result);
@@ -420,11 +527,36 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     if (nextIndex < steps.length) {
       setCurrentStep(steps[nextIndex].id);
     } else {
-      // Submit - only pass valid data
-      if (validationResult && validationResult.validData.length > 0 && onUploadComplete) {
-        onUploadComplete(validationResult.validData);
+      // Submit - execute upload
+      setIsSubmitting(true);
+      try {
+        const expectedHeaders = tabConfig.fields.map(f => f.csvColumn);
+        const rowsToUpload = validationResult?.validData && validationResult.validData.length > 0
+          ? validationResult.validData
+          : parsedData;
+
+        // Build a normalized CSV file where all dates are ISO YYYY-MM-DD and headers match expected tab fields
+        const normalizedFile = generateCSVFileFromRows(
+          rowsToUpload,
+          expectedHeaders,
+          uploadedFileName || `${tabConfig.id}_data.csv`
+        );
+
+        if (onUploadFile) {
+          await onUploadFile(normalizedFile, rowsToUpload);
+        } else if (onUploadComplete) {
+          await onUploadComplete(rowsToUpload, normalizedFile);
+        }
+        handleClose();
+      } catch (err: any) {
+        toast({
+          title: 'Upload Failed',
+          description: err?.message || 'Failed to upload CSV file.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-      handleClose();
     }
   };
 
@@ -440,9 +572,11 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     setCurrentStep('upload');
     setParsedData([]);
     setCsvHeaders([]);
+    setUploadedFile(null);
     setUploadedFileName('');
     setColumnMappings([]);
     setValidationResult(null);
+    setIsSubmitting(false);
   };
 
   const canProceed = useMemo(() => {
@@ -495,6 +629,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
               {tabConfig.validationRules.map((rule, i) => (
                 <li key={i}>• {rule}</li>
               ))}
+              <li>• Date format: YYYY-MM-DD (e.g. 2004-08-15) — automatically converted from DD-MM-YYYY</li>
               <li>• All mandatory fields must be filled</li>
               <li>• No duplicate records allowed</li>
             </ul>
@@ -854,10 +989,18 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
             size="sm"
             className="text-xs"
             onClick={handleNext}
-            disabled={!canProceed}
+            disabled={!canProceed || isSubmitting}
           >
-            {currentStep === 'submit' ? 'Submit & Close' : 'Next'}
-            {currentStep !== 'submit' && <ArrowRight className="h-3 w-3 ml-1" />}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Submitting...
+              </>
+            ) : currentStep === 'submit' ? (
+              'Submit & Close'
+            ) : (
+              'Next'
+            )}
+            {!isSubmitting && currentStep !== 'submit' && <ArrowRight className="h-3 w-3 ml-1" />}
           </Button>
         </div>
       </DialogContent>

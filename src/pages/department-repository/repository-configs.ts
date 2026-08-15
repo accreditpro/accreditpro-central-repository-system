@@ -278,7 +278,7 @@ export const studentRepositoryConfig: RepositoryModuleConfig = {
       label: 'Student Profile',
       icon: 'Users',
       fields: [
-        { key: 'registrationNumber', label: 'Student Registration Number', type: 'text', required: true, csvColumn: 'Student Registration Number' },
+        { key: 'registrationNumber', label: 'Registration Number', type: 'text', required: true, csvColumn: 'Registration Number' },
         { key: 'studentId', label: 'Student ID', type: 'text', required: true, csvColumn: 'Student ID' },
         { key: 'rollNumber', label: 'Roll Number', type: 'text', required: true, csvColumn: 'Roll Number' },
         { key: 'studentName', label: 'Student Name', type: 'text', required: true, csvColumn: 'Student Name' },
@@ -287,7 +287,7 @@ export const studentRepositoryConfig: RepositoryModuleConfig = {
         { key: 'aadhaarNumber', label: 'Aadhaar Number', type: 'text', required: false, csvColumn: 'Aadhaar Number' },
         { key: 'emailAddress', label: 'Email Address', type: 'text', required: false, csvColumn: 'Email Address' },
         { key: 'mobileNumber', label: 'Mobile Number', type: 'text', required: false, csvColumn: 'Mobile Number' },
-        { key: 'currentSemesterYear', label: 'Current Semester/Year', type: 'number', required: true, csvColumn: 'Current Semester/Year' },
+        { key: 'currentSemesterYear', label: 'Current Semester / Year', type: 'number', required: true, csvColumn: 'Current Semester / Year' },
         { key: 'studentStatus', label: 'Student Status', type: 'select', required: true, csvColumn: 'Student Status', selectOptions: ['Active', 'Graduated', 'Discontinued'] },
       ],
       requiredEvidence: ['Admission Register', 'Student Records', 'Admission Form', 'SSC Certificate', 'Aadhaar Card'],
