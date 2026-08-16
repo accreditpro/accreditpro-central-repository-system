@@ -250,7 +250,14 @@ export const RepositoryWorkspace = ({
 
   // Render Research Repository with its own dedicated module (Faculty Research, Student Research, Dept Project Dev, Dashboard)
   if (config.id === 'research') {
-    return <ResearchModule config={config} academicYear={academicYear} />;
+    return (
+      <ResearchModule
+        config={config}
+        academicYear={academicYear}
+        departmentId={departmentId}
+        departmentName={currentDepartment}
+      />
+    );
   }
 
   return (

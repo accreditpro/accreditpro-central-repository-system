@@ -383,8 +383,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         if (field.masterDataSource) {
           const value = row[field.csvColumn]?.trim() || '';
           if (value) {
-            const validValues = masterData[field.masterDataSource as keyof typeof masterData] as string[];
-            if (!validValues.includes(value)) {
+            const validValues = (masterData[field.masterDataSource as keyof typeof masterData] as string[]) || [];
+            const isValid = validValues.some(v => v.trim().toLowerCase() === value.toLowerCase());
+            if (!isValid) {
               errors.push({
                 row: rowIndex + 1,
                 column: field.csvColumn,
