@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,7 +8,15 @@ import { RepositoryModuleConfig } from '../types';
 import { repositoryHealth, departmentInfo } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
 import { getModuleTabActiveClasses } from './module-tab-styles';
+import { StudentProfileModule } from './StudentProfileModule';
+import { StudentAdmissionModule } from './StudentAdmissionModule';
+import { StudentDiversityModule } from './StudentDiversityModule';
 import { StudentMOOCModule } from './StudentMOOCModule';
+import { StudentScholarshipModule } from './StudentScholarshipModule';
+import {
+  getStudentRepositoryHealthMetrics,
+  StudentRepositoryMetrics,
+} from '@/services/student-repository.service';
 import {
   Building2,
   CalendarDays,
@@ -34,25 +42,70 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
 };
 
+import { useAuth } from '@/hooks/useAuth';
+
 interface StudentRepositoryModuleProps {
   config: RepositoryModuleConfig;
   academicYear?: string;
+  departmentId?: number;
+  departmentName?: string;
 }
 
 const academicYearOptions = ['2023-24', '2024-25', '2025-26', '2026-27'];
 const yearOptions = ['I Year', 'II Year', 'III Year', 'IV Year'];
 const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
 
-export const StudentRepositoryModule = ({ config, academicYear }: StudentRepositoryModuleProps) => {
+export const StudentRepositoryModule = ({
+  config,
+  academicYear,
+  departmentId,
+  departmentName,
+}: StudentRepositoryModuleProps) => {
+  const { user } = useAuth();
+  const effectiveDeptId = departmentId || user?.departmentId || 4;
+  const effectiveDeptName = departmentName || user?.department || departmentInfo.department;
+
   const [activeTab, setActiveTab] = useState(config.tabs[0]?.id || '');
   const activeClasses = getModuleTabActiveClasses(config.id);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState(academicYear || '2025-26');
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester 5');
-  const metrics = repositoryHealth[config.id];
+  const [liveMetrics, setLiveMetrics] = useState<StudentRepositoryMetrics | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingMetrics(true);
+    getStudentRepositoryHealthMetrics(selectedAcademicYear, effectiveDeptId)
+      .then((res) => {
+        if (isMounted && res) {
+          setLiveMetrics(res);
+        }
+      })
+      .catch((err) => {
+        console.warn('Live student health metrics error:', err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingMetrics(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedAcademicYear, effectiveDeptId]);
+
+  const metrics = useMemo(() => {
+    return {
+      dataCompleteness: liveMetrics?.dataCompleteness ?? repositoryHealth[config.id]?.dataCompleteness ?? 0,
+      evidenceCompleteness: liveMetrics?.evidenceScore ?? repositoryHealth[config.id]?.evidenceCompleteness ?? 0,
+      verificationPercent: liveMetrics?.verificationScore ?? repositoryHealth[config.id]?.verificationPercent ?? 0,
+      readinessScore: liveMetrics?.readinessScore ?? repositoryHealth[config.id]?.readinessScore ?? 0,
+    };
+  }, [liveMetrics, config.id]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 w-full min-w-0 max-w-full">
       {/* Repository Header */}
       <motion.div
         initial={{ opacity: 0, y: -5 }}
@@ -74,8 +127,8 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
               <Building2 className="h-4 w-4 text-blue-400" />
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Department</span>
             </div>
-            <p className="text-sm font-semibold text-white truncate" title={departmentInfo.department}>
-              {departmentInfo.department}
+            <p className="text-sm font-semibold text-white truncate" title={effectiveDeptName}>
+              {effectiveDeptName}
             </p>
           </div>
 
@@ -105,7 +158,6 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
             </div>
             <Select value={selectedYear} onValueChange={(value) => {
               setSelectedYear(value);
-              // Auto-adjust semester based on year selection
               const yearIndex = yearOptions.indexOf(value);
               const defaultSemester = `Semester ${yearIndex * 2 + 1}`;
               setSelectedSemester(defaultSemester);
@@ -165,7 +217,7 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
       {/* Context Info Banner */}
       <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 border border-border/30">
         <span className="text-xs text-muted-foreground">
-          Showing data for <span className="font-semibold text-foreground">{departmentInfo.department}</span> &bull; 
+          Showing data for <span className="font-semibold text-foreground">{effectiveDeptName}</span> &bull; 
           <span className="font-semibold text-foreground"> {selectedAcademicYear}</span> &bull; 
           <span className="font-semibold text-foreground"> {selectedYear}</span> &bull; 
           <span className="font-semibold text-foreground"> {selectedSemester}</span>
@@ -173,7 +225,7 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 max-w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl flex-wrap gap-0.5">
           {config.tabs.map((tab) => {
             const Icon = iconMap[tab.icon] || FileText;
@@ -196,11 +248,44 @@ export const StudentRepositoryModule = ({ config, academicYear }: StudentReposit
         </TabsList>
 
         {config.tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-4">
-            {tab.id === 'mooc-online-certifications' ? (
-              <StudentMOOCModule
-                department={departmentInfo.department}
+          <TabsContent key={tab.id} value={tab.id} className="mt-4 w-full min-w-0 max-w-full">
+            {tab.id === 'student-profile' ? (
+              <StudentProfileModule
+                department={effectiveDeptName}
+                departmentId={effectiveDeptId}
                 academicYear={selectedAcademicYear}
+                year={selectedYear}
+                semester={selectedSemester}
+              />
+            ) : tab.id === 'admission-info' ? (
+              <StudentAdmissionModule
+                department={effectiveDeptName}
+                departmentId={effectiveDeptId}
+                academicYear={selectedAcademicYear}
+                year={selectedYear}
+                semester={selectedSemester}
+              />
+            ) : tab.id === 'student-diversity' ? (
+              <StudentDiversityModule
+                department={effectiveDeptName}
+                departmentId={effectiveDeptId}
+                academicYear={selectedAcademicYear}
+                year={selectedYear}
+                semester={selectedSemester}
+              />
+            ) : tab.id === 'mooc-online-certifications' ? (
+              <StudentMOOCModule
+                department={effectiveDeptName}
+                departmentId={effectiveDeptId}
+                academicYear={selectedAcademicYear}
+              />
+            ) : tab.id === 'scholarship-freeship' || tab.id === 'scholarships-freeships' ? (
+              <StudentScholarshipModule
+                department={effectiveDeptName}
+                departmentId={effectiveDeptId}
+                academicYear={selectedAcademicYear}
+                year={selectedYear}
+                semester={selectedSemester}
               />
             ) : (
               <RepositoryTabContent

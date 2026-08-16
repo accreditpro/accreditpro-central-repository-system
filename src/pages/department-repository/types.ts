@@ -13,6 +13,8 @@ export interface RepositoryFieldConfig {
   validationRules?: string[];
 }
 
+export type FieldConfig = RepositoryFieldConfig;
+
 export interface RepositoryTabConfig {
   id: string;
   label: string;

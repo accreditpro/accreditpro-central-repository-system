@@ -1,0 +1,8 @@
+registrationNumber,studentName,admissionYear,admissionType,admissionCategory,admissionRank,admissionQuota,stateOfOrigin,country,admissionStatus,department,academicYear
+REG2025001,Aarav Patel,2025-26,Regular,General,1520,State Quota,Telangana,India,Admitted,Computer Science,2025-26
+REG2025002,Priya Sharma,2025-26,Lateral Entry,OBC,450,Management Quota,Andhra Pradesh,India,Admitted,Information Technology,2025-26
+REG2025003,Rohan Kumar,2025-26,Regular,SC,8500,State Quota,Maharashtra,India,Admitted,Computer Science,2025-26
+REG2024050,Sneha Gupta,2025-26,Regular,General,2100,All India,Delhi,India,Admitted,Electronics,2024-25
+REG2023100,Vikram Singh,2025-26,Regular,ST,12400,State Quota,Karnataka,India,Admitted,Mechanical,2023-24
+REG2025012,Ananya Desai,2025-26,Regular,General,3400,State Quota,Gujarat,India,Admitted,Civil Engineering,2025-26
+REG2025045,Karan Malhotra,2025-26,Regular,OBC,5600,All India,Punjab,India,Admitted,Computer Science,2025-26

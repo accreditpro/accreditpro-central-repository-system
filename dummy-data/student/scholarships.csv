@@ -1,0 +1,8 @@
+registrationNumber,studentName,scholarshipName,type,provider,amount,academicYear,feeWaiverStatus,disbursementStatus,department
+REG2025001,Aarav Patel,Post Matric Scholarship,Government,State Government,35000.00,2025-26,Partial,Disbursed,Computer Science & Engineering
+REG2025002,Priya Sharma,AICTE Pragati Scholarship,Merit-based,AICTE,50000.00,2025-26,None,Pending,Information Technology
+REG2025003,Rohan Kumar,National Scholarship Portal (NSP),Government,Central Government,25000.00,2025-26,Partial,Disbursed,Computer Science & Engineering
+REG2024050,Sneha Gupta,Corporate CSR Scholarship,Private,Reliance Foundation,75000.00,2024-25,Full,Disbursed,Electronics & Communication
+REG2023100,Vikram Singh,Merit-cum-Means Scholarship,Need-based,Institute,20000.00,2023-24,Partial,Disbursed,Mechanical Engineering
+REG2025012,Ananya Desai,Women in Tech Scholarship,Merit-based,Tech Mahindra,100000.00,2025-26,None,Disbursed,Civil Engineering
+REG2025045,Karan Malhotra,Sports Quota Scholarship,Extracurricular,Institute,15000.00,2025-26,Partial,Pending,Computer Science & Engineering

@@ -14,7 +14,14 @@ import {
 // Institution Master Data (from Institution Admin configuration)
 export const masterData: MasterData = {
   programs: ['B.Tech', 'M.Tech', 'Ph.D'],
-  departments: ['CSE', 'ECE', 'EEE', 'MECH', 'Civil'],
+  departments: [
+    'CSE', 'ECE', 'EEE', 'MECH', 'Civil', 'IT', 'MBA',
+    'Computer Science', 'Computer Science and Engineering',
+    'Mechanical Engineering', 'Electrical Engineering',
+    'Electrical and Electronics Engineering', 'Electrical & Electronics Engineering',
+    'Electronics and Communication Engineering',
+    'Civil Engineering', 'Business Administration', 'Information Technology'
+  ],
   specializations: ['AI', 'Data Science', 'Cyber Security', 'IoT', 'VLSI', 'Cloud Computing'],
   academicYears: ['2025-26', '2024-25', '2023-24', '2022-23', '2021-22'],
   regulations: ['R22', 'R20', 'R18'],
@@ -278,7 +285,7 @@ export const studentRepositoryConfig: RepositoryModuleConfig = {
       label: 'Student Profile',
       icon: 'Users',
       fields: [
-        { key: 'registrationNumber', label: 'Student Registration Number', type: 'text', required: true, csvColumn: 'Student Registration Number' },
+        { key: 'registrationNumber', label: 'Registration Number', type: 'text', required: true, csvColumn: 'Registration Number' },
         { key: 'studentId', label: 'Student ID', type: 'text', required: true, csvColumn: 'Student ID' },
         { key: 'rollNumber', label: 'Roll Number', type: 'text', required: true, csvColumn: 'Roll Number' },
         { key: 'studentName', label: 'Student Name', type: 'text', required: true, csvColumn: 'Student Name' },
@@ -287,7 +294,7 @@ export const studentRepositoryConfig: RepositoryModuleConfig = {
         { key: 'aadhaarNumber', label: 'Aadhaar Number', type: 'text', required: false, csvColumn: 'Aadhaar Number' },
         { key: 'emailAddress', label: 'Email Address', type: 'text', required: false, csvColumn: 'Email Address' },
         { key: 'mobileNumber', label: 'Mobile Number', type: 'text', required: false, csvColumn: 'Mobile Number' },
-        { key: 'currentSemesterYear', label: 'Current Semester/Year', type: 'number', required: true, csvColumn: 'Current Semester/Year' },
+        { key: 'currentSemesterYear', label: 'Current Semester / Year', type: 'number', required: true, csvColumn: 'Current Semester / Year' },
         { key: 'studentStatus', label: 'Student Status', type: 'select', required: true, csvColumn: 'Student Status', selectOptions: ['Active', 'Graduated', 'Discontinued'] },
       ],
       requiredEvidence: ['Admission Register', 'Student Records', 'Admission Form', 'SSC Certificate', 'Aadhaar Card'],
@@ -1454,19 +1461,8 @@ export const uploadHistory: UploadHistoryRecord[] = [
   { id: '7', fileName: 'academic_calendar_2025_26.csv', tab: 'Academic Calendar', repository: 'academic', uploadedAt: '2025-01-08 10:15', recordsCount: 25, validRecords: 25, invalidRecords: 0, status: 'approved', uploadedBy: 'Dr. Anita Sharma', workflowStatus: 'approved' },
 ];
 
-// Evidence Documents
-export const evidenceDocuments: EvidenceDocument[] = [
-  { id: '1', name: 'Curriculum Structure R22.pdf', category: 'Curriculum', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-08', status: 'verified', fileType: 'pdf', size: '2.4 MB' },
-  { id: '2', name: 'BoS Minutes Dec 2024.pdf', category: 'Curriculum', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-06', status: 'verified', fileType: 'pdf', size: '1.8 MB' },
-  { id: '3', name: 'Academic Calendar 2025-26.pdf', category: 'Academic Calendar', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-05', status: 'verified', fileType: 'pdf', size: '1.2 MB' },
-  { id: '4', name: 'Course Syllabus CSE AI.pdf', category: 'Courses', version: 'v2.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-12', status: 'pending', fileType: 'pdf', size: '4.5 MB' },
-  { id: '6', name: 'VAC Certificates Bundle.zip', category: 'Value Added Courses', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-09', status: 'verified', fileType: 'zip', size: '8.2 MB' },
-  { id: '7', name: 'Regulation R22 Document.pdf', category: 'Academic Regulations', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-04', status: 'verified', fileType: 'pdf', size: '3.1 MB' },
-  { id: '8', name: 'Faculty Appointment Orders.zip', category: 'Faculty Profiles', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-07', status: 'verified', fileType: 'zip', size: '6.8 MB' },
-  { id: '9', name: 'Research Publications 2024.zip', category: 'Publications', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-12', status: 'pending', fileType: 'zip', size: '22.4 MB' },
-  { id: '10', name: 'Add-on Program Brochures 2025-26.pdf', category: 'Add-on Programs', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-11', status: 'uploaded', fileType: 'pdf', size: '1.6 MB' },
-  { id: '11', name: 'Academic Timetable 2025-26.pdf', category: 'Academic Timetable', version: 'v1.0', uploadedBy: 'Dr. Anita Sharma', uploadedDate: '2025-01-10', status: 'uploaded', fileType: 'pdf', size: '1.1 MB' },
-];
+// Evidence Documents (Dynamic live state, no static mock fallbacks)
+export const evidenceDocuments: EvidenceDocument[] = [];
 
 // Workflow Steps
 export const workflowSteps: WorkflowStep[] = [

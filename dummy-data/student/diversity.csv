@@ -1,0 +1,9 @@
+registrationNumber,studentName,socialCategory,economicallyWeakerSection,minorityStatus,differentlyAbled,nationality,firstGenerationLearner,department,academicYear
+REG2025001,Aarav Patel,General,No,No,No,Indian,No,Computer Science & Engineering,2025-26
+REG2025002,Priya Sharma,OBC,Yes,No,No,Indian,Yes,Information Technology,2025-26
+REG2025003,Rohan Kumar,SC,No,No,Yes,Indian,No,Computer Science & Engineering,2025-26
+REG2024050,Sneha Gupta,General,No,Yes,No,Indian,No,Electronics & Communication,2024-25
+REG2023100,Vikram Singh,ST,Yes,No,No,Indian,Yes,Mechanical Engineering,2023-24
+REG2025012,Ananya Desai,General,No,No,No,NRI,No,Civil Engineering,2025-26
+REG2025045,Karan Malhotra,OBC,No,No,No,Indian,No,Computer Science & Engineering,2025-26
+REG2025088,Meera Reddy,General,Yes,No,No,Indian,Yes,Artificial Intelligence & Data Science,2025-26

@@ -1,0 +1,8 @@
+registrationNumber,studentName,platform,courseName,courseCategory,conductedBy,startDate,completionDate,durationHours,grade,score,certificationStatus,certificateId,academicYear,remarks,department
+REG2025001,Aarav Patel,Coursera,Python for Data Science,Technical,IBM,2026-07-01,2026-08-14,40,A,95%,Completed,IBM-DS-001,2025-26,Excellent performance,Computer Science & Engineering
+REG2025002,Priya Sharma,Udemy,Advanced React,Technical,Maximilian Schwarzmüller,2026-06-15,2026-08-10,30,B+,88%,Completed,UC-1234-ABCD,2025-26,Good project work,Information Technology
+REG2025003,Rohan Kumar,NPTEL,Enhancing Soft Skills and Personality,Soft Skills,IIT Kanpur,2026-05-01,2026-07-30,20,Elite,75%,Completed,NPTEL26S12345,2025-26,Top 5% of class,Computer Science & Engineering
+REG2024050,Sneha Gupta,edX,Machine Learning Fundamentals,Technical,UC San Diego,2026-01-10,2026-04-15,50,A+,98%,Completed,EDX-ML-998,2025-26,Outstanding,Electronics & Communication
+REG2023100,Vikram Singh,LinkedIn Learning,Project Management Foundations,Management,PMI,2026-08-01,2026-08-14,15,Pass,100%,Completed,LIL-PM-554,2025-26,Very Good,Mechanical Engineering
+REG2025012,Ananya Desai,Coursera,Google Data Analytics,Technical,Google,2026-02-15,2026-06-20,60,A,92%,Completed,GOOG-DA-776,2025-26,Highly recommended,Civil Engineering
+REG2025045,Karan Malhotra,AWS Training,AWS Cloud Practitioner,Technical,Amazon Web Services,2026-08-05,2026-08-14,12,Pass,850/1000,Completed,AWS-CP-2026X,2025-26,Cleared certification exam,Computer Science & Engineering
