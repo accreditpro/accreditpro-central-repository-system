@@ -17,6 +17,13 @@ import {
   deleteStudentDevRecord,
   uploadStudentDevCsv,
 } from '@/services/student-dev-outcomes.service';
+import {
+  getInfrastructureRecords,
+  createInfrastructureRecord,
+  updateInfrastructureRecord,
+  deleteInfrastructureRecord,
+  uploadInfrastructureCsv,
+} from '@/services/department-infrastructure.service';
 import { masterData, coordinatorContext } from '../repository-configs';
 import { CSVUploadDialog } from './CSVUploadDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,11 +131,12 @@ export const RepositoryTabContent = ({
   }, [tabConfig.fields, academicYear, departmentName]);
 
   const isStudentDev = repositoryId === 'student-dev-outcomes';
-  const apiFetchRecords = isStudentDev ? getStudentDevRecords : getResearchModuleRecords;
-  const apiCreateRecord = isStudentDev ? createStudentDevRecord : createResearchModuleRecord;
-  const apiUpdateRecord = isStudentDev ? updateStudentDevRecord : updateResearchModuleRecord;
-  const apiDeleteRecord = isStudentDev ? deleteStudentDevRecord : deleteResearchModuleRecord;
-  const apiUploadCsv = isStudentDev ? uploadStudentDevCsv : uploadResearchModuleCsv;
+  const isInfra = repositoryId === 'infrastructure' || repositoryId === 'infrastructure-repository';
+  const apiFetchRecords = isStudentDev ? getStudentDevRecords : isInfra ? getInfrastructureRecords : getResearchModuleRecords;
+  const apiCreateRecord = isStudentDev ? createStudentDevRecord : isInfra ? createInfrastructureRecord : createResearchModuleRecord;
+  const apiUpdateRecord = isStudentDev ? updateStudentDevRecord : isInfra ? updateInfrastructureRecord : updateResearchModuleRecord;
+  const apiDeleteRecord = isStudentDev ? deleteStudentDevRecord : isInfra ? deleteInfrastructureRecord : deleteResearchModuleRecord;
+  const apiUploadCsv = isStudentDev ? uploadStudentDevCsv : isInfra ? uploadInfrastructureCsv : uploadResearchModuleCsv;
 
   // Fetch records from backend
   const fetchRecords = useCallback(async () => {
@@ -145,18 +153,19 @@ export const RepositoryTabContent = ({
       if (Array.isArray(items)) {
         const normalized = items.map((it: any) => {
           const raw = it.recordData || it;
-          const rawStatus = it.workflowStatus || raw.workflowStatus || it.status || raw.status || raw['Status'] || 'draft';
-          const statusVal = String(rawStatus).toLowerCase();
+          const wfStatus = String(it.workflowStatus || raw.workflowStatus || 'draft').toLowerCase();
           const mapped: Record<string, any> = {
             id: it.id ?? raw.id,
-            status: statusVal,
-            workflowStatus: rawStatus,
+            workflowStatus: wfStatus,
             academicYear: it.academicYear || raw.academicYear || academicYear,
             departmentId: it.departmentId || raw.departmentId || effectiveDeptId,
           };
           tabConfig.fields.forEach((field) => {
             mapped[field.key] = raw[field.key] ?? raw[field.csvColumn] ?? '';
           });
+          if (mapped.status === undefined) {
+            mapped.status = raw.status || wfStatus;
+          }
           return mapped;
         });
         setRecords(normalized);
@@ -203,17 +212,26 @@ export const RepositoryTabContent = ({
 
     setSubmitting(true);
     try {
-      const statusVal = formData.workflowStatus || 'draft';
       const payload: Record<string, any> = {
         ...formData,
         departmentId: effectiveDeptId,
         academicYear: formData.academicYear || academicYear,
-        workflowStatus: statusVal,
-        status: statusVal,
       };
+
+      if (!isInfra) {
+        const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
+        const statusVal = formData.workflowStatus || 'draft';
+        payload.workflowStatus = statusVal;
+        if (!hasExplicitStatusField && !payload.status) {
+          payload.status = statusVal;
+        }
+      } else {
+        delete payload.workflowStatus;
+      }
+
       // Convert number fields
       tabConfig.fields.forEach((f) => {
-        if (f.type === 'number' && payload[f.key]) {
+        if (f.type === 'number' && payload[f.key] !== undefined && payload[f.key] !== '') {
           payload[f.key] = Number(payload[f.key]);
         }
       });
@@ -237,7 +255,9 @@ export const RepositoryTabContent = ({
     tabConfig.fields.forEach((field) => {
       formValues[field.key] = rec[field.key] ?? '';
     });
-    formValues.workflowStatus = rec.workflowStatus || rec.status || 'draft';
+    if (!isInfra) {
+      formValues.workflowStatus = rec.workflowStatus || (tabConfig.fields.some((f) => f.key === 'status') ? 'draft' : rec.status) || 'draft';
+    }
     setFormData(formValues);
     setShowEditDialog(true);
   };
@@ -257,16 +277,25 @@ export const RepositoryTabContent = ({
 
     setSubmitting(true);
     try {
-      const statusVal = formData.workflowStatus || 'draft';
       const payload: Record<string, any> = {
         ...formData,
         departmentId: effectiveDeptId,
         academicYear: formData.academicYear || academicYear,
-        workflowStatus: statusVal,
-        status: statusVal,
       };
+
+      if (!isInfra) {
+        const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
+        const statusVal = formData.workflowStatus || 'draft';
+        payload.workflowStatus = statusVal;
+        if (!hasExplicitStatusField && !payload.status) {
+          payload.status = statusVal;
+        }
+      } else {
+        delete payload.workflowStatus;
+      }
+
       tabConfig.fields.forEach((f) => {
-        if (f.type === 'number' && payload[f.key]) {
+        if (f.type === 'number' && payload[f.key] !== undefined && payload[f.key] !== '') {
           payload[f.key] = Number(payload[f.key]);
         }
       });
@@ -576,21 +605,26 @@ export const RepositoryTabContent = ({
                           );
                         })}
                         <TableCell className="text-xs">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'text-[9px] capitalize',
-                              (row.status === 'verified' || row.status === 'approved' || row.status === 'granted') &&
-                                'bg-emerald-500/10 text-emerald-600',
-                              (row.status === 'pending' || row.status === 'submitted' || row.status === 'hod_review' || row.status === 'iqac_verification') &&
-                                'bg-amber-500/10 text-amber-600',
-                              row.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                              (row.status === 'draft' || row.status === 'uploaded' || row.status === 'filed') &&
-                                'bg-blue-500/10 text-blue-600'
-                            )}
-                          >
-                            {row.status ? row.status.replace(/_/g, ' ') : 'draft'}
-                          </Badge>
+                          {(() => {
+                            const badgeVal = String(row.workflowStatus || row.status || 'draft').toLowerCase();
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className={cn(
+                                  'text-[9px] capitalize',
+                                  (badgeVal === 'verified' || badgeVal === 'approved' || badgeVal === 'granted' || badgeVal === 'active') &&
+                                    'bg-emerald-500/10 text-emerald-600',
+                                  (badgeVal === 'pending' || badgeVal === 'submitted' || badgeVal === 'hod_review' || badgeVal === 'iqac_verification' || badgeVal === 'under maintenance') &&
+                                    'bg-amber-500/10 text-amber-600',
+                                  (badgeVal === 'rejected' || badgeVal === 'inactive') && 'bg-red-500/10 text-red-600',
+                                  (badgeVal === 'draft' || badgeVal === 'uploaded' || badgeVal === 'filed' || badgeVal === 'available') &&
+                                    'bg-blue-500/10 text-blue-600'
+                                )}
+                              >
+                                {row.workflowStatus ? String(row.workflowStatus).replace(/_/g, ' ') : (row.status ? String(row.status).replace(/_/g, ' ') : 'draft')}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right sticky right-0 bg-card">
                           <div className="flex items-center justify-end gap-1">
@@ -739,26 +773,28 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Workflow Status</Label>
-                <Select
-                  value={formData.workflowStatus || 'draft'}
-                  onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="validated">Validated</SelectItem>
-                    <SelectItem value="hod_review">HOD Review</SelectItem>
-                    <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isInfra && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Workflow Status</Label>
+                  <Select
+                    value={formData.workflowStatus || 'draft'}
+                    onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="validated">Validated</SelectItem>
+                      <SelectItem value="hod_review">HOD Review</SelectItem>
+                      <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 mt-4 pt-3 border-t">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowAddDialog(false)}>
@@ -801,26 +837,28 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Workflow Status</Label>
-                <Select
-                  value={formData.workflowStatus || 'draft'}
-                  onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="validated">Validated</SelectItem>
-                    <SelectItem value="hod_review">HOD Review</SelectItem>
-                    <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isInfra && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Workflow Status</Label>
+                  <Select
+                    value={formData.workflowStatus || 'draft'}
+                    onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="validated">Validated</SelectItem>
+                      <SelectItem value="hod_review">HOD Review</SelectItem>
+                      <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 mt-4 pt-3 border-t">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowEditDialog(false)}>

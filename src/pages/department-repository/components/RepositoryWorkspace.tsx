@@ -252,7 +252,14 @@ export const RepositoryWorkspace = ({
 
   // Render Department Infrastructure Repository with its own dedicated module
   if (config.id === 'infrastructure') {
-    return <DepartmentInfrastructureModule config={config} academicYear={academicYear} />;
+    return (
+      <DepartmentInfrastructureModule
+        config={config}
+        academicYear={academicYear}
+        departmentId={departmentId}
+        departmentName={currentDepartment}
+      />
+    );
   }
 
   // Render Research Repository with its own dedicated module (Faculty Research, Student Research, Dept Project Dev, Dashboard)

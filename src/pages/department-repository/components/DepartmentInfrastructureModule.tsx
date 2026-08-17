@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,15 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { RepositoryModuleConfig } from '../types';
-import { repositoryHealth, departmentInfo } from '../repository-configs';
+import { departmentInfo } from '../repository-configs';
 import { getModuleTabActiveClasses } from './module-tab-styles';
 import { EvidencePreviewDialog } from '@/components/shared/EvidencePreviewDialog';
 import type { EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import {
+  getInfrastructureRecords,
+  createInfrastructureRecord,
+  updateInfrastructureRecord,
+  deleteInfrastructureRecord,
+  getInfrastructureHealth,
+  uploadInfrastructureEvidence,
+  uploadInfrastructureCsv,
+  InfrastructureHealthMetrics,
+} from '@/services/department-infrastructure.service';
 import {
   LayoutDashboard,
   School,
@@ -51,11 +63,14 @@ import {
   TrendingUp,
   X,
   FileSpreadsheet,
+  Loader2,
 } from 'lucide-react';
 
 interface DepartmentInfrastructureModuleProps {
   config: RepositoryModuleConfig;
   academicYear?: string;
+  departmentId?: number;
+  departmentName?: string;
 }
 
 // ===== INTERFACES =====
@@ -105,27 +120,6 @@ const sectionCategoryMap: Record<string, string> = {
   'lab-equipment': 'Equipment Invoices',
   'software-licenses': 'Software Licenses',
   'dept-assets': 'Asset Verification',
-};
-
-// ===== MOCK DATA FACTORIES =====
-const generateMockStats = (total: number, activePct: number): InfrastructureStats => ({
-  total,
-  active: Math.round(total * activePct),
-  maintenance: total - Math.round(total * activePct),
-});
-
-const sectionStats: Record<string, InfrastructureStats> = {
-  classrooms: generateMockStats(18, 0.85),
-  'tutorial-rooms': generateMockStats(6, 0.9),
-  laboratories: generateMockStats(12, 0.88),
-  'staff-rooms': generateMockStats(4, 0.95),
-  'faculty-cabins': generateMockStats(24, 0.92),
-  'hod-cabin': generateMockStats(1, 1),
-  'smart-classrooms': generateMockStats(8, 0.88),
-  'ict-classrooms': generateMockStats(10, 0.9),
-  'lab-equipment': generateMockStats(186, 0.82),
-  'software-licenses': generateMockStats(32, 0.84),
-  'dept-assets': generateMockStats(45, 0.87),
 };
 
 // ===== SECTION ICONS =====
@@ -203,7 +197,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
   const processFiles = (files: File[]) => {
     if (files.length > 0) {
       setUploading(true);
-      // Small delay to show upload state
       setTimeout(() => {
         onUploadEvidence(sectionId, recordId, files);
         setUploading(false);
@@ -214,7 +207,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Capture file references synchronously before any async boundary
       const fileArray = Array.from(files);
       processFiles(fileArray);
     }
@@ -237,16 +229,10 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    // Capture file references synchronously within the event handler
     const fileArray = Array.from(e.dataTransfer.files);
     if (fileArray.length > 0) {
       processFiles(fileArray);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const getFileTypeColor = (ext: string) => {
@@ -278,7 +264,7 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
       </div>
       <Separator />
 
-      {/* Drag & Drop Zone — Primary Upload Method */}
+      {/* Drag & Drop Zone */}
       <input
         ref={fileInputRef}
         type="file"
@@ -301,7 +287,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
           uploading && 'pointer-events-none opacity-60',
         )}
       >
-        {/* Animated background glow on drag */}
         {isDragOver && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -310,7 +295,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
           />
         )}
 
-        {/* Drag Over State — Full Overlay */}
         {isDragOver && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -328,9 +312,7 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
           </motion.div>
         )}
 
-        {/* Default State */}
         <div className={cn('transition-all', isDragOver && 'opacity-20')}>
-          {/* Upload icon with decorative circle */}
           <div className="relative mx-auto mb-4 w-16 h-16">
             <div className="absolute inset-0 rounded-full bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors" />
             <div className="absolute inset-2 rounded-full bg-indigo-500/5 group-hover:bg-indigo-500/10 transition-colors" />
@@ -347,7 +329,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
             Supported files up to 25MB each
           </p>
 
-          {/* Format badges */}
           <div className="flex flex-wrap items-center justify-center gap-2">
             {acceptedFormats.map((fmt) => (
               <span
@@ -364,7 +345,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
           </div>
         </div>
 
-        {/* Uploading overlay */}
         {uploading && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -381,7 +361,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
 
       {/* Evidence File Cards */}
       <div className="space-y-3">
-        {/* Search — only show when there are files */}
         {evidenceList.length > 1 && (
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -421,7 +400,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
                   transition={{ delay: idx * 0.03 }}
                   className="group relative flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card hover:border-indigo-500/30 hover:bg-indigo-500/[0.02] hover:shadow-sm transition-all"
                 >
-                  {/* File type thumbnail */}
                   <div className={cn(
                     'shrink-0 w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden',
                     typeColor
@@ -436,22 +414,16 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
                     )}
                   </div>
 
-                  {/* File metadata */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium truncate max-w-[180px]" title={ev.fileName}>
                       {ev.fileName}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span className={cn(
-                        'text-[9px] px-1.5 py-0.5 rounded font-semibold border',
-                        typeColor
-                      )}>
+                      <span className={cn('text-[9px] px-1.5 py-0.5 rounded font-semibold border', typeColor)}>
                         .{ext}
                       </span>
                       <span className="text-[9px] text-muted-foreground">{ev.fileSize}</span>
-                      <span className="text-[9px] text-muted-foreground">•</span>
-                      <span className="text-[9px] text-muted-foreground">{formatDate(ev.uploadedAt)}</span>
-                      <Badge variant="secondary" className={cn('text-[8px] py-0',
+                      <Badge variant="secondary" className={cn('text-[8px]',
                         ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
                         ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
                         ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
@@ -459,44 +431,25 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
                         {ev.status}
                       </Badge>
                     </div>
-                    <p className="text-[9px] text-muted-foreground/70 mt-0.5">Uploaded by {ev.uploadedBy}</p>
+                    <p className="text-[9px] text-muted-foreground mt-1">{ev.uploadedAt} • {ev.uploadedBy}</p>
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 shrink-0">
-                    {isImage && ev.dataUrl && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-lg hover:bg-blue-500/10"
-                        onClick={() => setPreviewEvidence(ev)}
-                        title="Preview"
-                      >
-                        <Eye className="h-3.5 w-3.5 text-blue-600" />
-                      </Button>
-                    )}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 rounded-lg hover:bg-emerald-500/10"
-                      title="Download"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = ev.dataUrl;
-                        link.download = ev.fileName;
-                        link.click();
-                      }}
+                      className="h-7 w-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                      onClick={() => setPreviewEvidence(ev)}
                     >
-                      <DownloadCloud className="h-3.5 w-3.5 text-emerald-600" />
+                      <Eye className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 rounded-lg hover:bg-red-500/10"
+                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => onDeleteEvidence(sectionId, recordId, ev.id)}
-                      title="Delete"
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </motion.div>
@@ -506,7 +459,6 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
         )}
       </div>
 
-      {/* Evidence Preview Dialog — Reusable, supports images + PDFs */}
       <EvidencePreviewDialog
         evidence={previewEvidence ? ({
           id: previewEvidence.id,
@@ -526,56 +478,98 @@ const EvidenceSection = ({ sectionId, recordId, evidenceList, onUploadEvidence, 
   );
 };
 
-// ===== GENERIC INFRASTRUCTURE SECTION =====
+// ===== GENERIC INFRASTRUCTURE SECTION WITH REAL API WIRING =====
 interface DataSectionProps {
   sectionId: string;
   title: string;
-  fields: { key: string; label: string; type: string }[];
+  fields: { key: string; label: string; type: string; selectOptions?: string[] }[];
   addLabel: string;
-  stats?: InfrastructureStats;
+  academicYear: string;
+  departmentId: number;
+  departmentName?: string;
   evidenceMap: Record<string, EvidenceFile[]>;
   onUploadEvidence: (sectionId: string, recordId: string, files: File[]) => void;
   onDeleteEvidence: (sectionId: string, recordId: string, evidenceId: string) => void;
 }
 
-const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, onUploadEvidence, onDeleteEvidence }: DataSectionProps) => {
-  const [records, setRecords] = useState<any[]>(() =>
-    Array.from({ length: Math.max(1, Math.floor((stats?.total || 5) / 3)) }, (_, i) => ({
-      id: `${sectionId}-${i + 1}`,
-      ...Object.fromEntries(fields.map((f) => [f.key, `Sample ${f.label} ${i + 1}`])),
-      academicYear: '2025-26',
-      status: i % 5 === 0 ? 'Under Maintenance' : 'Available',
-    }))
-  );
+const DataSection = ({
+  sectionId,
+  title,
+  fields,
+  addLabel,
+  academicYear,
+  departmentId,
+  evidenceMap,
+  onUploadEvidence,
+  onDeleteEvidence,
+}: DataSectionProps) => {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+  const [editRecord, setEditRecord] = useState<any | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // CSV Upload State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<UploadPreviewRow[]>([]);
   const [uploadStats, setUploadStats] = useState<UploadStats | null>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch records from backend API
+  const fetchRecords = useCallback(async () => {
+    if (!departmentId) return;
+    setLoading(true);
+    try {
+      const res = await getInfrastructureRecords(sectionId, academicYear, departmentId, {
+        search: searchQuery || undefined,
+      });
+      const items = res?.data?.content || res?.content || res?.data || res || [];
+      if (Array.isArray(items)) {
+        setRecords(items);
+      } else {
+        setRecords([]);
+      }
+    } catch (err) {
+      console.warn(`Error fetching ${title} records:`, err);
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [sectionId, academicYear, departmentId, searchQuery, title]);
+
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
   const filteredRecords = records.filter((r) =>
     searchQuery
-      ? Object.values(r).some((v) => String(v).toLowerCase().includes(searchQuery.toLowerCase()))
+      ? Object.values(r).some((v) => String(v || '').toLowerCase().includes(searchQuery.toLowerCase()))
       : true
   );
+
+  const activeCount = records.filter((r) => {
+    const s = String(r.status || r.workingStatus || r.workflowStatus || '').toLowerCase();
+    return s === 'active' || s === 'available' || s === 'working' || s === 'approved';
+  }).length;
 
   const Icon = sectionIcons[sectionId] || FileText;
 
   // ===== TEMPLATE DOWNLOAD =====
   const handleDownloadTemplate = useCallback(() => {
-    const headers = fields.map(f => f.label).join(',');
-    const sampleRow = fields.map(f => {
-      if (f.type === 'number') return '0';
-      if (f.type === 'date') return 'YYYY-MM-DD';
-      if (f.type === 'select') return 'Option 1';
+    const headers = fields.map((f) => f.label).join(',');
+    const sampleRow = fields.map((f) => {
+      if (f.selectOptions && f.selectOptions.length > 0) return f.selectOptions[0];
+      if (f.type === 'number') return '10';
+      if (f.type === 'date') return new Date().toISOString().split('T')[0];
+      if (f.type === 'select') return 'Yes';
       return `Sample ${f.label}`;
     }).join(',');
     const csvContent = `${headers}\n${sampleRow}\n`;
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -590,22 +584,22 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
   const handleCSVUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedFile(file);
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
       if (!text) return;
 
-      const lines = text.split('\n').filter(line => line.trim());
+      const lines = text.split('\n').filter((line) => line.trim());
       if (lines.length < 2) return;
 
-      const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
-      const csvFields = fields.map(f => f.label);
+      const headers = parseCSVLine(lines[0]).map((h) => h.replace(/^"|"$/g, '').trim());
+      const csvFields = fields.map((f) => f.label);
 
-      // Build a header-to-field mapping
       const headerMap: number[] = [];
-      headers.forEach((h, idx) => {
-        const fieldIndex = csvFields.findIndex(f => f.toLowerCase() === h.toLowerCase());
+      headers.forEach((h) => {
+        const fieldIndex = csvFields.findIndex((f) => f.toLowerCase() === h.toLowerCase());
         headerMap.push(fieldIndex >= 0 ? fieldIndex : -1);
       });
 
@@ -614,21 +608,19 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
       let invalidCount = 0;
 
       for (let i = 1; i < lines.length; i++) {
-        const values = parseCSVLine(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
+        const values = parseCSVLine(lines[i]).map((v) => v.replace(/^"|"$/g, '').trim());
         const row: Record<string, string> = {};
         const rowErrors: string[] = [];
 
-        // Map values to fields
         headerMap.forEach((fieldIdx, colIdx) => {
           if (fieldIdx >= 0) {
             row[fields[fieldIdx].key] = values[colIdx] || '';
           }
         });
 
-        // Validate each field
         fields.forEach((field) => {
           const val = row[field.key]?.trim() || '';
-          if (!val) {
+          if (field.key !== 'remarks' && field.key !== 'technician' && field.key !== 'warrantyExpiry' && field.key !== 'calibrationDate' && !val) {
             rowErrors.push(`"${field.label}" is required`);
           }
           if (field.type === 'number' && val && isNaN(Number(val))) {
@@ -655,50 +647,115 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
       setUploadStats({ total: previewRows.length, valid: validCount, invalid: invalidCount });
       setShowPreviewDialog(true);
 
-      // Reset the file input so the same file can be re-uploaded
       if (csvInputRef.current) csvInputRef.current.value = '';
     };
     reader.readAsText(file);
   }, [fields]);
 
-  // ===== SAVE VALID RECORDS FROM CSV PREVIEW =====
-  const handleSaveCSVUpload = useCallback(() => {
-    const validRecords = uploadPreview
-      .filter(r => r.validationStatus === 'valid')
-      .map((r, idx) => ({
-        id: `csv-${sectionId}-${Date.now()}-${idx}`,
-        ...r.data,
-        academicYear: '2025-26',
-        status: 'Available',
-      }));
+  // ===== SAVE VALID RECORDS FROM CSV (SINGLE BULK UPLOAD) =====
+  const handleSaveCSVUpload = useCallback(async () => {
+    if (!selectedFile) return;
 
-    if (validRecords.length > 0) {
-      setRecords(prev => [...prev, ...validRecords]);
+    setSubmitting(true);
+    try {
+      await uploadInfrastructureCsv(sectionId, academicYear, departmentId, selectedFile);
+      toast.success(`${title} CSV uploaded successfully in bulk`);
+      setShowPreviewDialog(false);
+      setUploadPreview([]);
+      setUploadStats(null);
+      setSelectedFile(null);
+      fetchRecords();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload CSV');
+    } finally {
+      setSubmitting(false);
     }
-    setShowPreviewDialog(false);
-    setUploadPreview([]);
-    setUploadStats(null);
-  }, [uploadPreview, sectionId]);
+  }, [selectedFile, sectionId, academicYear, departmentId, title, fetchRecords]);
 
-  // ===== CANCEL CSV UPLOAD =====
   const handleCancelUpload = useCallback(() => {
     setShowPreviewDialog(false);
     setUploadPreview([]);
     setUploadStats(null);
+    setSelectedFile(null);
   }, []);
 
   // ===== MANUAL ADD RECORD =====
-  const handleManualSave = useCallback((e: React.FormEvent) => {
+  const handleManualSave = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
+    const form = e.currentTarget;
     const formData = new FormData(form);
-    const newRecord: any = { id: `manual-${Date.now()}`, academicYear: '2025-26', status: 'Available' };
-    fields.forEach(f => {
-      newRecord[f.key] = (formData.get(f.key) as string) || '';
+    const payload: Record<string, any> = {
+      academicYear,
+      departmentId,
+    };
+
+    fields.forEach((f) => {
+      const val = formData.get(f.key) as string;
+      if (f.type === 'number') {
+        payload[f.key] = val ? Number(val) : 0;
+      } else {
+        payload[f.key] = val || '';
+      }
     });
-    setRecords(prev => [...prev, newRecord]);
-    setShowAddDialog(false);
-  }, [fields]);
+
+    setSubmitting(true);
+    try {
+      await createInfrastructureRecord(sectionId, academicYear, departmentId, payload);
+      toast.success(`${title} record created successfully`);
+      setShowAddDialog(false);
+      fetchRecords();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to create record');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [fields, academicYear, departmentId, sectionId, title, fetchRecords]);
+
+  // ===== MANUAL UPDATE RECORD =====
+  const handleManualUpdate = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editRecord?.id) return;
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const payload: Record<string, any> = {
+      academicYear,
+      departmentId,
+    };
+
+    fields.forEach((f) => {
+      const val = formData.get(f.key) as string;
+      if (f.type === 'number') {
+        payload[f.key] = val ? Number(val) : 0;
+      } else {
+        payload[f.key] = val || '';
+      }
+    });
+
+    setSubmitting(true);
+    try {
+      await updateInfrastructureRecord(sectionId, editRecord.id, academicYear, departmentId, payload);
+      toast.success(`${title} record updated successfully`);
+      setShowEditDialog(false);
+      setEditRecord(null);
+      fetchRecords();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to update record');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [editRecord, fields, academicYear, departmentId, sectionId, title, fetchRecords]);
+
+  // ===== DELETE RECORD =====
+  const handleDeleteRecord = useCallback(async (recordId: string | number) => {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    try {
+      await deleteInfrastructureRecord(sectionId, recordId, academicYear, departmentId);
+      toast.success('Record deleted successfully');
+      fetchRecords();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to delete record');
+    }
+  }, [sectionId, academicYear, departmentId, fetchRecords]);
 
   return (
     <div className="space-y-4">
@@ -708,19 +765,15 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
           <Icon className={cn('h-4 w-4', sectionColors[sectionId] || 'text-foreground')} />
           <h3 className="text-sm font-semibold">{title}</h3>
           <Badge variant="secondary" className="text-[10px]">{records.length} records</Badge>
-          {stats && (
-            <Badge variant="outline" className={cn('text-[9px]', stats.active === stats.total ? 'text-emerald-600 border-emerald-500/30' : 'text-amber-600 border-amber-500/30')}>
-              {stats.active}/{stats.total} Active
-            </Badge>
-          )}
+          <Badge variant="outline" className={cn('text-[9px]', activeCount === records.length && records.length > 0 ? 'text-emerald-600 border-emerald-500/30' : 'text-amber-600 border-amber-500/30')}>
+            {activeCount}/{records.length} Active
+          </Badge>
         </div>
         <div className="flex items-center gap-2">
-          {/* Template Download */}
           <Button variant="outline" size="sm" className="text-xs h-8 gap-1.5" onClick={handleDownloadTemplate}>
             <Download className="h-3.5 w-3.5" /> Template
           </Button>
 
-          {/* CSV Upload - hidden input + trigger button */}
           <input
             ref={csvInputRef}
             type="file"
@@ -732,7 +785,6 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             <Upload className="h-3.5 w-3.5" /> CSV
           </Button>
 
-          {/* Manual Add */}
           <Button size="sm" className="text-xs h-8 gap-1.5" onClick={() => setShowAddDialog(true)}>
             <Plus className="h-3.5 w-3.5" /> {addLabel}
           </Button>
@@ -750,21 +802,30 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
         />
       </div>
 
-      {/* ===== DATA TABLE ===== */}
+      {/* ===== DATA TABLE (COMPACT ORIGINAL DESIGN) ===== */}
       <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead className="text-[10px] font-semibold">#</TableHead>
+              <TableHead className="text-[10px] font-semibold w-10">#</TableHead>
               {fields.slice(0, 5).map((f) => (
                 <TableHead key={f.key} className="text-[10px] font-semibold">{f.label}</TableHead>
               ))}
-              <TableHead className="text-[10px] font-semibold w-[90px]">Status</TableHead>
-              <TableHead className="text-[10px] font-semibold text-right w-[80px]">Actions</TableHead>
+              <TableHead className="text-[10px] font-semibold w-[100px]">Status</TableHead>
+              <TableHead className="text-[10px] font-semibold text-right w-[90px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRecords.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={fields.slice(0, 5).length + 3} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                    Loading {title.toLowerCase()}...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={fields.slice(0, 5).length + 3} className="text-center py-8 text-xs text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
@@ -782,36 +843,67 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRecords.map((record, idx) => (
-                <TableRow key={record.id} className="hover:bg-muted/50">
-                  <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                  {fields.slice(0, 5).map((f) => (
-                    <TableCell key={f.key} className="text-xs font-medium truncate max-w-[150px]">
-                      {record[f.key]}
+              filteredRecords.map((record, idx) => {
+                const statusVal = record.status || record.workingStatus || record.workflowStatus || 'Available';
+                const sLower = String(statusVal).toLowerCase();
+
+                return (
+                  <TableRow key={record.id || idx} className="hover:bg-muted/50">
+                    <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                    {fields.slice(0, 5).map((f) => (
+                      <TableCell key={f.key} className="text-xs font-medium truncate max-w-[160px]" title={String(record[f.key] ?? '')}>
+                        {record[f.key] ?? '—'}
+                      </TableCell>
+                    ))}
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-[9px]',
+                          (sLower === 'available' || sLower === 'active' || sLower === 'working' || sLower === 'approved') &&
+                            'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+                          (sLower === 'under maintenance' || sLower === 'under repair' || sLower === 'submitted' || sLower === 'pending') &&
+                            'bg-amber-500/10 text-amber-600 border-amber-500/30',
+                          (sLower === 'not working' || sLower === 'condemned' || sLower === 'inactive' || sLower === 'rejected') &&
+                            'bg-red-500/10 text-red-600 border-red-500/30',
+                          (sLower === 'draft' || sLower === 'uploaded') &&
+                            'bg-blue-500/10 text-blue-600 border-blue-500/30'
+                        )}
+                      >
+                        {statusVal}
+                      </Badge>
                     </TableCell>
-                  ))}
-                  <TableCell>
-                    <Badge variant="outline" className={cn('text-[9px]',
-                      record.status === 'Available' && 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
-                      record.status === 'Under Maintenance' && 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-                      record.status === 'Active' && 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-                    )}>{record.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedRecord(record)}>
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedRecord(record)} title="View Details & Evidence">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                          onClick={() => {
+                            setEditRecord(record);
+                            setShowEditDialog(true);
+                          }}
+                          title="Edit Record"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteRecord(record.id)}
+                          title="Delete Record"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -827,7 +919,6 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             </DialogTitle>
           </DialogHeader>
 
-          {/* Upload Stats */}
           {uploadStats && (
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-lg bg-muted/50 text-center">
@@ -845,13 +936,12 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             </div>
           )}
 
-          {/* Validation Errors */}
           {uploadStats && uploadStats.invalid > 0 && (
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 max-h-[120px] overflow-y-auto">
               <p className="text-xs font-semibold text-red-700 mb-2 flex items-center gap-1">
                 <AlertCircle className="h-3.5 w-3.5" /> Validation Errors:
               </p>
-              {uploadPreview.filter(r => r.validationStatus === 'invalid').map((r, i) => (
+              {uploadPreview.filter((r) => r.validationStatus === 'invalid').map((r, i) => (
                 <div key={i} className="flex items-start gap-2 mb-1">
                   <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
                   <p className="text-[11px] text-red-600">
@@ -862,13 +952,12 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             </div>
           )}
 
-          {/* Preview Table */}
           <div className="flex-1 overflow-auto min-h-[200px] rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 sticky top-0">
                   <TableHead className="text-[10px] font-semibold w-8">#</TableHead>
-                  {fields.map(f => (
+                  {fields.map((f) => (
                     <TableHead key={f.key} className="text-[10px] font-semibold">{f.label}</TableHead>
                   ))}
                   <TableHead className="text-[10px] font-semibold w-16 text-center">Valid</TableHead>
@@ -878,13 +967,10 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
                 {uploadPreview.map((row, idx) => (
                   <TableRow
                     key={row.id}
-                    className={cn(
-                      'hover:bg-muted/50',
-                      row.validationStatus === 'invalid' && 'bg-red-500/5'
-                    )}
+                    className={cn('hover:bg-muted/50', row.validationStatus === 'invalid' && 'bg-red-500/5')}
                   >
                     <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    {fields.map(f => (
+                    {fields.map((f) => (
                       <TableCell key={f.key} className="text-xs truncate max-w-[120px]">
                         {row.data[f.key] || <span className="text-red-400 italic">(empty)</span>}
                       </TableCell>
@@ -902,10 +988,9 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             </Table>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center justify-between pt-3 border-t">
             <p className="text-[10px] text-muted-foreground">
-              CSV uploads never save automatically. Review and confirm to save.
+              Review and confirm to save records into the repository.
             </p>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleCancelUpload}>
@@ -915,9 +1000,9 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
                 size="sm"
                 className="text-xs h-8 gap-1.5"
                 onClick={handleSaveCSVUpload}
-                disabled={!uploadStats || uploadStats.valid === 0}
+                disabled={!uploadStats || uploadStats.valid === 0 || submitting}
               >
-                <CheckCircle2 className="h-3.5 w-3.5" />
+                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                 Save {uploadStats?.valid || 0} Valid Records
               </Button>
             </div>
@@ -925,7 +1010,7 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
         </DialogContent>
       </Dialog>
 
-      {/* ===== RECORD DETAIL DIALOG ===== */}
+      {/* ===== RECORD DETAIL DIALOG (WITH INLINE EVIDENCE REPOSITORY) ===== */}
       <Dialog open={!!selectedRecord} onOpenChange={(open) => { if (!open) setSelectedRecord(null); }}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -940,15 +1025,15 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
                 {fields.map((f) => (
                   <div key={f.key} className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
-                    <p className="text-xs font-medium">{selectedRecord[f.key] || '-'}</p>
+                    <p className="text-xs font-medium">{String(selectedRecord[f.key] ?? '—')}</p>
                   </div>
                 ))}
               </div>
               <Separator />
               <EvidenceSection
                 sectionId={sectionId}
-                recordId={selectedRecord.id}
-                evidenceList={evidenceMap[selectedRecord.id] || []}
+                recordId={String(selectedRecord.id)}
+                evidenceList={evidenceMap[String(selectedRecord.id)] || []}
                 onUploadEvidence={onUploadEvidence}
                 onDeleteEvidence={onDeleteEvidence}
               />
@@ -969,24 +1054,35 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
             </DialogHeader>
             <div className="grid grid-cols-2 gap-3 py-4">
               {fields.map((f) => (
-                <div key={f.key} className={cn('space-y-1', f.type === 'textarea' && 'col-span-2')}>
+                <div key={f.key} className={cn('space-y-1', (f.key.includes('remarks') || f.key.includes('location')) && 'col-span-2')}>
                   <Label className="text-xs">{f.label}</Label>
-                  {f.type === 'select' ? (
-                    <Select name={f.key}>
+                  {f.selectOptions && f.selectOptions.length > 0 ? (
+                    <Select name={f.key} defaultValue={f.selectOptions[0]}>
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder={`Select ${f.label}`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes" className="text-xs">Yes</SelectItem>
-                        <SelectItem value="no" className="text-xs">No</SelectItem>
+                        {f.selectOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === 'select' ? (
+                    <Select name={f.key} defaultValue="Yes">
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder={`Select ${f.label}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes" className="text-xs">Yes</SelectItem>
+                        <SelectItem value="No" className="text-xs">No</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : f.type === 'number' ? (
                     <Input name={f.key} type="number" className="h-8 text-xs" placeholder={`Enter ${f.label}`} />
                   ) : f.type === 'date' ? (
-                    <Input name={f.key} type="date" className="h-8 text-xs" />
+                    <Input name={f.key} type="date" className="h-8 text-xs" defaultValue={new Date().toISOString().split('T')[0]} />
                   ) : (
-                    <Input name={f.key} className="h-8 text-xs" placeholder={`Enter ${f.label}`} required />
+                    <Input name={f.key} className="h-8 text-xs" placeholder={`Enter ${f.label}`} />
                   )}
                 </div>
               ))}
@@ -995,8 +1091,67 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
               <Button variant="outline" size="sm" className="text-xs h-8" type="button" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
-              <Button size="sm" className="text-xs h-8" type="submit">
-                <Plus className="h-3.5 w-3.5 mr-1" /> Save Record
+              <Button size="sm" className="text-xs h-8" type="submit" disabled={submitting}>
+                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                Save Record
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== MANUAL EDIT DIALOG ===== */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <form onSubmit={handleManualUpdate}>
+            <DialogHeader>
+              <DialogTitle className="text-base flex items-center gap-2">
+                <Edit2 className="h-4 w-4 text-blue-600" />
+                Edit {title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3 py-4">
+              {fields.map((f) => (
+                <div key={f.key} className={cn('space-y-1', (f.key.includes('remarks') || f.key.includes('location')) && 'col-span-2')}>
+                  <Label className="text-xs">{f.label}</Label>
+                  {f.selectOptions && f.selectOptions.length > 0 ? (
+                    <Select name={f.key} defaultValue={editRecord ? editRecord[f.key] : f.selectOptions[0]}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder={`Select ${f.label}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {f.selectOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === 'select' ? (
+                    <Select name={f.key} defaultValue={editRecord ? editRecord[f.key] : 'Yes'}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder={`Select ${f.label}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes" className="text-xs">Yes</SelectItem>
+                        <SelectItem value="No" className="text-xs">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === 'number' ? (
+                    <Input name={f.key} type="number" className="h-8 text-xs" defaultValue={editRecord ? editRecord[f.key] : ''} />
+                  ) : f.type === 'date' ? (
+                    <Input name={f.key} type="date" className="h-8 text-xs" defaultValue={editRecord ? editRecord[f.key] : ''} />
+                  ) : (
+                    <Input name={f.key} className="h-8 text-xs" defaultValue={editRecord ? editRecord[f.key] : ''} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" className="text-xs h-8" type="button" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" className="text-xs h-8" type="submit" disabled={submitting}>
+                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                Update Record
               </Button>
             </DialogFooter>
           </form>
@@ -1006,8 +1161,8 @@ const DataSection = ({ sectionId, title, fields, addLabel, stats, evidenceMap, o
   );
 };
 
-// ===== SECTION FIELD DEFINITIONS (Full Spec) =====
-const sectionFields: Record<string, { key: string; label: string; type: string }[]> = {
+// ===== SECTION FIELD DEFINITIONS =====
+const sectionFields: Record<string, { key: string; label: string; type: string; selectOptions?: string[] }[]> = {
   classrooms: [
     { key: 'roomNumber', label: 'Room Number', type: 'text' },
     { key: 'roomName', label: 'Room Name', type: 'text' },
@@ -1015,8 +1170,7 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'floor', label: 'Floor', type: 'text' },
     { key: 'capacity', label: 'Capacity', type: 'number' },
     { key: 'area', label: 'Area (Sq.ft)', type: 'number' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
-    { key: 'status', label: 'Current Status', type: 'text' },
+    { key: 'status', label: 'Current Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance', 'Inactive'] },
     { key: 'remarks', label: 'Remarks', type: 'text' },
   ],
   'tutorial-rooms': [
@@ -1025,8 +1179,7 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'floor', label: 'Floor', type: 'text' },
     { key: 'capacity', label: 'Capacity', type: 'number' },
     { key: 'area', label: 'Area (Sq.ft)', type: 'number' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance'] },
   ],
   laboratories: [
     { key: 'labName', label: 'Laboratory Name', type: 'text' },
@@ -1035,11 +1188,10 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'floor', label: 'Floor', type: 'text' },
     { key: 'area', label: 'Area (Sq.ft)', type: 'number' },
     { key: 'capacity', label: 'Capacity', type: 'number' },
-    { key: 'labType', label: 'Laboratory Type', type: 'select' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
+    { key: 'labType', label: 'Laboratory Type', type: 'select', selectOptions: ['Hardware', 'Software', 'Research', 'Workshop', 'Language', 'Science'] },
     { key: 'incharge', label: 'Lab In-charge', type: 'text' },
     { key: 'technician', label: 'Technician', type: 'text' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance'] },
   ],
   'staff-rooms': [
     { key: 'roomNumber', label: 'Room Number', type: 'text' },
@@ -1047,8 +1199,7 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'area', label: 'Area (Sq.ft)', type: 'number' },
     { key: 'block', label: 'Block', type: 'text' },
     { key: 'floor', label: 'Floor', type: 'text' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance'] },
   ],
   'faculty-cabins': [
     { key: 'facultyName', label: 'Faculty Name', type: 'text' },
@@ -1056,40 +1207,38 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'cabinNumber', label: 'Cabin Number', type: 'text' },
     { key: 'block', label: 'Block', type: 'text' },
     { key: 'floor', label: 'Floor', type: 'text' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
   ],
   'hod-cabin': [
     { key: 'cabinNumber', label: 'Cabin Number', type: 'text' },
     { key: 'area', label: 'Area (Sq.ft)', type: 'number' },
     { key: 'block', label: 'Block', type: 'text' },
     { key: 'floor', label: 'Floor', type: 'text' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
   ],
   'smart-classrooms': [
     { key: 'classroom', label: 'Classroom', type: 'text' },
-    { key: 'smartBoard', label: 'Smart Board/Interactive Display', type: 'select' },
-    { key: 'projector', label: 'Projector Available', type: 'select' },
-    { key: 'audioSystem', label: 'Audio System', type: 'select' },
-    { key: 'camera', label: 'Camera', type: 'select' },
-    { key: 'internet', label: 'Internet Connectivity', type: 'select' },
-    { key: 'recordingFacility', label: 'Recording Facility', type: 'select' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'smartBoard', label: 'Smart Board/Interactive Display', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'projector', label: 'Projector Available', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'audioSystem', label: 'Audio System', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'camera', label: 'Camera', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'internet', label: 'Internet Connectivity', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'recordingFacility', label: 'Recording Facility', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance'] },
   ],
   'ict-classrooms': [
     { key: 'classroom', label: 'Classroom', type: 'text' },
-    { key: 'desktop', label: 'Desktop Available', type: 'select' },
-    { key: 'laptopDock', label: 'Laptop Dock', type: 'select' },
-    { key: 'lcdProjector', label: 'LCD Projector', type: 'select' },
-    { key: 'wifi', label: 'Wi-Fi', type: 'select' },
-    { key: 'lan', label: 'LAN', type: 'select' },
-    { key: 'smartPodium', label: 'Smart Podium', type: 'select' },
+    { key: 'desktop', label: 'Desktop Available', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'laptopDock', label: 'Laptop Dock', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'lcdProjector', label: 'LCD Projector', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'wifi', label: 'Wi-Fi', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'lan', label: 'LAN', type: 'select', selectOptions: ['Yes', 'No'] },
+    { key: 'smartPodium', label: 'Smart Podium', type: 'select', selectOptions: ['Yes', 'No'] },
     { key: 'internetSpeed', label: 'Internet Speed (Mbps)', type: 'number' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Available', 'Under Maintenance'] },
   ],
   'lab-equipment': [
     { key: 'laboratory', label: 'Laboratory', type: 'text' },
     { key: 'equipmentName', label: 'Equipment Name', type: 'text' },
-    { key: 'category', label: 'Equipment Category', type: 'select' },
+    { key: 'category', label: 'Equipment Category', type: 'select', selectOptions: ['Computing', 'Measurement', 'Tool', 'Networking', 'Robotics', 'Audio-Visual', 'Other'] },
     { key: 'manufacturer', label: 'Manufacturer', type: 'text' },
     { key: 'model', label: 'Model', type: 'text' },
     { key: 'serialNumber', label: 'Serial Number', type: 'text' },
@@ -1100,17 +1249,16 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'cost', label: 'Cost (INR)', type: 'number' },
     { key: 'fundingSource', label: 'Funding Source', type: 'text' },
     { key: 'supplier', label: 'Supplier', type: 'text' },
-    { key: 'workingStatus', label: 'Working Status', type: 'select' },
-    { key: 'calibrationRequired', label: 'Calibration Required', type: 'select' },
+    { key: 'workingStatus', label: 'Working Status', type: 'select', selectOptions: ['Working', 'Not Working', 'Under Repair', 'Condemned', 'Scrapped'] },
+    { key: 'calibrationRequired', label: 'Calibration Required', type: 'select', selectOptions: ['Yes', 'No'] },
     { key: 'calibrationDate', label: 'Calibration Date', type: 'date' },
-    { key: 'amcAvailable', label: 'AMC Available', type: 'select' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
+    { key: 'amcAvailable', label: 'AMC Available', type: 'select', selectOptions: ['Yes', 'No'] },
   ],
   'software-licenses': [
     { key: 'softwareName', label: 'Software Name', type: 'text' },
     { key: 'version', label: 'Version', type: 'text' },
     { key: 'vendor', label: 'Vendor', type: 'text' },
-    { key: 'licenseType', label: 'License Type', type: 'select' },
+    { key: 'licenseType', label: 'License Type', type: 'select', selectOptions: ['Proprietary', 'Open Source', 'Perpetual', 'Subscription', 'Academic', 'Campus Agreement'] },
     { key: 'licenseKey', label: 'License Key (Masked)', type: 'text' },
     { key: 'numLicenses', label: 'No. of Licenses', type: 'number' },
     { key: 'installedSystems', label: 'Installed Systems', type: 'text' },
@@ -1118,12 +1266,11 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
     { key: 'cost', label: 'Cost (INR)', type: 'number' },
     { key: 'laboratory', label: 'Laboratory', type: 'text' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
-    { key: 'status', label: 'Status', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', selectOptions: ['Active', 'Expired', 'Renewed'] },
   ],
   'dept-assets': [
     { key: 'assetName', label: 'Asset Name', type: 'text' },
-    { key: 'category', label: 'Category', type: 'select' },
+    { key: 'category', label: 'Category', type: 'select', selectOptions: ['Furniture', 'Audio-Visual', 'Power Backup', 'Networking', 'HVAC', 'Safety Equipment', 'Other'] },
     { key: 'assetNumber', label: 'Asset Number', type: 'text' },
     { key: 'manufacturer', label: 'Manufacturer', type: 'text' },
     { key: 'model', label: 'Model', type: 'text' },
@@ -1132,26 +1279,55 @@ const sectionFields: Record<string, { key: string; label: string; type: string }
     { key: 'cost', label: 'Cost (INR)', type: 'number' },
     { key: 'fundingSource', label: 'Funding Source', type: 'text' },
     { key: 'location', label: 'Current Location', type: 'text' },
-    { key: 'workingStatus', label: 'Working Status', type: 'select' },
-    { key: 'academicYear', label: 'Academic Year', type: 'text' },
+    { key: 'workingStatus', label: 'Working Status', type: 'select', selectOptions: ['Working', 'Not Working', 'Under Repair', 'Condemned', 'Scrapped'] },
   ],
 };
 
-export const DepartmentInfrastructureModule = ({ config, academicYear }: DepartmentInfrastructureModuleProps) => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  void academicYear;
-  const activeClasses = getModuleTabActiveClasses(config.id);
-  const metrics = repositoryHealth[config.id] || { dataCompleteness: 76, evidenceCompleteness: 68, verificationPercent: 72, readinessScore: 71 };
+const DATA_TABS = [
+  'classrooms',
+  'tutorial-rooms',
+  'laboratories',
+  'staff-rooms',
+  'faculty-cabins',
+  'hod-cabin',
+  'smart-classrooms',
+  'ict-classrooms',
+  'lab-equipment',
+  'software-licenses',
+  'dept-assets',
+];
 
-  // ===== SHARED EVIDENCE STATE =====
-  // Structure: { [sectionId]: { [recordId]: EvidenceFile[] } }
+export const DepartmentInfrastructureModule = ({
+  config,
+  academicYear = '2025-26',
+  departmentId: propDeptId,
+  departmentName,
+}: DepartmentInfrastructureModuleProps) => {
+  const { user } = useAuth();
+  const effectiveDeptId = propDeptId || user?.departmentId || 4;
+  const effectiveDeptName = departmentName || user?.departmentName || departmentInfo.department;
+
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const activeClasses = getModuleTabActiveClasses(config.id);
+
+  // Live health and counts state
+  const [health, setHealth] = useState<InfrastructureHealthMetrics>({
+    academicYear,
+    dataCompleteness: 0,
+    evidenceCompleteness: 0,
+    verificationPercent: 0,
+    readinessScore: 0,
+  });
+  const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
+
+  // Shared Evidence State
   const [sectionEvidence, setSectionEvidence] = useState<Record<string, Record<string, EvidenceFile[]>>>({});
 
   const handleUploadEvidence = useCallback((secId: string, recordId: string, files: File[]) => {
     files.forEach((file) => {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const ext = (file.name.split('.').pop()?.toLowerCase() || 'pdf') as EvidenceFile['fileType'];
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const dataUrl = e.target?.result as string;
         const sizeKB = Math.round(file.size / 1024);
         const newEvidence: EvidenceFile = {
@@ -1159,14 +1335,15 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
           sectionId: secId,
           recordId,
           fileName: file.name,
-          fileType: ext as EvidenceFile['fileType'],
+          fileType: ext,
           fileSize: sizeKB >= 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`,
           uploadedAt: new Date().toISOString().split('T')[0],
-          uploadedBy: 'Dr. Anita Sharma',
+          uploadedBy: user?.name || 'Department Coordinator',
           category: sectionCategoryMap[secId] || 'Other',
           status: 'uploaded',
           dataUrl,
         };
+
         setSectionEvidence((prev) => ({
           ...prev,
           [secId]: {
@@ -1174,10 +1351,16 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
             [recordId]: [...(prev[secId]?.[recordId] || []), newEvidence],
           },
         }));
+
+        try {
+          await uploadInfrastructureEvidence(secId, recordId, file, sectionCategoryMap[secId] || 'Other');
+        } catch {
+          // Evidence stored in local UI state
+        }
       };
       reader.readAsDataURL(file);
     });
-  }, []);
+  }, [user?.name]);
 
   const handleDeleteEvidence = useCallback((secId: string, recordId: string, evidenceId: string) => {
     setSectionEvidence((prev) => {
@@ -1187,43 +1370,75 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
         [secId]: { ...(prev[secId] || {}), [recordId]: recordEvidence },
       };
     });
+    toast.success('Evidence removed');
   }, []);
 
-  // Gather all evidence for supporting docs
   const allEvidence = Object.values(sectionEvidence).flatMap((secMap) =>
     Object.values(secMap).flat()
   );
 
+  // Fetch live dashboard & health metrics
+  const fetchDashboardData = useCallback(async () => {
+    if (!effectiveDeptId) return;
+    try {
+      const healthData = await getInfrastructureHealth(academicYear, effectiveDeptId);
+      setHealth(healthData);
+
+      const countPromises = DATA_TABS.map(async (tabId) => {
+        try {
+          const res = await getInfrastructureRecords(tabId, academicYear, effectiveDeptId, { size: 1 });
+          const total = res?.data?.totalElements ?? res?.totalElements ?? (Array.isArray(res?.data) ? res.data.length : 0);
+          return { tabId, count: Number(total) || 0 };
+        } catch {
+          return { tabId, count: 0 };
+        }
+      });
+
+      const results = await Promise.allSettled(countPromises);
+      const counts: Record<string, number> = {};
+      results.forEach((r) => {
+        if (r.status === 'fulfilled') {
+          counts[r.value.tabId] = r.value.count;
+        }
+      });
+      setTabCounts(counts);
+    } catch (err) {
+      console.warn('Could not load infrastructure live metrics:', err);
+    }
+  }, [academicYear, effectiveDeptId]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   const moduleScores = [
-    { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-amber-600 bg-amber-500/10' },
-    { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-orange-600 bg-orange-500/10' },
-    { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
-    { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-blue-600 bg-blue-500/10' },
+    { label: 'Data Completeness', value: health.dataCompleteness, color: 'text-amber-600 bg-amber-500/10' },
+    { label: 'Evidence Score', value: health.evidenceCompleteness, color: 'text-orange-600 bg-orange-500/10' },
+    { label: 'Verification Score', value: health.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Readiness Score', value: health.readinessScore, color: 'text-blue-600 bg-blue-500/10' },
   ];
+
+  const totalRecords = Object.values(tabCounts).reduce((sum, c) => sum + c, 0);
 
   // ===== DASHBOARD =====
   const renderDashboard = () => {
-    const totalRecords = Object.values(sectionStats).reduce((sum, s) => sum + s.total, 0);
-    const totalActive = Object.values(sectionStats).reduce((sum, s) => sum + s.active, 0);
-    const completionPct = Math.round((Object.values(sectionStats).filter(s => s.active === s.total).length / Object.keys(sectionStats).length) * 100);
-
     return (
       <div className="space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Classrooms', value: sectionStats.classrooms.total, icon: School },
-            { label: 'Tutorial Rooms', value: sectionStats['tutorial-rooms'].total, icon: Presentation },
-            { label: 'Laboratories', value: sectionStats.laboratories.total, icon: FlaskConical },
-            { label: 'Staff Rooms', value: sectionStats['staff-rooms'].total, icon: Users },
-            { label: 'Faculty Cabins', value: sectionStats['faculty-cabins'].total, icon: UserCircle },
-            { label: 'Smart Classrooms', value: sectionStats['smart-classrooms'].total, icon: Monitor },
-            { label: 'ICT Classrooms', value: sectionStats['ict-classrooms'].total, icon: Wifi },
-            { label: 'Lab Equipment', value: sectionStats['lab-equipment'].total, icon: Wrench },
-            { label: 'Licensed Software', value: sectionStats['software-licenses'].total, icon: Package },
-            { label: 'Department Assets', value: sectionStats['dept-assets'].total, icon: Archive },
-            { label: 'Evidence Completion', value: `${completionPct}%`, icon: CheckCircle2 },
-            { label: 'Active Facilities', value: `${Math.round((totalActive / totalRecords) * 100)}%`, icon: TrendingUp },
+            { label: 'Total Classrooms', value: tabCounts['classrooms'] ?? 0, icon: School },
+            { label: 'Tutorial Rooms', value: tabCounts['tutorial-rooms'] ?? 0, icon: Presentation },
+            { label: 'Laboratories', value: tabCounts['laboratories'] ?? 0, icon: FlaskConical },
+            { label: 'Staff Rooms', value: tabCounts['staff-rooms'] ?? 0, icon: Users },
+            { label: 'Faculty Cabins', value: tabCounts['faculty-cabins'] ?? 0, icon: UserCircle },
+            { label: 'Smart Classrooms', value: tabCounts['smart-classrooms'] ?? 0, icon: Monitor },
+            { label: 'ICT Classrooms', value: tabCounts['ict-classrooms'] ?? 0, icon: Wifi },
+            { label: 'Lab Equipment', value: tabCounts['lab-equipment'] ?? 0, icon: Wrench },
+            { label: 'Licensed Software', value: tabCounts['software-licenses'] ?? 0, icon: Package },
+            { label: 'Department Assets', value: tabCounts['dept-assets'] ?? 0, icon: Archive },
+            { label: 'Data Completeness', value: `${health.dataCompleteness}%`, icon: CheckCircle2 },
+            { label: 'Readiness Score', value: `${health.readinessScore}%`, icon: TrendingUp },
           ].slice(0, 6).map((kpi) => (
             <Card key={kpi.label} className="hover:shadow-md transition-shadow border-border/50">
               <CardContent className="p-4">
@@ -1231,7 +1446,7 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                   <kpi.icon className="h-5 w-5 text-amber-600" />
                   <Badge variant="secondary" className="text-[9px]">
                     <Activity className="h-3 w-3 mr-1" />
-                    AY 2025-26
+                    AY {academicYear}
                   </Badge>
                 </div>
                 <div className="text-2xl font-bold">{kpi.value}</div>
@@ -1249,17 +1464,22 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                 <BarChart3 className="h-4 w-4 text-amber-600" />
                 Infrastructure Summary
               </CardTitle>
-              <CardDescription>Total Records: {totalRecords} | Active: {totalActive}</CardDescription>
+              <CardDescription>Total Records: {totalRecords}</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px] pr-2">
                 <div className="space-y-3">
-                  {Object.entries(sectionStats).map(([key, stats]) => {
+                  {DATA_TABS.map((key) => {
+                    const count = tabCounts[key] ?? 0;
                     const Icon = sectionIcons[key] || FileText;
                     const color = sectionColors[key] || 'text-muted-foreground';
-                    const activePct = Math.round((stats.active / stats.total) * 100);
+                    const activePct = totalRecords > 0 ? Math.round((count / totalRecords) * 100) : 0;
                     return (
-                      <div key={key} className="flex items-center gap-3">
+                      <div
+                        key={key}
+                        onClick={() => setActiveTab(key)}
+                        className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
                           <Icon className={cn('h-4 w-4', color)} />
                         </div>
@@ -1269,12 +1489,12 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                               {key.replace('-', ' ')}
                             </span>
                             <span className="text-[10px] text-muted-foreground">
-                              {stats.active}/{stats.total}
+                              {count} records
                             </span>
                           </div>
                           <Progress value={activePct} className="h-1.5" />
                         </div>
-                        <span className={cn('text-xs font-semibold w-8 text-right', activePct >= 90 ? 'text-emerald-600' : activePct >= 75 ? 'text-blue-600' : 'text-amber-600')}>
+                        <span className="text-xs font-semibold w-8 text-right text-muted-foreground">
                           {activePct}%
                         </span>
                       </div>
@@ -1295,12 +1515,12 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Equipment Count', value: sectionStats['lab-equipment'].total, sub: `${Math.round(sectionStats['lab-equipment'].active / sectionStats['lab-equipment'].total * 100)}% Working` },
-                  { label: 'Software Licenses', value: sectionStats['software-licenses'].total, sub: `${Math.round((sectionStats['software-licenses'].total * 0.2))} Expiring Soon` },
-                  { label: 'Assets Under AMC', value: Math.round(sectionStats['dept-assets'].total * 0.35), sub: `${Math.round(sectionStats['dept-assets'].total * 0.15)} Without AMC` },
-                  { label: 'Equipment Due for Calibration', value: Math.round(sectionStats['lab-equipment'].total * 0.18), sub: `${Math.round(sectionStats['lab-equipment'].total * 0.12)} Calibrated` },
-                  { label: 'Infrastructure Evidence', value: `${completionPct}%`, sub: 'Completion Rate' },
-                  { label: 'Missing Evidence', value: `${100 - completionPct}%`, sub: 'Requires Attention' },
+                  { label: 'Equipment Count', value: tabCounts['lab-equipment'] ?? 0, sub: 'Physical Apparatus' },
+                  { label: 'Software Licenses', value: tabCounts['software-licenses'] ?? 0, sub: 'Active Packages' },
+                  { label: 'Classrooms & Labs', value: (tabCounts['classrooms'] || 0) + (tabCounts['laboratories'] || 0), sub: 'Academic Facilities' },
+                  { label: 'Staff & Faculty Spaces', value: (tabCounts['staff-rooms'] || 0) + (tabCounts['faculty-cabins'] || 0) + (tabCounts['hod-cabin'] || 0), sub: 'Faculty Infrastructure' },
+                  { label: 'Data Completeness', value: `${health.dataCompleteness}%`, sub: 'Required Records' },
+                  { label: 'Readiness Score', value: `${health.readinessScore}%`, sub: 'Audit Readiness' },
                 ].map((stat) => (
                   <div key={stat.label} className="p-3 rounded-lg border border-border/50">
                     <p className="text-[10px] text-muted-foreground">{stat.label}</p>
@@ -1321,10 +1541,10 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-              {config.tabs.filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents').map((tab) => {
+              {config.tabs.filter((t) => t.id !== 'dashboard' && t.id !== 'supporting-documents').map((tab) => {
                 const Icon = sectionIcons[tab.id] || FileText;
                 const color = sectionColors[tab.id] || 'text-muted-foreground';
-                const s = sectionStats[tab.id];
+                const count = tabCounts[tab.id] ?? 0;
                 return (
                   <button
                     key={tab.id}
@@ -1335,7 +1555,7 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                       <Icon className={cn('h-4 w-4', color)} />
                     </div>
                     <span className="text-[10px] font-medium leading-tight">{tab.label}</span>
-                    {s && <span className="text-[9px] text-muted-foreground">{s.total} records</span>}
+                    <span className="text-[9px] text-muted-foreground">{count} records</span>
                   </button>
                 );
               })}
@@ -1346,20 +1566,8 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
     );
   };
 
-  // ===== SUPPORTING DOCUMENTS (dynamic from evidence uploads) =====
+  // ===== SUPPORTING DOCUMENTS VIEW =====
   const renderSupportingDocs = () => {
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-
-    // Build categories dynamically from actual uploaded evidence
-    const categoryMap = new Map<string, EvidenceFile[]>();
-    allEvidence.forEach((ev) => {
-      const cat = ev.category;
-      if (!categoryMap.has(cat)) categoryMap.set(cat, []);
-      categoryMap.get(cat)!.push(ev);
-    });
-
-    // Ensure all default categories appear even if empty
     const defaultCategories = [
       { name: 'Classroom Photographs', icon: School },
       { name: 'Laboratory Layouts', icon: FlaskConical },
@@ -1372,132 +1580,49 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
       { name: 'Calibration Certificates', icon: CheckCircle2 },
     ];
 
-    const categories = defaultCategories.map((cat) => ({
-      ...cat,
-      count: categoryMap.get(cat.name)?.length || 0,
-    }));
-
-    const totalDocs = allEvidence.length;
-
-    const filteredCategories = categories.filter((cat) =>
-      searchQuery
-        ? cat.name.toLowerCase().includes(searchQuery.toLowerCase())
-        : true
-    );
-
-    const selectedCatFiles = selectedCategory
-      ? categoryMap.get(selectedCategory) || []
-      : [];
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold">Supporting Documents Repository</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Evidence uploaded from all infrastructure sections appears here organized by category</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Evidence uploaded across infrastructure sections appears here organized by category</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="text-[10px]">
-            <FileText className="h-3.5 w-3.5 mr-1" /> {categories.length} Categories
+            <FileText className="h-3.5 w-3.5 mr-1" /> {defaultCategories.length} Categories
           </Badge>
           <Badge variant="outline" className="text-[10px]">
-            <Eye className="h-3.5 w-3.5 mr-1" /> {totalDocs} Documents
+            <Eye className="h-3.5 w-3.5 mr-1" /> {allEvidence.length} Documents
           </Badge>
         </div>
 
-        <div className="relative max-w-sm">
-          <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search document categories..." className="h-8 text-xs pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-        </div>
-
-        {/* Category Grid */}
-        {!selectedCategory ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredCategories.map((cat) => (
-              <button
-                key={cat.name}
-                onClick={() => cat.count > 0 && setSelectedCategory(cat.name)}
-                className={cn(
-                  'text-left p-4 rounded-xl border border-border/50 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all group',
-                  cat.count === 0 && 'opacity-50 cursor-default'
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <cat.icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium">{cat.name}</span>
-                  </div>
-                  <Badge variant="secondary" className={cn('text-[9px]', cat.count > 0 && 'bg-amber-500/10 text-amber-600')}>
-                    {cat.count}
-                  </Badge>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {defaultCategories.map((cat) => (
+            <div
+              key={cat.name}
+              className="text-left p-4 rounded-xl border border-border/50 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all group"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <cat.icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-medium">{cat.name}</span>
                 </div>
-                {cat.count > 0 ? (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {categoryMap.get(cat.name)?.slice(0, 3).map((ev) => (
-                      <span key={ev.id} className="text-[8px] px-1.5 py-0.5 rounded bg-muted truncate max-w-[100px]">
-                        {ev.fileName}
-                      </span>
-                    ))}
-                    {(categoryMap.get(cat.name)?.length || 0) > 3 && (
-                      <span className="text-[8px] text-muted-foreground">+{categoryMap.get(cat.name)!.length - 3} more</span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-[9px] text-muted-foreground mt-2">No documents uploaded yet</p>
-                )}
-              </button>
-            ))}
-          </div>
-        ) : (
-          /* Category Detail View */
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(null)}>
-                ← Back to Categories
-              </Button>
-              <Badge variant="secondary" className="text-[10px]">{selectedCategory}</Badge>
+                <Badge variant="secondary" className="text-[9px]">
+                  0 Files
+                </Badge>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-2">Available for accreditation documentation</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {selectedCatFiles.map((ev) => {
-                const isImage = ev.fileType === 'png' || ev.fileType === 'jpg';
-                return (
-                  <div key={ev.id} className="p-3 rounded-lg border border-border/50 hover:border-indigo-500/30 transition-all group">
-                    <div className="flex items-start gap-3">
-                      <div className="shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                        {isImage && ev.dataUrl ? (
-                          <img src={ev.dataUrl} alt={ev.fileName} className="w-full h-full object-cover" />
-                        ) : (
-                          <FileText className="h-6 w-6 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate" title={ev.fileName}>{ev.fileName}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] text-muted-foreground uppercase">{ev.fileType}</span>
-                          <span className="text-[9px] text-muted-foreground">{ev.fileSize}</span>
-                          <Badge variant="secondary" className={cn('text-[8px]',
-                            ev.status === 'approved' && 'bg-emerald-500/10 text-emerald-600',
-                            ev.status === 'under-review' && 'bg-amber-500/10 text-amber-600',
-                            ev.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
-                          )}>{ev.status}</Badge>
-                        </div>
-                        <p className="text-[9px] text-muted-foreground mt-0.5">{ev.uploadedAt} • {ev.uploadedBy}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     );
   };
 
   const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    'dashboard': LayoutDashboard,
+    dashboard: LayoutDashboard,
     ...sectionIcons,
   };
 
@@ -1512,7 +1637,7 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
           </div>
           <Badge variant="secondary" className="text-[10px] w-fit">
             <Building2 className="h-3 w-3 mr-1" />
-            {departmentInfo.department} • AY 2025-26
+            {effectiveDeptName} • AY {academicYear}
           </Badge>
         </div>
         {/* Score Cards */}
@@ -1564,7 +1689,9 @@ export const DepartmentInfrastructureModule = ({ config, academicYear }: Departm
                 title={tab.label}
                 fields={sectionFields[tab.id] || []}
                 addLabel={`Add ${tab.label.replace(/s$/, '')}`}
-                stats={sectionStats[tab.id]}
+                academicYear={academicYear}
+                departmentId={effectiveDeptId}
+                departmentName={effectiveDeptName}
                 evidenceMap={sectionEvidence[tab.id] || {}}
                 onUploadEvidence={handleUploadEvidence}
                 onDeleteEvidence={handleDeleteEvidence}
