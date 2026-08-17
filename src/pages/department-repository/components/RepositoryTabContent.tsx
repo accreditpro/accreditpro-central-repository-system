@@ -10,6 +10,27 @@ import {
   deleteResearchModuleRecord,
   uploadResearchModuleCsv,
 } from '@/services/research-repository.service';
+import {
+  getStudentDevRecords,
+  createStudentDevRecord,
+  updateStudentDevRecord,
+  deleteStudentDevRecord,
+  uploadStudentDevCsv,
+} from '@/services/student-dev-outcomes.service';
+import {
+  getInfrastructureRecords,
+  createInfrastructureRecord,
+  updateInfrastructureRecord,
+  deleteInfrastructureRecord,
+  uploadInfrastructureCsv,
+} from '@/services/department-infrastructure.service';
+import {
+  getAlumniRecordsByTab,
+  createAlumniRecordByTab,
+  updateAlumniRecordByTab,
+  deleteAlumniRecordByTab,
+  uploadAlumniCsvByTab,
+} from '@/services/alumni-repository.service';
 import { masterData, coordinatorContext } from '../repository-configs';
 import { CSVUploadDialog } from './CSVUploadDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,7 +116,9 @@ export const RepositoryTabContent = ({
 
   // Initialize empty form data from tabConfig.fields
   const getEmptyFormData = useCallback(() => {
-    const initial: Record<string, any> = {};
+    const initial: Record<string, any> = {
+      workflowStatus: 'draft',
+    };
     tabConfig.fields.forEach((field) => {
       if (field.masterDataSource === 'academicYears' || field.key === 'academicYear') {
         initial[field.key] = academicYear;
@@ -114,12 +137,51 @@ export const RepositoryTabContent = ({
     return initial;
   }, [tabConfig.fields, academicYear, departmentName]);
 
+  const isAlumni = repositoryId === 'alumni' || repositoryId === 'alumni-repository';
+  const isStudentDev = repositoryId === 'student-dev-outcomes';
+  const isInfra = repositoryId === 'infrastructure' || repositoryId === 'infrastructure-repository';
+  const apiFetchRecords = isAlumni
+    ? getAlumniRecordsByTab
+    : isStudentDev
+    ? getStudentDevRecords
+    : isInfra
+    ? getInfrastructureRecords
+    : getResearchModuleRecords;
+  const apiCreateRecord = isAlumni
+    ? createAlumniRecordByTab
+    : isStudentDev
+    ? createStudentDevRecord
+    : isInfra
+    ? createInfrastructureRecord
+    : createResearchModuleRecord;
+  const apiUpdateRecord = isAlumni
+    ? updateAlumniRecordByTab
+    : isStudentDev
+    ? updateStudentDevRecord
+    : isInfra
+    ? updateInfrastructureRecord
+    : updateResearchModuleRecord;
+  const apiDeleteRecord = isAlumni
+    ? deleteAlumniRecordByTab
+    : isStudentDev
+    ? deleteStudentDevRecord
+    : isInfra
+    ? deleteInfrastructureRecord
+    : deleteResearchModuleRecord;
+  const apiUploadCsv = isAlumni
+    ? uploadAlumniCsvByTab
+    : isStudentDev
+    ? uploadStudentDevCsv
+    : isInfra
+    ? uploadInfrastructureCsv
+    : uploadResearchModuleCsv;
+
   // Fetch records from backend
   const fetchRecords = useCallback(async () => {
     if (!effectiveDeptId) return;
     setLoading(true);
     try {
-      const res = await getResearchModuleRecords(
+      const res = await apiFetchRecords(
         tabConfig.id,
         academicYear,
         effectiveDeptId,
@@ -129,16 +191,19 @@ export const RepositoryTabContent = ({
       if (Array.isArray(items)) {
         const normalized = items.map((it: any) => {
           const raw = it.recordData || it;
+          const wfStatus = String(it.workflowStatus || raw.workflowStatus || 'draft').toLowerCase();
           const mapped: Record<string, any> = {
             id: it.id ?? raw.id,
-            status: it.status || raw.status || raw['Status'] || 'draft',
-            workflowStatus: it.workflowStatus || raw.workflowStatus || 'DRAFT',
+            workflowStatus: wfStatus,
             academicYear: it.academicYear || raw.academicYear || academicYear,
             departmentId: it.departmentId || raw.departmentId || effectiveDeptId,
           };
           tabConfig.fields.forEach((field) => {
             mapped[field.key] = raw[field.key] ?? raw[field.csvColumn] ?? '';
           });
+          if (mapped.status === undefined) {
+            mapped.status = raw.status || wfStatus;
+          }
           return mapped;
         });
         setRecords(normalized);
@@ -151,7 +216,7 @@ export const RepositoryTabContent = ({
     } finally {
       setLoading(false);
     }
-  }, [tabConfig.id, tabConfig.label, tabConfig.fields, academicYear, effectiveDeptId, searchQuery]);
+  }, [apiFetchRecords, tabConfig.id, tabConfig.label, tabConfig.fields, academicYear, effectiveDeptId, searchQuery]);
 
   useEffect(() => {
     fetchRecords();
@@ -190,14 +255,26 @@ export const RepositoryTabContent = ({
         departmentId: effectiveDeptId,
         academicYear: formData.academicYear || academicYear,
       };
+
+      if (!isInfra && !isAlumni) {
+        const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
+        const statusVal = formData.workflowStatus || 'draft';
+        payload.workflowStatus = statusVal;
+        if (!hasExplicitStatusField && !payload.status) {
+          payload.status = statusVal;
+        }
+      } else {
+        delete payload.workflowStatus;
+      }
+
       // Convert number fields
       tabConfig.fields.forEach((f) => {
-        if (f.type === 'number' && payload[f.key]) {
+        if (f.type === 'number' && payload[f.key] !== undefined && payload[f.key] !== '') {
           payload[f.key] = Number(payload[f.key]);
         }
       });
 
-      await createResearchModuleRecord(tabConfig.id, academicYear, effectiveDeptId, payload);
+      await apiCreateRecord(tabConfig.id, academicYear, effectiveDeptId, payload);
       toast.success(`${tabConfig.label} record created successfully`);
       setShowAddDialog(false);
       fetchRecords();
@@ -216,6 +293,9 @@ export const RepositoryTabContent = ({
     tabConfig.fields.forEach((field) => {
       formValues[field.key] = rec[field.key] ?? '';
     });
+    if (!isInfra && !isAlumni) {
+      formValues.workflowStatus = rec.workflowStatus || (tabConfig.fields.some((f) => f.key === 'status') ? 'draft' : rec.status) || 'draft';
+    }
     setFormData(formValues);
     setShowEditDialog(true);
   };
@@ -240,13 +320,25 @@ export const RepositoryTabContent = ({
         departmentId: effectiveDeptId,
         academicYear: formData.academicYear || academicYear,
       };
+
+      if (!isInfra && !isAlumni) {
+        const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
+        const statusVal = formData.workflowStatus || 'draft';
+        payload.workflowStatus = statusVal;
+        if (!hasExplicitStatusField && !payload.status) {
+          payload.status = statusVal;
+        }
+      } else {
+        delete payload.workflowStatus;
+      }
+
       tabConfig.fields.forEach((f) => {
-        if (f.type === 'number' && payload[f.key]) {
+        if (f.type === 'number' && payload[f.key] !== undefined && payload[f.key] !== '') {
           payload[f.key] = Number(payload[f.key]);
         }
       });
 
-      await updateResearchModuleRecord(
+      await apiUpdateRecord(
         tabConfig.id,
         selectedRecord.id,
         academicYear,
@@ -275,7 +367,7 @@ export const RepositoryTabContent = ({
     if (!selectedRecord?.id) return;
     setSubmitting(true);
     try {
-      await deleteResearchModuleRecord(
+      await apiDeleteRecord(
         tabConfig.id,
         selectedRecord.id,
         academicYear,
@@ -299,6 +391,10 @@ export const RepositoryTabContent = ({
     const sampleRow = tabConfig.fields.map((f) => {
       if (f.masterDataSource === 'academicYears' || f.key === 'academicYear') return academicYear;
       if (f.masterDataSource === 'departments') return departmentName;
+      if (f.masterDataSource && masterData[f.masterDataSource as keyof typeof masterData]) {
+        const mdOptions = masterData[f.masterDataSource as keyof typeof masterData] as string[];
+        return mdOptions[0] || `Sample ${f.label}`;
+      }
       if (f.selectOptions && f.selectOptions.length > 0) return f.selectOptions[0];
       if (f.type === 'date') return new Date().toISOString().split('T')[0];
       if (f.type === 'number') return '10';
@@ -551,20 +647,26 @@ export const RepositoryTabContent = ({
                           );
                         })}
                         <TableCell className="text-xs">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'text-[9px] capitalize',
-                              (row.status === 'verified' || row.status === 'approved' || row.status === 'Granted') &&
-                                'bg-emerald-500/10 text-emerald-600',
-                              row.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                              row.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                              (row.status === 'draft' || row.status === 'uploaded' || row.status === 'Filed') &&
-                                'bg-blue-500/10 text-blue-600'
-                            )}
-                          >
-                            {row.status || 'draft'}
-                          </Badge>
+                          {(() => {
+                            const badgeVal = String(row.workflowStatus || row.status || 'draft').toLowerCase();
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className={cn(
+                                  'text-[9px] capitalize',
+                                  (badgeVal === 'verified' || badgeVal === 'approved' || badgeVal === 'granted' || badgeVal === 'active') &&
+                                    'bg-emerald-500/10 text-emerald-600',
+                                  (badgeVal === 'pending' || badgeVal === 'submitted' || badgeVal === 'hod_review' || badgeVal === 'iqac_verification' || badgeVal === 'under maintenance') &&
+                                    'bg-amber-500/10 text-amber-600',
+                                  (badgeVal === 'rejected' || badgeVal === 'inactive') && 'bg-red-500/10 text-red-600',
+                                  (badgeVal === 'draft' || badgeVal === 'uploaded' || badgeVal === 'filed' || badgeVal === 'available') &&
+                                    'bg-blue-500/10 text-blue-600'
+                                )}
+                              >
+                                {row.workflowStatus ? String(row.workflowStatus).replace(/_/g, ' ') : (row.status ? String(row.status).replace(/_/g, ' ') : 'draft')}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right sticky right-0 bg-card">
                           <div className="flex items-center justify-end gap-1">
@@ -713,6 +815,28 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
+              {!isInfra && !isAlumni && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Workflow Status</Label>
+                  <Select
+                    value={formData.workflowStatus || 'draft'}
+                    onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="validated">Validated</SelectItem>
+                      <SelectItem value="hod_review">HOD Review</SelectItem>
+                      <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 mt-4 pt-3 border-t">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowAddDialog(false)}>
@@ -755,6 +879,28 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
+              {!isInfra && !isAlumni && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Workflow Status</Label>
+                  <Select
+                    value={formData.workflowStatus || 'draft'}
+                    onValueChange={(val) => setFormData((prev) => ({ ...prev, workflowStatus: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="validated">Validated</SelectItem>
+                      <SelectItem value="hod_review">HOD Review</SelectItem>
+                      <SelectItem value="iqac_verification">IQAC Verification</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 mt-4 pt-3 border-t">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowEditDialog(false)}>
@@ -779,21 +925,17 @@ export const RepositoryTabContent = ({
             </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
-            <div className="p-3 rounded-lg bg-muted/40 border text-xs space-y-1">
-              <p className="font-semibold text-foreground">
-                {selectedRecord.title ||
-                  selectedRecord.paperTitle ||
-                  selectedRecord.patentTitle ||
-                  selectedRecord.bookTitle ||
-                  selectedRecord.chapterTitle ||
-                  selectedRecord.projectTitle ||
-                  selectedRecord.projectName ||
-                  selectedRecord.consultancyTitle ||
-                  'Selected Record'}
-              </p>
-              <p className="text-muted-foreground">
-                {selectedRecord.facultyName || selectedRecord.studentName || selectedRecord.principalInvestigator || ''}
-              </p>
+            <div className="p-3 rounded-lg bg-muted/40 border text-xs space-y-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                {tabConfig.fields.slice(0, 4).map((f) => (
+                  <div key={f.key}>
+                    <span className="text-[11px] text-muted-foreground block">{f.label}</span>
+                    <span className="font-medium text-foreground truncate block">
+                      {String(selectedRecord[f.key] || '—')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           <DialogFooter className="gap-2 mt-2">
@@ -816,7 +958,7 @@ export const RepositoryTabContent = ({
           tabConfig={tabConfig}
           existingData={records}
           onUploadFile={async (file) => {
-            await uploadResearchModuleCsv(
+            await apiUploadCsv(
               tabConfig.id,
               academicYear,
               effectiveDeptId,
