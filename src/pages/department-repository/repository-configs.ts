@@ -1097,7 +1097,7 @@ export const studentDevOutcomesConfig: RepositoryModuleConfig = {
         { key: 'studentName', label: 'Student Name', type: 'text', required: true, csvColumn: 'Student Name' },
         { key: 'company', label: 'Company Name', type: 'text', required: true, csvColumn: 'Company Name' },
         { key: 'jobRole', label: 'Job Role', type: 'text', required: true, csvColumn: 'Job Role' },
-        { key: 'package', label: 'Package (LPA)', type: 'number', required: false, csvColumn: 'Package (LPA)' },
+        { key: 'packageAmount', label: 'Package (LPA)', type: 'number', required: false, csvColumn: 'Package (LPA)' },
         { key: 'placementDate', label: 'Placement Date', type: 'date', required: true, csvColumn: 'Placement Date' },
         { key: 'mode', label: 'Mode', type: 'select', required: false, csvColumn: 'Mode', selectOptions: ['On-Campus', 'Off-Campus', 'Pool Campus'] },
         { key: 'offerReceived', label: 'Offer Received', type: 'select', required: true, csvColumn: 'Offer Received', selectOptions: ['Yes', 'No'] },

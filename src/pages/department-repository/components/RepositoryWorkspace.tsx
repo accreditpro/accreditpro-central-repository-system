@@ -240,7 +240,14 @@ export const RepositoryWorkspace = ({
 
   // Render Student Dev & Outcomes Repository with its own dedicated module
   if (config.id === 'student-dev-outcomes') {
-    return <StudentDevOutcomesModule config={config} academicYear={academicYear} />;
+    return (
+      <StudentDevOutcomesModule
+        config={config}
+        academicYear={academicYear}
+        departmentId={departmentId}
+        departmentName={currentDepartment}
+      />
+    );
   }
 
   // Render Department Infrastructure Repository with its own dedicated module
