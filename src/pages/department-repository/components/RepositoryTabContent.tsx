@@ -24,6 +24,13 @@ import {
   deleteInfrastructureRecord,
   uploadInfrastructureCsv,
 } from '@/services/department-infrastructure.service';
+import {
+  getAlumniRecordsByTab,
+  createAlumniRecordByTab,
+  updateAlumniRecordByTab,
+  deleteAlumniRecordByTab,
+  uploadAlumniCsvByTab,
+} from '@/services/alumni-repository.service';
 import { masterData, coordinatorContext } from '../repository-configs';
 import { CSVUploadDialog } from './CSVUploadDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -130,13 +137,44 @@ export const RepositoryTabContent = ({
     return initial;
   }, [tabConfig.fields, academicYear, departmentName]);
 
+  const isAlumni = repositoryId === 'alumni' || repositoryId === 'alumni-repository';
   const isStudentDev = repositoryId === 'student-dev-outcomes';
   const isInfra = repositoryId === 'infrastructure' || repositoryId === 'infrastructure-repository';
-  const apiFetchRecords = isStudentDev ? getStudentDevRecords : isInfra ? getInfrastructureRecords : getResearchModuleRecords;
-  const apiCreateRecord = isStudentDev ? createStudentDevRecord : isInfra ? createInfrastructureRecord : createResearchModuleRecord;
-  const apiUpdateRecord = isStudentDev ? updateStudentDevRecord : isInfra ? updateInfrastructureRecord : updateResearchModuleRecord;
-  const apiDeleteRecord = isStudentDev ? deleteStudentDevRecord : isInfra ? deleteInfrastructureRecord : deleteResearchModuleRecord;
-  const apiUploadCsv = isStudentDev ? uploadStudentDevCsv : isInfra ? uploadInfrastructureCsv : uploadResearchModuleCsv;
+  const apiFetchRecords = isAlumni
+    ? getAlumniRecordsByTab
+    : isStudentDev
+    ? getStudentDevRecords
+    : isInfra
+    ? getInfrastructureRecords
+    : getResearchModuleRecords;
+  const apiCreateRecord = isAlumni
+    ? createAlumniRecordByTab
+    : isStudentDev
+    ? createStudentDevRecord
+    : isInfra
+    ? createInfrastructureRecord
+    : createResearchModuleRecord;
+  const apiUpdateRecord = isAlumni
+    ? updateAlumniRecordByTab
+    : isStudentDev
+    ? updateStudentDevRecord
+    : isInfra
+    ? updateInfrastructureRecord
+    : updateResearchModuleRecord;
+  const apiDeleteRecord = isAlumni
+    ? deleteAlumniRecordByTab
+    : isStudentDev
+    ? deleteStudentDevRecord
+    : isInfra
+    ? deleteInfrastructureRecord
+    : deleteResearchModuleRecord;
+  const apiUploadCsv = isAlumni
+    ? uploadAlumniCsvByTab
+    : isStudentDev
+    ? uploadStudentDevCsv
+    : isInfra
+    ? uploadInfrastructureCsv
+    : uploadResearchModuleCsv;
 
   // Fetch records from backend
   const fetchRecords = useCallback(async () => {
@@ -218,7 +256,7 @@ export const RepositoryTabContent = ({
         academicYear: formData.academicYear || academicYear,
       };
 
-      if (!isInfra) {
+      if (!isInfra && !isAlumni) {
         const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
         const statusVal = formData.workflowStatus || 'draft';
         payload.workflowStatus = statusVal;
@@ -255,7 +293,7 @@ export const RepositoryTabContent = ({
     tabConfig.fields.forEach((field) => {
       formValues[field.key] = rec[field.key] ?? '';
     });
-    if (!isInfra) {
+    if (!isInfra && !isAlumni) {
       formValues.workflowStatus = rec.workflowStatus || (tabConfig.fields.some((f) => f.key === 'status') ? 'draft' : rec.status) || 'draft';
     }
     setFormData(formValues);
@@ -283,7 +321,7 @@ export const RepositoryTabContent = ({
         academicYear: formData.academicYear || academicYear,
       };
 
-      if (!isInfra) {
+      if (!isInfra && !isAlumni) {
         const hasExplicitStatusField = tabConfig.fields.some((f) => f.key === 'status');
         const statusVal = formData.workflowStatus || 'draft';
         payload.workflowStatus = statusVal;
@@ -353,6 +391,10 @@ export const RepositoryTabContent = ({
     const sampleRow = tabConfig.fields.map((f) => {
       if (f.masterDataSource === 'academicYears' || f.key === 'academicYear') return academicYear;
       if (f.masterDataSource === 'departments') return departmentName;
+      if (f.masterDataSource && masterData[f.masterDataSource as keyof typeof masterData]) {
+        const mdOptions = masterData[f.masterDataSource as keyof typeof masterData] as string[];
+        return mdOptions[0] || `Sample ${f.label}`;
+      }
       if (f.selectOptions && f.selectOptions.length > 0) return f.selectOptions[0];
       if (f.type === 'date') return new Date().toISOString().split('T')[0];
       if (f.type === 'number') return '10';
@@ -773,7 +815,7 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
-              {!isInfra && (
+              {!isInfra && !isAlumni && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Workflow Status</Label>
                   <Select
@@ -837,7 +879,7 @@ export const RepositoryTabContent = ({
                   {renderFieldControl(field)}
                 </div>
               ))}
-              {!isInfra && (
+              {!isInfra && !isAlumni && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Workflow Status</Label>
                   <Select
@@ -883,21 +925,17 @@ export const RepositoryTabContent = ({
             </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
-            <div className="p-3 rounded-lg bg-muted/40 border text-xs space-y-1">
-              <p className="font-semibold text-foreground">
-                {selectedRecord.title ||
-                  selectedRecord.paperTitle ||
-                  selectedRecord.patentTitle ||
-                  selectedRecord.bookTitle ||
-                  selectedRecord.chapterTitle ||
-                  selectedRecord.projectTitle ||
-                  selectedRecord.projectName ||
-                  selectedRecord.consultancyTitle ||
-                  'Selected Record'}
-              </p>
-              <p className="text-muted-foreground">
-                {selectedRecord.facultyName || selectedRecord.studentName || selectedRecord.principalInvestigator || ''}
-              </p>
+            <div className="p-3 rounded-lg bg-muted/40 border text-xs space-y-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                {tabConfig.fields.slice(0, 4).map((f) => (
+                  <div key={f.key}>
+                    <span className="text-[11px] text-muted-foreground block">{f.label}</span>
+                    <span className="font-medium text-foreground truncate block">
+                      {String(selectedRecord[f.key] || '—')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           <DialogFooter className="gap-2 mt-2">

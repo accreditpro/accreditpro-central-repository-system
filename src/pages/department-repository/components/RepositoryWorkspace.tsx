@@ -31,6 +31,10 @@ import {
   FacultyRepositoryMetrics,
 } from '@/services/faculty-repository.service';
 import {
+  getAlumniRepositoryHealth,
+  AlumniRepositoryHealth,
+} from '@/services/alumni-repository.service';
+import {
   GraduationCap,
   Users,
   Users2,
@@ -151,6 +155,8 @@ export const RepositoryWorkspace = ({
   const [academicSummary, setAcademicSummary] = useState<AcademicRepositorySummary | null>(null);
   // Live metrics for Faculty Repository score cards
   const [facultyMetrics, setFacultyMetrics] = useState<FacultyRepositoryMetrics | null>(null);
+  // Live metrics for Alumni Repository score cards
+  const [alumniHealth, setAlumniHealth] = useState<AlumniRepositoryHealth | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
 
   useEffect(() => {
@@ -188,6 +194,22 @@ export const RepositoryWorkspace = ({
             setLoadingMetrics(false);
           }
         });
+    } else if (config.id === 'alumni' || config.id === 'alumni-repository') {
+      setLoadingMetrics(true);
+      getAlumniRepositoryHealth(academicYear, departmentId)
+        .then((res) => {
+          if (isMounted && res) {
+            setAlumniHealth(res);
+          }
+        })
+        .catch((err) => {
+          console.warn('Live alumni metrics fetch error:', err);
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingMetrics(false);
+          }
+        });
     }
     return () => {
       isMounted = false;
@@ -217,6 +239,14 @@ export const RepositoryWorkspace = ({
         readinessScore: facultyMetrics?.readinessScore ?? repositoryHealth.faculty?.readinessScore ?? 0,
       };
     }
+    if (config.id === 'alumni' || config.id === 'alumni-repository') {
+      return {
+        dataCompleteness: alumniHealth?.dataCompleteness ?? repositoryHealth.alumni?.dataCompleteness ?? 0,
+        evidenceCompleteness: alumniHealth?.evidenceCompleteness ?? repositoryHealth.alumni?.evidenceCompleteness ?? 0,
+        verificationPercent: alumniHealth?.verificationPercent ?? repositoryHealth.alumni?.verificationPercent ?? 0,
+        readinessScore: alumniHealth?.readinessScore ?? repositoryHealth.alumni?.readinessScore ?? 0,
+      };
+    }
     const fallback = repositoryHealth[config.id] || {
       dataCompleteness: 0,
       evidenceCompleteness: 0,
@@ -224,7 +254,7 @@ export const RepositoryWorkspace = ({
       readinessScore: 0,
     };
     return fallback;
-  }, [config.id, academicSummary, facultyMetrics]);
+  }, [config.id, academicSummary, facultyMetrics, alumniHealth]);
 
   // Render Student Repository with its own dedicated module (with Department/Year/Semester selectors)
   if (config.id === 'student') {
@@ -400,7 +430,13 @@ export const RepositoryWorkspace = ({
                 academicYear={academicYear || '2025-26'}
               />
             ) : (
-              <RepositoryTabContent tabConfig={tab} repositoryId={config.id} />
+              <RepositoryTabContent
+                tabConfig={tab}
+                repositoryId={config.id}
+                academicYear={academicYear}
+                departmentId={departmentId}
+                departmentName={currentDepartment}
+              />
             )}
           </TabsContent>
         ))}

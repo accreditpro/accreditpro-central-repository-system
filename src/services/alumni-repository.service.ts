@@ -720,3 +720,88 @@ export async function getAlumniRepositoryHealth(
   const query = qs({ academicYear, departmentId });
   return apiService.get<AlumniRepositoryHealth>(`${BASE}/health?${query}`);
 }
+
+// ─── Generic Tab-Based CRUD & Upload Handlers ────────────────────────────────
+
+export function mapAlumniTabId(tabId: string): string {
+  switch (tabId) {
+    case 'alumni-details':
+      return 'details';
+    case 'employment-career':
+      return 'employment';
+    case 'higher-education':
+      return 'higher-education';
+    case 'alumni-engagement':
+      return 'engagement';
+    case 'alumni-contributions':
+      return 'contributions';
+    case 'alumni-mentorship':
+      return 'mentorship';
+    case 'alumni-achievements':
+      return 'achievements';
+    case 'alumni-chapters':
+      return 'chapters';
+    case 'alumni-events':
+      return 'events';
+    default:
+      return tabId.replace('alumni-', '');
+  }
+}
+
+export async function getAlumniRecordsByTab(
+  tabId: string,
+  academicYear: string,
+  departmentId: number,
+  extra?: { search?: string; page?: number; size?: number }
+): Promise<any> {
+  const slug = mapAlumniTabId(tabId);
+  const query = qs({ academicYear, departmentId, size: 500, ...extra });
+  return apiService.get<any>(`${BASE}/${slug}?${query}`);
+}
+
+export async function createAlumniRecordByTab(
+  tabId: string,
+  academicYear: string,
+  departmentId: number,
+  data: Record<string, any>
+): Promise<any> {
+  const slug = mapAlumniTabId(tabId);
+  const query = qs({ academicYear, departmentId });
+  return apiService.post<any>(`${BASE}/${slug}?${query}`, data);
+}
+
+export async function updateAlumniRecordByTab(
+  tabId: string,
+  id: number | string,
+  academicYear: string,
+  departmentId: number,
+  data: Record<string, any>
+): Promise<any> {
+  const slug = mapAlumniTabId(tabId);
+  const query = qs({ academicYear, departmentId });
+  return apiService.put<any>(`${BASE}/${slug}/${id}?${query}`, data);
+}
+
+export async function deleteAlumniRecordByTab(
+  tabId: string,
+  id: number | string,
+  academicYear: string,
+  departmentId: number
+): Promise<any> {
+  const slug = mapAlumniTabId(tabId);
+  const query = qs({ academicYear, departmentId });
+  return apiService.delete<any>(`${BASE}/${slug}/${id}?${query}`);
+}
+
+export async function uploadAlumniCsvByTab(
+  tabId: string,
+  academicYear: string,
+  departmentId: number,
+  file: File
+): Promise<any> {
+  const slug = mapAlumniTabId(tabId);
+  const query = qs({ academicYear, departmentId });
+  const form = new FormData();
+  form.append('file', file);
+  return apiService.post<any>(`${BASE}/${slug}/upload?${query}`, form);
+}
