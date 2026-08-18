@@ -56,11 +56,16 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { EvidencePreviewDialog } from '@/components/shared/EvidencePreviewDialog';
+import type { EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
 import {
-  getFacultyProfiles,
-  getFacultyEvidence,
-  uploadFacultyEvidence,
-  deleteFacultyEvidence,
+  getFacultyEvidenceSummary,
+  getFacultyEvidenceDocuments,
+  uploadFacultyEvidenceDocument,
+  deleteFacultyEvidenceDocumentVersion,
+  downloadFacultyEvidenceDocumentVersion,
+  getFacultyEvidenceDocumentBlob,
+  getFacultyEvidenceActivity,
 } from '@/services/faculty-repository.service';
 import { toast } from 'sonner';
 
@@ -130,8 +135,51 @@ interface FacultyEvidenceModuleProps {
 // HELPER FUNCTIONS
 // ============================================================
 
-function getStatusColor(status: DocumentStatus): string {
-  switch (status) {
+function normalizeDocumentStatus(status?: string): DocumentStatus {
+  if (!status) return 'not_uploaded';
+  const s = String(status).toLowerCase().trim();
+  if (s === 'uploaded') return 'uploaded';
+  if (s === 'under_review' || s === 'under review' || s === 'in_review') return 'under_review';
+  if (s === 'approved' || s === 'verified' || s === 'validated') return 'approved';
+  if (s === 'rejected') return 'rejected';
+  if (s === 'not_uploaded' || s === 'pending') return 'not_uploaded';
+  return 'uploaded';
+}
+
+function formatFileType(fileType?: string): string {
+  if (!fileType) return 'PDF';
+  const s = fileType.toLowerCase();
+  if (s.includes('pdf')) return 'PDF';
+  if (s.includes('png')) return 'PNG';
+  if (s.includes('jpg') || s.includes('jpeg')) return 'JPG';
+  if (s.includes('word') || s.includes('docx') || s.includes('doc')) return 'DOCX';
+  if (s.includes('sheet') || s.includes('xlsx') || s.includes('xls')) return 'XLSX';
+  return fileType.replace(/^[a-z]+\//i, '').toUpperCase();
+}
+
+function formatFileSize(bytes?: number | string): string {
+  if (!bytes) return '1.2 MB';
+  const num = Number(bytes);
+  if (isNaN(num)) return String(bytes);
+  if (num < 1024) return `${num} B`;
+  if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
+  return `${(num / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function getStatusColor(status?: string): string {
+  const s = normalizeDocumentStatus(status);
+  switch (s) {
     case 'not_uploaded': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     case 'uploaded': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
     case 'under_review': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
@@ -141,14 +189,15 @@ function getStatusColor(status: DocumentStatus): string {
   }
 }
 
-function getStatusLabel(status: DocumentStatus): string {
-  switch (status) {
+function getStatusLabel(status?: string): string {
+  const s = normalizeDocumentStatus(status);
+  switch (s) {
     case 'not_uploaded': return 'Not Uploaded';
     case 'uploaded': return 'Uploaded';
     case 'under_review': return 'Under Review';
     case 'approved': return 'Approved';
     case 'rejected': return 'Rejected';
-    default: return 'Unknown';
+    default: return 'Not Uploaded';
   }
 }
 
@@ -160,9 +209,10 @@ function getCompletionColor(pct: number): string {
 }
 
 function generateFolders(faculty: FacultyMember, uploadedEvidences: any[] = []): EvidenceFolderItem[] {
-  // Find uploaded doc by section & doc name or type
-  const findEvidence = (docName: string) => {
+  // Find uploaded doc by docCode or docType or name
+  const findEvidence = (docId: string, docName: string) => {
     return uploadedEvidences.find((e) =>
+      e.documentCode?.toLowerCase() === docId.toLowerCase() ||
       e.documentType?.toLowerCase() === docName.toLowerCase() ||
       e.documentName?.toLowerCase() === docName.toLowerCase() ||
       e.fileName?.toLowerCase().includes(docName.toLowerCase())
@@ -177,31 +227,49 @@ function generateFolders(faculty: FacultyMember, uploadedEvidences: any[] = []):
     conditionalValue?: string,
     referenceNote?: string
   ): EvidenceDocumentItem => {
-    const ev = findEvidence(name);
-    const hasUpload = !!ev;
-    const versions: DocumentVersion[] = hasUpload
+    const ev = findEvidence(id, name);
+    const hasUpload = !!ev && (normalizeDocumentStatus(ev.status) !== 'not_uploaded' || (Array.isArray(ev.versions) && ev.versions.length > 0));
+    const latestVer = Array.isArray(ev?.versions) && ev.versions.length > 0 ? ev.versions[0] : null;
+
+    const versions: DocumentVersion[] = Array.isArray(ev?.versions) && ev.versions.length > 0
+      ? ev.versions.map((v: any) => ({
+          id: v.versionId || v.id,
+          version: v.versionNumber || v.version || 1,
+          fileName: v.fileName || `${id}.pdf`,
+          fileSize: formatFileSize(v.fileSize),
+          fileType: formatFileType(v.fileType),
+          uploadedBy: v.uploadedBy || faculty.name,
+          uploadedAt: formatDate(v.uploadedAt),
+          status: normalizeDocumentStatus(v.status),
+          url: v.downloadUrl || v.url,
+        }))
+      : hasUpload
       ? [{
-          id: ev.id || `v-${id}`,
-          version: ev.version || 1,
+          id: ev.id || ev.documentId || `v-${id}`,
+          version: ev.currentVersion || ev.version || 1,
           fileName: ev.fileName || `${id}.pdf`,
-          fileSize: ev.fileSize || '1.2 MB',
-          fileType: ev.fileType || 'pdf',
-          uploadedBy: ev.uploadedByName || faculty.name,
-          uploadedAt: ev.uploadedAt || ev.createdDate || 'Recent',
-          status: (ev.status as DocumentStatus) || 'approved',
+          fileSize: formatFileSize(ev.fileSize),
+          fileType: formatFileType(ev.fileType),
+          uploadedBy: ev.uploadedByName || ev.uploadedBy || faculty.name,
+          uploadedAt: formatDate(ev.uploadedAt || ev.createdDate),
+          status: normalizeDocumentStatus(ev.status),
           url: ev.fileUrl || ev.url,
         }]
       : [];
+
+    const docStatus: DocumentStatus = hasUpload
+      ? normalizeDocumentStatus(ev.status || latestVer?.status)
+      : 'not_uploaded';
 
     return {
       id,
       name,
       mandatory,
-      status: hasUpload ? ((ev.status as DocumentStatus) || 'approved') : 'not_uploaded',
-      currentVersion: hasUpload ? (ev.version || 1) : undefined,
+      status: docStatus,
+      currentVersion: hasUpload ? (ev.currentVersion || latestVer?.versionNumber || ev.version || 1) : undefined,
       versions,
-      uploadedOn: hasUpload ? (ev.uploadedAt || ev.createdDate || 'Recent') : undefined,
-      uploadedBy: hasUpload ? (ev.uploadedByName || faculty.name) : undefined,
+      uploadedOn: hasUpload ? (latestVer?.uploadedAt ? formatDate(latestVer.uploadedAt) : formatDate(ev.uploadedAt || ev.createdDate)) : undefined,
+      uploadedBy: hasUpload ? (latestVer?.uploadedBy || ev.uploadedBy || ev.uploadedByName || faculty.name) : undefined,
       conditionalField,
       conditionalValue,
       referenceNote,
@@ -317,41 +385,77 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Fetch Faculty List ────────────────────────────────────────────────────
+  const [previewEvidence, setPreviewEvidence] = useState<EvidencePreviewData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ── Preview Document ───────────────────────────────────────────────────────
+  const handlePreviewDocument = async (doc: EvidenceDocumentItem) => {
+    const version = doc.versions[0];
+    if (!version) {
+      toast.error('No document uploaded to preview');
+      return;
+    }
+    setPreviewLoading(true);
+    try {
+      const blob = await getFacultyEvidenceDocumentBlob(version.id);
+      const dataUrl = URL.createObjectURL(blob);
+      setPreviewEvidence({
+        id: String(version.id),
+        fileName: version.fileName,
+        fileType: version.fileType.toLowerCase(),
+        fileSize: version.fileSize,
+        dataUrl,
+        uploadedAt: version.uploadedAt,
+        uploadedBy: version.uploadedBy,
+        status: doc.status,
+        category: selectedFolder?.name || 'Faculty Evidence',
+      });
+      setPreviewOpen(true);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to load document preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // ── Fetch Faculty List via Evidence Summary API ───────────────────────────
   const fetchFaculty = useCallback(async () => {
     if (!departmentId) return;
     setLoading(true);
     try {
-      const res = await getFacultyProfiles(academicYear, departmentId);
-      const items: any[] = res?.data?.content ?? res?.content ?? res?.data ?? res ?? [];
+      const res = await getFacultyEvidenceSummary(academicYear, departmentId);
+      const items: any[] = res?.data ?? res?.content ?? res ?? [];
 
       const mapped: FacultyMember[] = items.map((r: any, idx: number) => {
-        const designation = r.currentDesignation || r.designation || 'Faculty Member';
+        const designation = r.designation || r.currentDesignation || 'Faculty Member';
         const isPoP = designation.toLowerCase().includes('practice') || r.facultyType === 'Professor of Practice';
-        const hasPhD = !!r.highestDegree?.toLowerCase().includes('phd') || !!r.qualificationLevel?.toLowerCase().includes('phd') || !!r.isPhd;
-        const mandatoryCount = isPoP ? 14 : (hasPhD ? 10 : 8);
-        const uploadedCount = Math.min(mandatoryCount, 5 + (idx % 4));
-        const pct = Math.round((uploadedCount / mandatoryCount) * 100);
+        const hasPhD = !!r.hasPhD;
+        const hasPromotion = r.hasPromotion !== undefined ? !!r.hasPromotion : true;
+        const mandatoryCount = Number(r.mandatoryDocsCount ?? (isPoP ? 14 : (hasPhD ? 10 : 8)));
+        const uploadedCount = Number(r.uploadedDocsCount ?? 0);
+        const pendingCount = Number(r.pendingDocsCount ?? Math.max(0, mandatoryCount - uploadedCount));
+        const pct = Number(r.completionPercentage ?? (mandatoryCount > 0 ? Math.round((uploadedCount / mandatoryCount) * 100) : 0));
 
         return {
-          id: r.id,
-          empCode: r.empCode || `EMP${String(idx + 1).padStart(3, '0')}`,
-          name: r.name || r.facultyName || 'Faculty',
+          id: r.facultyId || r.id || `faculty-${idx + 1}`,
+          empCode: r.facultyId || r.empCode || `EMP${String(idx + 1).padStart(3, '0')}`,
+          name: r.facultyName || r.name || 'Faculty',
           designation,
           department: r.departmentName || department,
-          facultyType: isPoP ? 'Professor of Practice' : (r.employmentType || 'Regular'),
+          facultyType: r.facultyType || (isPoP ? 'Professor of Practice' : 'Regular'),
           hasPhD,
-          hasPromotion: true,
+          hasPromotion,
           completionPercentage: pct,
           mandatoryDocs: mandatoryCount,
           uploadedDocs: uploadedCount,
-          pendingDocs: mandatoryCount - uploadedCount,
+          pendingDocs: pendingCount,
         };
       });
 
       setFacultyList(mapped);
     } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to load faculty list');
+      toast.error(err?.message ?? 'Failed to load faculty evidence summary');
     } finally {
       setLoading(false);
     }
@@ -365,8 +469,9 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
   const fetchEvidenceForFaculty = useCallback(async (faculty: FacultyMember) => {
     if (!departmentId) return;
     try {
-      const res = await getFacultyEvidence(academicYear, departmentId, { empCode: faculty.empCode });
-      const items: any[] = res?.data?.content ?? res?.content ?? res?.data ?? res ?? [];
+      const facultyKey = String(faculty.empCode || faculty.id);
+      const res = await getFacultyEvidenceDocuments(facultyKey, academicYear, departmentId);
+      const items: any[] = res?.data ?? res?.content ?? res ?? [];
       setFacultyEvidences(Array.isArray(items) ? items : []);
     } catch {
       setFacultyEvidences([]);
@@ -386,19 +491,23 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
     if (!selectedUploadFile || !selectedDocument || !selectedFaculty || !departmentId) return;
     setUploading(true);
     try {
-      await uploadFacultyEvidence(departmentId, currentUserId, selectedUploadFile, {
+      const facultyKey = String(selectedFaculty.empCode || selectedFaculty.id);
+      await uploadFacultyEvidenceDocument(facultyKey, selectedUploadFile, {
+        categoryId: selectedFolder?.id || 'faculty-profile',
+        documentCode: selectedDocument.id,
+        documentName: selectedDocument.name,
+        departmentId,
         academicYear,
-        sectionName: selectedFolder?.name || 'Faculty Evidence',
-        recordId: selectedFaculty.id,
-        documentType: selectedDocument.name,
+        uploadedBy: user?.name || 'Department Coordinator',
       });
 
       toast.success(`${selectedDocument.name} uploaded successfully`);
       setUploadDialogOpen(false);
       setSelectedUploadFile(null);
       fetchEvidenceForFaculty(selectedFaculty);
+      fetchFaculty();
     } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to upload document');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload document');
     } finally {
       setUploading(false);
     }
@@ -407,14 +516,17 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
   // ── Delete Document ───────────────────────────────────────────────────────
   const handleDeleteDocument = async (doc: EvidenceDocumentItem) => {
     const version = doc.versions[0];
-    if (!version || !departmentId) return;
+    if (!version) return;
     setDeleting(true);
     try {
-      await deleteFacultyEvidence(version.id, academicYear, departmentId);
+      await deleteFacultyEvidenceDocumentVersion(version.id);
       toast.success('Document deleted successfully');
-      if (selectedFaculty) fetchEvidenceForFaculty(selectedFaculty);
+      if (selectedFaculty) {
+        fetchEvidenceForFaculty(selectedFaculty);
+        fetchFaculty();
+      }
     } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to delete document');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to delete document');
     } finally {
       setDeleting(false);
     }
@@ -580,7 +692,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                       </td>
                       <td className="p-3 whitespace-nowrap">
                         {doc.versions.length > 0 ? (
-                          <Badge variant="outline" className="text-[10px] px-2 py-0.5">{doc.versions[doc.versions.length - 1]?.fileType.toUpperCase()}</Badge>
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5">{doc.versions[0]?.fileType || 'PDF'}</Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
@@ -616,11 +728,17 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                               <>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(doc.versions[0]?.url || '#', '_blank')}>
-                                      <Eye className="h-3.5 w-3.5" />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                                      disabled={previewLoading}
+                                      onClick={() => handlePreviewDocument(doc)}
+                                    >
+                                      {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent>Preview</TooltipContent>
+                                  <TooltipContent>Preview Document</TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -739,6 +857,43 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge className={cn('text-[10px]', getStatusColor(ver.status))}>{getStatusLabel(ver.status)}</Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Preview"
+                        onClick={async () => {
+                          try {
+                            const blob = await getFacultyEvidenceDocumentBlob(ver.id);
+                            const dataUrl = URL.createObjectURL(blob);
+                            setPreviewEvidence({
+                              id: String(ver.id),
+                              fileName: ver.fileName,
+                              fileType: ver.fileType.toLowerCase(),
+                              fileSize: ver.fileSize,
+                              dataUrl,
+                              uploadedAt: ver.uploadedAt,
+                              uploadedBy: ver.uploadedBy,
+                              status: ver.status,
+                              category: selectedFolder?.name || 'Faculty Evidence',
+                            });
+                            setPreviewOpen(true);
+                          } catch (e: any) {
+                            toast.error(e?.message || 'Failed to load preview');
+                          }
+                        }}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Download"
+                        onClick={() => downloadFacultyEvidenceDocumentVersion(ver.id, ver.fileName)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -746,6 +901,13 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Evidence Preview Dialog */}
+        <EvidencePreviewDialog
+          evidence={previewEvidence}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+        />
       </div>
     );
   }
@@ -1037,6 +1199,13 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
           )}
         </CardContent>
       </Card>
+
+      {/* Evidence Preview Dialog */}
+      <EvidencePreviewDialog
+        evidence={previewEvidence}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   );
 }
