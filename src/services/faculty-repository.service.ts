@@ -666,6 +666,14 @@ export async function downloadFacultyEvidenceDocumentVersion(
   );
 }
 
+export async function getFacultyEvidenceDocumentBlob(
+  versionId: string | number
+): Promise<Blob> {
+  return apiService.getBlob(
+    `${FACULTY_EVIDENCE_BASE}/documents/versions/${versionId}/download`
+  );
+}
+
 export async function getFacultyEvidenceActivity(
   facultyId: string,
   academicYear: string,

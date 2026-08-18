@@ -198,7 +198,7 @@ export function EvidencePreviewDialog({ evidence, open, onOpenChange }: Evidence
         )}
       >
         {/* Header */}
-        <div className={cn('p-5 border-b', isFullScreen ? 'pb-3 shrink-0' : 'pb-3')}>
+        <div className={cn('p-5 pr-14 border-b', isFullScreen ? 'pb-3 shrink-0' : 'pb-3')}>
           <DialogHeader className="space-y-0">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0 flex-1">
