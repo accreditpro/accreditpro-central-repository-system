@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,16 +31,10 @@ import {
   RotateCcw,
   PlayCircle,
   XCircle,
+  Loader2,
 } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  addObservation,
-  deleteObservation,
-  selectObservations,
-  setObservationPriority,
-  setObservationStatus,
-} from '@/store/slices/iqacSlice';
+import { iqacService } from '@/services/iqac.service';
 import {
   ACADEMIC_YEARS,
   DEPARTMENT_OPTIONS,
@@ -102,9 +96,9 @@ const DEFAULT_FORM: ObservationInput = {
 };
 
 export function QualityObservations() {
-  const dispatch = useAppDispatch();
   const { isImpersonating } = useAuth();
-  const observations = useAppSelector(selectObservations);
+  const [observations, setObservations] = useState<QualityObservation[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -114,6 +108,18 @@ export function QualityObservations() {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<ObservationInput>(DEFAULT_FORM);
   const [viewObs, setViewObs] = useState<QualityObservation | null>(null);
+
+  const reload = () => {
+    iqacService
+      .getObservations()
+      .then((list) => setObservations((list ?? []) as QualityObservation[]))
+      .catch(() => setObservations([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
+  }, []);
 
   const stats = useMemo(() => {
     const active = observations.filter((o) => o.status !== 'closed');
@@ -144,42 +150,67 @@ export function QualityObservations() {
     [observations, search, statusFilter, priorityFilter, deptFilter, frameworkFilter]
   );
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.title.trim() || !form.description.trim() || !form.dueDate) {
       toast.error('Please fill the title, description and due date.');
       return;
     }
-    dispatch(addObservation({ ...form }));
-    toast.success('Quality observation raised and assigned to the department.');
-    setCreateOpen(false);
-    setForm(DEFAULT_FORM);
+    try {
+      await iqacService.createObservation({
+        ...form,
+        criterion: form.criterion?.trim() || undefined,
+      });
+      toast.success('Quality observation raised and assigned to the department.');
+      setCreateOpen(false);
+      setForm(DEFAULT_FORM);
+      reload();
+    } catch {
+      toast.error('Failed to raise the observation. Please try again.');
+    }
   };
 
-  const changeStatus = (obs: QualityObservation, status: ObservationStatus) => {
-    dispatch(setObservationStatus({ id: obs.id, status }));
-    const label = OBS_STATUS_META[status].label;
-    toast.success(`Observation marked as ${label}.`);
+  const changeStatus = async (obs: QualityObservation, status: ObservationStatus) => {
+    try {
+      await iqacService.updateObservation(obs.id, { status });
+      const label = OBS_STATUS_META[status].label;
+      toast.success(`Observation marked as ${label}.`);
+      reload();
+    } catch {
+      toast.error(`Unable to mark as ${OBS_STATUS_META[status].label}.`);
+    }
   };
 
-  const changePriority = (obs: QualityObservation, priority: ObservationPriority) => {
-    dispatch(setObservationPriority({ id: obs.id, priority }));
-    toast.success(`Priority updated to ${PRIORITY_META[priority].label}.`);
+  const changePriority = async (obs: QualityObservation, priority: ObservationPriority) => {
+    try {
+      await iqacService.updateObservation(obs.id, { priority });
+      toast.success(`Priority updated to ${PRIORITY_META[priority].label}.`);
+      reload();
+    } catch {
+      toast.error('Failed to update the priority. Please try again.');
+    }
   };
 
-  const closeObservation = (obs: QualityObservation) => {
-    dispatch(
-      setObservationStatus({
-        id: obs.id,
+  const closeObservation = async (obs: QualityObservation) => {
+    try {
+      await iqacService.updateObservation(obs.id, {
         status: 'closed',
         resolution: 'Closed by IQAC after department update and HOD re-approval.',
-      })
-    );
-    toast.success('Observation closed. Workflow complete.');
+      });
+      toast.success('Observation closed. Workflow complete.');
+      reload();
+    } catch {
+      toast.error('Failed to close the observation. Please try again.');
+    }
   };
 
-  const remove = (id: string) => {
-    dispatch(deleteObservation(id));
-    toast.success('Observation deleted.');
+  const remove = async (id: string) => {
+    try {
+      await iqacService.deleteObservation(id);
+      toast.success('Observation deleted.');
+      reload();
+    } catch {
+      toast.error('Failed to delete the observation. Please try again.');
+    }
   };
 
   const nextStatus = (obs: QualityObservation): ObservationStatus => {
@@ -187,6 +218,15 @@ export function QualityObservations() {
     if (obs.status === 'in-progress') return 'resolved';
     return 'closed';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading quality observations…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

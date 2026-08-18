@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,9 +29,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { EvidencePreviewDialog, type EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
-import { useAppDispatch, useAppSelector } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
-import { addDocument, addDocumentVersion, selectDocuments } from '@/store/slices/iqacSlice';
+import { iqacService } from '@/services/iqac.service';
 import { DOC_FOLDERS, IQAC_NAME } from '../iqac-data';
 import type { IQACDocument, IQACDocumentInput } from '../types';
 import { SearchInput } from './common';
@@ -110,9 +109,8 @@ const TYPE_COLOR: Record<IQACDocument['fileType'], string> = {
 };
 
 export function SupportingDocuments() {
-  const dispatch = useAppDispatch();
   const { isImpersonating } = useAuth();
-  const documents = useAppSelector(selectDocuments);
+  const [documents, setDocuments] = useState<IQACDocument[]>([]);
 
   const [search, setSearch] = useState('');
   const [folder, setFolder] = useState('all');
@@ -127,6 +125,26 @@ export function SupportingDocuments() {
     size: '1.0 MB',
     tags: [],
   });
+
+  const reload = () => {
+    iqacService
+      .getDocuments()
+      .then((list) =>
+        setDocuments(
+          (list ?? []).map((d) => ({
+            ...d,
+            tags: d.tags ?? [],
+            versions: d.versions ?? [],
+            description: d.description ?? '',
+          })) as IQACDocument[]
+        )
+      )
+      .catch(() => setDocuments([]));
+  };
+
+  useEffect(() => {
+    reload();
+  }, []);
 
   const filtered = useMemo(
     () =>
@@ -156,15 +174,27 @@ export function SupportingDocuments() {
     toast.success(`Downloading ${doc.name}`);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.name.trim()) {
       toast.error('Please provide a document name.');
       return;
     }
-    dispatch(addDocument({ ...form, uploadedBy: IQAC_NAME }));
-    toast.success('Document uploaded to the IQAC document store.');
-    setUploadOpen(false);
-    setForm({ folder: DOC_FOLDERS[0], name: '', description: '', fileType: 'pdf', size: '1.0 MB', tags: [] });
+    try {
+      const fd = new FormData();
+      fd.append('folder', form.folder);
+      fd.append('name', form.name);
+      fd.append('description', form.description);
+      fd.append('fileType', form.fileType);
+      fd.append('size', form.size);
+      fd.append('tags', form.tags.join(', '));
+      await iqacService.uploadDocument(fd);
+      toast.success('Document uploaded to the IQAC document store.');
+      setUploadOpen(false);
+      setForm({ folder: DOC_FOLDERS[0], name: '', description: '', fileType: 'pdf', size: '1.0 MB', tags: [] });
+      reload();
+    } catch {
+      toast.error('Failed to upload the document. Please try again.');
+    }
   };
 
   return (
@@ -288,9 +318,16 @@ export function SupportingDocuments() {
                             variant="ghost"
                             size="sm"
                             className="h-7 text-[10px] gap-1"
-                            onClick={() => {
-                              dispatch(addDocumentVersion({ id: doc.id, note: 'New version uploaded' }));
-                              toast.success('New version added.');
+                            onClick={async () => {
+                              try {
+                                const fd = new FormData();
+                                fd.append('note', 'New version uploaded');
+                                await iqacService.addDocumentVersion(doc.id, fd);
+                                toast.success('New version added.');
+                                reload();
+                              } catch {
+                                toast.error('Failed to add a new version. Please try again.');
+                              }
                             }}
                           >
                             <Plus className="h-3 w-3" /> New Version
@@ -421,7 +458,7 @@ export function SupportingDocuments() {
 
       <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
         <ShieldCheck className="h-3 w-3 text-emerald-500" />
-        Documents are stored locally in this session and survive reloads via the IQAC store.
+        Documents are maintained by the IQAC in the institution's document store and versioned automatically.
       </p>
     </div>
   );

@@ -219,7 +219,7 @@ class InstitutionService {
       if (params.sortBy) queryParams.sortBy = params.sortBy;
       if (params.sortDirection) queryParams.sortDirection = params.sortDirection;
 
-      const raw = await apiService.get<any>('/v1/super-admin/institutions', { params: queryParams });
+      const raw = await apiService.get<any>('/admin/institutions', { params: queryParams });
 
       let items: any[] = [];
       let total = 0;
@@ -246,7 +246,7 @@ class InstitutionService {
           code: item.code || item.basicInfo?.code || '',
           category: (item.category || item.basicInfo?.category || 'Engineering') as InstitutionCategory,
           state: item.state || item.address?.state || '',
-          city: item.city || item.address?.city || item.address?.district || item.district || '',
+          city: item.city || item.address?.city || item.address?.district || '',
           status: (item.status ? String(item.status).toLowerCase() : 'active') as InstitutionStatus,
           logo: item.logoUrl || item.logo || item.basicInfo?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent((instName || 'IN').slice(0, 2))}&background=3b82f6&color=fff&size=80&bold=true`,
           email: item.email || item.basicInfo?.email || '',
@@ -261,14 +261,13 @@ class InstitutionService {
                 name: adminObj.name || '',
                 email: adminObj.email || '',
                 mobile: adminObj.mobile || '',
-                temporaryPassword: adminObj.temporaryPassword,
               }
             : undefined,
           usersCount: rawItem.usersCreated ?? item.usersCount ?? item.userCount ?? 0,
           repositoryCompletion: item.repositoryCompletion ?? item.completionPercentage ?? 0,
           documentsUploaded: item.documentsUploaded ?? item.documentCount ?? 0,
-          establishedYear: item.establishedYear || item.yearOfEstablishment || (item.createdAt ? new Date(item.createdAt).getFullYear() : new Date().getFullYear()),
-          accreditationStatus: item.accreditation || item.accreditationStatus || 'Active',
+          establishedYear: item.establishedYear || (item.createdAt ? new Date(item.createdAt).getFullYear() : new Date().getFullYear()),
+          accreditationStatus: item.accreditationStatus || 'Active',
           lastActive: item.lastActive || 'Recently',
           createdAt: item.createdAt || new Date().toISOString(),
           updatedAt: item.updatedAt || new Date().toISOString(),
@@ -291,10 +290,10 @@ class InstitutionService {
 
   async getInstitutionById(id: string): Promise<Institution | null> {
     try {
-      const raw = await apiService.get<any>(`/v1/super-admin/institutions/${id}`);
+      const raw = await apiService.get<any>(`/admin/institutions/${id}`);
       if (!raw) return null;
 
-      // Extract institution object and adminUser object from API response
+      // Extract institution object and adminUser object from nested API response
       const target = raw?.data?.institution || raw?.institution || raw?.data || raw;
       const adminObj = raw?.data?.adminUser || raw?.adminUser || raw?.admin || target?.admin;
 
@@ -305,7 +304,7 @@ class InstitutionService {
         code: target.code || target.basicInfo?.code || '',
         category: (target.category || target.basicInfo?.category || 'Engineering') as InstitutionCategory,
         state: target.state || target.address?.state || '',
-        city: target.city || target.address?.city || target.address?.district || target.district || '',
+        city: target.city || target.address?.city || target.address?.district || '',
         status: (target.status ? String(target.status).toLowerCase() : 'active') as InstitutionStatus,
         logo: target.logoUrl || target.logo || target.basicInfo?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent((instName || 'IN').slice(0, 2))}&background=3b82f6&color=fff&size=80&bold=true`,
         email: target.email || target.basicInfo?.email || '',
@@ -320,14 +319,13 @@ class InstitutionService {
               name: adminObj.name || '',
               email: adminObj.email || '',
               mobile: adminObj.mobile || '',
-              temporaryPassword: adminObj.temporaryPassword,
             }
           : undefined,
         usersCount: raw?.data?.usersCreated ?? target.usersCount ?? target.userCount ?? 0,
         repositoryCompletion: target.repositoryCompletion ?? target.completionPercentage ?? 0,
         documentsUploaded: target.documentsUploaded ?? target.documentCount ?? 0,
-        establishedYear: target.establishedYear || target.yearOfEstablishment || (target.createdAt ? new Date(target.createdAt).getFullYear() : new Date().getFullYear()),
-        accreditationStatus: target.accreditation || target.accreditationStatus || 'Active',
+        establishedYear: target.establishedYear || (target.createdAt ? new Date(target.createdAt).getFullYear() : new Date().getFullYear()),
+        accreditationStatus: target.accreditationStatus || 'Active',
         lastActive: target.lastActive || 'Recently',
         createdAt: target.createdAt || new Date().toISOString(),
         updatedAt: target.updatedAt || new Date().toISOString(),
@@ -370,6 +368,7 @@ class InstitutionService {
           addressLine2: data.addressLine2 || '',
           state: data.state,
           district: data.district || data.city,
+          city: data.city,
           pincode: data.pincode,
         },
         admin: {
@@ -378,15 +377,32 @@ class InstitutionService {
           mobile: data.admin.mobile,
           autoGeneratePassword: true,
         },
+        academicConfig: {
+          programTypes: ['UG', 'PG'],
+          shiftOptions: ['Day'],
+          accreditationBody: 'NAAC',
+          naacGrade: 'A+',
+          nbaAccredited: true,
+        },
+        academicYears: {
+          currentAcademicYear: '2025-26',
+          historicalYears: ['2024-25', '2023-24'],
+        },
+        iqacCoordinator: {
+          name: data.admin.name,
+          email: data.admin.email,
+          mobile: data.admin.mobile,
+        },
+        principal: {
+          name: data.admin.name,
+          email: data.admin.email,
+          mobile: data.admin.mobile,
+        },
       };
 
       const response = await adminService.createInstitution(payload);
-      const createdAdmin = response?.data?.admin || response?.admin;
-      const createdInst = response?.data?.institution || response?.data || response;
-      const temporaryPassword = createdAdmin?.temporaryPassword || data.admin.temporaryPassword || `Acc@${Math.random().toString(36).slice(2, 8)}`;
-
       return {
-        id: String(createdInst?.id || response?.id || `inst-${Date.now()}`),
+        id: String(response?.id || `inst-${Date.now()}`),
         name: data.name,
         code: data.code,
         category: data.category,
@@ -401,13 +417,7 @@ class InstitutionService {
         addressLine2: data.addressLine2,
         district: data.district,
         pincode: data.pincode,
-        admin: {
-          name: data.admin.name,
-          email: data.admin.email,
-          mobile: data.admin.mobile,
-          temporaryPassword,
-          password: temporaryPassword,
-        },
+        admin: data.admin,
         usersCount: 0,
         repositoryCompletion: 0,
         documentsUploaded: 0,
@@ -419,7 +429,6 @@ class InstitutionService {
       };
     } catch (error) {
       console.warn('API error creating institution, using fallback:', error);
-      const generatedPassword = `Acc@${Math.random().toString(36).slice(2, 8)}`;
       const inst: Institution = {
         id: `inst-${String(mockInstitutions.length + 1).padStart(3, '0')}`,
         name: data.name,
@@ -436,11 +445,7 @@ class InstitutionService {
         addressLine2: data.addressLine2 || '',
         district: data.district,
         pincode: data.pincode,
-        admin: {
-          ...data.admin,
-          temporaryPassword: generatedPassword,
-          password: generatedPassword,
-        },
+        admin: data.admin,
         usersCount: 0,
         repositoryCompletion: 0,
         documentsUploaded: 0,
@@ -458,7 +463,7 @@ class InstitutionService {
 
   async updateInstitutionStatus(id: string, status: InstitutionStatus): Promise<Institution | null> {
     try {
-      const numericId = parseInt(id.replace(/\D/g, '')) || id;
+      const numericId = parseInt(id.replace(/\D/g, '')) || 1;
       const apiStatus = status.toUpperCase() === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
       await adminService.updateInstitutionStatus(numericId, apiStatus);
       return await this.getInstitutionById(id);
@@ -476,7 +481,7 @@ class InstitutionService {
 
   async updateInstitution(id: string, updates: Partial<Institution>): Promise<Institution | null> {
     try {
-      const numericId = parseInt(id.replace(/\D/g, '')) || id;
+      const numericId = parseInt(id.replace(/\D/g, '')) || 1;
       const payload: any = {
         basicInfo: {
           name: updates.name || '',
@@ -492,9 +497,31 @@ class InstitutionService {
           addressLine2: updates.addressLine2 || '',
           state: updates.state || '',
           district: updates.district || updates.city || '',
+          city: updates.city || '',
           pincode: updates.pincode || '',
         },
         admin: {
+          name: updates.admin?.name || '',
+          email: updates.admin?.email || '',
+          mobile: updates.admin?.mobile || '',
+        },
+        academicConfig: {
+          programTypes: ['UG', 'PG'],
+          shiftOptions: ['Day'],
+          accreditationBody: 'NAAC',
+          naacGrade: 'A+',
+          nbaAccredited: true,
+        },
+        academicYears: {
+          currentAcademicYear: '2025-26',
+          historicalYears: ['2024-25', '2023-24'],
+        },
+        iqacCoordinator: {
+          name: updates.admin?.name || '',
+          email: updates.admin?.email || '',
+          mobile: updates.admin?.mobile || '',
+        },
+        principal: {
           name: updates.admin?.name || '',
           email: updates.admin?.email || '',
           mobile: updates.admin?.mobile || '',
@@ -536,14 +563,6 @@ class InstitutionService {
 
   getCategories(): InstitutionCategory[] {
     return categories;
-  }
-
-  async exportInstitutions(params?: InstitutionQueryParams): Promise<void> {
-    return adminService.exportInstitutions(params);
-  }
-
-  async uploadInstitutionCSV(file: File): Promise<any> {
-    return adminService.uploadInstitutionCSV(file);
   }
 }
 

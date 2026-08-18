@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Search,
   ArrowLeft,
@@ -23,8 +22,11 @@ import {
   Replace,
   History,
   Filter,
-  RefreshCw,
-  Loader2,
+  Image,
+  File,
+  FileType,
+  GripVertical,
+  X,
 } from 'lucide-react';
 import {
   Dialog,
@@ -55,14 +57,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  getFacultyProfiles,
-  getFacultyEvidence,
-  uploadFacultyEvidence,
-  deleteFacultyEvidence,
-} from '@/services/faculty-repository.service';
-import { toast } from 'sonner';
 
 // ============================================================
 // TYPES
@@ -71,7 +65,7 @@ import { toast } from 'sonner';
 type DocumentStatus = 'not_uploaded' | 'uploaded' | 'under_review' | 'approved' | 'rejected';
 
 interface DocumentVersion {
-  id: string | number;
+  id: string;
   version: number;
   fileName: string;
   fileSize: string;
@@ -79,7 +73,6 @@ interface DocumentVersion {
   uploadedBy: string;
   uploadedAt: string;
   status: DocumentStatus;
-  url?: string;
 }
 
 interface EvidenceDocumentItem {
@@ -106,7 +99,7 @@ interface EvidenceFolderItem {
 }
 
 interface FacultyMember {
-  id: string | number;
+  id: string;
   empCode: string;
   name: string;
   designation: string;
@@ -120,10 +113,88 @@ interface FacultyMember {
   pendingDocs: number;
 }
 
-interface FacultyEvidenceModuleProps {
-  department: string;
-  academicYear: string;
-  departmentId?: number;
+// ============================================================
+// MOCK DATA
+// ============================================================
+
+const mockFaculty: FacultyMember[] = [
+  { id: '1', empCode: 'EMP001', name: 'Dr. Ramesh Kumar', designation: 'Assistant Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: true, hasPromotion: true, completionPercentage: 75, mandatoryDocs: 12, uploadedDocs: 9, pendingDocs: 3 },
+  { id: '2', empCode: 'EMP002', name: 'Dr. Priya Sharma', designation: 'Associate Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: true, hasPromotion: false, completionPercentage: 100, mandatoryDocs: 10, uploadedDocs: 10, pendingDocs: 0 },
+  { id: '3', empCode: 'EMP003', name: 'Mr. Suresh Reddy', designation: 'Assistant Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: false, hasPromotion: false, completionPercentage: 60, mandatoryDocs: 8, uploadedDocs: 5, pendingDocs: 3 },
+  { id: '4', empCode: 'EMP004', name: 'Dr. Anita Desai', designation: 'Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: true, hasPromotion: true, completionPercentage: 90, mandatoryDocs: 12, uploadedDocs: 11, pendingDocs: 1 },
+  { id: '5', empCode: 'EMP005', name: 'Mr. Vikram Patel', designation: 'Professor of Practice', department: 'Computer Science & Engineering', facultyType: 'Professor of Practice', hasPhD: false, hasPromotion: false, completionPercentage: 50, mandatoryDocs: 14, uploadedDocs: 7, pendingDocs: 7 },
+  { id: '6', empCode: 'EMP006', name: 'Dr. Meena Iyer', designation: 'Associate Professor', department: 'Computer Science & Engineering', facultyType: 'Regular', hasPhD: true, hasPromotion: true, completionPercentage: 85, mandatoryDocs: 12, uploadedDocs: 10, pendingDocs: 2 },
+];
+
+function generateFolders(faculty: FacultyMember): EvidenceFolderItem[] {
+  const folders: EvidenceFolderItem[] = [
+    {
+      id: 'faculty-profile',
+      name: 'Faculty Profile',
+      description: 'Personal identification and appointment documents',
+      documents: [
+        { id: 'fp-photo', name: 'Passport Size Photograph', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'photo.jpg', fileSize: '250 KB', fileType: 'jpg', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
+        { id: 'fp-aadhaar', name: 'Aadhaar Card', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'aadhaar.pdf', fileSize: '1.2 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
+        { id: 'fp-pan', name: 'PAN Card', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'pan_card.pdf', fileSize: '800 KB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
+        { id: 'fp-appointment', name: 'Appointment Order', mandatory: true, status: 'approved', currentVersion: 2, versions: [{ id: 'v1', version: 1, fileName: 'appointment_v1.pdf', fileSize: '1.5 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '05-Jan-2026', status: 'approved' }, { id: 'v2', version: 2, fileName: 'appointment_v2.pdf', fileSize: '1.6 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '15-Jan-2026', status: 'approved' }], uploadedOn: '15-Jan-2026', uploadedBy: 'Admin' },
+        { id: 'fp-joining', name: 'Joining Report', mandatory: true, status: 'approved', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'joining_report.pdf', fileSize: '900 KB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '05-Jan-2026', status: 'approved' }], uploadedOn: '05-Jan-2026', uploadedBy: 'Admin' },
+        { id: 'fp-resume', name: 'Resume / CV', mandatory: true, status: faculty.completionPercentage >= 75 ? 'uploaded' : 'not_uploaded', currentVersion: faculty.completionPercentage >= 75 ? 1 : undefined, versions: faculty.completionPercentage >= 75 ? [{ id: 'v1', version: 1, fileName: 'resume.pdf', fileSize: '2.1 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '12-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.completionPercentage >= 75 ? '12-Jan-2026' : undefined, uploadedBy: faculty.completionPercentage >= 75 ? faculty.name : undefined },
+        { id: 'fp-id-card', name: 'Employee ID Card', mandatory: false, status: 'not_uploaded', versions: [] },
+      ],
+    },
+    {
+      id: 'qualifications',
+      name: 'Qualifications',
+      description: 'Academic degree certificates and transcripts',
+      documents: [
+        { id: 'q-degree', name: 'Degree Certificate', mandatory: true, status: 'approved', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'degree_certificate.pdf', fileSize: '3.2 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'approved' }], uploadedOn: '08-Jan-2026', uploadedBy: faculty.name },
+        { id: 'q-marks', name: 'Consolidated Marks Memo', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'marks_memo.pdf', fileSize: '2.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'uploaded' }], uploadedOn: '08-Jan-2026', uploadedBy: faculty.name },
+        { id: 'q-phd', name: 'PhD Certificate', mandatory: true, status: faculty.hasPhD ? 'approved' : 'not_uploaded', currentVersion: faculty.hasPhD ? 1 : undefined, versions: faculty.hasPhD ? [{ id: 'v1', version: 1, fileName: 'phd_certificate.pdf', fileSize: '1.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '08-Jan-2026', status: 'approved' }] : [], uploadedOn: faculty.hasPhD ? '08-Jan-2026' : undefined, uploadedBy: faculty.hasPhD ? faculty.name : undefined, conditionalField: 'hasPhD', conditionalValue: 'true' },
+        { id: 'q-provisional', name: 'Provisional Certificate', mandatory: false, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'provisional.pdf', fileSize: '1.1 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '09-Jan-2026', status: 'uploaded' }], uploadedOn: '09-Jan-2026', uploadedBy: faculty.name },
+        { id: 'q-equivalence', name: 'Equivalence Certificate', mandatory: false, status: 'not_uploaded', versions: [] },
+      ],
+    },
+    {
+      id: 'employment-info',
+      name: 'Employment Information',
+      description: 'Employment orders, promotions, and experience documents',
+      documents: [
+        { id: 'ei-appointment', name: 'Appointment Order', mandatory: true, status: 'approved', currentVersion: 1, versions: [], referenceNote: 'Already available in Faculty Profile', uploadedOn: '15-Jan-2026', uploadedBy: 'Admin' },
+        { id: 'ei-promotion', name: 'Promotion Order', mandatory: true, status: faculty.hasPromotion ? 'uploaded' : 'not_uploaded', currentVersion: faculty.hasPromotion ? 1 : undefined, versions: faculty.hasPromotion ? [{ id: 'v1', version: 1, fileName: 'promotion_order.pdf', fileSize: '1.3 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '20-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.hasPromotion ? '20-Jan-2026' : undefined, uploadedBy: faculty.hasPromotion ? 'Admin' : undefined, conditionalField: 'hasPromotion', conditionalValue: 'true' },
+        { id: 'ei-increment', name: 'Increment Order', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'ei-relieving', name: 'Relieving Order', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'ei-pay-revision', name: 'Pay Revision Order', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'ei-experience', name: 'Experience Certificates', mandatory: false, status: faculty.completionPercentage >= 85 ? 'uploaded' : 'not_uploaded', currentVersion: faculty.completionPercentage >= 85 ? 1 : undefined, versions: faculty.completionPercentage >= 85 ? [{ id: 'v1', version: 1, fileName: 'experience_cert.pdf', fileSize: '950 KB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '22-Jan-2026', status: 'uploaded' }] : [], uploadedOn: faculty.completionPercentage >= 85 ? '22-Jan-2026' : undefined, uploadedBy: faculty.completionPercentage >= 85 ? faculty.name : undefined },
+      ],
+    },
+  ];
+
+  // Only add Professor of Practice folder if faculty type matches
+  if (faculty.facultyType === 'Professor of Practice') {
+    folders.push({
+      id: 'professor-of-practice',
+      name: 'Professor of Practice',
+      description: 'Industry experience and practice-related documents',
+      conditionalField: 'facultyType',
+      conditionalValue: 'Professor of Practice',
+      documents: [
+        { id: 'pop-appointment', name: 'Appointment Order', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'pop_appointment.pdf', fileSize: '1.4 MB', fileType: 'pdf', uploadedBy: 'Admin', uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: 'Admin' },
+        { id: 'pop-industry-exp', name: 'Industry Experience Certificate', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'industry_exp.pdf', fileSize: '1.8 MB', fileType: 'pdf', uploadedBy: faculty.name, uploadedAt: '10-Jan-2026', status: 'uploaded' }], uploadedOn: '10-Jan-2026', uploadedBy: faculty.name },
+        { id: 'pop-resume', name: 'Resume', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'pop-recommendation', name: 'Industry Recommendation Letter', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'pop-contract', name: 'Contract / Agreement', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'pop-aicte', name: 'AICTE Approval', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'pop-geotagged', name: 'Geo-tagged Photographs', mandatory: true, status: 'uploaded', currentVersion: 1, versions: [{ id: 'v1', version: 1, fileName: 'geotagged_photos.zip', fileSize: '5.2 MB', fileType: 'zip', uploadedBy: faculty.name, uploadedAt: '12-Jan-2026', status: 'uploaded' }], uploadedOn: '12-Jan-2026', uploadedBy: faculty.name },
+        { id: 'pop-registered-students', name: 'Registered Students List', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'pop-attended-students', name: 'Attended Students List', mandatory: true, status: 'not_uploaded', versions: [] },
+        { id: 'pop-session-report', name: 'Session Completion Report', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'pop-feedback', name: 'Student Feedback', mandatory: false, status: 'not_uploaded', versions: [] },
+        { id: 'pop-appreciation', name: 'Certificate of Appreciation', mandatory: false, status: 'not_uploaded', versions: [] },
+      ],
+    });
+  }
+
+  return folders;
 }
 
 // ============================================================
@@ -159,124 +230,6 @@ function getCompletionColor(pct: number): string {
   return 'text-red-600 dark:text-red-400';
 }
 
-function generateFolders(faculty: FacultyMember, uploadedEvidences: any[] = []): EvidenceFolderItem[] {
-  // Find uploaded doc by section & doc name or type
-  const findEvidence = (docName: string) => {
-    return uploadedEvidences.find((e) =>
-      e.documentType?.toLowerCase() === docName.toLowerCase() ||
-      e.documentName?.toLowerCase() === docName.toLowerCase() ||
-      e.fileName?.toLowerCase().includes(docName.toLowerCase())
-    );
-  };
-
-  const mapDocItem = (
-    id: string,
-    name: string,
-    mandatory: boolean,
-    conditionalField?: string,
-    conditionalValue?: string,
-    referenceNote?: string
-  ): EvidenceDocumentItem => {
-    const ev = findEvidence(name);
-    const hasUpload = !!ev;
-    const versions: DocumentVersion[] = hasUpload
-      ? [{
-          id: ev.id || `v-${id}`,
-          version: ev.version || 1,
-          fileName: ev.fileName || `${id}.pdf`,
-          fileSize: ev.fileSize || '1.2 MB',
-          fileType: ev.fileType || 'pdf',
-          uploadedBy: ev.uploadedByName || faculty.name,
-          uploadedAt: ev.uploadedAt || ev.createdDate || 'Recent',
-          status: (ev.status as DocumentStatus) || 'approved',
-          url: ev.fileUrl || ev.url,
-        }]
-      : [];
-
-    return {
-      id,
-      name,
-      mandatory,
-      status: hasUpload ? ((ev.status as DocumentStatus) || 'approved') : 'not_uploaded',
-      currentVersion: hasUpload ? (ev.version || 1) : undefined,
-      versions,
-      uploadedOn: hasUpload ? (ev.uploadedAt || ev.createdDate || 'Recent') : undefined,
-      uploadedBy: hasUpload ? (ev.uploadedByName || faculty.name) : undefined,
-      conditionalField,
-      conditionalValue,
-      referenceNote,
-    };
-  };
-
-  const folders: EvidenceFolderItem[] = [
-    {
-      id: 'faculty-profile',
-      name: 'Faculty Profile',
-      description: 'Personal identification and appointment documents',
-      documents: [
-        mapDocItem('fp-photo', 'Passport Size Photograph', false),
-        mapDocItem('fp-aadhaar', 'Aadhaar Card', false),
-        mapDocItem('fp-pan', 'PAN Card', false),
-        mapDocItem('fp-appointment', 'Appointment Order', true),
-        mapDocItem('fp-joining', 'Joining Report', true),
-        mapDocItem('fp-resume', 'Resume / CV', true),
-        mapDocItem('fp-id-card', 'Employee ID Card', false),
-      ],
-    },
-    {
-      id: 'qualifications',
-      name: 'Qualifications',
-      description: 'Academic degree certificates and transcripts',
-      documents: [
-        mapDocItem('q-degree', 'Degree Certificate', true),
-        mapDocItem('q-marks', 'Consolidated Marks Memo', true),
-        mapDocItem('q-phd', 'PhD Certificate', true, 'hasPhD', 'true'),
-        mapDocItem('q-provisional', 'Provisional Certificate', false),
-        mapDocItem('q-equivalence', 'Equivalence Certificate', false),
-      ],
-    },
-    {
-      id: 'employment-info',
-      name: 'Employment Information',
-      description: 'Employment orders, promotions, and experience documents',
-      documents: [
-        mapDocItem('ei-appointment', 'Appointment Order', true, undefined, undefined, 'Available from Profile'),
-        mapDocItem('ei-promotion', 'Promotion Order', true, 'hasPromotion', 'true'),
-        mapDocItem('ei-increment', 'Increment Order', false),
-        mapDocItem('ei-relieving', 'Relieving Order', false),
-        mapDocItem('ei-pay-revision', 'Pay Revision Order', false),
-        mapDocItem('ei-experience', 'Experience Certificates', false),
-      ],
-    },
-  ];
-
-  if (faculty.facultyType === 'Professor of Practice') {
-    folders.push({
-      id: 'professor-of-practice',
-      name: 'Professor of Practice',
-      description: 'Industry experience and practice-related documents',
-      conditionalField: 'facultyType',
-      conditionalValue: 'Professor of Practice',
-      documents: [
-        mapDocItem('pop-appointment', 'Appointment Order', true),
-        mapDocItem('pop-industry-exp', 'Industry Experience Certificate', true),
-        mapDocItem('pop-resume', 'Resume', true),
-        mapDocItem('pop-recommendation', 'Industry Recommendation Letter', false),
-        mapDocItem('pop-contract', 'Contract / Agreement', false),
-        mapDocItem('pop-aicte', 'AICTE Approval', false),
-        mapDocItem('pop-geotagged', 'Geo-tagged Photographs', true),
-        mapDocItem('pop-registered-students', 'Registered Students List', true),
-        mapDocItem('pop-attended-students', 'Attended Students List', true),
-        mapDocItem('pop-session-report', 'Session Completion Report', false),
-        mapDocItem('pop-feedback', 'Student Feedback', false),
-        mapDocItem('pop-appreciation', 'Certificate of Appreciation', false),
-      ],
-    });
-  }
-
-  return folders;
-}
-
 function calculateFolderCompletion(folder: EvidenceFolderItem, faculty: FacultyMember): { mandatory: number; uploaded: number; percentage: number } {
   const applicableDocs = folder.documents.filter(doc => {
     if (doc.conditionalField === 'hasPhD' && !faculty.hasPhD) return false;
@@ -289,173 +242,53 @@ function calculateFolderCompletion(folder: EvidenceFolderItem, faculty: FacultyM
 }
 
 // ============================================================
+// COMPONENT PROPS
+// ============================================================
+
+interface FacultyEvidenceModuleProps {
+  department: string;
+  academicYear: string;
+}
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
-export function FacultyEvidenceModule({ department, academicYear, departmentId: propDeptId }: FacultyEvidenceModuleProps) {
-  const { user } = useAuth();
-  const departmentId = propDeptId ?? user?.departmentId ?? 0;
-  const currentUserId = user?.id || 1;
-
-  const [facultyList, setFacultyList] = useState<FacultyMember[]>([]);
+export function FacultyEvidenceModule({ department }: FacultyEvidenceModuleProps) {
   const [selectedFaculty, setSelectedFaculty] = useState<FacultyMember | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<EvidenceFolderItem | null>(null);
-  const [facultyEvidences, setFacultyEvidences] = useState<any[]>([]);
-
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<EvidenceDocumentItem | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Fetch Faculty List ────────────────────────────────────────────────────
-  const fetchFaculty = useCallback(async () => {
-    if (!departmentId) return;
-    setLoading(true);
-    try {
-      const res = await getFacultyProfiles(academicYear, departmentId);
-      const items: any[] = res?.data?.content ?? res?.content ?? res?.data ?? res ?? [];
-
-      const mapped: FacultyMember[] = items.map((r: any, idx: number) => {
-        const designation = r.currentDesignation || r.designation || 'Faculty Member';
-        const isPoP = designation.toLowerCase().includes('practice') || r.facultyType === 'Professor of Practice';
-        const hasPhD = !!r.highestDegree?.toLowerCase().includes('phd') || !!r.qualificationLevel?.toLowerCase().includes('phd') || !!r.isPhd;
-        const mandatoryCount = isPoP ? 14 : (hasPhD ? 10 : 8);
-        const uploadedCount = Math.min(mandatoryCount, 5 + (idx % 4));
-        const pct = Math.round((uploadedCount / mandatoryCount) * 100);
-
-        return {
-          id: r.id,
-          empCode: r.empCode || `EMP${String(idx + 1).padStart(3, '0')}`,
-          name: r.name || r.facultyName || 'Faculty',
-          designation,
-          department: r.departmentName || department,
-          facultyType: isPoP ? 'Professor of Practice' : (r.employmentType || 'Regular'),
-          hasPhD,
-          hasPromotion: true,
-          completionPercentage: pct,
-          mandatoryDocs: mandatoryCount,
-          uploadedDocs: uploadedCount,
-          pendingDocs: mandatoryCount - uploadedCount,
-        };
-      });
-
-      setFacultyList(mapped);
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to load faculty list');
-    } finally {
-      setLoading(false);
-    }
-  }, [academicYear, departmentId, department]);
-
-  useEffect(() => {
-    fetchFaculty();
-  }, [fetchFaculty]);
-
-  // ── Fetch Evidence for Selected Faculty ───────────────────────────────────
-  const fetchEvidenceForFaculty = useCallback(async (faculty: FacultyMember) => {
-    if (!departmentId) return;
-    try {
-      const res = await getFacultyEvidence(academicYear, departmentId, { empCode: faculty.empCode });
-      const items: any[] = res?.data?.content ?? res?.content ?? res?.data ?? res ?? [];
-      setFacultyEvidences(Array.isArray(items) ? items : []);
-    } catch {
-      setFacultyEvidences([]);
-    }
-  }, [academicYear, departmentId]);
-
-  const handleSelectFaculty = (faculty: FacultyMember) => {
-    setSelectedFaculty(faculty);
-    setSelectedFolder(null);
-    setSearchQuery('');
-    setStatusFilter('all');
-    fetchEvidenceForFaculty(faculty);
-  };
-
-  // ── Upload Document ───────────────────────────────────────────────────────
-  const handleUploadSubmit = async () => {
-    if (!selectedUploadFile || !selectedDocument || !selectedFaculty || !departmentId) return;
-    setUploading(true);
-    try {
-      await uploadFacultyEvidence(departmentId, currentUserId, selectedUploadFile, {
-        academicYear,
-        sectionName: selectedFolder?.name || 'Faculty Evidence',
-        recordId: selectedFaculty.id,
-        documentType: selectedDocument.name,
-      });
-
-      toast.success(`${selectedDocument.name} uploaded successfully`);
-      setUploadDialogOpen(false);
-      setSelectedUploadFile(null);
-      fetchEvidenceForFaculty(selectedFaculty);
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to upload document');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // ── Delete Document ───────────────────────────────────────────────────────
-  const handleDeleteDocument = async (doc: EvidenceDocumentItem) => {
-    const version = doc.versions[0];
-    if (!version || !departmentId) return;
-    setDeleting(true);
-    try {
-      await deleteFacultyEvidence(version.id, academicYear, departmentId);
-      toast.success('Document deleted successfully');
-      if (selectedFaculty) fetchEvidenceForFaculty(selectedFaculty);
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to delete document');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // ── Faculty list filtering ────────────────────────────────────────────────
+  // Faculty list filtering
   const filteredFaculty = useMemo(() => {
-    let list = facultyList;
+    let list = mockFaculty;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(f => f.name.toLowerCase().includes(q) || f.empCode.toLowerCase().includes(q) || f.designation.toLowerCase().includes(q));
     }
-    if (typeFilter !== 'all') {
-      if (typeFilter === 'complete') list = list.filter(f => f.completionPercentage === 100);
-      else if (typeFilter === 'in-progress') list = list.filter(f => f.completionPercentage > 0 && f.completionPercentage < 100);
-      else if (typeFilter === 'critical') list = list.filter(f => f.completionPercentage < 50);
-    }
     return list;
-  }, [facultyList, searchQuery, typeFilter]);
+  }, [searchQuery]);
 
-  // ── Summary metrics ───────────────────────────────────────────────────────
+  // Summary metrics
   const summaryMetrics = useMemo(() => {
     const totalCategories = 4;
-    const totalFacultyCount = facultyList.length;
-    const totalMandatory = facultyList.reduce((sum, f) => sum + f.mandatoryDocs, 0);
-    const totalUploaded = facultyList.reduce((sum, f) => sum + f.uploadedDocs, 0);
-    const totalPending = facultyList.reduce((sum, f) => sum + f.pendingDocs, 0);
-    const avgCompletion = totalFacultyCount > 0
-      ? Math.round(facultyList.reduce((sum, f) => sum + f.completionPercentage, 0) / totalFacultyCount)
-      : 0;
-    return { totalCategories, totalFacultyCount, totalMandatory, totalUploaded, totalPending, avgCompletion };
-  }, [facultyList]);
+    const totalMandatory = mockFaculty.reduce((sum, f) => sum + f.mandatoryDocs, 0);
+    const totalUploaded = mockFaculty.reduce((sum, f) => sum + f.uploadedDocs, 0);
+    const totalPending = mockFaculty.reduce((sum, f) => sum + f.pendingDocs, 0);
+    const avgCompletion = Math.round(mockFaculty.reduce((sum, f) => sum + f.completionPercentage, 0) / mockFaculty.length);
+    return { totalCategories, totalMandatory, totalUploaded, totalPending, avgCompletion };
+  }, []);
 
   // ============================================================
   // RENDER: Document Detail View (inside a folder)
   // ============================================================
   if (selectedFaculty && selectedFolder) {
-    const liveFolders = generateFolders(selectedFaculty, facultyEvidences);
-    const currentFolder = liveFolders.find(f => f.id === selectedFolder.id) || selectedFolder;
-
-    const applicableDocs = currentFolder.documents.filter(doc => {
+    const applicableDocs = selectedFolder.documents.filter(doc => {
       if (doc.conditionalField === 'hasPhD' && !selectedFaculty.hasPhD) return false;
       if (doc.conditionalField === 'hasPromotion' && !selectedFaculty.hasPromotion) return false;
       return true;
@@ -472,21 +305,21 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
       return true;
     });
 
-    const folderMetrics = calculateFolderCompletion(currentFolder, selectedFaculty);
+    const folderMetrics = calculateFolderCompletion(selectedFolder, selectedFaculty);
 
     return (
-      <div className="space-y-4 w-full min-w-0 max-w-full">
+      <div className="space-y-4">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm">
           <Button variant="ghost" size="sm" onClick={() => { setSelectedFolder(null); }} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" />
             Back to Evidence Repository
           </Button>
-          <span className="text-muted-foreground">/ {selectedFaculty.name} / {currentFolder.name}</span>
+          <span className="text-muted-foreground">/ {selectedFaculty.name} / {selectedFolder.name}</span>
         </div>
 
         {/* Folder Header */}
-        <Card className="w-full min-w-0 max-w-full">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -494,8 +327,8 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                   <FolderOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">{currentFolder.name}</h2>
-                  <p className="text-sm text-muted-foreground">{currentFolder.description}</p>
+                  <h2 className="text-lg font-semibold">{selectedFolder.name}</h2>
+                  <p className="text-sm text-muted-foreground">{selectedFolder.description}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 text-sm">
@@ -533,6 +366,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
               { label: 'Uploaded', value: 'uploaded' },
               { label: 'Pending', value: 'pending' },
               { label: 'Approved', value: 'approved' },
+              { label: 'Rejected', value: 'rejected' },
             ].map(f => (
               <Button key={f.value} variant={statusFilter === f.value ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => setStatusFilter(f.value)}>
                 {f.label}
@@ -542,27 +376,27 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
         </div>
 
         {/* Document Table */}
-        <Card className="border-border/50 w-full min-w-0 max-w-full overflow-hidden shadow-sm">
-          <CardContent className="p-0 w-full min-w-0 max-w-full overflow-hidden">
-            <div className="w-full table-scroll-container max-h-[520px]">
-              <table className="w-full text-xs text-left min-w-[950px] border-collapse">
-                <thead className="sticky top-0 z-20 bg-muted/80 backdrop-blur border-b border-border/60">
-                  <tr>
-                    <th className="p-3 font-semibold text-center w-10 sticky left-0 bg-muted/95 backdrop-blur z-30 shadow-[1px_0_0_0_hsl(var(--border))]">#</th>
-                    <th className="p-3 font-semibold whitespace-nowrap">Document Name</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-24">Type</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-28">Status</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-28">Uploaded On</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-28">Uploaded By</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-16 text-center">Version</th>
-                    <th className="p-3 font-semibold text-right whitespace-nowrap w-44 sticky right-0 bg-muted/95 backdrop-blur z-30 shadow-[-1px_0_0_0_hsl(var(--border))]">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8">#</TableHead>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead className="w-24">Type</TableHead>
+                    <TableHead className="w-28">Status</TableHead>
+                    <TableHead className="w-28">Uploaded On</TableHead>
+                    <TableHead className="w-28">Uploaded By</TableHead>
+                    <TableHead className="w-16 text-center">Version</TableHead>
+                    <TableHead className="w-48 text-center">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredDocs.map((doc, idx) => (
-                    <tr key={doc.id} className={cn('hover:bg-muted/40 transition-colors', doc.referenceNote && 'bg-muted/20')}>
-                      <td className="p-3 text-muted-foreground text-center font-mono sticky left-0 bg-background/95 backdrop-blur z-10 shadow-[1px_0_0_0_hsl(var(--border))]">{idx + 1}</td>
-                      <td className="p-3">
+                    <TableRow key={doc.id} className={doc.referenceNote ? 'bg-muted/30' : ''}>
+                      <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                           <div>
@@ -577,31 +411,31 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>
                         {doc.versions.length > 0 ? (
-                          <Badge variant="outline" className="text-[10px] px-2 py-0.5">{doc.versions[doc.versions.length - 1]?.fileType.toUpperCase()}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{doc.versions[doc.versions.length - 1]?.fileType.toUpperCase()}</Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <Badge className={cn('text-[10px] px-2 py-0.5', getStatusColor(doc.status))}>{getStatusLabel(doc.status)}</Badge>
-                      </td>
-                      <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{doc.uploadedOn || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{doc.uploadedBy || '—'}</td>
-                      <td className="p-3 text-center text-xs whitespace-nowrap">{doc.currentVersion ? `v${doc.currentVersion}` : '—'}</td>
-                      <td className="p-3 text-right sticky right-0 bg-background/95 backdrop-blur z-10 shadow-[-1px_0_0_0_hsl(var(--border))]">
-                        <div className="flex items-center justify-end gap-1">
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn('text-[10px]', getStatusColor(doc.status))}>{getStatusLabel(doc.status)}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{doc.uploadedOn || '—'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{doc.uploadedBy || '—'}</TableCell>
+                      <TableCell className="text-center text-xs">{doc.currentVersion || '—'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-1">
                           <TooltipProvider>
                             {doc.status === 'not_uploaded' && !doc.referenceNote ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDocument(doc); setSelectedUploadFile(null); setUploadDialogOpen(true); }}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDocument(doc); setUploadDialogOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Upload Document</TooltipContent>
+                                <TooltipContent>Upload</TooltipContent>
                               </Tooltip>
                             ) : doc.referenceNote ? (
                               <Tooltip>
@@ -616,7 +450,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                               <>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(doc.versions[0]?.url || '#', '_blank')}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
                                       <Eye className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -624,7 +458,15 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDocument(doc); setSelectedUploadFile(null); setUploadDialogOpen(true); }}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                      <Download className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Download</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedDocument(doc); setUploadDialogOpen(true); }}>
                                       <Replace className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -632,7 +474,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDocument(doc)} disabled={deleting}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
@@ -650,11 +492,11 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                             )}
                           </TooltipProvider>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -667,7 +509,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Document: <strong className="text-foreground">{selectedDocument?.name}</strong>
+                {selectedDocument?.name}
               </p>
               <div
                 className={cn(
@@ -676,28 +518,11 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                 )}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  if (e.dataTransfer.files?.[0]) setSelectedUploadFile(e.dataTransfer.files[0]);
-                }}
-                onClick={() => fileInputRef.current?.click()}
+                onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
               >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.docx"
-                  className="hidden"
-                  onChange={(e) => setSelectedUploadFile(e.target.files?.[0] || null)}
-                />
                 <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm font-medium">Drag & drop your file here</p>
                 <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
-                {selectedUploadFile && (
-                  <div className="mt-3 p-2 rounded bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-                    Selected: {selectedUploadFile.name} ({(selectedUploadFile.size / 1024 / 1024).toFixed(2)} MB)
-                  </div>
-                )}
                 <div className="flex items-center justify-center gap-2 mt-3">
                   <Badge variant="outline" className="text-[10px]">PDF</Badge>
                   <Badge variant="outline" className="text-[10px]">JPG</Badge>
@@ -709,9 +534,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleUploadSubmit} disabled={!selectedUploadFile || uploading}>
-                {uploading ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />Uploading...</> : 'Upload'}
-              </Button>
+              <Button onClick={() => setUploadDialogOpen(false)}>Upload</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -739,6 +562,12 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge className={cn('text-[10px]', getStatusColor(ver.status))}>{getStatusLabel(ver.status)}</Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -754,7 +583,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
   // RENDER: Evidence Repository Dashboard (folder view for selected faculty)
   // ============================================================
   if (selectedFaculty) {
-    const folders = generateFolders(selectedFaculty, facultyEvidences);
+    const folders = generateFolders(selectedFaculty);
     const totalMandatory = folders.reduce((sum, f) => sum + calculateFolderCompletion(f, selectedFaculty).mandatory, 0);
     const totalUploaded = folders.reduce((sum, f) => sum + calculateFolderCompletion(f, selectedFaculty).uploaded, 0);
     const totalPending = totalMandatory - totalUploaded;
@@ -783,7 +612,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                   <h2 className="text-lg font-semibold">{selectedFaculty.name}</h2>
                   <p className="text-sm text-muted-foreground">{selectedFaculty.designation} • {selectedFaculty.department}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-[10px] font-mono">{selectedFaculty.empCode}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{selectedFaculty.empCode}</Badge>
                     <Badge variant="secondary" className="text-[10px]">{selectedFaculty.facultyType}</Badge>
                     {selectedFaculty.hasPhD && <Badge className="text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">PhD</Badge>}
                   </div>
@@ -822,12 +651,13 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
           ))}
         </div>
 
+        {/* Note about completion */}
         <p className="text-xs text-muted-foreground italic">
           * Only mandatory documents contribute to the completion percentage.
         </p>
 
-        {/* 3 Core Section Folders (+ PoP if applicable) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Folder Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {folders.map(folder => {
             const metrics = calculateFolderCompletion(folder, selectedFaculty);
             const totalDocs = folder.documents.filter(d => {
@@ -848,7 +678,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Card className="cursor-pointer hover:shadow-md transition-shadow h-full border-border/60" onClick={() => { setSelectedFolder(folder); setSearchQuery(''); setStatusFilter('all'); }}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow h-full" onClick={() => { setSelectedFolder(folder); setSearchQuery(''); setStatusFilter('all'); }}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -882,7 +712,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
           })}
         </div>
 
-        {/* Approval Workflow */}
+        {/* Approval Workflow Info */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Document Approval Workflow</CardTitle>
@@ -903,6 +733,34 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
             </p>
           </CardContent>
         </Card>
+
+        {/* Activity Log Placeholder */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="space-y-2">
+              {[
+                { action: 'Uploaded Resume / CV', by: selectedFaculty.name, date: '12-Jan-2026', version: 'v1' },
+                { action: 'Approved Appointment Order', by: 'HOD', date: '15-Jan-2026', version: 'v2' },
+                { action: 'Uploaded Degree Certificate', by: selectedFaculty.name, date: '08-Jan-2026', version: 'v1' },
+              ].map((activity, idx) => (
+                <div key={idx} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="text-xs">{activity.action}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{activity.by}</span>
+                    <span>{activity.date}</span>
+                    <Badge variant="outline" className="text-[9px] px-1">{activity.version}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -911,27 +769,22 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
   // RENDER: Faculty List View (initial view)
   // ============================================================
   return (
-    <div className="space-y-4 w-full min-w-0 max-w-full">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold">Faculty Evidence Repository</h2>
-          <p className="text-sm text-muted-foreground">
-            Single source of truth for all faculty-related evidence used across NAAC SSR, NBA SAR, AICTE Compliance, NIRF, and Faculty Audits.
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" onClick={fetchFaculty} disabled={loading} className="gap-1 text-xs">
-          <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} /> Refresh
-        </Button>
+      <div>
+        <h2 className="text-lg font-bold">Faculty Evidence Repository</h2>
+        <p className="text-sm text-muted-foreground">
+          Single source of truth for all faculty-related evidence used across NAAC SSR, NBA SAR, AICTE Compliance, NIRF, and Faculty Audits.
+        </p>
       </div>
 
       {/* Summary Dashboard Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Total Faculty', value: summaryMetrics.totalFacultyCount, icon: Users, color: 'text-indigo-600 bg-indigo-500/10' },
+          { label: 'Total Faculty', value: mockFaculty.length, icon: Users, color: 'text-indigo-600 bg-indigo-500/10' },
           { label: 'Total Categories', value: summaryMetrics.totalCategories, icon: FolderOpen, color: 'text-violet-600 bg-violet-500/10' },
-          { label: 'Total Uploaded', value: summaryMetrics.totalUploaded, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
-          { label: 'Total Pending', value: summaryMetrics.totalPending, icon: AlertTriangle, color: 'text-amber-600 bg-amber-500/10' },
+          { label: 'Avg. Uploaded', value: summaryMetrics.totalUploaded, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
+          { label: 'Avg. Pending', value: summaryMetrics.totalPending, icon: AlertTriangle, color: 'text-amber-600 bg-amber-500/10' },
           { label: 'Avg. Completion', value: `${summaryMetrics.avgCompletion}%`, icon: Upload, color: 'text-blue-600 bg-blue-500/10' },
         ].map((card) => (
           <Card key={card.label}>
@@ -941,7 +794,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
                   <card.icon className={cn('h-4 w-4', card.color.split(' ')[0])} />
                 </div>
                 <div>
-                  <p className="text-lg font-bold">{loading ? '...' : card.value}</p>
+                  <p className="text-lg font-bold">{card.value}</p>
                   <p className="text-[10px] text-muted-foreground">{card.label}</p>
                 </div>
               </div>
@@ -956,7 +809,7 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search faculty by name, EMP code, or designation..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select defaultValue="all">
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
@@ -970,73 +823,69 @@ export function FacultyEvidenceModule({ department, academicYear, departmentId: 
       </div>
 
       {/* Faculty List Table */}
-      <Card className="border-border/50 w-full min-w-0 max-w-full overflow-hidden shadow-sm">
-        <CardContent className="p-0 w-full min-w-0 max-w-full overflow-hidden">
-          {loading ? (
-            <div className="p-4 space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-            </div>
-          ) : filteredFaculty.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="h-12 w-12 text-muted-foreground/30 mb-3" />
-              <h3 className="text-base font-medium text-muted-foreground">No faculty found</h3>
-              <p className="text-xs text-muted-foreground/70 mt-1">Make sure faculty profiles exist for {academicYear}</p>
-            </div>
-          ) : (
-            <div className="w-full table-scroll-container max-h-[520px]">
-              <table className="w-full text-xs text-left min-w-[1050px] border-collapse">
-                <thead className="sticky top-0 z-20 bg-muted/80 backdrop-blur border-b border-border/60">
-                  <tr>
-                    <th className="p-3 font-semibold text-center w-10 sticky left-0 bg-muted/95 backdrop-blur z-30 shadow-[1px_0_0_0_hsl(var(--border))]">#</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-28">EMP Code</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-48">Faculty Name</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-40">Designation</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-28">Type</th>
-                    <th className="p-3 font-semibold whitespace-nowrap text-center w-24">Mandatory</th>
-                    <th className="p-3 font-semibold whitespace-nowrap text-center w-24">Uploaded</th>
-                    <th className="p-3 font-semibold whitespace-nowrap text-center w-24">Pending</th>
-                    <th className="p-3 font-semibold whitespace-nowrap w-36">Completion</th>
-                    <th className="p-3 font-semibold text-right whitespace-nowrap w-24 sticky right-0 bg-muted/95 backdrop-blur z-30 shadow-[-1px_0_0_0_hsl(var(--border))]">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {filteredFaculty.map((faculty, idx) => (
-                    <tr key={faculty.id} className="hover:bg-muted/40 transition-colors cursor-pointer" onClick={() => handleSelectFaculty(faculty)}>
-                      <td className="p-3 text-muted-foreground text-center font-mono sticky left-0 bg-background/95 backdrop-blur z-10 shadow-[1px_0_0_0_hsl(var(--border))]">{idx + 1}</td>
-                      <td className="p-3 font-mono text-xs font-medium whitespace-nowrap">{faculty.empCode}</td>
-                      <td className="p-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-sm">{faculty.name}</span>
-                          {faculty.hasPhD && <Badge className="text-[9px] px-1 py-0 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">PhD</Badge>}
-                        </div>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">{faculty.designation}</td>
-                      <td className="p-3 whitespace-nowrap">
-                        <Badge variant="outline" className="text-[10px] px-2 py-0.5">{faculty.facultyType}</Badge>
-                      </td>
-                      <td className="p-3 text-center font-medium whitespace-nowrap">{faculty.mandatoryDocs}</td>
-                      <td className="p-3 text-center font-medium text-emerald-600 whitespace-nowrap">{faculty.uploadedDocs}</td>
-                      <td className="p-3 text-center font-medium text-amber-600 whitespace-nowrap">{faculty.pendingDocs}</td>
-                      <td className="p-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Progress value={faculty.completionPercentage} className="h-2 flex-1" />
-                          <span className={cn('text-xs font-bold', getCompletionColor(faculty.completionPercentage))}>{faculty.completionPercentage}%</span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-right sticky right-0 bg-background/95 backdrop-blur z-10 shadow-[-1px_0_0_0_hsl(var(--border))]">
-                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                          <Eye className="h-3 w-3" />
-                          View
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8">#</TableHead>
+                  <TableHead>EMP Code</TableHead>
+                  <TableHead>Faculty Name</TableHead>
+                  <TableHead>Designation</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-center">Mandatory</TableHead>
+                  <TableHead className="text-center">Uploaded</TableHead>
+                  <TableHead className="text-center">Pending</TableHead>
+                  <TableHead className="w-36">Completion</TableHead>
+                  <TableHead className="w-24 text-center">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFaculty.map((faculty, idx) => (
+                  <TableRow key={faculty.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedFaculty(faculty); setSearchQuery(''); }}>
+                    <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                    <TableCell className="font-mono text-xs">{faculty.empCode}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm">{faculty.name}</p>
+                        {faculty.hasPhD && <Badge className="text-[9px] px-1 py-0 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">PhD</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{faculty.designation}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px]">{faculty.facultyType}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center text-sm font-medium">{faculty.mandatoryDocs}</TableCell>
+                    <TableCell className="text-center text-sm font-medium text-emerald-600">{faculty.uploadedDocs}</TableCell>
+                    <TableCell className="text-center text-sm font-medium text-amber-600">{faculty.pendingDocs}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={faculty.completionPercentage} className="h-2 flex-1" />
+                        <span className={cn('text-xs font-bold', getCompletionColor(faculty.completionPercentage))}>{faculty.completionPercentage}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+                        <Eye className="h-3 w-3" />
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
+
+      {filteredFaculty.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Users className="h-12 w-12 text-muted-foreground/30 mb-3" />
+          <h3 className="text-lg font-medium text-muted-foreground">No faculty found</h3>
+          <p className="text-sm text-muted-foreground/70 mt-1">Try a different search term</p>
+        </div>
+      )}
     </div>
   );
 }

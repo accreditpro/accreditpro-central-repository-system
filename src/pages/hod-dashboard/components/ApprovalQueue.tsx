@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { EvidencePreviewDialog, EvidencePreviewData } from '@/components/shared/EvidencePreviewDialog';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { evidenceReviewKey, selectReviews, setReview } from '@/store/slices/evidenceReviewSlice';
-import { getHODYearData, EvidenceItem, HOD_NAME } from '../hod-configs';
+import { useAppDispatch } from '@/store';
+import { addNotification } from '@/store/slices/uiSlice';
+import { hodService } from '@/services/hod.service';
+import { EvidenceItem } from '../hod-configs';
 import {
   STATUS_META,
   REPO_ICONS,
@@ -20,11 +21,11 @@ import {
   formatDate,
   downloadItem,
   buildPreviewData,
-  applyReviewOverrides,
   buildRepoGroups,
   RepoGroup,
 } from './evidence-utils';
 import { cn } from '@/lib/utils';
+import { useReadOnly } from '@/hooks/useReadOnly';
 import {
   Search,
   Eye,
@@ -41,18 +42,20 @@ import {
   ShieldCheck,
   AlertTriangle,
   MessageSquareWarning,
+  Loader2,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Pending Approvals — every section & category that is awaiting the HOD's
-// decision. Approving / rejecting here updates the SAME shared store as the
-// Evidence Review page, so both views always agree.
+// decision. Approving / rejecting here is persisted through the backend
+// evidence review API, so all views agree.
 // ---------------------------------------------------------------------------
 
 export function ApprovalQueue({ academicYear }: { academicYear: string }) {
+  const isReadOnly = useReadOnly();
   const dispatch = useAppDispatch();
-  const reviews = useAppSelector(selectReviews);
-  const [items, setItems] = useState<EvidenceItem[]>(() => getHODYearData(academicYear).evidence);
+  const [items, setItems] = useState<EvidenceItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [repositoryFilter, setRepositoryFilter] = useState<string>('all');
   // Pending-only by default — the queue is for approvals that need action.
@@ -62,20 +65,30 @@ export function ApprovalQueue({ academicYear }: { academicYear: string }) {
   const [previewData, setPreviewData] = useState<EvidencePreviewData | null>(null);
   const [action, setAction] = useState<{ type: 'approve' | 'reject' | 'changes'; item: EvidenceItem } | null>(null);
   const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setItems(applyReviewOverrides(getHODYearData(academicYear).evidence, academicYear, reviews));
+    let cancelled = false;
+    setLoading(true);
     setCollapsedRepos(new Set());
     setCollapsedSections(new Set());
     setPreviewData(null);
     setAction(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    hodService
+      .getEvidence({ academicYear, page: 0, size: 200, sortBy: 'uploadDate', sortDirection: 'DESC' })
+      .then((data) => {
+        if (!cancelled) setItems(data.content as EvidenceItem[]);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Failed to load the approval queue. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [academicYear]);
-
-  // Keep decisions made elsewhere (e.g. in Evidence Review) in sync.
-  useEffect(() => {
-    setItems((prev) => applyReviewOverrides(prev, academicYear, reviews));
-  }, [reviews, academicYear]);
 
   const filteredItems = useMemo(() => {
     const q = searchTerm.toLowerCase();
@@ -124,77 +137,68 @@ export function ApprovalQueue({ academicYear }: { academicYear: string }) {
   };
 
   // -------------------------------------------------------------------------
-  // Decisions — persisted to the shared store (coordinator sees them too)
+  // Decisions — persisted through the backend evidence review API
   // -------------------------------------------------------------------------
-  const commitDecision = (item: EvidenceItem, type: 'approve' | 'reject' | 'changes', noteText: string) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const nextStatus = type === 'approve' ? 'approved' : type === 'reject' ? 'rejected' : 'changes-requested';
-    const actionLabel =
-      type === 'approve' ? 'Approved by HOD' : type === 'reject' ? 'Rejected by HOD' : 'Changes requested by HOD';
-    const versionMatch = item.version.match(/^v(\d+)\.(\d+)$/);
-    const nextVersion = versionMatch ? `v${versionMatch[1]}.${parseInt(versionMatch[2], 10) + 1}` : 'v1.1';
-    dispatch(
-      setReview({
-        key: evidenceReviewKey(academicYear, item.repository, item.section, item.documentCategory),
-        entry: {
-          status: nextStatus,
-          note: noteText.trim() || item.reviewNote,
-          reviewedBy: HOD_NAME,
-          reviewDate: today,
-        },
-      })
-    );
-    setItems((prev) =>
-      prev.map((it) =>
-        it.id === item.id
-          ? {
-              ...it,
-              status: nextStatus,
-              version: nextVersion,
-              reviewNote: noteText.trim() || it.reviewNote,
-              reviewedBy: HOD_NAME,
-              reviewDate: today,
-              history: [
-                ...it.history,
-                {
-                  version: nextVersion,
-                  date: today,
-                  actor: HOD_NAME,
-                  note: actionLabel + (noteText.trim() ? ` — ${noteText.trim()}` : ''),
-                },
-              ],
-            }
-          : it
-      )
-    );
-  };
-
-  const applyAction = () => {
+  const applyAction = async () => {
     if (!action) return;
     const { type, item } = action;
     if (type !== 'approve' && !note.trim()) {
       toast.error('Please add a reason before submitting');
       return;
     }
-    commitDecision(item, type, note);
-    toast.success(
-      type === 'approve'
-        ? `"${item.documentName}" approved`
-        : type === 'reject'
-          ? `"${item.documentName}" rejected`
-          : `Changes requested for "${item.documentName}"`
-    );
-    setAction(null);
-    setNote('');
+    const nextStatus = type === 'approve' ? 'approved' : type === 'reject' ? 'rejected' : 'changes-requested';
+    setSubmitting(true);
+    try {
+      const updated = await hodService.reviewEvidence(item.id, { action: nextStatus, note: note.trim() || undefined });
+      setItems((prev) => prev.map((it) => (it.id === item.id ? (updated as unknown as EvidenceItem) : it)));
+      toast.success(
+        type === 'approve'
+          ? `"${item.documentName}" approved`
+          : type === 'reject'
+            ? `"${item.documentName}" rejected`
+            : `Changes requested for "${item.documentName}"`
+      );
+      dispatch(
+        addNotification({
+          title: type === 'approve' ? 'Evidence approved by HOD' : 'Evidence returned by HOD',
+          message:
+            type === 'approve'
+              ? `"${item.documentName}" (${item.repository}) is HOD-approved — ready for IQAC verification.`
+              : `"${item.documentName}" (${item.repository}) was ${type === 'reject' ? 'rejected' : 'sent back for changes'}.`,
+          type: type === 'approve' ? 'success' : 'warning',
+          read: false,
+        })
+      );
+      setAction(null);
+      setNote('');
+    } catch {
+      toast.error('Failed to save the review decision. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const approveSection = (repository: string, section: string) => {
+  const approveSection = async (repository: string, section: string) => {
     const pending = items.filter(
       (i) => i.repository === repository && i.section === section && i.status === 'pending'
     );
     if (pending.length === 0) return;
-    pending.forEach((item) => commitDecision(item, 'approve', ''));
-    toast.success(`Approved ${pending.length} document(s) in ${section}`);
+    setSubmitting(true);
+    try {
+      const ids = pending.map((i) => Number(i.id)).filter((n) => !Number.isNaN(n));
+      const updated = await hodService.bulkReviewEvidence({ evidenceIds: ids, action: 'approved' });
+      const updatedById = new Map(updated.map((u) => [u.id, u as unknown as EvidenceItem]));
+      setItems((prev) => prev.map((it) => updatedById.get(it.id) ?? it));
+      toast.success(`Approved ${updated.length} document(s) in ${section}`);
+    } catch {
+      toast.error('Failed to approve the documents. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePreview = async (item: EvidenceItem) => {
+    setPreviewData(await buildPreviewData(item));
   };
 
   const actionMeta = {
@@ -277,220 +281,235 @@ export function ApprovalQueue({ academicYear }: { academicYear: string }) {
         </CardContent>
       </Card>
 
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          Loading approval queue...
+        </div>
+      )}
+
       {/* Pending approvals grouped by section & category */}
-      <div className="space-y-4">
-        {repoGroups.length === 0 && (
-          <Card>
-            <CardContent className="p-10 text-center">
-              <CheckCheck className="h-10 w-10 mx-auto text-emerald-500/50 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">
-                {statusFilter === 'pending' ? 'No pending approvals — you are all caught up!' : 'No documents match your filters'}
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                {statusFilter === 'pending' ? 'Everything has been reviewed and approved.' : 'Try clearing the search or filters.'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {repoGroups.map((group) => {
-          const isCollapsed = collapsedRepos.has(group.repository);
-          const pendingCount = group.sections.reduce(
-            (sum, s) => sum + s.items.filter((i) => i.status === 'pending').length,
-            0
-          );
-          const Icon = REPO_ICONS[group.repository] || FolderOpen;
-          const accent = REPO_ACCENT[group.repository] || 'text-primary bg-primary/10 border-primary/30';
-
-          return (
-            <Card key={group.repository} className="border shadow-sm overflow-hidden">
-              {/* Repository header */}
-              <button
-                onClick={() => toggleRepo(group.repository)}
-                className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/40 transition-colors"
-              >
-                <div className={cn('h-10 w-10 rounded-xl border flex items-center justify-center shrink-0', accent)}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-bold">{group.repository} Repository</h3>
-                    <Badge variant="outline" className="text-[9px]">
-                      {group.sections.length} section{group.sections.length !== 1 ? 's' : ''}
-                    </Badge>
-                    {pendingCount > 0 && (
-                      <Badge variant="secondary" className="text-[9px] bg-amber-500/10 text-amber-600">
-                        <Clock className="h-2.5 w-2.5 mr-1" /> {pendingCount} pending
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs font-semibold text-muted-foreground">{group.total} docs</span>
-                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-
-              <AnimatePresence initial={false}>
-                {!isCollapsed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-t border-border/50"
-                  >
-                    <div className="divide-y divide-border/50">
-                      {group.sections.map((section) => {
-                        const secKey = `${group.repository}::${section.section}`;
-                        const secCollapsed = collapsedSections.has(secKey);
-                        const secPending = section.items.filter((i) => i.status === 'pending').length;
-                        return (
-                          <div key={secKey} className="bg-muted/20">
-                            {/* Section header */}
-                            <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted/40 transition-colors">
-                              <button
-                                onClick={() => toggleSection(secKey)}
-                                className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
-                              >
-                                {secCollapsed ? (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                                )}
-                                <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="text-xs font-semibold">{section.section}</span>
-                              </button>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {secPending > 0 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 text-[10px] gap-1 border-green-500/40 text-green-700 hover:bg-green-500/10"
-                                    onClick={() => approveSection(group.repository, section.section)}
-                                    title="Approve all pending documents in this section"
-                                  >
-                                    <CheckCheck className="h-3 w-3" /> Approve all ({secPending})
-                                  </Button>
-                                )}
-                                <Badge variant="outline" className="text-[9px]">{section.items.length} docs</Badge>
-                              </div>
-                            </div>
-
-                            <AnimatePresence initial={false}>
-                              {!secCollapsed && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.18 }}
-                                >
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                      <thead>
-                                        <tr className="border-t border-border/50 bg-muted/30">
-                                          <th className="text-left p-2.5 pl-10 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Evidence Category</th>
-                                          <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">File</th>
-                                          <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Uploaded By</th>
-                                          <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Date</th>
-                                          <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Status</th>
-                                          <th className="text-right p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Actions</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {section.items.map((item) => (
-                                          <tr key={item.id} className="border-t border-border/40 hover:bg-muted/40 transition-colors">
-                                            <td className="p-2.5 pl-10">
-                                              <div className="flex items-start gap-2">
-                                                <span className={cn('mt-1.5 h-2 w-2 rounded-full shrink-0', STATUS_META[item.status].dot)} />
-                                                <div>
-                                                  <p className="text-xs font-semibold leading-snug">{item.documentCategory}</p>
-                                                  {item.reviewNote && (
-                                                    <p className="text-[10px] text-muted-foreground mt-0.5 flex items-start gap-1 max-w-[280px]">
-                                                      <MessageSquareWarning className="h-3 w-3 shrink-0 mt-px text-purple-500" />
-                                                      <span className="line-clamp-1">{item.reviewNote}</span>
-                                                    </p>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </td>
-                                            <td className="p-2.5">
-                                              <div className="flex items-center gap-1.5">
-                                                {getFileIcon(item)}
-                                                <div>
-                                                  <p className="text-xs font-medium">{item.documentName}</p>
-                                                  <p className="text-[10px] text-muted-foreground">
-                                                    {item.fileSize} • {item.version}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                            </td>
-                                            <td className="p-2.5 text-xs text-muted-foreground whitespace-nowrap">{item.uploadedBy}</td>
-                                            <td className="p-2.5 text-xs text-muted-foreground whitespace-nowrap">{formatDate(item.uploadDate)}</td>
-                                            <td className="p-2.5">
-                                              <Badge className={cn('text-[10px]', STATUS_META[item.status].badge)}>
-                                                {STATUS_META[item.status].label}
-                                              </Badge>
-                                            </td>
-                                            <td className="p-2.5">
-                                              <div className="flex items-center justify-end gap-0.5">
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Preview" onClick={() => setPreviewData(buildPreviewData(item))}>
-                                                  <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                                                  title="Approve"
-                                                  disabled={item.status === 'approved'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'approve', item }); }}
-                                                >
-                                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                                                  title="Reject"
-                                                  disabled={item.status === 'rejected'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'reject', item }); }}
-                                                >
-                                                  <XCircle className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 text-purple-600 hover:text-purple-700 hover:bg-purple-500/10"
-                                                  title="Request Changes"
-                                                  disabled={item.status === 'changes-requested'}
-                                                  onClick={() => { setNote(''); setAction({ type: 'changes', item }); }}
-                                                >
-                                                  <RotateCcw className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Download" onClick={() => downloadItem(item)}>
-                                                  <Download className="h-3.5 w-3.5" />
-                                                </Button>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      {!loading && (
+        <div className="space-y-4">
+          {repoGroups.length === 0 && (
+            <Card>
+              <CardContent className="p-10 text-center">
+                <CheckCheck className="h-10 w-10 mx-auto text-emerald-500/50 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  {statusFilter === 'pending' ? 'No pending approvals — you are all caught up!' : 'No documents match your filters'}
+                </p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  {statusFilter === 'pending' ? 'Everything has been reviewed and approved.' : 'Try clearing the search or filters.'}
+                </p>
+              </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          )}
+
+          {repoGroups.map((group) => {
+            const isCollapsed = collapsedRepos.has(group.repository);
+            const pendingCount = group.sections.reduce(
+              (sum, s) => sum + s.items.filter((i) => i.status === 'pending').length,
+              0
+            );
+            const Icon = REPO_ICONS[group.repository] || FolderOpen;
+            const accent = REPO_ACCENT[group.repository] || 'text-primary bg-primary/10 border-primary/30';
+
+            return (
+              <Card key={group.repository} className="border shadow-sm overflow-hidden">
+                {/* Repository header */}
+                <button
+                  onClick={() => toggleRepo(group.repository)}
+                  className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/40 transition-colors"
+                >
+                  <div className={cn('h-10 w-10 rounded-xl border flex items-center justify-center shrink-0', accent)}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold">{group.repository} Repository</h3>
+                      <Badge variant="outline" className="text-[9px]">
+                        {group.sections.length} section{group.sections.length !== 1 ? 's' : ''}
+                      </Badge>
+                      {pendingCount > 0 && (
+                        <Badge variant="secondary" className="text-[9px] bg-amber-500/10 text-amber-600">
+                          <Clock className="h-2.5 w-2.5 mr-1" /> {pendingCount} pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-semibold text-muted-foreground">{group.total} docs</span>
+                    {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {!isCollapsed && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="border-t border-border/50"
+                    >
+                      <div className="divide-y divide-border/50">
+                        {group.sections.map((section) => {
+                          const secKey = `${group.repository}::${section.section}`;
+                          const secCollapsed = collapsedSections.has(secKey);
+                          const secPending = section.items.filter((i) => i.status === 'pending').length;
+                          return (
+                            <div key={secKey} className="bg-muted/20">
+                              {/* Section header */}
+                              <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted/40 transition-colors">
+                                <button
+                                  onClick={() => toggleSection(secKey)}
+                                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                                >
+                                  {secCollapsed ? (
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  )}
+                                  <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="text-xs font-semibold">{section.section}</span>
+                                </button>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {secPending > 0 && !isReadOnly && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-[10px] gap-1 border-green-500/40 text-green-700 hover:bg-green-500/10"
+                                      onClick={() => approveSection(group.repository, section.section)}
+                                      disabled={submitting}
+                                      title="Approve all pending documents in this section"
+                                    >
+                                      <CheckCheck className="h-3 w-3" /> Approve all ({secPending})
+                                    </Button>
+                                  )}
+                                  <Badge variant="outline" className="text-[9px]">{section.items.length} docs</Badge>
+                                </div>
+                              </div>
+
+                              <AnimatePresence initial={false}>
+                                {!secCollapsed && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                  >
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-sm">
+                                        <thead>
+                                          <tr className="border-t border-border/50 bg-muted/30">
+                                            <th className="text-left p-2.5 pl-10 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Evidence Category</th>
+                                            <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">File</th>
+                                            <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Uploaded By</th>
+                                            <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Date</th>
+                                            <th className="text-left p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Status</th>
+                                            <th className="text-right p-2.5 font-medium text-[10px] uppercase tracking-wider text-muted-foreground">Actions</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {section.items.map((item) => (
+                                            <tr key={item.id} className="border-t border-border/40 hover:bg-muted/40 transition-colors">
+                                              <td className="p-2.5 pl-10">
+                                                <div className="flex items-start gap-2">
+                                                  <span className={cn('mt-1.5 h-2 w-2 rounded-full shrink-0', STATUS_META[item.status].dot)} />
+                                                  <div>
+                                                    <p className="text-xs font-semibold leading-snug">{item.documentCategory}</p>
+                                                    {item.reviewNote && (
+                                                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-start gap-1 max-w-[280px]">
+                                                        <MessageSquareWarning className="h-3 w-3 shrink-0 mt-px text-purple-500" />
+                                                        <span className="line-clamp-1">{item.reviewNote}</span>
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="p-2.5">
+                                                <div className="flex items-center gap-1.5">
+                                                  {getFileIcon(item)}
+                                                  <div>
+                                                    <p className="text-xs font-medium">{item.documentName}</p>
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                      {item.fileSize} • {item.version}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="p-2.5 text-xs text-muted-foreground whitespace-nowrap">{item.uploadedBy}</td>
+                                              <td className="p-2.5 text-xs text-muted-foreground whitespace-nowrap">{formatDate(item.uploadDate)}</td>
+                                              <td className="p-2.5">
+                                                <Badge className={cn('text-[10px]', STATUS_META[item.status].badge)}>
+                                                  {STATUS_META[item.status].label}
+                                                </Badge>
+                                              </td>
+                                              <td className="p-2.5">
+                                                <div className="flex items-center justify-end gap-0.5">
+                                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Preview" onClick={() => handlePreview(item)}>
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                  {!isReadOnly && (
+                                                    <>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                                        title="Approve"
+                                                        disabled={item.status === 'approved' || submitting}
+                                                        onClick={() => { setNote(''); setAction({ type: 'approve', item }); }}
+                                                      >
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                                        title="Reject"
+                                                        disabled={item.status === 'rejected' || submitting}
+                                                        onClick={() => { setNote(''); setAction({ type: 'reject', item }); }}
+                                                      >
+                                                        <XCircle className="h-3.5 w-3.5" />
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-purple-600 hover:text-purple-700 hover:bg-purple-500/10"
+                                                        title="Request Changes"
+                                                        disabled={item.status === 'changes-requested' || submitting}
+                                                        onClick={() => { setNote(''); setAction({ type: 'changes', item }); }}
+                                                      >
+                                                        <RotateCcw className="h-3.5 w-3.5" />
+                                                      </Button>
+                                                    </>
+                                                  )}
+                                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Download" onClick={() => downloadItem(item)}>
+                                                    <Download className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Preview dialog */}
       <EvidencePreviewDialog
@@ -572,8 +591,8 @@ export function ApprovalQueue({ academicYear }: { academicYear: string }) {
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setAction(null)}>Cancel</Button>
             {action && (
-              <Button className={actionMeta[action.type].buttonClass} onClick={applyAction}>
-                {actionMeta[action.type].buttonLabel}
+              <Button className={actionMeta[action.type].buttonClass} onClick={applyAction} disabled={submitting}>
+                {submitting ? 'Saving...' : actionMeta[action.type].buttonLabel}
               </Button>
             )}
           </DialogFooter>

@@ -198,13 +198,13 @@ export const InfrastructureRepositoryPage = () => {
       return <InfrastructureDocumentsView />;
     }
     if (activeView === 'upload-history') {
-      return <UploadHistoryView />;
+      return <UploadHistoryView liveMode />;
     }
     if (activeView === 'verification-status') {
-      return <VerificationStatusView />;
+      return <VerificationStatusView liveMode />;
     }
     if (activeView === 'profile') {
-      return <ProfileView />;
+      return <ProfileView liveMode />;
     }
 
     const viewConfig = getConfigForView(activeView);
@@ -213,6 +213,7 @@ export const InfrastructureRepositoryPage = () => {
         <RepositoryWorkspace
           config={viewConfig.config}
           initialTabIndex={viewConfig.tabIndex}
+          liveMode
         />
       );
     }

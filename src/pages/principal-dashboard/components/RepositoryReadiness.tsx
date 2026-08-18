@@ -1,60 +1,112 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Database, FolderOpen, FileText, ChevronRight, Lock } from 'lucide-react';
-import { departmentRepositories, departmentOptions, academicYearOptions, REPO_LIST } from '../principal-data';
-import { StatusBadge, ReadinessBar, scoreTone, statusOf, FilterBar, FilterSelect, StatCard } from './common';
+import {
+  Database,
+  FolderOpen,
+  FileText,
+  ChevronRight,
+  Lock,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-react';
+import { departmentOptions, academicYearOptions } from '../principal-data';
+import {
+  principalService,
+  PrincipalRepositoryReadinessDto,
+  DrillDepartmentDto,
+} from '@/services/principal.service';
+import {
+  StatusBadge,
+  ReadinessBar,
+  scoreTone,
+  statusOf,
+  FilterBar,
+  FilterSelect,
+  StatCard,
+} from './common';
 import { cn } from '@/lib/utils';
-
-// Sample folder/document structure per repository (read-only drill-down).
-const DOC_STRUCTURE: Record<string, { folder: string; docs: string[] }[]> = {
-  Academic: [
-    { folder: 'Academic Calendar', docs: ['Academic_Calendar_2025-26.pdf', 'Calendar Report.pdf', 'NBA Evidence.pdf', 'NAAC Evidence.pdf'] },
-    { folder: 'Curriculum', docs: ['Course_File_2025-26.pdf', 'BoS Minutes.pdf'] },
-  ],
-  Faculty: [
-    { folder: 'Faculty Profile', docs: ['Appointment Orders.pdf', 'PAN Cards.zip', 'Aadhaar.zip'] },
-    { folder: 'Qualification', docs: ['Degree Certificates.pdf', 'PhD Certificates.pdf'] },
-  ],
-  Student: [
-    { folder: 'Student Profile', docs: ['Admission Register.xlsx', 'Student Records.xlsx', 'SSC Certificates.zip'] },
-    { folder: 'Diversity', docs: ['Diversity Register.xlsx', 'Self Declarations.pdf'] },
-  ],
-  Research: [
-    { folder: 'Publications', docs: ['Journal Papers 2025.pdf', 'DOI Proofs.pdf', 'Indexing Proofs.pdf'] },
-    { folder: 'Patents', docs: ['Patent Applications.pdf', 'Filing Receipts.pdf'] },
-  ],
-  Infrastructure: [
-    { folder: 'Laboratories', docs: ['Lab Layouts.pdf', 'Equipment Invoices.pdf'] },
-    { folder: 'Licenses', docs: ['Software Licenses.xlsx', 'License Renewal Quotes.pdf'] },
-  ],
-  Examination: [
-    { folder: 'Results', docs: ['Even Sem Results.xlsx', 'Pass % Summary.pdf'] },
-    { folder: 'Supplementary', docs: ['Supplementary Register.xlsx'] },
-  ],
-  Alumni: [
-    { folder: 'Alumni Details', docs: ['Graduation Register.xlsx', 'Alumni Registration.xlsx'] },
-    { folder: 'Engagement', docs: ['Event Reports.pdf', 'Feedback.xlsx'] },
-  ],
-  Placement: [
-    { folder: 'Placements', docs: ['Selection Lists.xlsx', 'Offer Letters.pdf', 'Recruiter Feedback.pdf'] },
-    { folder: 'Internships', docs: ['Internship Register.xlsx', 'Completion Certificates.zip'] },
-  ],
-};
+import type { StatusLevel } from '../principal-data';
 
 export function RepositoryReadiness() {
   const [year, setYear] = useState('2025-26');
   const [deptFilter, setDeptFilter] = useState('all');
-  const [selectedDept, setSelectedDept] = useState('CSE');
-  const [selectedRepo, setSelectedRepo] = useState('Academic');
+  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedRepo, setSelectedRepo] = useState('');
 
-  const departments = useMemo(
-    () => (deptFilter === 'all' ? departmentRepositories : departmentRepositories.filter((d) => d.code === deptFilter)),
-    [deptFilter]
+  const [data, setData] = useState<PrincipalRepositoryReadinessDto | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    principalService
+      .getRepositoryReadiness(year, deptFilter === 'all' ? undefined : deptFilter)
+      .then(response => {
+        if (cancelled) return;
+        setData(response);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [year, deptFilter]);
+
+  // Keep the selection valid against the real department list whenever it changes.
+  useEffect(() => {
+    if (!data) return;
+    const depts = data.departments ?? [];
+    setSelectedDept(prev => (depts.some(d => d.code === prev) ? prev : (depts[0]?.code ?? '')));
+  }, [data]);
+
+  useEffect(() => {
+    if (!data) return;
+    const depts = data.departments ?? [];
+    const dept = depts.find(d => d.code === selectedDept) ?? depts[0];
+    const repos = dept?.repositories ?? [];
+    setSelectedRepo(prev => (repos.some(r => r.repo === prev) ? prev : (repos[0]?.repo ?? '')));
+  }, [data, selectedDept]);
+
+  const departments: DrillDepartmentDto[] = useMemo(() => data?.departments ?? [], [data]);
+  const instAvg = data?.institutionCompletion ?? 0;
+
+  const deptData = useMemo(
+    () => departments.find(d => d.code === selectedDept) ?? departments[0],
+    [departments, selectedDept]
   );
 
-  const deptData = departmentRepositories.find((d) => d.code === selectedDept) ?? departmentRepositories[0];
-  const instAvg = Math.round(departmentRepositories.reduce((a, d) => a + d.readiness, 0) / departmentRepositories.length);
+  const repoCount = departments[0]?.repositories.length ?? 0;
+  const evidenceFolders = useMemo(
+    () =>
+      departments.reduce(
+        (sum, d) => sum + d.repositories.reduce((s, r) => s + (r.folders?.length ?? 0), 0),
+        0
+      ),
+    [departments]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading repository readiness...
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <AlertTriangle className="h-5 w-5 mr-2" />
+        Unable to load repository readiness. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -62,8 +114,18 @@ export function RepositoryReadiness() {
       <Card>
         <CardContent className="p-3">
           <FilterBar>
-            <FilterSelect value={year} onValueChange={setYear} options={academicYearOptions} placeholder="Academic Year" />
-            <FilterSelect value={deptFilter} onValueChange={setDeptFilter} options={departmentOptions} placeholder="Department" />
+            <FilterSelect
+              value={year}
+              onValueChange={setYear}
+              options={academicYearOptions}
+              placeholder="Academic Year"
+            />
+            <FilterSelect
+              value={deptFilter}
+              onValueChange={setDeptFilter}
+              options={departmentOptions}
+              placeholder="Department"
+            />
             <span className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" /> Read-only monitoring — no data entry
             </span>
@@ -73,10 +135,38 @@ export function RepositoryReadiness() {
 
       {/* Institution summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={Database} label="Institution Completion" value={`${instAvg}%`} sub={`${departmentRepositories.length} departments`} tone="text-blue-600" iconBg="bg-blue-50 dark:bg-blue-950/40" />
-        <StatCard icon={Database} label="Departments Visible" value={`${departments.length}`} sub="Selected filter" tone="text-indigo-600" iconBg="bg-indigo-50 dark:bg-indigo-950/40" />
-        <StatCard icon={Database} label="Repositories Tracked" value={`${REPO_LIST.length}`} sub="Per department" tone="text-violet-600" iconBg="bg-violet-50 dark:bg-violet-950/40" />
-        <StatCard icon={Database} label="Evidence Folders" value="16" sub="Across repositories" tone="text-teal-600" iconBg="bg-teal-50 dark:bg-teal-950/40" />
+        <StatCard
+          icon={Database}
+          label="Institution Completion"
+          value={`${instAvg}%`}
+          sub={`${departments.length} departments`}
+          tone="text-blue-600"
+          iconBg="bg-blue-50 dark:bg-blue-950/40"
+        />
+        <StatCard
+          icon={Database}
+          label="Departments Visible"
+          value={`${departments.length}`}
+          sub="Selected filter"
+          tone="text-indigo-600"
+          iconBg="bg-indigo-50 dark:bg-indigo-950/40"
+        />
+        <StatCard
+          icon={Database}
+          label="Repositories Tracked"
+          value={`${repoCount}`}
+          sub="Per department"
+          tone="text-violet-600"
+          iconBg="bg-violet-50 dark:bg-violet-950/40"
+        />
+        <StatCard
+          icon={Database}
+          label="Evidence Folders"
+          value={`${evidenceFolders}`}
+          sub="Across repositories"
+          tone="text-teal-600"
+          iconBg="bg-teal-50 dark:bg-teal-950/40"
+        />
       </div>
 
       {/* Drill-down: Department → Repository → Folder/Documents */}
@@ -87,7 +177,7 @@ export function RepositoryReadiness() {
             <CardTitle className="text-sm font-semibold">1 · Department</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
-            {departments.map((d) => (
+            {departments.map(d => (
               <button
                 key={d.code}
                 onClick={() => setSelectedDept(d.code)}
@@ -98,7 +188,9 @@ export function RepositoryReadiness() {
               >
                 <div>
                   <p className="text-xs font-semibold">{d.code}</p>
-                  <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{d.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                    {d.name}
+                  </p>
                 </div>
                 <span className={scoreTone(d.readiness)}>{d.readiness}%</span>
               </button>
@@ -109,10 +201,12 @@ export function RepositoryReadiness() {
         {/* Repositories */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">2 · Repository — {selectedDept}</CardTitle>
+            <CardTitle className="text-sm font-semibold">
+              2 · Repository — {deptData?.code ?? '—'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
-            {deptData.repositories.map((r) => (
+            {(deptData?.repositories ?? []).map(r => (
               <button
                 key={r.repo}
                 onClick={() => setSelectedRepo(r.repo)}
@@ -139,30 +233,36 @@ export function RepositoryReadiness() {
         {/* Folders & Documents */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">3 · Folder / Document — {selectedRepo}</CardTitle>
+            <CardTitle className="text-sm font-semibold">
+              3 · Folder / Document — {selectedRepo}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(DOC_STRUCTURE[selectedRepo] ?? []).map((folder) => (
-              <div key={folder.folder} className="rounded-lg border">
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/40 rounded-t-lg">
-                  <FolderOpen className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-xs font-medium flex-1">{folder.folder}</span>
-                  <Badge variant="outline" className="text-[9px]">{folder.docs.length} docs</Badge>
+            {(deptData?.repositories.find(r => r.repo === selectedRepo)?.folders ?? []).map(
+              folder => (
+                <div key={folder.folder} className="rounded-lg border">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted/40 rounded-t-lg">
+                    <FolderOpen className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-xs font-medium flex-1">{folder.folder}</span>
+                    <Badge variant="outline" className="text-[9px]">
+                      {(folder.documents ?? []).length} docs
+                    </Badge>
+                  </div>
+                  <div className="divide-y">
+                    {(folder.documents ?? []).map(doc => (
+                      <div key={doc.name} className="flex items-center gap-2 px-3 py-1.5">
+                        <FileText className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[11px] flex-1 truncate">{doc.name}</span>
+                        <StatusBadge status={(doc.status as StatusLevel) ?? statusOf(70)} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="divide-y">
-                  {folder.docs.map((doc, di) => (
-                    <div key={doc} className="flex items-center gap-2 px-3 py-1.5">
-                      <FileText className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-[11px] flex-1 truncate">{doc}</span>
-                      {/* Stable per-document status derived from structure, not Math.random. */}
-                      <StatusBadge status={statusOf(78 + ((di * 7) % 20))} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              )
+            )}
             <div className="flex items-center justify-center gap-1 pt-1 text-[10px] text-muted-foreground">
-              <Lock className="h-3 w-3" /> Read-only — current status <ChevronRight className="h-3 w-3" />
+              <Lock className="h-3 w-3" /> Read-only — current status{' '}
+              <ChevronRight className="h-3 w-3" />
             </div>
           </CardContent>
         </Card>

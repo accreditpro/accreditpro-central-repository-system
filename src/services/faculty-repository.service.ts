@@ -578,32 +578,12 @@ export async function deleteFacultyEvidence(
 
 // ─── 7. Health Metrics ────────────────────────────────────────────────────────
 
-export interface FacultyRepositoryMetrics {
-  dataCompleteness: number;
-  evidenceScore: number;
-  verificationScore: number;
-  readinessScore: number;
-}
-
-export async function getFacultyRepositoryHealthMetrics(
+export async function getFacultyRepositoryHealth(
   academicYear: string,
   departmentId: number
-): Promise<FacultyRepositoryMetrics> {
+): Promise<any> {
   const query = qs({ academicYear, departmentId });
-  return apiService.get<any>(`${BASE}/health-metrics?${query}`).then((res) => {
-    const data = res?.data ?? res ?? {};
-    return {
-      dataCompleteness: typeof data.dataCompleteness === 'number' ? data.dataCompleteness : 0,
-      evidenceScore: typeof data.evidenceScore === 'number' ? data.evidenceScore : 0,
-      verificationScore: typeof data.verificationScore === 'number' ? data.verificationScore : 0,
-      readinessScore: typeof data.readinessScore === 'number' ? data.readinessScore : 0,
-    };
-  });
 }
-
-export const getFacultyRepositoryHealth = getFacultyRepositoryHealthMetrics;
-export const getFacultyRepositoryMetrics = getFacultyRepositoryHealthMetrics;
-
 
 // ─── 8. Faculty Evidence Tab ────────────────────────────────────────────────────────
 

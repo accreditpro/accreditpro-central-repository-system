@@ -8,17 +8,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import { RepositoryModuleConfig } from '../types';
-import { repositoryHealth, evidenceDocuments } from '../repository-configs';
+import { repositoryHealth, departmentInfo, evidenceDocuments } from '../repository-configs';
 import { RepositoryTabContent } from './RepositoryTabContent';
 import { getModuleTabActiveClasses } from './module-tab-styles';
 import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
-import {
-  getStudentDevHealth,
-  getStudentDevRecords,
-  StudentDevHealthMetrics,
-} from '@/services/student-dev-outcomes.service';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -48,9 +42,10 @@ import {
 interface StudentDevOutcomesModuleProps {
   config: RepositoryModuleConfig;
   academicYear?: string;
-  departmentId?: number;
-  departmentName?: string;
 }
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+};
 
 const studentDevUploadCategories: EvidenceCategory[] = [
   { id: 'projects', label: 'Academic Projects', icon: <FolderKanban className="h-4 w-4 text-primary" /> },
@@ -84,140 +79,49 @@ const tabIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   'supporting-documents': FileText,
 };
 
-export const StudentDevOutcomesModule = ({
-  config,
-  academicYear,
-  departmentId: propDeptId,
-  departmentName,
-}: StudentDevOutcomesModuleProps) => {
-  const { user } = useAuth();
-  const effectiveYear = academicYear || '2025-26';
-  const effectiveDeptId = propDeptId || user?.departmentId || 4;
-  const effectiveDeptName = departmentName || user?.department || 'Computer Science & Engineering';
-
+export const StudentDevOutcomesModule = ({ config, academicYear }: StudentDevOutcomesModuleProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  void academicYear;
   const activeClasses = getModuleTabActiveClasses(config.id);
-
-  // Live health metrics & tab counts
-  const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
-  const [recentActivitiesList, setRecentActivitiesList] = useState<any[]>([]);
-
-  const fallbackHealth = repositoryHealth[config.id] || {
-    dataCompleteness: 0,
-    evidenceCompleteness: 0,
-    verificationPercent: 0,
-    readinessScore: 0,
-  };
-
-  const [healthMetrics, setHealthMetrics] = useState<StudentDevHealthMetrics>({
-    academicYear: effectiveYear,
-    dataCompleteness: fallbackHealth.dataCompleteness,
-    evidenceCompleteness: fallbackHealth.evidenceCompleteness,
-    verificationPercent: fallbackHealth.verificationPercent,
-    readinessScore: fallbackHealth.readinessScore,
-    totalRecords: 0,
-  });
-
-  useEffect(() => {
-    if (!effectiveDeptId) return;
-
-    // 1. Fetch Health Metrics
-    getStudentDevHealth(effectiveYear, effectiveDeptId)
-      .then((res) => {
-        if (res) setHealthMetrics(res);
-      })
-      .catch((err) => console.warn('Could not load SDO health metrics:', err));
-
-    // 2. Fetch live counts and recent activities across all submodules
-    const activeSubmodules = config.tabs.filter(
-      (t) => t.id !== 'dashboard' && t.id !== 'supporting-documents'
-    );
-
-    Promise.allSettled(
-      activeSubmodules.map(async (tab) => {
-        try {
-          const res = await getStudentDevRecords(tab.id, effectiveYear, effectiveDeptId, { page: 0, size: 5 });
-          const items = res?.data?.content || res?.content || res?.data || res || [];
-          const count = res?.data?.totalElements ?? (Array.isArray(items) ? items.length : 0);
-          return { id: tab.id, label: tab.label, count, items: Array.isArray(items) ? items : [] };
-        } catch {
-          return { id: tab.id, label: tab.label, count: 0, items: [] };
-        }
-      })
-    ).then((results) => {
-      const counts: Record<string, number> = {};
-      const activities: any[] = [];
-
-      results.forEach((r) => {
-        if (r.status === 'fulfilled' && r.value) {
-          counts[r.value.id] = r.value.count;
-          if (r.value.items && r.value.items.length > 0) {
-            r.value.items.forEach((it: any) => {
-              const raw = it.recordData || it;
-              const title =
-                raw.projectTitle ||
-                raw.company ||
-                raw.organization ||
-                raw.institution ||
-                raw.ventureName ||
-                raw.eventName ||
-                raw.competitionName ||
-                raw.courseName ||
-                raw.activityName ||
-                raw.studentName ||
-                'Record';
-              activities.push({
-                title: `${raw.studentName || 'Student'} - ${title}`,
-                date: raw.updatedAt ? new Date(raw.updatedAt).toLocaleDateString() : raw.startDate || raw.createdAt || 'Recent',
-                type: r.value.label,
-                status: (raw.workflowStatus || raw.status || 'draft').toLowerCase() === 'approved' ? 'completed' : 'in-progress',
-              });
-            });
-          }
-        }
-      });
-
-      setTabCounts(counts);
-      if (activities.length > 0) {
-        setRecentActivitiesList(activities.slice(0, 8));
-      }
-    });
-  }, [effectiveYear, effectiveDeptId, config.tabs]);
-
-  // Compute total records
-  const totalLiveRecords = Object.values(tabCounts).reduce((a, b) => a + b, 0);
+  const metrics = repositoryHealth[config.id] || { dataCompleteness: 72, evidenceCompleteness: 65, verificationPercent: 68, readinessScore: 68 };
 
   // Score card data
   const moduleScores = [
-    { label: 'Data Completeness', value: healthMetrics.dataCompleteness || (totalLiveRecords > 0 ? 85 : 0), color: 'text-indigo-600 bg-indigo-500/10' },
-    { label: 'Evidence Score', value: healthMetrics.evidenceCompleteness || (totalLiveRecords > 0 ? 70 : 0), color: 'text-violet-600 bg-violet-500/10' },
-    { label: 'Verification Score', value: healthMetrics.verificationPercent || (totalLiveRecords > 0 ? 75 : 0), color: 'text-emerald-600 bg-emerald-500/10' },
-    { label: 'Readiness Score', value: healthMetrics.readinessScore || (totalLiveRecords > 0 ? 80 : 0), color: 'text-rose-600 bg-rose-500/10' },
+    { label: 'Data Completeness', value: metrics.dataCompleteness, color: 'text-indigo-600 bg-indigo-500/10' },
+    { label: 'Evidence Score', value: metrics.evidenceCompleteness, color: 'text-violet-600 bg-violet-500/10' },
+    { label: 'Verification Score', value: metrics.verificationPercent, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Readiness Score', value: metrics.readinessScore, color: 'text-rose-600 bg-rose-500/10' },
   ];
 
-  // KPI data for dashboard (100% real live counts)
+  // KPI data for dashboard
   const kpiCards = [
-    { label: 'Academic Projects', value: String(tabCounts['academic-projects'] ?? 0), icon: FolderKanban, color: 'text-blue-600 bg-blue-500/10' },
-    { label: 'Internships', value: String(tabCounts['internships'] ?? 0), icon: Briefcase, color: 'text-violet-600 bg-violet-500/10' },
-    { label: 'Placements', value: String(tabCounts['placements'] ?? 0), icon: Target, color: 'text-emerald-600 bg-emerald-500/10' },
-    { label: 'Higher Studies', value: String(tabCounts['higher-studies'] ?? 0), icon: GraduationCap, color: 'text-amber-600 bg-amber-500/10' },
-    { label: 'Startups', value: String(tabCounts['entrepreneurship'] ?? 0), icon: Zap, color: 'text-orange-600 bg-orange-500/10' },
-    { label: 'Memberships', value: String(tabCounts['professional-memberships'] ?? 0), icon: Award, color: 'text-purple-600 bg-purple-500/10' },
-    { label: 'Competitions', value: String(tabCounts['competitions-hackathons'] ?? 0), icon: Trophy, color: 'text-pink-600 bg-pink-500/10' },
-    { label: 'MOOCs', value: String(tabCounts['moocs-swayam-nptel'] ?? 0), icon: Globe, color: 'text-cyan-600 bg-cyan-500/10' },
+    { label: 'Academic Projects', value: '45', icon: FolderKanban, color: 'text-blue-600 bg-blue-500/10' },
+    { label: 'Internships', value: '28', icon: Briefcase, color: 'text-violet-600 bg-violet-500/10' },
+    { label: 'Placements', value: '56', icon: Target, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Higher Studies', value: '18', icon: GraduationCap, color: 'text-amber-600 bg-amber-500/10' },
+    { label: 'Startups', value: '8', icon: Zap, color: 'text-orange-600 bg-orange-500/10' },
+    { label: 'Memberships', value: '35', icon: Award, color: 'text-purple-600 bg-purple-500/10' },
+    { label: 'Competitions', value: '25', icon: Trophy, color: 'text-pink-600 bg-pink-500/10' },
+    { label: 'MOOCs', value: '40', icon: Globe, color: 'text-cyan-600 bg-cyan-500/10' },
   ];
 
-  const healthData = config.tabs
-    .filter((t) => t.id !== 'dashboard' && t.id !== 'supporting-documents')
-    .map((t) => {
-      const count = tabCounts[t.id] ?? 0;
-      return {
-        module: t.label,
-        completion: count > 0 ? 100 : 0,
-        records: count,
-      };
-    });
+  const recentActivities = [
+    { title: '3 students placed at Microsoft', date: '2 days ago', type: 'Placement', status: 'completed' },
+    { title: 'CLD internship certificates uploaded', date: '3 days ago', type: 'Internship', status: 'completed' },
+    { title: 'IEEE Student Chapter event report submitted', date: '1 week ago', type: 'Chapter', status: 'completed' },
+    { title: 'NSS Blood Donation Camp conducted', date: '1 week ago', type: 'NSS', status: 'completed' },
+    { title: 'Smart India Hackathon team registration', date: '2 weeks ago', type: 'Competition', status: 'in-progress' },
+    { title: 'NPTEL Deep Learning course completed', date: '2 weeks ago', type: 'MOOC', status: 'completed' },
+    { title: 'Industrial Visit to DRDO planned', date: '3 weeks ago', type: 'Visit', status: 'in-progress' },
+    { title: 'Coding Club Hackathon 2024', date: '3 weeks ago', type: 'Club', status: 'completed' },
+  ];
+
+  const healthData = config.tabs.filter(t => t.id !== 'dashboard' && t.id !== 'supporting-documents').map(t => ({
+    module: t.label,
+    completion: Math.floor(Math.random() * 30) + 65,
+    records: Math.floor(Math.random() * 50) + 5,
+  }));
 
   // Render Dashboard
   const renderDashboard = () => (
@@ -260,17 +164,9 @@ export const StudentDevOutcomesModule = ({
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
-                            item.completion >= 90
-                              ? 'bg-green-500'
-                              : item.completion >= 75
-                              ? 'bg-blue-500'
-                              : item.completion >= 60
-                              ? 'bg-amber-500'
-                              : item.records > 0
-                              ? 'bg-blue-500'
-                              : 'bg-muted-foreground/30'
+                            item.completion >= 90 ? 'bg-green-500' : item.completion >= 75 ? 'bg-blue-500' : item.completion >= 60 ? 'bg-amber-500' : 'bg-red-500'
                           }`}
-                          style={{ width: `${Math.max(item.completion, item.records > 0 ? 100 : 5)}%` }}
+                          style={{ width: `${item.completion}%` }}
                         />
                       </div>
                     </div>
@@ -290,34 +186,24 @@ export const StudentDevOutcomesModule = ({
           <CardContent>
             <ScrollArea className="h-[380px] pr-2">
               <div className="space-y-3">
-                {recentActivitiesList.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-center gap-1.5">
-                    <Clock className="h-6 w-6 text-muted-foreground/40" />
-                    <p className="text-xs font-medium">No recent activities</p>
-                    <p className="text-[10px] text-muted-foreground/60">
-                      Activities will appear as records are created or updated.
-                    </p>
-                  </div>
-                ) : (
-                  recentActivitiesList.map((activity, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="mt-0.5">
-                        {activity.status === 'completed' ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <Clock className="h-4 w-4 text-amber-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{activity.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-xs py-0 px-1.5">{activity.type}</Badge>
-                          <span className="text-xs text-muted-foreground">{activity.date}</span>
-                        </div>
+                {recentActivities.map((activity, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="mt-0.5">
+                      {activity.status === 'completed' ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{activity.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-xs py-0 px-1.5">{activity.type}</Badge>
+                        <span className="text-xs text-muted-foreground">{activity.date}</span>
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           </CardContent>
@@ -327,19 +213,19 @@ export const StudentDevOutcomesModule = ({
       {/* Annual Summary */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Annual Summary ({effectiveYear})</CardTitle>
+          <CardTitle className="text-base">Annual Summary (2024-25)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             {[
-              { label: 'Projects Completed', value: tabCounts['academic-projects'] ?? 0, icon: FolderKanban, color: 'bg-blue-50 dark:bg-blue-950/20 text-blue-600' },
-              { label: 'Interns Done', value: tabCounts['internships'] ?? 0, icon: Briefcase, color: 'bg-violet-50 dark:bg-violet-950/20 text-violet-600' },
-              { label: 'Students Placed', value: tabCounts['placements'] ?? 0, icon: Target, color: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600' },
-              { label: 'Higher Studies', value: tabCounts['higher-studies'] ?? 0, icon: GraduationCap, color: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600' },
-              { label: 'Startups Launched', value: tabCounts['entrepreneurship'] ?? 0, icon: Zap, color: 'bg-orange-50 dark:bg-orange-950/20 text-orange-600' },
-              { label: 'Competitions Won', value: tabCounts['competitions-hackathons'] ?? 0, icon: Trophy, color: 'bg-pink-50 dark:bg-pink-950/20 text-pink-600' },
-              { label: 'MOOCs Completed', value: tabCounts['moocs-swayam-nptel'] ?? 0, icon: Globe, color: 'bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600' },
-              { label: 'Total Records', value: totalLiveRecords, icon: Award, color: 'bg-purple-50 dark:bg-purple-950/20 text-purple-600' },
+              { label: 'Projects Completed', value: '42', icon: FolderKanban, color: 'bg-blue-50 dark:bg-blue-950/20 text-blue-600' },
+              { label: 'Interns Done', value: '28', icon: Briefcase, color: 'bg-violet-50 dark:bg-violet-950/20 text-violet-600' },
+              { label: 'Students Placed', value: '56', icon: Target, color: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600' },
+              { label: 'Higher Studies', value: '18', icon: GraduationCap, color: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600' },
+              { label: 'Startups Launched', value: '3', icon: Zap, color: 'bg-orange-50 dark:bg-orange-950/20 text-orange-600' },
+              { label: 'Competitions Won', value: '15', icon: Trophy, color: 'bg-pink-50 dark:bg-pink-950/20 text-pink-600' },
+              { label: 'MOOCs Completed', value: '36', icon: Globe, color: 'bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600' },
+              { label: 'Total Certifications', value: '126', icon: Award, color: 'bg-purple-50 dark:bg-purple-950/20 text-purple-600' },
             ].map((stat) => (
               <div key={stat.label} className="text-center p-3 rounded-lg border border-border/50">
                 <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${stat.color.split(' ').slice(2).join(' ')} ${stat.color.split(' ')[0]} ${stat.color.split(' ')[1]} mb-1`}>
@@ -359,26 +245,29 @@ export const StudentDevOutcomesModule = ({
   const renderSupportingDocs = () => {
     const totalDocs = evidenceDocuments.length;
     const categories = [
-      { name: 'Project Documents', count: 0, icon: FolderKanban },
-      { name: 'Internship Records', count: 0, icon: Briefcase },
-      { name: 'Placement Offers', count: 0, icon: Target },
-      { name: 'Higher Studies Acceptance', count: 0, icon: GraduationCap },
-      { name: 'Startup Certificates', count: 0, icon: Zap },
-      { name: 'Membership Cards', count: 0, icon: Award },
-      { name: 'Competition Certificates', count: 0, icon: Trophy },
-      { name: 'MOOC Certificates', count: 0, icon: Globe },
-      { name: 'Activity Reports', count: 0, icon: Calendar },
+      { name: 'Project Documents', count: 8, icon: FolderKanban },
+      { name: 'Internship Records', count: 12, icon: Briefcase },
+      { name: 'Placement Offers', count: 15, icon: Target },
+      { name: 'Higher Study Admissions', count: 6, icon: GraduationCap },
+      { name: 'Startup Registrations', count: 3, icon: Zap },
+      { name: 'Membership Certificates', count: 20, icon: Award },
+      { name: 'Competition Certificates', count: 18, icon: Trophy },
+      { name: 'MOOC Certificates', count: 25, icon: Globe },
+      { name: 'Event Reports', count: 30, icon: Calendar },
+      { name: 'Workshop Materials', count: 22, icon: Presentation },
+      { name: 'Visit Reports', count: 10, icon: Building2 },
+      { name: 'NSS/NCC Records', count: 15, icon: Shield },
     ];
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold">Supporting Documents Repository</h3>
-            <p className="text-xs text-muted-foreground">Centralized evidence documents for student holistic development</p>
+            <h3 className="text-lg font-semibold">Supporting Documents Repository</h3>
+            <p className="text-sm text-muted-foreground">Central repository for all student development evidence documents</p>
           </div>
-          <Button size="sm" className="gap-1.5" onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="h-3.5 w-3.5" />
+          <Button className="gap-2" onClick={() => setUploadDialogOpen(true)}>
+            <Upload className="h-4 w-4" />
             Upload Document
           </Button>
         </div>
@@ -440,52 +329,38 @@ export const StudentDevOutcomesModule = ({
                     <th className="text-left p-3 font-medium">Uploaded By</th>
                     <th className="text-left p-3 font-medium">Date</th>
                     <th className="text-left p-3 font-medium">Status</th>
-                    <th className="text-right p-3 font-medium">Actions</th>
+                    <th className="text-left p-3 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {evidenceDocuments.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <FileText className="h-6 w-6 text-muted-foreground/30" />
-                          <p className="text-xs font-medium">No supporting documents uploaded</p>
-                          <p className="text-[10px] text-muted-foreground/60">
-                            Use the &quot;Upload Document&quot; button to upload student development evidence documents.
-                          </p>
+                  {evidenceDocuments.slice(0, 5).map((doc) => (
+                    <tr key={doc.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium truncate max-w-[180px]">{doc.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3"><Badge variant="outline" className="text-[9px]">{doc.category}</Badge></td>
+                      <td className="p-3 text-muted-foreground">{doc.version}</td>
+                      <td className="p-3 text-muted-foreground">{doc.uploadedBy}</td>
+                      <td className="p-3 text-muted-foreground">{doc.uploadedDate}</td>
+                      <td className="p-3">
+                        <Badge variant="secondary" className={cn('text-[9px]',
+                          doc.status === 'verified' && 'bg-emerald-500/10 text-emerald-600',
+                          doc.status === 'pending' && 'bg-amber-500/10 text-amber-600',
+                          doc.status === 'rejected' && 'bg-red-500/10 text-red-600',
+                          doc.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
+                        )}>{doc.status}</Badge>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-6 w-6"><Eye className="h-3 w-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6"><DownloadCloud className="h-3 w-3" /></Button>
                         </div>
                       </td>
                     </tr>
-                  ) : (
-                    evidenceDocuments.slice(0, 5).map((doc) => (
-                      <tr key={doc.id} className="border-b hover:bg-muted/50">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs font-medium truncate max-w-[180px]">{doc.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-3"><Badge variant="outline" className="text-[9px]">{doc.category}</Badge></td>
-                        <td className="p-3 text-muted-foreground">{doc.version}</td>
-                        <td className="p-3 text-muted-foreground">{doc.uploadedBy}</td>
-                        <td className="p-3 text-muted-foreground">{doc.uploadedDate}</td>
-                        <td className="p-3">
-                          <Badge variant="secondary" className={cn('text-[9px]',
-                            doc.status === 'verified' && 'bg-emerald-500/10 text-emerald-600',
-                            doc.status === 'pending' && 'bg-amber-500/10 text-amber-600',
-                            doc.status === 'rejected' && 'bg-red-500/10 text-red-600',
-                            doc.status === 'uploaded' && 'bg-blue-500/10 text-blue-600',
-                          )}>{doc.status}</Badge>
-                        </td>
-                        <td className="p-3 text-right">
-                          <div className="flex items-center justify-end gap-0.5">
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><Eye className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><DownloadCloud className="h-3 w-3" /></Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -558,13 +433,7 @@ export const StudentDevOutcomesModule = ({
             ) : tab.id === 'supporting-documents' ? (
               renderSupportingDocs()
             ) : (
-              <RepositoryTabContent
-                tabConfig={tab}
-                repositoryId="student-dev-outcomes"
-                academicYear={effectiveYear}
-                departmentId={effectiveDeptId}
-                departmentName={effectiveDeptName}
-              />
+              <RepositoryTabContent tabConfig={tab} />
             )}
           </TabsContent>
         ))}

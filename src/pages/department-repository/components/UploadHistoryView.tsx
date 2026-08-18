@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { uploadHistory } from '../repository-configs';
+import {
+  infrastructureRepositoryService,
+  UploadHistoryData,
+  UploadHistoryItem,
+} from '@/services/infrastructure-repository.service';
 import {
   Search,
   Upload,
@@ -28,6 +34,10 @@ import {
   XCircle,
   Filter,
   FileSpreadsheet,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 
 const workflowStatusLabels: Record<string, { label: string; color: string }> = {
@@ -41,18 +51,123 @@ const workflowStatusLabels: Record<string, { label: string; color: string }> = {
   rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600' },
 };
 
-export const UploadHistoryView = () => {
+interface UploadHistoryViewProps {
+  /** When true, the view reads the Infrastructure Coordinator backend instead of mock data. */
+  liveMode?: boolean;
+}
+
+const PAGE_SIZE = 10;
+
+export const UploadHistoryView = ({ liveMode }: UploadHistoryViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [repoFilter, setRepoFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredHistory = uploadHistory.filter(record => {
-    const matchesSearch = record.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.tab.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRepo = repoFilter === 'all' || record.repository === repoFilter;
-    const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
-    return matchesSearch && matchesRepo && matchesStatus;
-  });
+  // ---- live (backend) state ----
+  const [liveData, setLiveData] = useState<UploadHistoryData | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [livePage, setLivePage] = useState(0);
+  const livePageRef = useRef(0);
+  const searchTimer = useRef<number | undefined>(undefined);
+
+  const fetchHistory = useCallback(async (search?: string, page?: number) => {
+    if (!liveMode) return;
+    const targetPage = page ?? livePageRef.current;
+    setLiveLoading(true);
+    setLiveError(null);
+    try {
+      const res = await infrastructureRepositoryService.getUploadHistory({
+        repository: repoFilter === 'all' ? undefined : repoFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        search: search || undefined,
+        page: targetPage,
+        size: PAGE_SIZE,
+      });
+      setLiveData(res);
+      setLivePage(targetPage);
+      livePageRef.current = targetPage;
+    } catch (e) {
+      setLiveError(e instanceof Error ? e.message : 'Failed to load upload history');
+    } finally {
+      setLiveLoading(false);
+    }
+  }, [liveMode, repoFilter, statusFilter]);
+
+  useEffect(() => {
+    if (!liveMode) return;
+    livePageRef.current = 0;
+    fetchHistory('', 0);
+    return () => {
+      if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    };
+  }, [liveMode, repoFilter, statusFilter, fetchHistory]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (!liveMode) return;
+    if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => {
+      livePageRef.current = 0;
+      fetchHistory(value, 0);
+    }, 400);
+  };
+
+  const liveRecords = liveData?.content || [];
+
+  const filteredHistory = liveMode
+    ? liveRecords
+    : uploadHistory.filter(record => {
+        const matchesSearch = record.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.tab.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesRepo = repoFilter === 'all' || record.repository === repoFilter;
+        const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
+        return matchesSearch && matchesRepo && matchesStatus;
+      });
+
+  const summary = liveMode
+    ? {
+        totalUploads: liveData?.summary?.totalUploads ?? 0,
+        approved: liveData?.summary?.approved ?? 0,
+        pending: liveData?.summary?.pending ?? 0,
+        rejected: liveData?.summary?.rejected ?? 0,
+      }
+    : {
+        totalUploads: uploadHistory.length,
+        approved: uploadHistory.filter(u => u.status === 'approved').length,
+        pending: uploadHistory.filter(u => u.status === 'pending').length,
+        rejected: uploadHistory.filter(u => u.status === 'rejected').length,
+      };
+
+  const renderRow = (record: UploadHistoryItem) => {
+    const wfStatus = workflowStatusLabels[record.workflowStatus] || workflowStatusLabels.draft;
+    return (
+      <TableRow key={record.id} className="hover:bg-muted/50">
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            <span className="text-xs font-medium truncate max-w-[180px]">{record.fileName}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="outline" className="text-[9px] capitalize">{record.repository}</Badge>
+        </TableCell>
+        <TableCell className="text-xs text-muted-foreground">{record.tab}</TableCell>
+        <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
+        <TableCell className="text-xs font-medium">{record.recordsCount}</TableCell>
+        <TableCell className="text-xs">
+          <span className="text-emerald-600">{record.validRecords}</span>
+          {' / '}
+          <span className="text-red-600">{record.invalidRecords}</span>
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary" className={cn('text-[9px]', wfStatus.color)}>
+            {wfStatus.label}
+          </Badge>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -66,10 +181,10 @@ export const UploadHistoryView = () => {
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Total Uploads', value: uploadHistory.length, icon: Upload, color: 'text-indigo-600 bg-indigo-500/10' },
-          { label: 'Approved', value: uploadHistory.filter(u => u.status === 'approved').length, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
-          { label: 'Pending', value: uploadHistory.filter(u => u.status === 'pending').length, icon: Clock, color: 'text-amber-600 bg-amber-500/10' },
-          { label: 'Rejected', value: uploadHistory.filter(u => u.status === 'rejected').length, icon: XCircle, color: 'text-red-600 bg-red-500/10' },
+          { label: 'Total Uploads', value: summary.totalUploads, icon: Upload, color: 'text-indigo-600 bg-indigo-500/10' },
+          { label: 'Approved', value: summary.approved, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-500/10' },
+          { label: 'Pending', value: summary.pending, icon: Clock, color: 'text-amber-600 bg-amber-500/10' },
+          { label: 'Rejected', value: summary.rejected, icon: XCircle, color: 'text-red-600 bg-red-500/10' },
         ].map((stat) => {
           const Icon = stat.icon;
           return (
@@ -90,6 +205,13 @@ export const UploadHistoryView = () => {
         })}
       </div>
 
+      {liveMode && liveError && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+          <p className="text-xs text-red-600">{liveError}</p>
+        </div>
+      )}
+
       {/* Upload History Table */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
@@ -103,7 +225,7 @@ export const UploadHistoryView = () => {
               <Input
                 placeholder="Search uploads..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
@@ -114,10 +236,21 @@ export const UploadHistoryView = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Repositories</SelectItem>
-                <SelectItem value="academic">Academic</SelectItem>
-                <SelectItem value="faculty">Faculty</SelectItem>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
+                {liveMode ? (
+                  <>
+                    <SelectItem value="infrastructure">Infrastructure</SelectItem>
+                    <SelectItem value="green-campus">Green Campus</SelectItem>
+                    <SelectItem value="safety-security">Safety & Security</SelectItem>
+                    <SelectItem value="utilities">Utilities</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="academic">Academic</SelectItem>
+                    <SelectItem value="faculty">Faculty</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="research">Research</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -133,52 +266,64 @@ export const UploadHistoryView = () => {
             </Select>
           </div>
 
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="text-[10px]">File Name</TableHead>
-                  <TableHead className="text-[10px]">Repository</TableHead>
-                  <TableHead className="text-[10px]">Tab</TableHead>
-                  <TableHead className="text-[10px]">Uploaded</TableHead>
-                  <TableHead className="text-[10px]">Records</TableHead>
-                  <TableHead className="text-[10px]">Valid / Invalid</TableHead>
-                  <TableHead className="text-[10px]">Workflow Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredHistory.map((record) => {
-                  const wfStatus = workflowStatusLabels[record.workflowStatus] || workflowStatusLabels.draft;
-                  return (
-                    <TableRow key={record.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                          <span className="text-xs font-medium truncate max-w-[180px]">{record.fileName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[9px] capitalize">{record.repository}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{record.tab}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{record.uploadedAt}</TableCell>
-                      <TableCell className="text-xs font-medium">{record.recordsCount}</TableCell>
-                      <TableCell className="text-xs">
-                        <span className="text-emerald-600">{record.validRecords}</span>
-                        {' / '}
-                        <span className="text-red-600">{record.invalidRecords}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={cn('text-[9px]', wfStatus.color)}>
-                          {wfStatus.label}
-                        </Badge>
+          {liveMode && liveLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs">Loading upload history...</span>
+            </div>
+          ) : (
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-[10px]">File Name</TableHead>
+                    <TableHead className="text-[10px]">Repository</TableHead>
+                    <TableHead className="text-[10px]">Tab</TableHead>
+                    <TableHead className="text-[10px]">Uploaded</TableHead>
+                    <TableHead className="text-[10px]">Records</TableHead>
+                    <TableHead className="text-[10px]">Valid / Invalid</TableHead>
+                    <TableHead className="text-[10px]">Workflow Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <FileSpreadsheet className="h-8 w-8 mx-auto opacity-40 mb-2" />
+                        <p className="text-xs">No uploads found.</p>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                  ) : (
+                    filteredHistory.map(renderRow)
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {liveMode && (liveData?.totalPages ?? 0) > 1 && (
+            <div className="flex items-center justify-between pt-3">
+              <p className="text-[10px] text-muted-foreground">
+                Page {livePage + 1} of {liveData?.totalPages ?? 1} • {liveData?.totalElements ?? 0} uploads
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline" size="icon" className="h-6 w-6"
+                  disabled={livePage === 0}
+                  onClick={() => fetchHistory(searchQuery || undefined, livePageRef.current - 1)}
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="outline" size="icon" className="h-6 w-6"
+                  disabled={livePage >= (liveData?.totalPages ?? 1) - 1}
+                  onClick={() => fetchHistory(searchQuery || undefined, livePageRef.current + 1)}
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

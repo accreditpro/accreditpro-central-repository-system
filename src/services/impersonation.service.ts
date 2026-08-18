@@ -18,13 +18,9 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.INFRASTRUCTURE_COORDINATOR]: 'Infrastructure Coordinator',
   [UserRole.FINANCE_COORDINATOR]: 'Finance Coordinator',
   [UserRole.TPO_COORDINATOR]: 'TPO Coordinator',
-  [UserRole.PLACEMENT_OFFICER]: 'Placement Officer',
   [UserRole.STUDENT_DEVELOPMENT_COORDINATOR]: 'Student Development Coordinator',
   [UserRole.EXAMINATION_OFFICER]: 'Examination Officer',
   [UserRole.HEAD_OF_DEPARTMENT]: 'Head of Department',
-  [UserRole.HOD]: 'Head of Department',
-  [UserRole.RESEARCH_COORDINATOR]: 'Research Coordinator',
-  [UserRole.COMPLIANCE_OFFICER]: 'Compliance Officer',
 };
 
 export const getRoleLabel = (role?: UserRole): string =>

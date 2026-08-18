@@ -1,25 +1,12 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Award, TrendingUp } from 'lucide-react';
-import {
-  nbaDeptScores,
-  naacDeptScores,
-  nirfDeptScores,
-  NBA_CRITERIA,
-  NAAC_CRITERIA,
-  NIRF_PARAMETERS,
-  NIRF_SHORT,
-  naacCriteria,
-  nirfParameters,
-  iqacKpis,
-} from '../iqac-data';
+import { Trophy, Award, TrendingUp, Loader2 } from 'lucide-react';
+import { iqacService } from '@/services/iqac.service';
+import type { AccreditationDto } from '@/services/iqac.service';
 import { ReadinessBar, StatCard, StatusBadge, statusOf, scoreTone } from './common';
 import { cn } from '@/lib/utils';
-
-function criterionAvg(matrix: { scores: number[] }[], index: number): number {
-  return Math.round(matrix.reduce((a, d) => a + d.scores[index], 0) / matrix.length);
-}
 
 function CriterionBars({
   rows,
@@ -142,6 +129,53 @@ function FrameworkHeader({
 }
 
 export function AccreditationReadiness() {
+  const [data, setData] = useState<AccreditationDto | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    iqacService
+      .getAccreditation()
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading accreditation readiness…
+      </div>
+    );
+  }
+
+  const nba = data.nba;
+  const naac = data.naac;
+  const nirf = data.nirf;
+
+  const nbaCriteria = nba.criteria ?? [];
+  const nbaDeptScores = nba.departments ?? [];
+  const naacCriteria = naac.criteria ?? [];
+  const naacDeptScores = naac.departments ?? [];
+  const nirfParameters = nirf.parameters ?? [];
+  const nirfDeptScores = nirf.departments ?? [];
+
+  const NBA_CRITERIA = nbaCriteria.map((c) => c.name);
+  const NAAC_CRITERIA = naacCriteria.map((c) => c.name);
+  const NIRF_PARAMETERS = nirfParameters.map((p) => p.name);
+  const NIRF_SHORT = nirfParameters.map((p) => p.id.toUpperCase());
+
+  const bestNbaCriterion = [...nbaCriteria].sort((a, b) => b.value - a.value)[0];
+  const bestNbaDept = [...nbaDeptScores].sort((a, b) => b.overall - a.overall)[0];
+  const bestNirf = [...nirfParameters].sort((a, b) => b.score - a.score)[0];
+  const weakestNirf = [...nirfParameters].sort((a, b) => a.score - b.score)[0];
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="nba">
@@ -156,21 +190,18 @@ export function AccreditationReadiness() {
           <FrameworkHeader
             icon={Trophy}
             title="NBA Readiness"
-            overall={iqacKpis.nbaReadiness}
+            overall={nba.overall}
             chip="bg-amber-500/10 text-amber-600"
             sub="Criterion-wise, department-wise and overall readiness for NBA accreditation"
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={Trophy} label="Overall Readiness" value={`${iqacKpis.nbaReadiness}%`} tone="text-amber-600" iconBg="bg-amber-50 dark:bg-amber-950/40" />
-            <StatCard icon={Trophy} label="Best Criterion" value={`C${(() => {
-              const avgs = NBA_CRITERIA.map((_, ci) => criterionAvg(nbaDeptScores, ci));
-              return avgs.indexOf(Math.max(...avgs)) + 1;
-            })()}`} sub="Highest average" tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
-            <StatCard icon={Trophy} label="Best Department" value={nbaDeptScores.reduce((a, b) => (a.overall > b.overall ? a : b)).dept} sub="Highest overall" tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
+            <StatCard icon={Trophy} label="Overall Readiness" value={`${nba.overall}%`} tone="text-amber-600" iconBg="bg-amber-50 dark:bg-amber-950/40" />
+            <StatCard icon={Trophy} label="Best Criterion" value={bestNbaCriterion?.name ?? '—'} sub={`${bestNbaCriterion?.value ?? 0}%`} tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
+            <StatCard icon={Trophy} label="Best Department" value={bestNbaDept?.dept ?? '—'} sub="Highest overall" tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
             <StatCard icon={Trophy} label="Departments at Risk" value={`${nbaDeptScores.filter((d) => d.overall < 70).length}`} sub="Below 70%" tone="text-red-600" iconBg="bg-red-50 dark:bg-red-950/40" />
           </div>
           <CriterionBars
-            rows={NBA_CRITERIA.map((name, ci) => ({ name, value: criterionAvg(nbaDeptScores, ci), weight: [60, 80, 120, 120, 100, 80, 40][ci] }))}
+            rows={nbaCriteria.map((c) => ({ name: c.name, value: c.value, weight: c.weight }))}
             weightLabel="Weight"
           />
           <DeptMatrix rows={nbaDeptScores} criteria={NBA_CRITERIA} title="Department-wise Readiness" />
@@ -181,23 +212,23 @@ export function AccreditationReadiness() {
           <FrameworkHeader
             icon={Award}
             title="NAAC Readiness"
-            overall={iqacKpis.naacReadiness}
+            overall={naac.overall}
             chip="bg-purple-500/10 text-purple-600"
             sub="Criterion-wise, department-wise and institution readiness for NAAC accreditation"
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={Award} label="Overall Readiness" value={`${iqacKpis.naacReadiness}%`} tone="text-purple-600" iconBg="bg-purple-50 dark:bg-purple-950/40" />
-            <StatCard icon={Award} label="Criteria Ready" value={`${naacCriteria.filter((c) => c.completion >= 85).length}/7`} sub="At or above 85%" tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
+            <StatCard icon={Award} label="Overall Readiness" value={`${naac.overall}%`} tone="text-purple-600" iconBg="bg-purple-50 dark:bg-purple-950/40" />
+            <StatCard icon={Award} label="Criteria Ready" value={`${naacCriteria.filter((c) => c.completion >= 85).length}/${naacCriteria.length}`} sub="At or above 85%" tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
             <StatCard icon={Award} label="Projected Grade" value="A" sub="CGPA 3.25–3.50" tone="text-purple-600" iconBg="bg-purple-50 dark:bg-purple-950/40" />
             <StatCard icon={Award} label="Departments at Risk" value={`${naacDeptScores.filter((d) => d.overall < 70).length}`} sub="Below 70%" tone="text-red-600" iconBg="bg-red-50 dark:bg-red-950/40" />
           </div>
           <CriterionBars
-            rows={NAAC_CRITERIA.map((name, ci) => ({ name, value: criterionAvg(naacDeptScores, ci), weight: [150, 200, 250, 100, 100, 100, 100][ci] }))}
+            rows={naacCriteria.map((c) => ({ name: c.name, value: c.completion, weight: c.weightage }))}
             weightLabel="Weight"
           />
           <DeptMatrix rows={naacDeptScores} criteria={NAAC_CRITERIA} title="Department-wise Readiness" />
 
-          {/* Institution readiness from config */}
+          {/* Institution readiness from the backend criteria */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Institution-wise Criterion Readiness</CardTitle>
@@ -224,23 +255,23 @@ export function AccreditationReadiness() {
           <FrameworkHeader
             icon={TrendingUp}
             title="NIRF Readiness"
-            overall={iqacKpis.nirfReadiness}
+            overall={nirf.overall}
             chip="bg-emerald-500/10 text-emerald-600"
             sub="Category-wise readiness — Teaching, Learning and Resources (TLR), Research and Professional Practice (RP), Graduation Outcomes (GO), Outreach and Inclusivity (OI), Perception (PR)"
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={TrendingUp} label="Overall Score" value={`${iqacKpis.nirfReadiness}%`} tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
+            <StatCard icon={TrendingUp} label="Overall Score" value={`${nirf.overall}%`} tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
             <StatCard icon={TrendingUp} label="Projected Band" value="101–150" sub="Engineering category" tone="text-blue-600" iconBg="bg-blue-50 dark:bg-blue-950/40" />
-            <StatCard icon={TrendingUp} label="Best Category" value="GO" sub={`${criterionAvg(nirfDeptScores, 2)}%`} tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
-            <StatCard icon={TrendingUp} label="Weakest Category" value="Perception" sub={`${criterionAvg(nirfDeptScores, 4)}%`} tone="text-red-600" iconBg="bg-red-50 dark:bg-red-950/40" />
+            <StatCard icon={TrendingUp} label="Best Category" value={bestNirf?.id ?? '—'} sub={`${bestNirf?.score ?? 0}%`} tone="text-emerald-600" iconBg="bg-emerald-50 dark:bg-emerald-950/40" />
+            <StatCard icon={TrendingUp} label="Weakest Category" value={weakestNirf?.name ?? '—'} sub={`${weakestNirf?.score ?? 0}%`} tone="text-red-600" iconBg="bg-red-50 dark:bg-red-950/40" />
           </div>
           <CriterionBars
-            rows={NIRF_PARAMETERS.map((name, ci) => ({ name, value: criterionAvg(nirfDeptScores, ci), weight: [30, 30, 20, 10, 10][ci] }))}
+            rows={nirfParameters.map((p) => ({ name: p.name, value: p.score, weight: p.weightage }))}
             weightLabel="Weight %"
           />
           <DeptMatrix rows={nirfDeptScores} criteria={NIRF_PARAMETERS} headers={NIRF_SHORT} title="Department-wise Readiness" />
 
-          {/* Config-based NIRF parameters */}
+          {/* Backend NIRF parameters */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">NIRF Parameter Scores</CardTitle>

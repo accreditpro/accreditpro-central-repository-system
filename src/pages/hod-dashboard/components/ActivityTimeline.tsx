@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,22 +14,67 @@ import {
   ShieldCheck,
   Send,
   Filter,
+  Loader2,
 } from 'lucide-react';
-import { getHODYearData } from '../hod-configs';
+import { hodService } from '@/services/hod.service';
+import { ActivityItem } from '../hod-configs';
+
+const REPO_FILTERS = ['Academic', 'Course', 'Faculty', 'Student', 'Research', 'Student Dev', 'Infrastructure', 'Alumni'];
 
 export function ActivityTimeline({ academicYear }: { academicYear: string }) {
-  const activityTimelineData = getHODYearData(academicYear).activities;
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [repositoryFilter, setRepositoryFilter] = useState<string>('all');
 
-  const filteredData = activityTimelineData.filter((item) => {
-    const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'all' || item.type === typeFilter;
-    const matchesRepo = repositoryFilter === 'all' || item.repository === repositoryFilter;
-    return matchesSearch && matchesType && matchesRepo;
-  });
+  const loadPage = useCallback(
+    (targetPage: number, reset: boolean) => {
+      setLoading(true);
+      hodService
+        .getActivities({
+          academicYear,
+          type: typeFilter === 'all' ? undefined : typeFilter,
+          repository: repositoryFilter === 'all' ? undefined : repositoryFilter,
+          search: searchTerm || undefined,
+          page: targetPage,
+          size: 20,
+          sortBy: 'timestamp',
+          sortDirection: 'DESC',
+        })
+        .then((data) => {
+          setActivities((prev) => (reset ? (data.content as ActivityItem[]) : [...prev, ...(data.content as ActivityItem[])]));
+          setHasMore(!data.last && data.content.length > 0);
+        })
+        .catch(() => {
+          setActivities((prev) => (reset ? [] : prev));
+          setHasMore(false);
+        })
+        .finally(() => setLoading(false));
+    },
+    [academicYear, typeFilter, repositoryFilter, searchTerm]
+  );
+
+  // Reset + load page 0 whenever the academic year or a filter changes.
+  useEffect(() => {
+    setPage(0);
+    loadPage(0, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [academicYear, typeFilter, repositoryFilter]);
+
+  // Debounce search input.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(0);
+      loadPage(0, true);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  const filteredData = activities;
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -67,6 +112,12 @@ export function ActivityTimeline({ academicYear }: { academicYear: string }) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
+  };
+
+  const loadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    loadPage(next, false);
   };
 
   return (
@@ -107,11 +158,9 @@ export function ActivityTimeline({ academicYear }: { academicYear: string }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Repositories</SelectItem>
-                  <SelectItem value="Academic">Academic</SelectItem>
-                  <SelectItem value="Faculty">Faculty</SelectItem>
-                  <SelectItem value="Student">Student</SelectItem>
-                  <SelectItem value="Research">Research</SelectItem>
-                  <SelectItem value="Alumni">Alumni</SelectItem>
+                  {REPO_FILTERS.map((repo) => (
+                    <SelectItem key={repo} value={repo}>{repo}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -128,53 +177,62 @@ export function ActivityTimeline({ academicYear }: { academicYear: string }) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
+          {loading && filteredData.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading activities...
+            </div>
+          ) : (
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
 
-            <div className="space-y-4">
-              {filteredData.map((activity) => (
-                <div key={activity.id} className="relative flex items-start gap-4 pl-2">
-                  {/* Timeline dot */}
-                  <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border-2 border-border">
-                    {getActivityIcon(activity.type)}
-                  </div>
+              <div className="space-y-4">
+                {filteredData.map((activity) => (
+                  <div key={activity.id} className="relative flex items-start gap-4 pl-2">
+                    {/* Timeline dot */}
+                    <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border-2 border-border">
+                      {getActivityIcon(activity.type)}
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 pb-4">
-                    <div className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="text-sm">{activity.description}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs font-medium">{activity.user}</span>
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <span className="text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</span>
+                    {/* Content */}
+                    <div className="flex-1 pb-4">
+                      <div className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm">{activity.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs font-medium">{activity.user}</span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge className={`text-xs ${getActivityColor(activity.type)}`}>
-                            {activity.type}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">{activity.repository}</Badge>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge className={`text-xs ${getActivityColor(activity.type)}`}>
+                              {activity.type}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">{activity.repository}</Badge>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {filteredData.length > 0 && hasMore && (
+                <div className="flex justify-center mt-4">
+                  <Button variant="outline" size="sm" onClick={loadMore} disabled={loading}>
+                    {loading ? 'Loading...' : 'Load More Activities'}
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          {filteredData.length > 0 && (
-            <div className="flex justify-center mt-4">
-              <Button variant="outline" size="sm">Load More Activities</Button>
-            </div>
-          )}
-
-          {filteredData.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">No activities found matching your filters.</p>
+              {filteredData.length === 0 && !loading && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">No activities found matching your filters.</p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

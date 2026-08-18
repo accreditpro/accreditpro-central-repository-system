@@ -1,17 +1,50 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ShieldCheck, CheckCircle2, MessageSquareWarning, AlertTriangle, ChevronRight, History } from 'lucide-react';
-import { useVerificationDocuments } from './verification/useVerificationDocuments';
-import { summarizeVerification } from '../verification-data';
+import { ShieldCheck, CheckCircle2, MessageSquareWarning, AlertTriangle, ChevronRight, History, Loader2 } from 'lucide-react';
+import { useAppSelector } from '@/store';
+import { iqacService } from '@/services/iqac.service';
+import type { EvidenceObservationDto, VerificationSummaryDto } from '@/services/iqac.service';
 import { PRIORITY_META } from './common';
 
 export function VerificationOverview() {
   const navigate = useNavigate();
-  const { documents, observations } = useVerificationDocuments();
-  const summary = summarizeVerification(documents, observations);
+  const selectedAcademicYear = useAppSelector((state) => state.ui.selectedAcademicYear);
+  const [summary, setSummary] = useState<VerificationSummaryDto | null>(null);
+  const [observations, setObservations] = useState<EvidenceObservationDto[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      iqacService.getVerificationSummary(selectedAcademicYear),
+      iqacService.getVerificationObservations(),
+    ])
+      .then(([s, obs]) => {
+        if (cancelled) return;
+        setSummary(s);
+        setObservations(obs);
+      })
+      .catch(() => {
+        if (!cancelled) setSummary(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAcademicYear]);
+
+  if (!summary) {
+    return (
+      <Card>
+        <CardContent className="p-8 flex items-center justify-center text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          Loading verification overview…
+        </CardContent>
+      </Card>
+    );
+  }
 
   const cards = [
     { label: 'Pending Verification', value: summary.approvedNotVerified, icon: ShieldCheck, cls: 'text-blue-600 bg-blue-500/10', link: 'pending-verification' },
@@ -23,14 +56,10 @@ export function VerificationOverview() {
   const recentActivity = [
     ...observations
       .filter((o) => o.status === 'verified')
-      .map((o) => ({ text: `Observation verified — ${o.documentName}`, type: 'verified' as const, at: o.verifiedAt ?? o.raisedAt })),
+      .map((o) => ({ text: `Observation verified — ${o.documentName}`, type: 'verified' as const, at: o.verifiedAt ?? o.raisedAt ?? '' })),
     ...observations
       .filter((o) => o.status === 'resolved')
-      .map((o) => ({ text: `Department resolved — ${o.documentName}`, type: 'resolved' as const, at: o.respondedAt ?? o.raisedAt })),
-    ...documents
-      .filter((d) => d.iqacStatus === 'verified')
-      .slice(0, 4)
-      .map((d) => ({ text: `Verified — ${d.name} (${d.department})`, type: 'verified' as const, at: d.verifiedAt ?? '' })),
+      .map((o) => ({ text: `Department resolved — ${o.documentName}`, type: 'resolved' as const, at: o.respondedAt ?? o.raisedAt ?? '' })),
   ]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 6);

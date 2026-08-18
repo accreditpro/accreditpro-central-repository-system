@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Loader2 } from 'lucide-react';
+import { Plus, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -43,11 +43,8 @@ import { ImpersonateDialog } from './components/ImpersonateDialog';
 
 export const InstitutionsPage = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [pagination, setPagination] = useState<PaginationConfig>({
     page: 1,
     pageSize: 10,
@@ -113,48 +110,6 @@ export const InstitutionsPage = () => {
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, [filters]);
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await institutionService.exportInstitutions({
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        search: filters.search || undefined,
-        status: filters.status !== 'all' ? filters.status : undefined,
-        category: filters.category !== 'all' ? filters.category : undefined,
-        state: filters.state !== 'all' ? filters.state : undefined,
-        repositoryCompletion: filters.repositoryCompletion !== 'all' ? filters.repositoryCompletion : undefined,
-        sortBy: sort?.key || undefined,
-        sortDirection: sort?.direction || undefined,
-      });
-      toast.success('Institutions exported successfully');
-    } catch {
-      toast.error('Failed to export institutions');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      toast.error('Please upload a valid .csv file');
-      return;
-    }
-    setImporting(true);
-    try {
-      const res = await institutionService.uploadInstitutionCSV(file);
-      toast.success(res?.message || 'Institutions imported successfully');
-      fetchInstitutions();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to import institutions CSV');
-    } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   const handleStatusChange = async (institution: Institution, newStatus: InstitutionStatus) => {
     try {
@@ -388,32 +343,13 @@ export const InstitutionsPage = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept=".csv"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 h-8 text-xs"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importing}
-            >
-              {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-              {importing ? 'Importing...' : 'Import'}
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <Upload className="h-3.5 w-3.5" />
+              Import
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 h-8 text-xs"
-              onClick={handleExport}
-              disabled={exporting}
-            >
-              {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              {exporting ? 'Exporting...' : 'Export'}
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <Download className="h-3.5 w-3.5" />
+              Export
             </Button>
             <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => navigate('/admin/institutions/create')}>
               <Plus className="h-3.5 w-3.5" />

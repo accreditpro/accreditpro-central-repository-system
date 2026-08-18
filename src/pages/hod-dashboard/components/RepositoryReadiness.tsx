@@ -1,16 +1,58 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { getHODYearData, yearlyTrends } from '../hod-configs';
-import { TrendingUp, Target, ShieldCheck, FileCheck } from 'lucide-react';
+import { hodService, HodReadinessDto } from '@/services/hod.service';
+import { TrendingUp, Target, ShieldCheck, FileCheck, Loader2, AlertCircle } from 'lucide-react';
 
 export function RepositoryReadiness({ academicYear }: { academicYear: string }) {
-  const readinessData = getHODYearData(academicYear).readiness;
+  const [data, setData] = useState<HodReadinessDto | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    hodService
+      .getReadiness(academicYear)
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading repository readiness...
+      </div>
+    );
+  }
+
+  if (!data || data.readiness.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
+        Readiness data unavailable for this academic year.
+      </div>
+    );
+  }
+
+  const readinessData = data.readiness;
+  const yearlyTrends = data.trends;
 
   // Calculate weighted readiness score
   const weightedScore = readinessData.reduce((acc, item) => {
     const avgScore = (item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4;
-    return acc + (avgScore * item.weight / 100);
+    return acc + (avgScore * item.weight) / 100;
   }, 0);
 
   const getScoreColor = (score: number) => {
@@ -18,13 +60,6 @@ export function RepositoryReadiness({ academicYear }: { academicYear: string }) 
     if (score >= 75) return 'text-blue-600';
     if (score >= 60) return 'text-amber-600';
     return 'text-red-600';
-  };
-
-  const getProgressColor = (score: number) => {
-    if (score >= 90) return 'bg-green-500';
-    if (score >= 75) return 'bg-blue-500';
-    if (score >= 60) return 'bg-amber-500';
-    return 'bg-red-500';
   };
 
   const getStatusLabel = (score: number) => {
@@ -142,8 +177,8 @@ export function RepositoryReadiness({ academicYear }: { academicYear: string }) 
               <TrendingUp className="h-4 w-4 text-teal-600" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">YoY Improvement</p>
-              <p className="text-xl font-bold">+12%</p>
+              <p className="text-xs text-muted-foreground">Overall Score</p>
+              <p className="text-xl font-bold">{data.overallScore}%</p>
             </div>
           </CardContent>
         </Card>

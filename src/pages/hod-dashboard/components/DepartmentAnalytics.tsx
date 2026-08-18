@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getHODYearData, yearlyTrends } from '../hod-configs';
+import { hodService, AnalyticsDto, YearlyTrendDto } from '@/services/hod.service';
 import {
   Users,
   GraduationCap,
@@ -13,10 +14,52 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 export function DepartmentAnalytics({ academicYear }: { academicYear: string }) {
-  const analyticsData = getHODYearData(academicYear).analytics;
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsDto | null>(null);
+  const [yearlyTrends, setYearlyTrends] = useState<YearlyTrendDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([hodService.getAnalytics(academicYear), hodService.getReadiness(academicYear)])
+      .then(([analytics, readiness]) => {
+        if (cancelled) return;
+        setAnalyticsData(analytics);
+        setYearlyTrends(readiness.trends);
+      })
+      .catch(() => {
+        if (!cancelled) setAnalyticsData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading department analytics...
+      </div>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
+        Analytics data unavailable for this academic year.
+      </div>
+    );
+  }
 
   const statsCards = [
     { label: 'Total Faculty', value: analyticsData.facultyCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30', trend: '+3', trendUp: true },
@@ -41,31 +84,10 @@ export function DepartmentAnalytics({ academicYear }: { academicYear: string }) 
     return 'text-gray-500';
   };
 
-  // Faculty qualification data
-  const facultyQualification = [
-    { qualification: 'Ph.D.', count: 32, percentage: 71 },
-    { qualification: 'M.Tech/M.E.', count: 8, percentage: 18 },
-    { qualification: 'M.Sc./M.A.', count: 3, percentage: 7 },
-    { qualification: 'NET/SET Qualified', count: 2, percentage: 4 },
-  ];
-
-  // Student performance data
-  const studentPerformance = [
-    { category: 'First Class with Distinction', percentage: 35 },
-    { category: 'First Class', percentage: 42 },
-    { category: 'Second Class', percentage: 15 },
-    { category: 'Pass Class', percentage: 5.5 },
-    { category: 'Failed/ATKT', percentage: 2.5 },
-  ];
-
-  // Research metrics
-  const researchMetrics = [
-    { metric: 'SCI/Scopus Papers', value: 78, target: 100 },
-    { metric: 'UGC Listed Papers', value: 35, target: 50 },
-    { metric: 'Conference Papers', value: 14, target: 20 },
-    { metric: 'Book Chapters', value: 12, target: 15 },
-    { metric: 'Books Published', value: 5, target: 8 },
-  ];
+  // Faculty qualification / student performance / research metrics from the API.
+  const facultyQualification = analyticsData.facultyQualification ?? [];
+  const studentPerformance = analyticsData.studentPerformance ?? [];
+  const researchMetrics = analyticsData.researchMetrics ?? [];
 
   return (
     <div className="space-y-6">
@@ -163,7 +185,7 @@ export function DepartmentAnalytics({ academicYear }: { academicYear: string }) 
           <CardContent>
             <div className="space-y-4">
               {researchMetrics.map((item) => {
-                const percentage = Math.round((item.value / item.target) * 100);
+                const percentage = item.target > 0 ? Math.round((item.value / item.target) * 100) : 0;
                 return (
                   <div key={item.metric} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">

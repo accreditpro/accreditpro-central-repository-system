@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,15 +20,12 @@ import {
   ChevronRight,
   Building2,
   Layers,
+  Loader2,
 } from 'lucide-react';
-import {
-  institutionRepositories,
-  institutionOverall,
-  departmentReadinessRows,
-  departmentRepositories,
-  REPOSITORY_LIST,
-  statusOf,
-} from '../iqac-data';
+import { useAppSelector } from '@/store';
+import { iqacService } from '@/services/iqac.service';
+import type { InstitutionReadinessDto } from '@/services/iqac.service';
+import { statusOf } from '../iqac-data';
 import { ReadinessBar, StatusBadge, scoreTone } from './common';
 import { cn } from '@/lib/utils';
 
@@ -55,7 +52,42 @@ const REPO_TONES: Record<string, { icon: string; bar: string }> = {
 };
 
 export function InstitutionReadiness() {
+  const selectedAcademicYear = useAppSelector((state) => state.ui.selectedAcademicYear);
+  const [data, setData] = useState<InstitutionReadinessDto | null>(null);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    iqacService
+      .getInstitutionReadiness(selectedAcademicYear)
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAcademicYear]);
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading institution readiness…
+      </div>
+    );
+  }
+
+  const institutionOverall = data.overall;
+  const departmentReadinessRows = data.departments ?? [];
+  const institutionRepositories = data.repositories ?? [];
+  const departmentRepositories = (data.departments ?? []).map((d) => ({
+    code: d.code,
+    repositories: d.repositories ?? [],
+  }));
+  const REPOSITORY_LIST = institutionRepositories.map((r) => r.repository);
 
   return (
     <div className="space-y-6">

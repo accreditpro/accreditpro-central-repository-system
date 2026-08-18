@@ -1,24 +1,6 @@
 import { useState, useMemo, cloneElement, isValidElement } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -40,21 +22,18 @@ import {
   Medal,
   Calendar,
   FileText,
-  Search,
-  Plus,
-  Pencil,
-  Trash2,
-  Upload,
-  Download,
+  Building2,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 import { studentDevTabConfigs } from './student-development-configs';
 import { StudentDevelopmentDashboard } from './components/StudentDevelopmentDashboard';
 import { StudentDevelopmentDocumentsView } from './components/StudentDevelopmentDocumentsView';
 import { TPOSectionView } from '@/pages/tpo-repository/components/TPOSectionView';
-import { TPOEvidence, TPOEvidenceSectionConfig } from '@/pages/tpo-repository/components/TPOEvidenceDialog';
+import { TPOEvidenceSectionConfig } from '@/pages/tpo-repository/components/TPOEvidenceDialog';
 import {
   NSS_EVIDENCE_SECTIONS,
   NCC_EVIDENCE_SECTIONS,
@@ -93,472 +72,232 @@ const navItems: NavItem[] = [
   { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
+// Academic years (kept in sync with the rest of the app's year selector pattern)
+const ACADEMIC_YEARS = [
+  '2025-26',
+  '2024-25',
+  '2023-24',
+  '2022-23',
+  '2021-22',
+  '2020-21',
+  '2019-20',
+];
+
+/**
+ * Maps section IDs to their evidence section configs for use in the
+ * consolidated Supporting Documents view.
+ */
+const evidenceSectionConfigMap: Record<string, TPOEvidenceSectionConfig[]> = {
+  nss: NSS_EVIDENCE_SECTIONS,
+  ncc: NCC_EVIDENCE_SECTIONS,
+  'sports-activities': SPORTS_EVIDENCE_SECTIONS,
+  'cultural-activities': CULTURAL_EVIDENCE_SECTIONS,
+  events: EVENTS_EVIDENCE_SECTIONS,
+  'student-achievements': STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS,
+  'extension-activities': EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS,
+  'community-outreach': COMMUNITY_OUTREACH_EVIDENCE_SECTIONS,
+  clubs: CLUBS_EVIDENCE_SECTIONS,
+  'student-chapters': STUDENT_CHAPTERS_EVIDENCE_SECTIONS,
+  'student-awards': STUDENT_AWARDS_EVIDENCE_SECTIONS,
+};
+
+/** Maps section IDs to their human-readable labels. */
+const sectionLabelMap: Record<string, string> = Object.fromEntries(
+  studentDevTabConfigs.map((t) => [t.id, t.label])
+);
+
 export default function StudentDevelopmentRepositoryPage() {
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
-  const [isNewRecord, setIsNewRecord] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
-    const initial: Record<string, Record<string, string | number>[]> = {};
-    studentDevTabConfigs.forEach(tab => {
-      initial[tab.id] = [...tab.sampleData];
-    });
-    return initial;
-  });
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2025-26');
+
+  const departmentId = user?.departmentId ?? null;
 
   const activeTabConfig = useMemo(() => {
-    return studentDevTabConfigs.find(t => t.id === activeView);
+    return studentDevTabConfigs.find((t) => t.id === activeView);
   }, [activeView]);
 
-  const currentData = useMemo(() => {
-    if (!activeTabConfig) return [];
-    const data = tableData[activeView] || [];
-    if (!searchQuery) return data;
-    return data.filter(row =>
-      Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  }, [activeTabConfig, tableData, activeView, searchQuery]);
-
-  const handleAddNew = () => {
-    if (!activeTabConfig) return;
-    const emptyRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach(f => { emptyRow[f.key] = ''; });
-    setEditingRow(emptyRow);
-    setIsNewRecord(true);
-    setEditDialogOpen(true);
-  };
-
-  const handleEdit = (row: Record<string, string | number>) => {
-    setEditingRow({ ...row });
-    setIsNewRecord(false);
-    setEditDialogOpen(true);
-  };
-
-  const handleDelete = (index: number) => {
-    setTableData(prev => ({
-      ...prev,
-      [activeView]: prev[activeView].filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSave = () => {
-    if (!editingRow) return;
-    setTableData(prev => {
-      const updated = { ...prev };
-      if (isNewRecord) {
-        updated[activeView] = [...(updated[activeView] || []), editingRow];
-      } else {
-        const idx = updated[activeView].findIndex(r =>
-          Object.keys(r).every(k => r[k] === tableData[activeView].find(orig => orig === r)?.[k])
-        );
-        if (idx >= 0) {
-          updated[activeView] = [...updated[activeView]];
-          updated[activeView][idx] = editingRow;
-        }
-      }
-      return updated;
-    });
-    setEditDialogOpen(false);
-    setEditingRow(null);
-  };
-
-  const handleDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, [activeView]: data }));
-  };
-
-  // ============ Evidence State Management ============
-  const [evidenceData, setEvidenceData] = useState<
-    Record<string, Record<string, TPOEvidence | null>>
-  >({});
-
-  const handleRecordEvidenceChange = (sectionId: string) => (recordId: string, evidence: TPOEvidence | null) => {
-    setEvidenceData(prev => ({
-      ...prev,
-      [sectionId]: {
-        ...(prev[sectionId] || {}),
-        [recordId]: evidence,
-      },
-    }));
-  };
-
-  /**
-   * Maps section IDs to their evidence section configs for use in the
-   * consolidated Supporting Documents view.
-   */
-  const evidenceSectionConfigMap: Record<string, TPOEvidenceSectionConfig[]> = {
-    nss: NSS_EVIDENCE_SECTIONS,
-    ncc: NCC_EVIDENCE_SECTIONS,
-    'sports-activities': SPORTS_EVIDENCE_SECTIONS,
-    'cultural-activities': CULTURAL_EVIDENCE_SECTIONS,
-    events: EVENTS_EVIDENCE_SECTIONS,
-    'student-achievements': STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS,
-    'extension-activities': EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS,
-    'community-outreach': COMMUNITY_OUTREACH_EVIDENCE_SECTIONS,
-    clubs: CLUBS_EVIDENCE_SECTIONS,
-    'student-chapters': STUDENT_CHAPTERS_EVIDENCE_SECTIONS,
-    'student-awards': STUDENT_AWARDS_EVIDENCE_SECTIONS,
-  };
-
-  /**
-   * Maps section IDs to their human-readable labels.
-   */
-  const sectionLabelMap: Record<string, string> = Object.fromEntries(
-    studentDevTabConfigs.map(t => [t.id, t.label])
-  );
-
   const renderContent = () => {
-    if (activeView === 'dashboard') return <StudentDevelopmentDashboard />;
+    if (departmentId == null) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
+          <h3 className="text-lg font-semibold">Department required</h3>
+          <p className="text-sm text-muted-foreground max-w-md mt-1">
+            Your account has no department assigned. Ask your Institution Admin to assign a
+            department to your profile before using the Student Development Repository.
+          </p>
+        </div>
+      );
+    }
+
+    if (activeView === 'dashboard') {
+      return <StudentDevelopmentDashboard departmentId={departmentId} academicYear={selectedAcademicYear} />;
+    }
+
     if (activeView === 'documents') {
       return (
         <StudentDevelopmentDocumentsView
-          evidenceData={evidenceData}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           sectionEvidenceConfigs={evidenceSectionConfigMap}
           sectionLabels={sectionLabelMap}
-          onRemoveEvidenceFile={(sectionId, recordId, sectionConfigId, fileId) => {
-            const sectionEvidence = evidenceData[sectionId];
-            if (!sectionEvidence || !sectionEvidence[recordId]) return;
-            const evidence = sectionEvidence[recordId];
-            const updatedSections = { ...evidence!.sections };
-            const files = updatedSections[sectionConfigId]?.filter(f => f.id !== fileId) || [];
-            updatedSections[sectionConfigId] = files;
-            const updatedEvidence: TPOEvidence = {
-              recordId,
-              sections: updatedSections,
-            };
-            setEvidenceData(prev => ({
-              ...prev,
-              [sectionId]: {
-                ...(prev[sectionId] || {}),
-                [recordId]: updatedEvidence,
-              },
-            }));
-          }}
         />
       );
     }
 
     if (!activeTabConfig) return null;
 
-    if (activeView === 'nss' && activeTabConfig) {
+    const sectionId = activeTabConfig.id;
+    const evidenceConfigs = evidenceSectionConfigMap[sectionId];
+
+    if (sectionId === 'nss') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['nss'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.nssUnitNumber || 'NSS Unit')}
-          getRecordId={(_, index) => `nss-${index}`}
-          evidenceSectionConfigs={NSS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['nss']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('nss')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'ncc' && activeTabConfig) {
+    if (sectionId === 'ncc') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['ncc'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.nccUnit || 'NCC Unit')}
-          getRecordId={(_, index) => `ncc-${index}`}
-          evidenceSectionConfigs={NCC_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['ncc']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('ncc')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'sports-activities' && activeTabConfig) {
+    if (sectionId === 'sports-activities') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['sports-activities'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.event || row.sport || 'Sports Event')}
-          getRecordId={(_, index) => `sports-${index}`}
-          evidenceSectionConfigs={SPORTS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['sports-activities']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('sports-activities')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'cultural-activities' && activeTabConfig) {
+    if (sectionId === 'cultural-activities') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['cultural-activities'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.eventName || 'Cultural Event')}
-          getRecordId={(_, index) => `cultural-${index}`}
-          evidenceSectionConfigs={CULTURAL_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['cultural-activities']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('cultural-activities')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'events' && activeTabConfig) {
+    if (sectionId === 'events') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['events'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.eventName || 'Event')}
-          getRecordId={(_, index) => `events-${index}`}
-          evidenceSectionConfigs={EVENTS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['events']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('events')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'student-achievements' && activeTabConfig) {
+    if (sectionId === 'student-achievements') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['student-achievements'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.studentName || row.achievement || 'Achievement')}
-          getRecordId={(_, index) => `achievement-${index}`}
-          evidenceSectionConfigs={STUDENT_ACHIEVEMENTS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['student-achievements']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('student-achievements')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'extension-activities' && activeTabConfig) {
+    if (sectionId === 'extension-activities') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['extension-activities'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.activity || 'Extension Activity')}
-          getRecordId={(_, index) => `extension-${index}`}
-          evidenceSectionConfigs={EXTENSION_ACTIVITIES_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['extension-activities']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('extension-activities')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'community-outreach' && activeTabConfig) {
+    if (sectionId === 'community-outreach') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['community-outreach'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.programName || 'Outreach Program')}
-          getRecordId={(_, index) => `outreach-${index}`}
-          evidenceSectionConfigs={COMMUNITY_OUTREACH_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['community-outreach']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('community-outreach')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'clubs' && activeTabConfig) {
+    if (sectionId === 'clubs') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['clubs'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.clubName || 'Club/Society')}
-          getRecordId={(_, index) => `club-${index}`}
-          evidenceSectionConfigs={CLUBS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['clubs']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('clubs')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'student-chapters' && activeTabConfig) {
+    if (sectionId === 'student-chapters') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['student-chapters'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.chapterName || 'Student Chapter')}
-          getRecordId={(_, index) => `chapter-${index}`}
-          evidenceSectionConfigs={STUDENT_CHAPTERS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['student-chapters']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('student-chapters')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
 
-    if (activeView === 'student-awards' && activeTabConfig) {
+    if (sectionId === 'student-awards') {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['student-awards'] || []}
-          onDataChange={handleDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.awardName || row.recipientName || 'Award')}
-          getRecordId={(_, index) => `award-${index}`}
-          evidenceSectionConfigs={STUDENT_AWARDS_EVIDENCE_SECTIONS}
-          initialEvidenceMap={evidenceData['student-awards']}
-          onRecordEvidenceChange={handleRecordEvidenceChange('student-awards')}
+          evidenceSectionConfigs={evidenceConfigs}
         />
       );
     }
-
-    // All other tabs use the generic table view (unchanged)
-
-    const visibleFields = activeTabConfig.fields.slice(0, 7);
 
     return (
-      <div className="space-y-4">
-        {/* Tab Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">{activeTabConfig.label}</h3>
-            <p className="text-sm text-muted-foreground">{activeTabConfig.description}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="h-4 w-4" />
-              CSV Upload
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button size="sm" className="gap-2" onClick={handleAddNew}>
-              <Plus className="h-4 w-4" />
-              Add Record
-            </Button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={`Search ${activeTabConfig.label.toLowerCase()}...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Data Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{activeTabConfig.label} Records</CardTitle>
-              <Badge variant="secondary">{currentData.length} records</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {visibleFields.map(field => (
-                      <TableHead key={field.key} className="whitespace-nowrap text-xs">
-                        {field.label}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-right text-xs">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={visibleFields.length + 1} className="text-center py-8 text-muted-foreground">
-                        No records found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentData.map((row, idx) => (
-                      <TableRow key={idx}>
-                        {visibleFields.map(field => (
-                          <TableCell key={field.key} className="text-sm whitespace-nowrap max-w-[200px] truncate">
-                            {field.type === 'currency'
-                              ? `₹${Number(row[field.key]).toLocaleString('en-IN')}`
-                              : field.type === 'percentage'
-                              ? `${row[field.key]}%`
-                              : String(row[field.key] || '-')}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Edit/Add Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{isNewRecord ? 'Add New Record' : 'Edit Record'}</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              {activeTabConfig.fields.map(field => (
-                <div key={field.key} className="space-y-1.5">
-                  <Label className="text-xs font-medium">
-                    {field.label}
-                    {field.required && <span className="text-destructive ml-0.5">*</span>}
-                  </Label>
-                  {field.type === 'select' ? (
-                    <Select
-                      value={String(editingRow?.[field.key] || '')}
-                      onValueChange={(val) => setEditingRow(prev => prev ? { ...prev, [field.key]: val } : null)}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder={`Select ${field.label}`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.options?.map(opt => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                      value={String(editingRow?.[field.key] || '')}
-                      onChange={(e) => setEditingRow(prev => prev ? { ...prev, [field.key]: field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? Number(e.target.value) : e.target.value } : null)}
-                      placeholder={field.placeholder || `Enter ${field.label}`}
-                      className="h-9"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>{isNewRecord ? 'Add Record' : 'Save Changes'}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <TPOSectionView
+        tabConfig={activeTabConfig}
+        departmentId={departmentId}
+        academicYear={selectedAcademicYear}
+        getRecordTitle={(row) => String(row.id || 'Record')}
+      />
     );
   };
 
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-64'}`}>
+      <aside className={`border-r bg-card transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-14' : 'w-60'}`}>
         <div className="flex items-center justify-between p-3 border-b">
           {!sidebarCollapsed && <span className="text-sm font-semibold text-primary">Student Development</span>}
           <Button
@@ -570,6 +309,35 @@ export default function StudentDevelopmentRepositoryPage() {
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
+
+        {/* Department + Academic Year */}
+        {!sidebarCollapsed && (
+          <div className="px-3 py-2 border-b space-y-2">
+            {departmentId != null && (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-semibold bg-blue-500/10 text-blue-700 border-blue-500/30">
+                <Building2 className="h-3 w-3 mr-1" />
+                Dept #{departmentId}
+              </Badge>
+            )}
+            <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
+              <SelectTrigger className="h-8 text-xs w-full border-dashed">
+                <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                <SelectValue placeholder="Select Academic Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACADEMIC_YEARS.map((year) => (
+                  <SelectItem key={year} value={year} className="text-xs">
+                    {year}
+                    {year === '2025-26' && (
+                      <span className="ml-2 text-[9px] text-blue-600 font-medium">(Current)</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = activeView === item.id;
@@ -584,7 +352,7 @@ export default function StudentDevelopmentRepositoryPage() {
                     ? 'bg-primary/10 text-primary font-medium'
                     : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
-                onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+                onClick={() => setActiveView(item.id)}
                 title={sidebarCollapsed ? item.label : undefined}
               >
                 {isActive && isValidElement(item.icon)

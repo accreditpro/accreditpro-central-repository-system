@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { RepositoryTabConfig } from '../types';
 import { masterData } from '../repository-configs';
+import { infrastructureRepositoryService, CsvValidationResponse } from '@/services/infrastructure-repository.service';
 import {
   Upload,
   CheckCircle2,
@@ -40,15 +41,15 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface CSVUploadDialogProps {
   open: boolean;
   onClose: () => void;
   tabConfig: RepositoryTabConfig;
   existingData: Record<string, string>[];
-  onUploadComplete?: (data: Record<string, string>[], file?: File | null) => Promise<void> | void;
-  onUploadFile?: (file: File, validData?: Record<string, string>[]) => Promise<any>;
+  onUploadComplete?: (data: Record<string, string>[]) => void;
+  /** When true, the dialog uses the backend's two-phase CSV flow (validate -> confirm). */
+  liveMode?: boolean;
 }
 
 type UploadStep = 'upload' | 'mapping' | 'validate' | 'preview' | 'evidence' | 'submit';
@@ -77,7 +78,7 @@ interface ValidationResult {
   validData: Record<string, string>[];
 }
 
-const steps: { id: UploadStep; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const ALL_STEPS: { id: UploadStep; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'mapping', label: 'Mapping', icon: Columns },
   { id: 'validate', label: 'Validate', icon: CheckCircle2 },
@@ -90,74 +91,16 @@ const UNMAPPED_VALUE = '__unmapped__';
 
 // Fuzzy match helper for column mapping
 function computeConfidence(csvCol: string, fieldCol: string): number {
-  const a = csvCol.toLowerCase().trim().replace(/[_\s-]+/g, '');
-  const b = fieldCol.toLowerCase().trim().replace(/[_\s-]+/g, '');
+  const a = csvCol.toLowerCase().trim().replace(/[_\\s-]+/g, '');
+  const b = fieldCol.toLowerCase().trim().replace(/[_\\s-]+/g, '');
   if (a === b) return 100;
   if (a.includes(b) || b.includes(a)) return 90;
-  const aWords = csvCol.toLowerCase().split(/[\s_-]+/);
-  const bWords = fieldCol.toLowerCase().split(/[\s_-]+/);
+  const aWords = csvCol.toLowerCase().split(/[\\s_-]+/);
+  const bWords = fieldCol.toLowerCase().split(/[\\s_-]+/);
   const overlap = aWords.filter(w => bWords.includes(w)).length;
   const maxWords = Math.max(aWords.length, bWords.length);
   if (overlap > 0) return Math.round((overlap / maxWords) * 80);
   return 0;
-}
-
-// Date normalizer to standard ISO YYYY-MM-DD
-export function normalizeDateToISO(dateStr: string): string {
-  if (!dateStr) return '';
-  const trimmed = dateStr.trim();
-  // Already YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
-  // DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
-  const dmyMatch = trimmed.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
-  if (dmyMatch) {
-    const day = dmyMatch[1].padStart(2, '0');
-    const month = dmyMatch[2].padStart(2, '0');
-    const year = dmyMatch[3];
-    return `${year}-${month}-${day}`;
-  }
-
-  // YYYY/MM/DD or YYYY.MM.DD
-  const ymdMatch = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
-  if (ymdMatch) {
-    const year = ymdMatch[1];
-    const month = ymdMatch[2].padStart(2, '0');
-    const day = ymdMatch[3].padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  // Fallback: try JavaScript Date parse
-  const parsed = new Date(trimmed);
-  if (!isNaN(parsed.getTime())) {
-    const y = parsed.getFullYear();
-    const m = String(parsed.getMonth() + 1).padStart(2, '0');
-    const d = String(parsed.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-
-  return trimmed;
-}
-
-// Generate normalized CSV File from rows and expected headers
-function generateCSVFileFromRows(
-  rows: Record<string, string>[],
-  headers: string[],
-  fileName: string
-): File {
-  const escapeCSV = (val: any) => {
-    const s = String(val ?? '');
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  };
-
-  const headerLine = headers.map(escapeCSV).join(',');
-  const dataLines = rows.map(row => headers.map(h => escapeCSV(row[h] ?? '')).join(','));
-  const csvContent = [headerLine, ...dataLines].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  return new File([blob], fileName || 'upload.csv', { type: 'text/csv' });
 }
 
 // Parse a single CSV line handling quoted fields
@@ -180,24 +123,112 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUploadComplete, onUploadFile }: CSVUploadDialogProps) => {
-  const { toast } = useToast();
+/** Convert the backend's camelCase preview row into a csvColumn-keyed display row. */
+function serverPreviewToRow(preview: { row: number; data: Record<string, unknown>; validationStatus: string; errors: unknown[] }, fields: RepositoryTabConfig['fields']): Record<string, string> {
+  const row: Record<string, string> = {};
+  fields.forEach(f => {
+    const value = preview.data[f.key];
+    row[f.csvColumn] = value === undefined || value === null ? '' : String(value);
+  });
+  return row;
+}
+
+export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUploadComplete, liveMode }: CSVUploadDialogProps) => {
   const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
   const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [columnMappings, setColumnMappings] = useState<ColumnMappingItem[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ---- live (backend) state ----
+  const [serverValidation, setServerValidation] = useState<CsvValidationResponse | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const steps = liveMode
+    ? ALL_STEPS.filter(s => s.id === 'upload' || s.id === 'validate' || s.id === 'preview' || s.id === 'submit')
+    : ALL_STEPS;
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+
+  const resetServerState = () => {
+    setServerValidation(null);
+    setServerError(null);
+    setSelectedFile(null);
+    setValidating(false);
+    setConfirming(false);
+  };
+
+  const handleClose = () => {
+    onClose();
+    setCurrentStep('upload');
+    setParsedData([]);
+    setCsvHeaders([]);
+    setUploadedFileName('');
+    setColumnMappings([]);
+    setValidationResult(null);
+    resetServerState();
+  };
+
+  const handleServerUpload = async (file: File) => {
+    setValidating(true);
+    setServerError(null);
+    try {
+      const res = await infrastructureRepositoryService.validateCsvUpload(tabConfig.id, file);
+      setServerValidation(res);
+      setSelectedFile(file);
+      // Build a ValidationResult compatible with the shared preview UI.
+      const result: ValidationResult = {
+        totalRows: res.totalRows,
+        validRows: res.validRows,
+        invalidRows: res.invalidRows,
+        warnings: res.warnings,
+        errors: (res.errors || []).map(e => ({
+          row: e.row,
+          column: e.column,
+          value: e.value,
+          message: e.message,
+          severity: e.severity,
+        })),
+        validData: (res.previewRows || [])
+          .filter(p => p.validationStatus === 'valid')
+          .map(p => serverPreviewToRow(p, tabConfig.fields)),
+      };
+      setValidationResult(result);
+      setCurrentStep('validate');
+    } catch (e) {
+      setServerError(e instanceof Error ? e.message : 'CSV validation failed');
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!serverValidation) return;
+    setConfirming(true);
+    setServerError(null);
+    try {
+      await infrastructureRepositoryService.confirmCsvUpload(tabConfig.id, serverValidation.uploadId);
+      if (onUploadComplete) onUploadComplete([]);
+      handleClose();
+    } catch (e) {
+      setServerError(e instanceof Error ? e.message : 'Failed to confirm CSV import');
+      setConfirming(false);
+    }
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setUploadedFile(file);
     setUploadedFileName(file.name);
+
+    if (liveMode) {
+      handleServerUpload(file);
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -262,44 +293,27 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       case 'qualifications':
         return row['Employee ID'] && row['Degree'] ? `${row['Employee ID']}|${row['Degree']}` : null;
       case 'certifications':
+        return row['Employee ID'] && row['Certification Name'] ? `${row['Employee ID']}|${row['Certification Name']}` : null;
       case 'student-profile':
-        return row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'] || null;
-      case 'admission-info': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const yr = row['Admission Year'] || row['admissionYear'];
-        return reg && yr ? `${reg}|${yr}` : reg || null;
-      }
+        return row['Student Registration Number'] || null;
+      case 'admission-info':
+        return row['Student Registration Number'] && row['Admission Year'] ? `${row['Student Registration Number']}|${row['Admission Year']}` : null;
       case 'student-diversity':
-        return row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'] || null;
-      case 'academic-performance': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const sem = row['Semester'] || row['semester'];
-        return reg && sem ? `${reg}|${sem}` : reg || null;
-      }
-      case 'student-progression': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const yr = row['Academic Year'] || row['academicYear'];
-        return reg && yr ? `${reg}|${yr}` : reg || null;
-      }
-      case 'scholarship-freeship': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const sch = row['Scholarship Name'] || row['scholarshipName'];
-        return reg && sch ? `${reg}|${sch}` : reg || null;
-      }
-      case 'mooc-online-certifications': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const crs = row['Course Name'] || row['courseName'];
-        return reg && crs ? `${reg}|${crs}` : reg || null;
-      }
-      case 'student-achievements': {
-        const reg = row['Student Registration Number'] || row['Registration Number'] || row['registrationNumber'];
-        const ach = row['Achievement Name'] || row['achievementName'];
-        return reg && ach ? `${reg}|${ach}` : reg || null;
-      }
+        return row['Student Registration Number'] || null;
+      case 'academic-performance':
+        return row['Student Registration Number'] && row['Semester'] ? `${row['Student Registration Number']}|${row['Semester']}` : null;
+      case 'student-progression':
+        return row['Student Registration Number'] && row['Academic Year'] ? `${row['Student Registration Number']}|${row['Academic Year']}` : null;
+      case 'scholarship-freeship':
+        return row['Student Registration Number'] && row['Scholarship Name'] ? `${row['Student Registration Number']}|${row['Scholarship Name']}` : null;
+      case 'mooc-online-certifications':
+        return row['Student Registration Number'] && row['Course Name'] ? `${row['Student Registration Number']}|${row['Course Name']}` : null;
+      case 'student-achievements':
+        return row['Student Registration Number'] && row['Achievement Name'] ? `${row['Student Registration Number']}|${row['Achievement Name']}` : null;
       case 'publications':
-        return row['Publication Title'] || row['title'] || null;
+        return row['Publication Title'] || null;
       case 'patents':
-        return row['Application Number'] || row['applicationNumber'] || null;
+        return row['Application Number'] || null;
       default: {
         const firstField = Object.keys(row)[0];
         return firstField ? row[firstField] : null;
@@ -342,15 +356,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       const mappedRow: Record<string, string> = {};
       columnMappings.forEach(mapping => {
         if (mapping.csvColumn && mapping.status !== 'unmapped') {
-          let val = row[mapping.csvColumn] || '';
-          const fieldDef = tabConfig.fields.find(f => f.csvColumn === mapping.mappedField);
-          if (fieldDef?.type === 'date' && val) {
-            val = normalizeDateToISO(val);
-          }
-          if (fieldDef?.key === 'aadhaarNumber' && val && val.length > 10) {
-            val = val.slice(0, 10);
-          }
-          mappedRow[mapping.mappedField] = val;
+          mappedRow[mapping.mappedField] = row[mapping.csvColumn] || '';
         } else {
           mappedRow[mapping.mappedField] = '';
         }
@@ -383,9 +389,8 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         if (field.masterDataSource) {
           const value = row[field.csvColumn]?.trim() || '';
           if (value) {
-            const validValues = (masterData[field.masterDataSource as keyof typeof masterData] as string[]) || [];
-            const isValid = validValues.some(v => v.trim().toLowerCase() === value.toLowerCase());
-            if (!isValid) {
+            const validValues = masterData[field.masterDataSource as keyof typeof masterData] as string[];
+            if (!validValues.includes(value)) {
               errors.push({
                 row: rowIndex + 1,
                 column: field.csvColumn,
@@ -452,23 +457,6 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         }
       }
 
-      // Validate date fields
-      tabConfig.fields.forEach(field => {
-        if (field.type === 'date') {
-          const value = row[field.csvColumn]?.trim() || '';
-          if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-            errors.push({
-              row: rowIndex + 1,
-              column: field.csvColumn,
-              value,
-              message: `Invalid date format for "${field.csvColumn}". Expected YYYY-MM-DD`,
-              severity: 'error',
-            });
-            rowHasError = true;
-          }
-        }
-      });
-
       // Validate boolean fields
       tabConfig.fields.forEach(field => {
         if (field.type === 'boolean') {
@@ -518,7 +506,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     });
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep === 'mapping') {
       const result = performValidation();
       setValidationResult(result);
@@ -528,35 +516,12 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     if (nextIndex < steps.length) {
       setCurrentStep(steps[nextIndex].id);
     } else {
-      // Submit - execute upload
-      setIsSubmitting(true);
-      try {
-        const expectedHeaders = tabConfig.fields.map(f => f.csvColumn);
-        const rowsToUpload = validationResult?.validData && validationResult.validData.length > 0
-          ? validationResult.validData
-          : parsedData;
-
-        // Build a normalized CSV file where all dates are ISO YYYY-MM-DD and headers match expected tab fields
-        const normalizedFile = generateCSVFileFromRows(
-          rowsToUpload,
-          expectedHeaders,
-          uploadedFileName || `${tabConfig.id}_data.csv`
-        );
-
-        if (onUploadFile) {
-          await onUploadFile(normalizedFile, rowsToUpload);
-        } else if (onUploadComplete) {
-          await onUploadComplete(rowsToUpload, normalizedFile);
-        }
+      // Submit
+      if (liveMode) {
+        handleConfirm();
+      } else if (validationResult && validationResult.validData.length > 0 && onUploadComplete) {
+        onUploadComplete(validationResult.validData);
         handleClose();
-      } catch (err: any) {
-        toast({
-          title: 'Upload Failed',
-          description: err?.message || 'Failed to upload CSV file.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsSubmitting(false);
       }
     }
   };
@@ -568,22 +533,10 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
     }
   };
 
-  const handleClose = () => {
-    onClose();
-    setCurrentStep('upload');
-    setParsedData([]);
-    setCsvHeaders([]);
-    setUploadedFile(null);
-    setUploadedFileName('');
-    setColumnMappings([]);
-    setValidationResult(null);
-    setIsSubmitting(false);
-  };
-
   const canProceed = useMemo(() => {
     switch (currentStep) {
       case 'upload':
-        return parsedData.length > 0;
+        return liveMode ? serverValidation !== null && serverValidation.totalRows > 0 : parsedData.length > 0;
       case 'mapping':
         return columnMappings.some(m => m.status !== 'unmapped');
       case 'validate':
@@ -597,7 +550,7 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
       default:
         return true;
     }
-  }, [currentStep, parsedData, columnMappings, validationResult]);
+  }, [currentStep, parsedData, columnMappings, validationResult, liveMode, serverValidation]);
 
   // ============ RENDER STEP CONTENT ============
 
@@ -609,7 +562,11 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           <>
             <FileSpreadsheet className="h-12 w-12 mx-auto text-emerald-500 mb-3" />
             <p className="text-sm font-medium text-emerald-600">{uploadedFileName}</p>
-            <p className="text-xs text-muted-foreground mt-1">{parsedData.length} records detected • {csvHeaders.length} columns</p>
+            {liveMode && serverValidation ? (
+              <p className="text-xs text-muted-foreground mt-1">{serverValidation.totalRows} records detected • validated by server</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">{parsedData.length} records detected • {csvHeaders.length} columns</p>
+            )}
             <p className="text-[10px] text-muted-foreground mt-1">Click to replace file</p>
           </>
         ) : (
@@ -621,23 +578,37 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           </>
         )}
       </label>
-      <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Validation Rules</p>
-            <ul className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
-              {tabConfig.validationRules.map((rule, i) => (
-                <li key={i}>• {rule}</li>
-              ))}
-              <li>• Date format: YYYY-MM-DD (e.g. 2004-08-15) — automatically converted from DD-MM-YYYY</li>
-              <li>• All mandatory fields must be filled</li>
-              <li>• No duplicate records allowed</li>
-            </ul>
+      {liveMode && validating && (
+        <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-xs">Uploading to server for validation...</span>
+        </div>
+      )}
+      {liveMode && serverError && (
+        <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+          <p className="text-xs text-red-600 flex items-start gap-1.5">
+            <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {serverError}
+          </p>
+        </div>
+      )}
+      {!liveMode && (
+        <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Validation Rules</p>
+              <ul className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
+                {tabConfig.validationRules.map((rule, i) => (
+                  <li key={i}>• {rule}</li>
+                ))}
+                <li>• All mandatory fields must be filled</li>
+                <li>• No duplicate records allowed</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
-      {parsedData.length > 0 && (
+      )}
+      {!liveMode && parsedData.length > 0 && (
         <div className="p-3 rounded-lg bg-muted/30 border">
           <p className="text-xs font-medium mb-2">Detected Columns:</p>
           <div className="flex flex-wrap gap-1">
@@ -905,6 +876,19 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
           </p>
         )}
       </div>
+      {confirming && (
+        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-xs">Importing records...</span>
+        </div>
+      )}
+      {serverError && (
+        <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+          <p className="text-xs text-red-600 flex items-start gap-1.5">
+            <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {serverError}
+          </p>
+        </div>
+      )}
       <div className="p-3 rounded-lg bg-muted/50 text-left">
         <p className="text-[10px] text-muted-foreground">Workflow Status:</p>
         <div className="flex items-center gap-2 mt-1">
@@ -941,7 +925,9 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-base">CSV Upload - {tabConfig.label}</DialogTitle>
           <DialogDescription className="text-xs">
-            Upload and validate data with duplicate detection and field validation
+            {liveMode
+              ? 'Upload your CSV — the server validates each row, then you confirm the import'
+              : 'Upload and validate data with duplicate detection and field validation'}
           </DialogDescription>
         </DialogHeader>
 
@@ -983,25 +969,17 @@ export const CSVUploadDialog = ({ open, onClose, tabConfig, existingData, onUplo
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t shrink-0">
-          <Button variant="ghost" size="sm" className="text-xs" onClick={handleBack} disabled={currentStepIndex === 0}>
+          <Button variant="ghost" size="sm" className="text-xs" onClick={handleBack} disabled={currentStepIndex === 0 || confirming}>
             Back
           </Button>
           <Button
             size="sm"
             className="text-xs"
             onClick={handleNext}
-            disabled={!canProceed || isSubmitting}
+            disabled={!canProceed || validating || confirming}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Submitting...
-              </>
-            ) : currentStep === 'submit' ? (
-              'Submit & Close'
-            ) : (
-              'Next'
-            )}
-            {!isSubmitting && currentStep !== 'submit' && <ArrowRight className="h-3 w-3 ml-1" />}
+            {currentStep === 'submit' ? (liveMode ? 'Confirm Import' : 'Submit & Close') : 'Next'}
+            {currentStep !== 'submit' && <ArrowRight className="h-3 w-3 ml-1" />}
           </Button>
         </div>
       </DialogContent>

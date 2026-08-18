@@ -22,15 +22,15 @@ import {
   UsersRound,
   Briefcase,
   Database,
+  Loader2,
 } from 'lucide-react';
+import { iqacService } from '@/services/iqac.service';
+import type { DepartmentReadinessDto } from '@/services/iqac.service';
 import {
-  departmentRepositoriesForYear,
-  drillDownData,
   DEPARTMENT_OPTIONS,
   DEPARTMENT_PROGRAMS,
   YEAR_OPTIONS,
   PROGRAM_OPTIONS,
-  REPOSITORY_LIST,
   statusOf,
 } from '../iqac-data';
 import type { DrillDepartment, DrillFolder, DrillRepository } from '../iqac-data';
@@ -72,8 +72,34 @@ export function DepartmentReadiness() {
   const [drillRepo, setDrillRepo] = useState<DrillRepository | null>(null);
   const [drillFolder, setDrillFolder] = useState<DrillFolder | null>(null);
 
-  // Year-aware department × repository matrix
-  const matrix = useMemo(() => departmentRepositoriesForYear(year), [year]);
+  // Year / filter-aware department × repository matrix + drill-down (backend)
+  const [data, setData] = useState<DepartmentReadinessDto | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    iqacService
+      .getDepartments({
+        academicYear: year === 'all' ? undefined : year,
+        department: deptFilter === 'all' ? undefined : deptFilter,
+        program: program === 'all' ? undefined : program,
+        search: search || undefined,
+      })
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [year, deptFilter, program, search]);
+
+  const matrix = data?.matrix ?? [];
+  const drillDownData = (data?.drillDown ?? []) as DrillDepartment[];
+  const REPOSITORY_LIST = Array.from(
+    new Set(matrix.flatMap((d) => (d.repositories ?? []).map((r) => r.repo)))
+  );
 
   const rows = useMemo(
     () =>
@@ -124,6 +150,15 @@ export function DepartmentReadiness() {
     const approved = folder.evidence.filter((e) => e.status === 'approved').length;
     return Math.round((approved / Math.max(1, folder.evidence.length)) * 100);
   };
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading department readiness…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

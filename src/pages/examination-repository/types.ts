@@ -2,182 +2,11 @@
 // Examination Module Types
 // ==============================
 
-/** Status workflow shared across all modules */
-export type RecordStatus = 'draft' | 'published' | 'archived';
-
-/** Examination types */
-export type ExaminationType =
-  | 'internal-assessment'
-  | 'end-semester-examination'
-  | 'supplementary-examination';
-
-/** Circular categories */
-export type CircularCategory =
-  | 'examination-notification'
-  | 'hall-ticket-notification'
-  | 'practical-examination'
-  | 'evaluation'
-  | 'result-notification'
-  | 'supplementary-notification'
-  | 'general-circular';
-
-/** Document categories for supporting documents */
-export type SupportingDocCategory =
-  | 'examination-policy'
-  | 'examination-manual'
-  | 'circulars'
-  | 'notifications'
-  | 'schedules'
-  | 'result-gazettes'
-  | 'university-communications'
-  | 'committee-meeting-minutes'
-  | 'other-supporting-documents';
-
-// ==============================
-// Examination Schedule
-// ==============================
-
-export interface ExaminationSchedule {
-  id: string;
-  academicYear: string;
-  semester: string;
-  examinationType: ExaminationType;
-  program: string;
-  department: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  schedulePdf?: string;
-  supportingDocuments?: string[];
-  status: RecordStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ==============================
-// Examination Circular
-// ==============================
-
-export interface ExaminationCircular {
-  id: string;
-  circularNumber: string;
-  circularDate: string;
-  title: string;
-  description: string;
-  category: CircularCategory;
-  pdf?: string;
-  supportingDocuments?: string[];
-  status: RecordStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ==============================
-// Result Publication
-// ==============================
-
-export interface ResultPublication {
-  id: string;
-  academicYear: string;
-  semester: string;
-  examinationType: ExaminationType;
-  program: string;
-  title: string;
-  publicationDate: string;
-  totalStudentsAppeared?: number;
-  totalStudentsPassed?: number;
-  passPercentage?: number;
-  resultGazette?: string;
-  resultSummary?: string;
-  supportingDocuments?: string[];
-  status: RecordStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ==============================
-// Supplementary Examination
-// ==============================
-
-export interface SupplementaryExamination {
-  id: string;
-  academicYear: string;
-  semester: string;
-  program: string;
-  examinationName: string;
-  startDate: string;
-  endDate: string;
-  notification?: string;
-  schedule?: string;
-  supportingDocuments?: string[];
-  status: RecordStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ==============================
-// Backlog Record
-// ==============================
-
-export interface BacklogRecord {
-  id: string;
-  academicYear: string;
-  semester: string;
-  program: string;
-  department: string;
-  subjectCode: string;
-  subjectName: string;
-  studentsAppeared: number;
-  studentsPassed: number;
-  studentsFailed: number;
-}
-
-// ==============================
-// Supporting Document (within folders)
-// ==============================
-
-export interface SupportingDocument {
-  id: string;
-  category: SupportingDocCategory;
-  title: string;
-  description: string;
-  academicYear: string;
-  tags: string[];
-  version: string;
-  fileUrl?: string;
-  uploadedAt: string;
-}
-
-// ==============================
-// Supporting Document Folder
-// ==============================
-
-export interface DocumentFolder {
-  id: string;
-  category: SupportingDocCategory;
-  label: string;
-  description: string;
-  documentCount: number;
-  documents: SupportingDocument[];
-}
-
-// ==============================
-// Dashboard Summary
-// ==============================
-
-export interface DashboardSummary {
-  totalSchedules: number;
-  publishedResults: number;
-  supplementaryExams: number;
-  backlogRecords: number;
-  activeCirculars: number;
-  recentSchedules: ExaminationSchedule[];
-  recentResults: ResultPublication[];
-  recentCirculars: ExaminationCircular[];
-  upcomingSchedules: ExaminationSchedule[];
-  upcomingSupplementary: SupplementaryExamination[];
-}
+/**
+ * Status workflow shared across all modules.
+ * Values are the backend display values (RecordStatus enum).
+ */
+export type RecordStatus = 'Draft' | 'Published' | 'Archived';
 
 // ==============================
 // Field Configuration for Dynamic Forms
@@ -186,10 +15,44 @@ export interface DashboardSummary {
 export interface FieldConfig {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'textarea' | 'file';
+  type: 'text' | 'number' | 'date' | 'time' | 'select' | 'textarea' | 'file';
   required?: boolean;
   options?: string[];
   placeholder?: string;
+  /**
+   * Field is displayed with its current value but cannot be edited
+   * (e.g. Academic Year on examination schedules).
+   */
+  readOnly?: boolean;
+  /**
+   * When set, the field's value is derived automatically (first key = numerator,
+   * second key = denominator) using `numerator / denominator * 100` whenever one
+   * of the source fields changes. The field is rendered read-only. e.g.
+   * passPercentage from totalStudentsPassed / totalStudentsAppeared.
+   */
+  autoCalculateFrom?: [string, string];
+  /**
+   * Helper text shown under a read-only field. Defaults to the academic-year
+   * hint when omitted.
+   */
+  readOnlyHint?: string;
+  /**
+   * Shorter label used for the table column header when the full label is too
+   * long (e.g. "Total Students Appeared" → "Appeared").
+   */
+  tableLabel?: string;
+  /**
+   * Renders a 0–100 percentage value in the list as a small color-coded
+   * progress bar (green ≥ 75, amber ≥ 50, red < 50). Used for numeric
+   * percentage fields such as passPercentage.
+   */
+  progress?: boolean;
+  /**
+   * Autofetches the option list from the institution's reference data so the
+   * user picks a real entity (enables backend reference resolution). Falls
+   * back to a free-text input when the list is unavailable.
+   */
+  autofetch?: 'programs' | 'departments';
 }
 
 // ==============================
@@ -202,5 +65,11 @@ export interface ModuleConfig {
   icon: string;
   description: string;
   fields: FieldConfig[];
-  sampleData: Record<string, string | number>[];
+  /**
+   * Optional ordered list of field keys to render as table columns. When
+   * omitted the table falls back to the first {@link fields} entries.
+   * Date fields with a matching "*Time" sibling field render the time
+   * below the date (e.g. startDate + startTime).
+   */
+  tableFields?: string[];
 }

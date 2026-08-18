@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +15,26 @@ import {
   Search,
   Upload,
   Download,
-  Eye,
+  Trash2,
   FileText,
   FolderOpen,
   ArrowLeft,
   Calendar,
-  User,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { tpoDocumentCategories } from '../tpo-configs';
-import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+import {
+  EvidenceUploadDialog,
+  EvidenceCategory,
+  EvidenceUploadResult,
+} from '@/components/shared/EvidenceUploadDialog';
+import { tpoRepositoryService, TpoDocumentRecord } from '@/services/tpo.service';
+
+interface DocumentsViewProps {
+  departmentId: number;
+  academicYear: string;
+}
 
 const uploadCategories: EvidenceCategory[] = tpoDocumentCategories.map((c) => ({
   id: c.id,
@@ -32,52 +43,105 @@ const uploadCategories: EvidenceCategory[] = tpoDocumentCategories.map((c) => ({
   icon: <FileText className="h-4 w-4 text-primary" />,
 }));
 
-interface Document {
-  id: string;
-  name: string;
-  type: string;
-  uploadedBy: string;
-  uploadDate: string;
-  size: string;
-  status: 'Verified' | 'Pending' | 'Under Review';
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const sampleDocuments: Record<string, Document[]> = {
-  'placement-reports': [
-    { id: '1', name: 'Annual_Placement_Report_2023-24.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-06-30', size: '4.8 MB', status: 'Verified' },
-    { id: '2', name: 'Placement_Statistics_Summary_2023-24.xlsx', type: 'Excel', uploadedBy: 'TPO Office', uploadDate: '2024-07-15', size: '1.2 MB', status: 'Verified' },
-    { id: '3', name: 'Department_Wise_Placement_2023-24.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-07-01', size: '2.5 MB', status: 'Verified' },
-  ],
-  'mou-agreements': [
-    { id: '1', name: 'MoU_TCS_Campus_Recruitment_2024.pdf', type: 'PDF', uploadedBy: 'TPO Office', uploadDate: '2024-03-15', size: '1.8 MB', status: 'Verified' },
-    { id: '2', name: 'MoU_Infosys_InStep_Program.pdf', type: 'PDF', uploadedBy: 'TPO Office', uploadDate: '2024-04-01', size: '2.1 MB', status: 'Verified' },
-    { id: '3', name: 'Agreement_Deloitte_Hiring_2024.pdf', type: 'PDF', uploadedBy: 'Vikram Mehta', uploadDate: '2024-05-20', size: '1.5 MB', status: 'Under Review' },
-  ],
-  'offer-letters': [
-    { id: '1', name: 'Offer_Google_DivyaSharma_CS.pdf', type: 'PDF', uploadedBy: 'Student', uploadDate: '2024-10-10', size: '890 KB', status: 'Verified' },
-    { id: '2', name: 'Offer_Deloitte_MeeraPatel_EC.pdf', type: 'PDF', uploadedBy: 'Student', uploadDate: '2024-11-25', size: '750 KB', status: 'Verified' },
-  ],
-};
-
-export function TPODocumentsView() {
+export function TPODocumentsView({ departmentId, academicYear }: DocumentsViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
+  const [documents, setDocuments] = useState<TpoDocumentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const currentDocs = selectedCategory ? (sampleDocuments[selectedCategory] || []) : [];
-  const filteredDocs = currentDocs.filter(doc =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const loadDocuments = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    tpoRepositoryService
+      .getDocuments({
+        departmentId,
+        academicYear,
+        sectionName: 'documents',
+        page: 0,
+        size: 500,
+      })
+      .then((page) => setDocuments(page.content ?? []))
+      .catch(() => setError('Failed to load supporting documents. Please try again.'))
+      .finally(() => setLoading(false));
+  }, [departmentId, academicYear]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
+
+  // Real per-category counts from the documents that actually exist.
+  const categoryCounts = useCallback(
+    (categoryId: string) =>
+      documents.filter((doc) => doc.documentType === categoryId).length,
+    [documents]
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Verified': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case 'Pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'Under Review': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      default: return '';
+  const currentDocs = selectedCategory
+    ? documents.filter((doc) => doc.documentType === selectedCategory)
+    : [];
+  const filteredDocs = currentDocs.filter((doc) =>
+    doc.documentName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDownload = async (doc: TpoDocumentRecord) => {
+    try {
+      await tpoRepositoryService.downloadDocument(doc.id, departmentId, doc.documentName);
+    } catch {
+      setError('Download failed. Please try again.');
     }
   };
+
+  const handleDelete = async (doc: TpoDocumentRecord) => {
+    if (!window.confirm(`Delete "${doc.documentName}"? This cannot be undone.`)) return;
+    setDeletingId(doc.id);
+    setError(null);
+    try {
+      await tpoRepositoryService.deleteDocument(doc.id, departmentId);
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+    } catch {
+      setError('Delete failed. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleUploadSave = async (result: EvidenceUploadResult) => {
+    const filesByCategory = result.files;
+    const entries = Object.entries(filesByCategory).filter(
+      ([, files]) => files.length > 0
+    );
+    for (const [categoryId, files] of entries) {
+      for (const file of files) {
+        if (!file.file) continue;
+        await tpoRepositoryService.uploadDocument(file.file, {
+          departmentId,
+          academicYear,
+          sectionName: 'documents',
+          documentType: categoryId,
+        });
+      }
+    }
+    loadDocuments();
+  };
+
+  if (loading && documents.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading supporting documents...
+      </div>
+    );
+  }
 
   if (!selectedCategory) {
     return (
@@ -85,7 +149,9 @@ export function TPODocumentsView() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Supporting Documents</h3>
-            <p className="text-sm text-muted-foreground">Manage placement and training documents organized by category</p>
+            <p className="text-sm text-muted-foreground">
+              Manage placement and training documents organized by category · Academic Year {academicYear}
+            </p>
           </div>
           <Button size="sm" className="gap-2" onClick={() => { setUploadTarget(null); setUploadDialogOpen(true); }}>
             <Upload className="h-4 w-4" />
@@ -93,28 +159,37 @@ export function TPODocumentsView() {
           </Button>
         </div>
 
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tpoDocumentCategories.map((category) => (
-            <Card
-              key={category.id}
-              className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
-              onClick={() => setSelectedCategory(category.id)}
-              onDoubleClick={() => { setUploadTarget(uploadCategories.find((c) => c.id === category.id) || null); setUploadDialogOpen(true); }}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <FolderOpen className="h-5 w-5" />
+          {tpoDocumentCategories.map((category) => {
+            const count = categoryCounts(category.id);
+            return (
+              <Card
+                key={category.id}
+                className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <FolderOpen className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{category.label}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{count} documents</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">{count}</Badge>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{category.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{category.count} documents</p>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">{category.count}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Evidence Upload Dialog */}
@@ -128,12 +203,13 @@ export function TPODocumentsView() {
               : 'Upload placement & training supporting documents across all categories'
           }
           categories={uploadTarget ? [uploadTarget] : uploadCategories}
+          onSave={handleUploadSave}
         />
       </div>
     );
   }
 
-  const categoryLabel = tpoDocumentCategories.find(c => c.id === selectedCategory)?.label || '';
+  const categoryLabel = tpoDocumentCategories.find((c) => c.id === selectedCategory)?.label || '';
 
   return (
     <div className="space-y-4">
@@ -147,6 +223,13 @@ export function TPODocumentsView() {
           <p className="text-xs text-muted-foreground">{filteredDocs.length} documents</p>
         </div>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -180,10 +263,8 @@ export function TPODocumentsView() {
                 <TableRow>
                   <TableHead>Document Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Uploaded By</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Uploaded</TableHead>
                   <TableHead>Size</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -193,42 +274,53 @@ export function TPODocumentsView() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{doc.name}</span>
+                        <span className="text-sm font-medium">{doc.documentName}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">{doc.type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        {doc.uploadedBy}
-                      </div>
+                      <Badge variant="outline" className="text-xs">{doc.documentType}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        {doc.uploadDate}
+                        {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '—'}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{doc.size}</TableCell>
-                    <TableCell>
-                      <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>{doc.status}</Badge>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatFileSize(doc.size)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleDownload(doc)}
+                          title="Download"
+                        >
                           <Download className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(doc)}
+                          disabled={deletingId === doc.id}
+                          title="Delete"
+                        >
+                          {deletingId === doc.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>            ))}
-          </TableBody>
-        </Table>
-      )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -243,6 +335,7 @@ export function TPODocumentsView() {
             : 'Upload placement & training supporting documents across all categories'
         }
         categories={uploadTarget ? [uploadTarget] : uploadCategories}
+        onSave={handleUploadSave}
       />
     </div>
   );

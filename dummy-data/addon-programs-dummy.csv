@@ -1,7 +1,6 @@
-academicYear,yearOfStudy,semester,topic,coordinator,fromDate,toDate,timeFrom,timeTo,duration,studentsEnrolled,studentsParticipated,certificationProvided,certificatesIssued
-2025-26,III Year,Semester 5,Python for Data Science,Dr. Anita Sharma,2026-01-15,2026-01-20,09:00:00,12:00:00,30 Hours,120,115,true,110
-2025-26,III Year,Semester 5,Advanced React & Next.js,Prof. Amit Patel,2026-02-01,2026-02-10,14:00:00,16:00:00,20 Hours,85,80,true,80
-2025-26,III Year,Semester 5,Java Spring Boot Microservices,Dr. Rajesh Kumar,2026-02-15,2026-02-28,10:00:00,12:00:00,26 Hours,150,140,true,135
-2025-26,III Year,Semester 5,Computer Vision with YOLO,Ms. Neha Gupta,2026-03-05,2026-03-12,15:00:00,17:00:00,14 Hours,60,55,false,0
-2025-26,III Year,Semester 5,DevOps with Docker & WSL,Mr. Rohan Sharma,2026-03-20,2026-03-30,09:30:00,11:30:00,20 Hours,110,105,true,100
-2025-26,III Year,Semester 5,Algorithmic Swing Trading,Dr. Vikram Singh,2026-04-05,2026-04-15,16:00:00,18:00:00,20 Hours,200,190,true,185
+Department,Year,Semester,Topic,From Date,To Date,Time From,Time To,Coordinator,Duration,Students Enrolled,Students Participated,Certification Provided,Certificates Issued
+Computer Science & Engineering (CSE),III Year,Semester 5,Full Stack Web Development,2025-08-01,2025-08-30,16:00,18:00,Prof. John Doe,40 hrs,100,95,Yes,90
+Computer Science & Engineering (CSE),III Year,Semester 5,Cloud Computing Basics,2025-09-01,2025-09-15,16:00,18:00,Dr. Alice Smith,20 hrs,120,110,Yes,110
+Computer Science & Engineering (CSE),IV Year,Semester 7,Advanced AI and ML,2025-07-15,2025-08-15,10:00,12:00,Dr. Alan Turing,30 hrs,80,75,Yes,70
+Computer Science & Engineering (CSE),II Year,Semester 3,Introduction to UI/UX,2025-10-01,2025-10-10,14:00,16:00,Ms. Sarah Design,15 hrs,150,140,No,0
+Computer Science & Engineering (CSE),IV Year,Semester 8,Cybersecurity Ethics,2026-01-10,2026-01-20,09:00,11:00,Mr. Hacker Safe,20 hrs,60,60,Yes,60

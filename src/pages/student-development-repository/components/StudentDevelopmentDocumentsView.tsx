@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,27 +40,26 @@ import {
   FileArchive,
   ArrowLeft,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import {
-  TPOEvidence,
   TPOEvidenceSectionConfig,
   UploadedFile,
 } from '@/pages/tpo-repository/components/TPOEvidenceDialog';
 import { ImageZoomViewer } from '@/components/shared/ImageZoomViewer';
-import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+import {
+  EvidenceUploadDialog,
+  EvidenceCategory,
+  EvidenceUploadResult,
+} from '@/components/shared/EvidenceUploadDialog';
+import { sdcRepositoryService, SdcDocumentRecord } from '@/services/sdc.service';
 
-const uploadCategories: EvidenceCategory[] = [
-  { id: 'nss', label: 'NSS Activities', icon: <Heart className="h-4 w-4 text-primary" /> },
-  { id: 'ncc', label: 'NCC Activities', icon: <Shield className="h-4 w-4 text-primary" /> },
-  { id: 'sports', label: 'Sports Activities', icon: <Trophy className="h-4 w-4 text-primary" /> },
-  { id: 'cultural', label: 'Cultural Activities', icon: <Music className="h-4 w-4 text-primary" /> },
-  { id: 'events', label: 'Events', icon: <Calendar className="h-4 w-4 text-primary" /> },
-  { id: 'achievements', label: 'Student Achievements', icon: <Award className="h-4 w-4 text-primary" /> },
-  { id: 'extension', label: 'Extension Activities', icon: <HandHeart className="h-4 w-4 text-primary" /> },
-  { id: 'outreach', label: 'Community Outreach', icon: <Users className="h-4 w-4 text-primary" /> },
-  { id: 'clubs', label: 'Clubs & Societies', icon: <Layers className="h-4 w-4 text-primary" /> },
-  { id: 'chapters', label: 'Student Chapters', icon: <BookMarked className="h-4 w-4 text-primary" /> },
-];
+interface DocumentsViewProps {
+  departmentId: number;
+  academicYear: string;
+  sectionEvidenceConfigs: Record<string, TPOEvidenceSectionConfig[]>;
+  sectionLabels: Record<string, string>;
+}
 
 // ============================================================
 // TYPES
@@ -75,6 +74,7 @@ interface FlattenedDocument {
   categoryId: string;
   categoryLabel: string;
   file: UploadedFile;
+  docId: number;
 }
 
 interface SectionFolder {
@@ -88,18 +88,6 @@ interface SectionFolder {
   icon: React.ReactNode;
 }
 
-interface StudentDevelopmentDocumentsViewProps {
-  evidenceData: Record<string, Record<string, TPOEvidence | null>>;
-  sectionEvidenceConfigs: Record<string, TPOEvidenceSectionConfig[]>;
-  sectionLabels: Record<string, string>;
-  onRemoveEvidenceFile?: (
-    sectionId: string,
-    recordId: string,
-    sectionConfigId: string,
-    fileId: string
-  ) => void;
-}
-
 // ============================================================
 // HELPERS
 // ============================================================
@@ -108,6 +96,18 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function typeFromName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (lower.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (lower.endsWith('.csv')) return 'text/csv';
+  if (lower.endsWith('.zip')) return 'application/zip';
+  return 'application/octet-stream';
 }
 
 function getFileIcon(type: string) {
@@ -140,53 +140,76 @@ function getSectionMeta(sectionId: string): { icon: React.ReactNode; color: stri
 // ============================================================
 
 export function StudentDevelopmentDocumentsView({
-  evidenceData,
+  departmentId,
+  academicYear,
   sectionEvidenceConfigs,
   sectionLabels,
-  onRemoveEvidenceFile,
-}: StudentDevelopmentDocumentsViewProps) {
+}: DocumentsViewProps) {
+  const [documents, setDocuments] = useState<SdcDocumentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Flatten all evidence data into a list of documents
+  const uploadCategories: EvidenceCategory[] = useMemo(() => {
+    return Object.entries(sectionLabels).map(([id, label]) => ({
+      id,
+      label,
+      description: `Upload student development documents for ${label.toLowerCase()}`,
+      icon: <FolderOpen className="h-4 w-4 text-primary" />,
+    }));
+  }, [sectionLabels]);
+
+  const loadDocuments = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    sdcRepositoryService
+      .getDocuments({ departmentId, academicYear, page: 0, size: 500 })
+      .then((page) => setDocuments(page.content ?? []))
+      .catch(() => setError('Failed to load supporting documents. Please try again.'))
+      .finally(() => setLoading(false));
+  }, [departmentId, academicYear]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
+
+  // Flatten all documents into the folder/record structure the view renders.
   const allDocuments = useMemo(() => {
     const docs: FlattenedDocument[] = [];
-    const sectionIds = Object.keys(evidenceData);
-
-    for (const sectionId of sectionIds) {
-      const recordMap = evidenceData[sectionId];
-      if (!recordMap) continue;
-      const configs = sectionEvidenceConfigs[sectionId] || [];
-      const configMap = new Map(configs.map((c) => [c.id, c.label]));
-
-      for (const [recordId, evidence] of Object.entries(recordMap)) {
-        if (!evidence) continue;
-        const sectionName = sectionLabels[sectionId] || sectionId;
-
-        for (const [categoryId, files] of Object.entries(evidence.sections)) {
-          const categoryLabel = configMap.get(categoryId) || categoryId;
-
-          for (const file of files) {
-            docs.push({
-              id: `${sectionId}-${recordId}-${categoryId}-${file.id}`,
-              sectionId,
-              sectionLabel: sectionName,
-              recordId,
-              recordName: sectionName,
-              categoryId,
-              categoryLabel,
-              file,
-            });
-          }
-        }
-      }
+    for (const doc of documents) {
+      // Documents uploaded from the documents view use sectionName='documents'
+      // with documentType = section id; per-record evidence uses the section
+      // slug as sectionName. Both group under the section folder.
+      const sectionId = doc.sectionName === 'documents' ? doc.documentType : (doc.sectionName || doc.documentType);
+      if (!sectionId) continue;
+      const recordId = String(doc.recordId ?? '0');
+      const categoryId = doc.documentType || 'documents';
+      const fileType = typeFromName(doc.documentName || '');
+      docs.push({
+        id: `${sectionId}-${recordId}-${categoryId}-${doc.id}`,
+        sectionId,
+        sectionLabel: sectionLabels[sectionId] || sectionId,
+        recordId,
+        recordName: sectionLabels[sectionId] || sectionId,
+        categoryId,
+        categoryLabel: categoryId,
+        file: {
+          id: String(doc.id),
+          name: doc.documentName,
+          size: doc.size || 0,
+          type: fileType,
+          uploadedAt: doc.uploadedAt || '',
+        },
+        docId: doc.id,
+      });
     }
-
     return docs;
-  }, [evidenceData, sectionEvidenceConfigs, sectionLabels]);
+  }, [documents, sectionLabels]);
 
   // Build section folders from the flattened documents
   const folders = useMemo(() => {
@@ -256,37 +279,60 @@ export function StudentDevelopmentDocumentsView({
   }, [allDocuments]);
 
   const handleRemove = useCallback(
-    (doc: FlattenedDocument) => {
-      onRemoveEvidenceFile?.(doc.sectionId, doc.recordId, doc.categoryId, doc.file.id);
-      setSuccessMsg(`Removed "${doc.file.name}" from ${doc.sectionLabel}`);
-      setTimeout(() => setSuccessMsg(null), 3000);
+    async (doc: FlattenedDocument) => {
+      setDeletingId(doc.docId);
+      setError(null);
+      try {
+        await sdcRepositoryService.deleteDocument(doc.docId, departmentId);
+        setDocuments((prev) => prev.filter((d) => d.id !== doc.docId));
+        setSuccessMsg(`Removed "${doc.file.name}" from ${doc.sectionLabel}`);
+        setTimeout(() => setSuccessMsg(null), 3000);
+      } catch {
+        setError('Failed to remove the document. Please try again.');
+      } finally {
+        setDeletingId(null);
+      }
     },
-    [onRemoveEvidenceFile]
+    [departmentId]
   );
 
-  const handleDownload = useCallback((file: UploadedFile) => {
-    if (file.dataUrl) {
-      const a = document.createElement('a');
-      a.href = file.dataUrl;
-      a.download = file.name;
-      a.click();
-    } else {
-      setSuccessMsg('Download not available for this file');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    }
-  }, []);
+  const handleDownload = useCallback(
+    async (doc: FlattenedDocument) => {
+      try {
+        await sdcRepositoryService.downloadDocument(doc.docId, departmentId, doc.file.name);
+      } catch {
+        setError('Download failed. Please try again.');
+      }
+    },
+    [departmentId]
+  );
 
-  const handlePreview = useCallback((file: UploadedFile) => {
-    // Show images and PDFs inline in the dialog
-    if (file.dataUrl && (file.type.startsWith('image/') || file.type.includes('pdf'))) {
-      setPreviewFile(file);
-    } else if (file.dataUrl) {
-      window.open(file.dataUrl, '_blank');
-    } else {
-      setSuccessMsg('Preview not available for this file');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    }
-  }, []);
+  const handlePreview = useCallback(
+    (doc: FlattenedDocument) => {
+      // Previewed files are streamed from the backend, so open/download them.
+      handleDownload(doc);
+    },
+    [handleDownload]
+  );
+
+  const handleUploadSave = useCallback(
+    async (result: EvidenceUploadResult) => {
+      const entries = Object.entries(result.files).filter(([, files]) => files.length > 0);
+      for (const [categoryId, files] of entries) {
+        for (const file of files) {
+          if (!file.file) continue;
+          await sdcRepositoryService.uploadDocument(file.file, {
+            departmentId,
+            academicYear,
+            sectionName: 'documents',
+            documentType: categoryId,
+          });
+        }
+      }
+      loadDocuments();
+    },
+    [departmentId, academicYear, loadDocuments]
+  );
 
   // ============================================================
   // RENDER: Folder Grid View
@@ -294,7 +340,6 @@ export function StudentDevelopmentDocumentsView({
 
   const renderFolderGrid = () => (
     <>
-      {/* Folder Grid */}
       {filteredFolders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <AlertCircle className="h-10 w-10 text-muted-foreground/30 mb-3" />
@@ -347,7 +392,6 @@ export function StudentDevelopmentDocumentsView({
                     </div>
                   </div>
 
-                  {/* Mini file summary */}
                   <div className="mt-3 pt-3 border-t border-border/30">
                     <div className="flex flex-wrap gap-1">
                       {folder.size > 0 && (
@@ -479,13 +523,13 @@ export function StudentDevelopmentDocumentsView({
                         </td>
                         <td className="px-3 py-2.5 align-middle text-right">
                           <div className="flex items-center justify-end gap-0.5">
-                            {/* Preview */}
+                            {/* Preview / Open */}
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() => handlePreview(doc.file)}
-                              title={doc.file.type.startsWith('image/') ? 'Preview' : 'Open'}
+                              onClick={() => handlePreview(doc)}
+                              title="Open"
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </Button>
@@ -494,7 +538,7 @@ export function StudentDevelopmentDocumentsView({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() => handleDownload(doc.file)}
+                              onClick={() => handleDownload(doc)}
                               title="Download"
                             >
                               <Download className="h-3.5 w-3.5 text-blue-500" />
@@ -505,9 +549,14 @@ export function StudentDevelopmentDocumentsView({
                               size="icon"
                               className="h-7 w-7 text-destructive hover:text-destructive"
                               onClick={() => handleRemove(doc)}
+                              disabled={deletingId === doc.docId}
                               title="Remove"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              {deletingId === doc.docId ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
                             </Button>
                           </div>
                         </td>
@@ -540,8 +589,7 @@ export function StudentDevelopmentDocumentsView({
           <p className="text-sm text-muted-foreground">
             {selectedSection
               ? `Documents uploaded in ${selectedFolderMeta?.label || selectedSection}`
-              : 'Browse documents by section folder'
-            }
+              : 'Browse documents by section folder'}
           </p>
         </div>
         <Button size="sm" className="gap-2" onClick={() => setUploadDialogOpen(true)}>
@@ -621,6 +669,13 @@ export function StudentDevelopmentDocumentsView({
         )}
       </AnimatePresence>
 
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
+
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -635,25 +690,34 @@ export function StudentDevelopmentDocumentsView({
         />
       </div>
 
-      {/* Empty state when no docs at all */}
-      {allDocuments.length === 0 && !selectedSection && (
-        <Card className="border-border/50">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Paperclip className="h-8 w-8 text-muted-foreground/50" />
-            </div>
-            <h4 className="text-base font-semibold text-muted-foreground mb-1">No documents uploaded yet</h4>
-            <p className="text-xs text-muted-foreground max-w-md">
-              Upload documents to any section (NSS, NCC, Clubs, Events, etc.) using the document upload dialog.
-              They will appear here in the consolidated view.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {loading && documents.length === 0 ? (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          Loading documents...
+        </div>
+      ) : (
+        <>
+          {/* Empty state when no docs at all */}
+          {allDocuments.length === 0 && !selectedSection && (
+            <Card className="border-border/50">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Paperclip className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <h4 className="text-base font-semibold text-muted-foreground mb-1">No documents uploaded yet</h4>
+                <p className="text-xs text-muted-foreground max-w-md">
+                  Upload documents to any section (NSS, NCC, Clubs, Events, etc.) using the document upload dialog.
+                  They will appear here in the consolidated view.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Main Content: Folder Grid or Section Documents */}
-      {allDocuments.length > 0 && !selectedSection && renderFolderGrid()}
-      {selectedSection && renderSectionDocuments()}
+          {/* Main Content: Folder Grid or Section Documents */}
+          {allDocuments.length > 0 && !selectedSection && renderFolderGrid()}
+          {selectedSection && renderSectionDocuments()}
+        </>
+      )}
 
       {/* Evidence Upload Dialog */}
       <EvidenceUploadDialog
@@ -662,6 +726,7 @@ export function StudentDevelopmentDocumentsView({
         title="Student Development Supporting Documents"
         subtitle="Upload student development & outcomes evidence documents across all categories"
         categories={uploadCategories}
+        onSave={handleUploadSave}
       />
 
       {/* Preview Dialog */}
@@ -707,15 +772,6 @@ export function StudentDevelopmentDocumentsView({
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <FileText className="h-16 w-16" />
                   <p className="text-sm">Preview not available for this file type</p>
-                  {previewFile?.dataUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(previewFile.dataUrl, '_blank')}
-                    >
-                      Open in new tab
-                    </Button>
-                  )}
                 </div>
               </div>
             )}

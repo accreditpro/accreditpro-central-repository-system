@@ -1,24 +1,6 @@
 import { useState, useMemo, cloneElement, isValidElement } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -36,24 +18,19 @@ import {
   Presentation,
   BarChart3,
   FileText,
-  Search,
-  Plus,
-  Pencil,
-  Trash2,
-  Upload,
-  Download,
+  Calendar,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useReadOnly } from '@/hooks/useReadOnly';
+import { useAuth } from '@/hooks/useAuth';
 import { tpoTabConfigs } from './tpo-configs';
 import { TPODashboard } from './components/TPODashboard';
 import { TPODocumentsView } from './components/TPODocumentsView';
 import { RecruitersView } from './components/RecruitersView';
 import { TPOSectionView } from './components/TPOSectionView';
 import {
-  RECRUITER_EVIDENCE_SECTIONS,
   PLACEMENT_OFFER_EVIDENCE_SECTIONS,
   INTERNSHIP_EVIDENCE_SECTIONS,
   HIGHER_EDUCATION_EVIDENCE_SECTIONS,
@@ -81,124 +58,62 @@ const navItems: NavItem[] = [
   { id: 'documents', label: 'Supporting Documents', icon: <FileText className="h-4 w-4" /> },
 ];
 
+// Academic years (kept in sync with the rest of the app's year selector pattern)
+const ACADEMIC_YEARS = [
+  '2025-26',
+  '2024-25',
+  '2023-24',
+  '2022-23',
+  '2021-22',
+  '2020-21',
+  '2019-20',
+];
+
 export default function TPORepositoryPage() {
-  const isReadOnly = useReadOnly();
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<Record<string, string | number> | null>(null);
-  const [isNewRecord, setIsNewRecord] = useState(false);
-  const [tableData, setTableData] = useState<Record<string, Record<string, string | number>[]>>(() => {
-    const initial: Record<string, Record<string, string | number>[]> = {};
-    tpoTabConfigs.forEach(tab => {
-      initial[tab.id] = [...tab.sampleData];
-    });
-    return initial;
-  });
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2025-26');
+
+  const departmentId = user?.departmentId ?? null;
 
   const activeTabConfig = useMemo(() => {
-    return tpoTabConfigs.find(t => t.id === activeView);
+    return tpoTabConfigs.find((t) => t.id === activeView);
   }, [activeView]);
 
-  const currentData = useMemo(() => {
-    if (!activeTabConfig) return [];
-    const data = tableData[activeView] || [];
-    if (!searchQuery) return data;
-    return data.filter(row =>
-      Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  }, [activeTabConfig, tableData, activeView, searchQuery]);
-
-  const handleAddNew = () => {
-    if (!activeTabConfig) return;
-    const emptyRow: Record<string, string | number> = {};
-    activeTabConfig.fields.forEach(f => { emptyRow[f.key] = ''; });
-    setEditingRow(emptyRow);
-    setIsNewRecord(true);
-    setEditDialogOpen(true);
-  };
-
-  const handleEdit = (row: Record<string, string | number>) => {
-    setEditingRow({ ...row });
-    setIsNewRecord(false);
-    setEditDialogOpen(true);
-  };
-
-  const handleDelete = (index: number) => {
-    setTableData(prev => ({
-      ...prev,
-      [activeView]: prev[activeView].filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSave = () => {
-    if (!editingRow) return;
-    setTableData(prev => {
-      const updated = { ...prev };
-      if (isNewRecord) {
-        updated[activeView] = [...(updated[activeView] || []), editingRow];
-      } else {
-        const idx = updated[activeView].findIndex(r =>
-          Object.keys(r).every(k => r[k] === tableData[activeView].find(orig => orig === r)?.[k])
-        );
-        if (idx >= 0) {
-          updated[activeView] = [...updated[activeView]];
-          updated[activeView][idx] = editingRow;
-        }
-      }
-      return updated;
-    });
-    setEditDialogOpen(false);
-    setEditingRow(null);
-  };
-
-  const handleRecruitersDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, recruiters: data }));
-  };
-
-  const handlePlacementOffersDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, 'placement-offers': data }));
-  };
-
-  const handleInternshipsDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, internships: data }));
-  };
-
-  const handleHigherEducationDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, 'higher-education': data }));
-  };
-
-  const handleEntrepreneurshipDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, 'entrepreneurship-startups': data }));
-  };
-
-  const handleTrainingActivitiesDataChange = (data: Record<string, string | number>[]) => {
-    setTableData(prev => ({ ...prev, 'training-activities': data }));
-  };
-
   const renderContent = () => {
-    if (activeView === 'dashboard') return <TPODashboard />;
-    if (activeView === 'documents') return <TPODocumentsView />;
-    if (activeView === 'recruiters') {
+    if (departmentId == null) {
       return (
-        <RecruitersView
-          initialData={tableData['recruiters'] || []}
-          onDataChange={handleRecruitersDataChange}
-        />
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
+          <h3 className="text-lg font-semibold">Department required</h3>
+          <p className="text-sm text-muted-foreground max-w-md mt-1">
+            Your account has no department assigned. Ask your Institution Admin to assign a
+            department to your profile before using the TPO Repository.
+          </p>
+        </div>
       );
+    }
+
+    if (activeView === 'dashboard') {
+      return <TPODashboard departmentId={departmentId} academicYear={selectedAcademicYear} />;
+    }
+
+    if (activeView === 'documents') {
+      return <TPODocumentsView departmentId={departmentId} academicYear={selectedAcademicYear} />;
+    }
+
+    if (activeView === 'recruiters') {
+      return <RecruitersView departmentId={departmentId} academicYear={selectedAcademicYear} />;
     }
 
     if (activeView === 'training-activities' && activeTabConfig) {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['training-activities'] || []}
-          onDataChange={handleTrainingActivitiesDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => String(row.programName || 'Training')}
-          getRecordId={(_, index) => `training-${index}`}
           evidenceSectionConfigs={TRAINING_ACTIVITIES_EVIDENCE_SECTIONS}
         />
       );
@@ -208,10 +123,9 @@ export default function TPORepositoryPage() {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['placement-offers'] || []}
-          onDataChange={handlePlacementOffersDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
-          getRecordId={(_, index) => `placement-offer-${index}`}
           evidenceSectionConfigs={PLACEMENT_OFFER_EVIDENCE_SECTIONS}
         />
       );
@@ -221,10 +135,9 @@ export default function TPORepositoryPage() {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['internships'] || []}
-          onDataChange={handleInternshipsDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.company || ''}`}
-          getRecordId={(_, index) => `internship-${index}`}
           evidenceSectionConfigs={INTERNSHIP_EVIDENCE_SECTIONS}
         />
       );
@@ -234,10 +147,9 @@ export default function TPORepositoryPage() {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['higher-education'] || []}
-          onDataChange={handleHigherEducationDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => `${row.studentName || 'Unknown'} - ${row.university || ''}`}
-          getRecordId={(_, index) => `higher-ed-${index}`}
           evidenceSectionConfigs={HIGHER_EDUCATION_EVIDENCE_SECTIONS}
         />
       );
@@ -247,169 +159,34 @@ export default function TPORepositoryPage() {
       return (
         <TPOSectionView
           tabConfig={activeTabConfig}
-          initialData={tableData['entrepreneurship-startups'] || []}
-          onDataChange={handleEntrepreneurshipDataChange}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
           getRecordTitle={(row) => `${row.startupName || 'Unknown'} - ${row.founderName || ''}`}
-          getRecordId={(_, index) => `startup-${index}`}
           evidenceSectionConfigs={ENTREPRENEURSHIP_EVIDENCE_SECTIONS}
+        />
+      );
+    }
+
+    if (activeView === 'placement-statistics' && activeTabConfig) {
+      return (
+        <TPOSectionView
+          tabConfig={activeTabConfig}
+          departmentId={departmentId}
+          academicYear={selectedAcademicYear}
+          getRecordTitle={(row) => `${row.department || 'Department'} - ${row.academicYear || ''}`}
         />
       );
     }
 
     if (!activeTabConfig) return null;
 
-    const visibleFields = activeTabConfig.fields.slice(0, 7);
-
     return (
-      <div className="space-y-4">
-        {/* Tab Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">{activeTabConfig.label}</h3>
-            <p className="text-sm text-muted-foreground">{activeTabConfig.description}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            {!isReadOnly && (
-              <>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  CSV Upload
-                </Button>
-                <Button size="sm" className="gap-2" onClick={handleAddNew}>
-                  <Plus className="h-4 w-4" />
-                  Add Record
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={`Search ${activeTabConfig.label.toLowerCase()}...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Data Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{activeTabConfig.label} Records</CardTitle>
-              <Badge variant="secondary">{currentData.length} records</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {visibleFields.map(field => (
-                      <TableHead key={field.key} className="whitespace-nowrap text-xs">
-                        {field.label}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-right text-xs">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={visibleFields.length + 1} className="text-center py-8 text-muted-foreground">
-                        No records found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentData.map((row, idx) => (
-                      <TableRow key={idx}>
-                        {visibleFields.map(field => (
-                          <TableCell key={field.key} className="text-sm whitespace-nowrap max-w-[200px] truncate">
-                            {field.type === 'currency'
-                              ? `₹${Number(row[field.key]).toLocaleString('en-IN')}`
-                              : field.type === 'percentage'
-                              ? `${row[field.key]}%`
-                              : String(row[field.key] || '-')}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {isReadOnly ? (
-                              <span className="text-[10px] text-muted-foreground italic">Read-only</span>
-                            ) : (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(row)}>
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(idx)}>
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Edit/Add Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{isNewRecord ? 'Add New Record' : 'Edit Record'}</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              {activeTabConfig.fields.map(field => (
-                <div key={field.key} className="space-y-1.5">
-                  <Label className="text-xs font-medium">
-                    {field.label}
-                    {field.required && <span className="text-destructive ml-0.5">*</span>}
-                  </Label>
-                  {field.type === 'select' ? (
-                    <Select
-                      value={String(editingRow?.[field.key] || '')}
-                      onValueChange={(val) => setEditingRow(prev => prev ? { ...prev, [field.key]: val } : null)}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder={`Select ${field.label}`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.options?.map(opt => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      type={field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                      value={String(editingRow?.[field.key] || '')}
-                      onChange={(e) => setEditingRow(prev => prev ? { ...prev, [field.key]: field.type === 'number' || field.type === 'currency' || field.type === 'percentage' ? Number(e.target.value) : e.target.value } : null)}
-                      placeholder={field.placeholder || `Enter ${field.label}`}
-                      className="h-9"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>{isNewRecord ? 'Add Record' : 'Save Changes'}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <TPOSectionView
+        tabConfig={activeTabConfig}
+        departmentId={departmentId}
+        academicYear={selectedAcademicYear}
+        getRecordTitle={(row) => String(row.id || 'Record')}
+      />
     );
   };
 
@@ -428,6 +205,35 @@ export default function TPORepositoryPage() {
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
+
+        {/* Department + Academic Year */}
+        {!sidebarCollapsed && (
+          <div className="px-3 py-2 border-b space-y-2">
+            {departmentId != null && (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-semibold bg-blue-500/10 text-blue-700 border-blue-500/30">
+                <Building2 className="h-3 w-3 mr-1" />
+                Dept #{departmentId}
+              </Badge>
+            )}
+            <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
+              <SelectTrigger className="h-8 text-xs w-full border-dashed">
+                <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                <SelectValue placeholder="Select Academic Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACADEMIC_YEARS.map((year) => (
+                  <SelectItem key={year} value={year} className="text-xs">
+                    {year}
+                    {year === '2025-26' && (
+                      <span className="ml-2 text-[9px] text-blue-600 font-medium">(Current)</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = activeView === item.id;
@@ -442,7 +248,7 @@ export default function TPORepositoryPage() {
                     ? 'bg-primary/10 text-primary font-medium'
                     : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
-                onClick={() => { setActiveView(item.id); setSearchQuery(''); }}
+                onClick={() => setActiveView(item.id)}
                 title={sidebarCollapsed ? item.label : undefined}
               >
                 {isActive && isValidElement(item.icon)

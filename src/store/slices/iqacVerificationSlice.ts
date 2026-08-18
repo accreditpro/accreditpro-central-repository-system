@@ -1,8 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { IQAC_NAME } from '@/pages/iqac-dashboard/iqac-data';
 import {
-  buildSeedObservations,
-  buildSeedVerificationMap,
   EvidenceObservation,
   EvidenceObservationStatus,
   IqacVerificationStatus,
@@ -29,7 +27,10 @@ export interface VerificationState {
   observations: EvidenceObservation[];
 }
 
-const STORAGE_KEY = 'accreditpro-iqac-verification';
+// v2: the initial state is no longer seeded from mock data — documents and
+// observations come from the backend API and this slice only overlays live
+// IQAC decisions made in the current session.
+const STORAGE_KEY = 'accreditpro-iqac-verification-v2';
 
 function loadPersisted<T>(fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -51,13 +52,13 @@ export function persistVerification(state: VerificationState): void {
 }
 
 const seeded = loadPersisted<VerificationState>({
-  verifications: buildSeedVerificationMap(),
-  observations: buildSeedObservations(),
+  verifications: {},
+  observations: [],
 });
 
 const initialState: VerificationState = {
-  verifications: seeded.verifications ?? buildSeedVerificationMap(),
-  observations: seeded.observations ?? buildSeedObservations(),
+  verifications: seeded.verifications ?? {},
+  observations: seeded.observations ?? [],
 };
 
 let counter = 0;

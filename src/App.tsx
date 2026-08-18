@@ -173,18 +173,17 @@ const AppRoutes = () => {
         <Route index element={<FinanceRepositoryPage />} />
       </Route>
 
-      {/* TPO / Placement Officer Routes - No outer sidebar */}
+      {/* TPO Coordinator Routes - No outer sidebar */}
       <Route
         path="/app/tpo-repository"
         element={
-          <ProtectedRoute allowedRoles={[UserRole.TPO_COORDINATOR, UserRole.PLACEMENT_OFFICER]}>
+          <ProtectedRoute allowedRoles={[UserRole.TPO_COORDINATOR]}>
             <TPOCoordinatorLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<TPORepositoryPage />} />
       </Route>
-      <Route path="/app/placement-repository" element={<Navigate to="/app/tpo-repository" replace />} />
 
       {/* Student Development Coordinator Routes - No outer sidebar */}
       <Route
@@ -214,7 +213,7 @@ const AppRoutes = () => {
       <Route
         path="/app/hod-dashboard"
         element={
-          <ProtectedRoute allowedRoles={[UserRole.HEAD_OF_DEPARTMENT, UserRole.HOD]}>
+          <ProtectedRoute allowedRoles={[UserRole.HEAD_OF_DEPARTMENT]}>
             <HODLayout />
           </ProtectedRoute>
         }

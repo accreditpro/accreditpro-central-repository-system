@@ -26,7 +26,6 @@ import {
   departmentInfrastructureConfig,
   departmentInfo,
 } from './repository-configs';
-import { useAuth } from '@/hooks/useAuth';
 import { SidebarView } from './types';
 import {
   LayoutDashboard,
@@ -100,7 +99,6 @@ const repositoryConfigMap: Record<string, typeof academicRepositoryConfig> = {
 };
 
 export const DepartmentRepositoryPage = () => {
-  const { user } = useAuth();
   const [activeView, setActiveView] = useState<SidebarView>('academic-repository');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -109,20 +107,9 @@ export const DepartmentRepositoryPage = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return (
-          <RepositoryDashboard
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId || 1}
-            onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)}
-          />
-        );
+        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
       case 'mission-vision':
-        return (
-          <DepartmentMissionVision
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId || 1}
-          />
-        );
+        return <DepartmentMissionVision />;
       case 'course-repository':
         return <CourseRepositoryModule />;
       case 'academic-repository':
@@ -136,8 +123,6 @@ export const DepartmentRepositoryPage = () => {
           <RepositoryWorkspace
             config={repositoryConfigMap[activeView]}
             academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId || 1}
-            departmentName={user?.department || departmentInfo.department}
           />
         );
       case 'documents':
@@ -149,13 +134,7 @@ export const DepartmentRepositoryPage = () => {
       case 'profile':
         return <ProfileView />;
       default:
-        return (
-          <RepositoryDashboard
-            academicYear={selectedAcademicYear}
-            departmentId={user?.departmentId || 1}
-            onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)}
-          />
-        );
+        return <RepositoryDashboard onNavigate={(module) => setActiveView(`${module}-repository` as SidebarView)} />;
     }
   };
 
@@ -188,7 +167,7 @@ export const DepartmentRepositoryPage = () => {
         <div className={cn('p-4 border-b border-border/50', sidebarCollapsed && 'p-2')}>
           {!sidebarCollapsed ? (
             <div className="space-y-2">
-              <h2 className="text-sm font-bold tracking-tight">{user?.department || departmentInfo.department}</h2>
+              <h2 className="text-sm font-bold tracking-tight">{departmentInfo.department}</h2>
               <div className="flex items-center gap-1.5">
                 <Badge
                   variant="outline"
@@ -277,7 +256,7 @@ export const DepartmentRepositoryPage = () => {
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col">
+      <main className="flex-1 overflow-hidden flex flex-col">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50">
           <Button
@@ -293,7 +272,7 @@ export const DepartmentRepositoryPage = () => {
               {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
             </p>
             <p className="text-[10px] text-muted-foreground">
-              {user?.department || departmentInfo.department} • {selectedAcademicYear}
+              {departmentInfo.department} • {selectedAcademicYear}
             </p>
           </div>
           <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
@@ -309,8 +288,8 @@ export const DepartmentRepositoryPage = () => {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
-          <div className="p-6 w-full min-w-0 max-w-full">
+        <ScrollArea className="flex-1">
+          <div className="p-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${activeView}-${selectedAcademicYear}`}
@@ -318,13 +297,12 @@ export const DepartmentRepositoryPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="w-full min-w-0 max-w-full"
               >
                 {renderContent()}
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </ScrollArea>
       </main>
     </div>
   );

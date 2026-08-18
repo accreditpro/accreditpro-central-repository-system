@@ -1,8 +1,5 @@
-Department,Academic Year,Year,Semester,Description,Start Date,End Date
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,Commencement of Class Work,2026-01-19,2026-01-19
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,First Mid-Term Examinations,2026-03-02,2026-03-07
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,Major Project Review I,2026-03-09,2026-03-11
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,Second Mid-Term Examinations,2026-04-20,2026-04-25
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,Major Project Review II,2026-04-27,2026-04-29
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,End Semester Theory Examinations,2026-05-04,2026-05-16
-Computer Science & Engineering (CSE),2025-26,IV Year,Semester II,Major Project Viva-Voce,2026-05-18,2026-05-23
+Department,Year,Semester,Description,Start Date,End Date,Duration
+Computer Science & Engineering (CSE),III Year,Semester I,Guest Lecture on AI,2025-08-10,2025-08-10,1
+Computer Science & Engineering (CSE),III Year,Semester I,Mid Term Practical Exams,2025-09-01,2025-09-05,5
+Computer Science & Engineering (CSE),III Year,Semester I,Cultural Fest TechSymposium,2025-10-15,2025-10-18,4
+Computer Science & Engineering (CSE),III Year,Semester I,Final Theory Examination,2025-12-01,2025-12-15,15

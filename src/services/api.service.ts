@@ -131,6 +131,17 @@ class ApiService {
   }
 
   /**
+   * Fetch a raw response body as a Blob (for in-app previews of
+   * authenticated downloads). Unlike `download`, it does not trigger
+   * a browser download. The blob type is inspected so callers can
+   * detect JSON error payloads.
+   */
+  async getBlob(url: string): Promise<Blob> {
+    const response = await this.instance.get(url, { responseType: 'blob' });
+    return response.data as Blob;
+  }
+
+  /**
    * Raw request — returns the full Axios response including
    * the ApiResponse wrapper. Useful when you need the message/timestamp.
    */
@@ -146,16 +157,20 @@ class ApiService {
    * Attempts to extract the filename from Content-Disposition headers;
    * falls back to the provided `filename` param or a default name.
    */
-  async download(url: string, filename?: string, params?: Record<string, any>): Promise<void> {
-    const response = await this.instance.get(url, { responseType: 'blob', params });
+  async download(url: string, filename?: string): Promise<void> {
+    const response = await this.instance.get(url, { responseType: 'blob' });
 
-    // Try to extract filename from Content-Disposition header
+    // Prefer the server-provided Content-Disposition filename; fall back to
+    // the explicitly passed `filename` param, then to a generic name. The
+    // server header is the source of truth, but a caller-provided fallback
+    // keeps downloads named correctly even when the header is unavailable.
     const disposition = response.headers['content-disposition'];
-    let name = filename;
-    if (!name && disposition) {
+    let name: string | undefined;
+    if (disposition) {
       const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
       if (match) name = match[1].replace(/['"]/g, '');
     }
+    if (!name) name = filename;
 
     const blob = response.data;
 
@@ -177,24 +192,6 @@ class ApiService {
     anchor.click();
     document.body.removeChild(anchor);
     window.URL.revokeObjectURL(blobUrl);
-  }
-
-  /**
-   * Fetch a resource as a Blob (useful for in-browser preview / ObjectURLs).
-   */
-  async getBlob(url: string, params?: Record<string, any>): Promise<Blob> {
-    const response = await this.instance.get(url, { responseType: 'blob', params });
-    const blob = response.data;
-    if (blob && blob.type === 'application/json') {
-      try {
-        const text = await blob.text();
-        const json = JSON.parse(text);
-        throw new Error(json.message || 'Error fetching document preview');
-      } catch (e) {
-        throw new Error('Failed to fetch document preview');
-      }
-    }
-    return blob;
   }
 }
 

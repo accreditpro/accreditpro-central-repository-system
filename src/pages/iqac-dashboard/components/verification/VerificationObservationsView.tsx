@@ -12,6 +12,7 @@ import {
 import { useAppDispatch } from '@/store';
 import { markObservationVerified } from '@/store/slices/iqacVerificationSlice';
 import { addNotification } from '@/store/slices/uiSlice';
+import { iqacService } from '@/services/iqac.service';
 import { useReadOnly } from '@/hooks/useReadOnly';
 import { toast } from 'sonner';
 import { MessageSquareWarning, CheckCircle2, Calendar, ArrowRight } from 'lucide-react';
@@ -50,21 +51,27 @@ export function VerificationObservationsView() {
     verified: observations.filter((o) => o.status === 'verified').length,
   };
 
-  const handleVerify = (obs: EvidenceObservation) => {
+  const handleVerify = async (obs: EvidenceObservation) => {
     if (obs.status !== 'resolved') {
       toast.info('Observation must be resolved by the department before it can be verified.');
       return;
     }
-    dispatch(markObservationVerified({ id: obs.id }));
-    dispatch(
-      addNotification({
-        title: 'Observation verified',
-        message: `Observation on "${obs.documentName}" verified and closed.`,
-        type: 'success',
-        read: false,
-      })
-    );
-    toast.success('Observation verified — document marked as verified');
+    try {
+      await iqacService.verifyObservation(obs.id);
+      // Optimistic local overlay — the observation list reflects the change immediately.
+      dispatch(markObservationVerified({ id: obs.id }));
+      dispatch(
+        addNotification({
+          title: 'Observation verified',
+          message: `Observation on "${obs.documentName}" verified and closed.`,
+          type: 'success',
+          read: false,
+        })
+      );
+      toast.success('Observation verified — document marked as verified');
+    } catch {
+      toast.error('Failed to verify the observation. Please try again.');
+    }
   };
 
   return (

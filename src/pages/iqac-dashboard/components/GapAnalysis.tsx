@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,15 +12,10 @@ import {
   AlertTriangle,
   Target,
   Lightbulb,
+  Loader2,
 } from 'lucide-react';
-import {
-  repositoryGaps,
-  evidenceGaps,
-  criterionGaps,
-  departmentGaps,
-  yearGaps,
-  gapStats,
-} from '../iqac-data';
+import { iqacService } from '@/services/iqac.service';
+import type { GapAnalysisDto } from '@/services/iqac.service';
 import type { IqaGap } from '../iqac-data';
 import { StatCard, PRIORITY_META, PriorityBadge, scoreTone, ReadinessBar } from './common';
 import { cn } from '@/lib/utils';
@@ -95,6 +90,29 @@ function GapTable({ gaps }: { gaps: IqaGap[] }) {
 
 export function GapAnalysis() {
   const [tab, setTab] = useState('repository');
+  const [gaps, setGaps] = useState<GapAnalysisDto | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    iqacService
+      .getGaps()
+      .then((result) => {
+        if (!cancelled) setGaps(result);
+      })
+      .catch(() => {
+        if (!cancelled) setGaps(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const repositoryGaps = (gaps?.repository ?? []) as IqaGap[];
+  const evidenceGaps = (gaps?.evidence ?? []) as IqaGap[];
+  const criterionGaps = (gaps?.criterion ?? []) as IqaGap[];
+  const departmentGaps = (gaps?.department ?? []) as IqaGap[];
+  const yearGaps = (gaps?.year ?? []) as IqaGap[];
+  const gapStats = gaps?.stats ?? { critical: 0, total: 0 };
 
   const tabGaps: Record<string, IqaGap[]> = useMemo(
     () => ({
@@ -104,10 +122,19 @@ export function GapAnalysis() {
       department: departmentGaps,
       year: yearGaps,
     }),
-    []
+    [repositoryGaps, evidenceGaps, criterionGaps, departmentGaps, yearGaps]
   );
 
   const criticalCount = gapStats.critical;
+
+  if (!gaps) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading gap analysis…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

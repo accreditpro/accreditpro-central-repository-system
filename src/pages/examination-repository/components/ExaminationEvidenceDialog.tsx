@@ -1,11 +1,16 @@
 import { Badge } from '@/components/ui/badge';
-import { Paperclip, FileText } from 'lucide-react';
-import { ExaminationEvidenceFile, useEvidenceStore } from '../evidence-store';
+import { FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   EvidenceUploadDialog,
   EvidenceUploadResult,
+  UploadedFile,
 } from '@/components/shared/EvidenceUploadDialog';
-import type { EvidenceCategory, UploadedFile } from '@/components/shared/EvidenceUploadDialog';
+import type { EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
+import {
+  examinationRepositoryService,
+  ExaminationEvidenceFile,
+} from '@/services/examination-repository.service';
 
 // ============================================================
 // TYPES
@@ -32,7 +37,6 @@ export function FileCountBadge({ totalFiles, sections }: EvidenceBadgeProps) {
   if (totalFiles === 0) {
     return (
       <Badge variant="outline" className="text-[9px] text-muted-foreground gap-1">
-        <Paperclip className="h-2.5 w-2.5" />
         No docs
       </Badge>
     );
@@ -117,17 +121,22 @@ export const MODULE_EVIDENCE_SECTIONS: Record<string, EvidenceSectionConfig[]> =
 };
 
 // ============================================================
-// MAIN EVIDENCE DIALOG
+// MAIN EVIDENCE DIALOG (server-backed)
 // ============================================================
 
 interface ExaminationEvidenceDialogProps {
+  /** Backend UUID of the parent record */
   recordId: string;
   recordTitle: string;
   moduleId: string;
   moduleLabel: string;
+  academicYear: string;
   open: boolean;
   onClose: () => void;
+  /** Persisted evidence for this record (from the backend) */
   existingFiles?: ExaminationEvidenceFile[];
+  /** Invoked after any change so the caller can refresh its evidence list */
+  onChanged?: () => void;
 }
 
 export function ExaminationEvidenceDialog({
@@ -135,12 +144,12 @@ export function ExaminationEvidenceDialog({
   recordTitle,
   moduleId,
   moduleLabel,
+  academicYear,
   open,
   onClose,
   existingFiles = [],
+  onChanged,
 }: ExaminationEvidenceDialogProps) {
-  const { addEvidence, removeEvidence } = useEvidenceStore();
-
   const sectionConfigs = MODULE_EVIDENCE_SECTIONS[moduleId] || SCHEDULE_EVIDENCE_SECTIONS;
 
   const categories: EvidenceCategory[] = sectionConfigs.map((s) => ({
@@ -155,50 +164,69 @@ export function ExaminationEvidenceDialog({
   const initialFiles: Record<string, UploadedFile[]> = {};
   sectionConfigs.forEach((s) => {
     initialFiles[s.id] = existingFiles
-      .filter((f) => f.category === s.id)
+      .filter((f) => f.sectionId === s.id)
       .map((f) => ({
         id: f.id,
         name: f.name,
         size: f.size,
         type: f.type,
-        uploadedAt: f.recordedAt,
-        dataUrl: f.dataUrl,
+        uploadedAt: f.uploadedAt,
       }));
   });
 
-  const handleSave = (result: EvidenceUploadResult) => {
-    const now = new Date().toISOString();
+  /**
+   * Save & Close: deletes removed files and uploads newly added files via the
+   * backend. Throws when any operation fails so the dialog stays open and the
+   * caller can surface the error.
+   */
+  const handleSave = async (result: EvidenceUploadResult): Promise<void> => {
     const existingIds = new Set(existingFiles.map((f) => f.id));
     const finalIds = new Set(Object.values(result.files).flat().map((f) => f.id));
+    const errors: string[] = [];
 
-    // Remove files that were deleted in this session
-    existingFiles.forEach((f) => {
-      if (!finalIds.has(f.id)) removeEvidence(f.id);
-    });
-
-    // Add newly uploaded files
-    const filesToAdd: ExaminationEvidenceFile[] = [];
-    Object.entries(result.files).forEach(([sectionId, files]) => {
-      files.forEach((f) => {
-        if (existingIds.has(f.id)) return;
-        filesToAdd.push({
-          id: f.id,
-          name: f.name,
-          size: f.size,
-          type: f.type,
-          recordedAt: now,
-          dataUrl: f.dataUrl,
-          category: sectionId,
-          moduleId,
-          moduleLabel,
-          recordTitle,
-        });
-      });
-    });
-
-    if (filesToAdd.length > 0) {
-      addEvidence(filesToAdd);
+    // Files removed in this session → delete on the server
+    const toDelete = existingFiles.filter((f) => !finalIds.has(f.id));
+    for (const f of toDelete) {
+      try {
+        await examinationRepositoryService.deleteEvidence(f.id);
+      } catch {
+        errors.push(`Could not delete ${f.name}`);
+      }
     }
+
+    // Newly added files → upload
+    for (const [sectionId, files] of Object.entries(result.files)) {
+      for (const f of files) {
+        if (existingIds.has(f.id)) continue;
+        if (!f.file) {
+          errors.push(`Missing file data for ${f.name}`);
+          continue;
+        }
+        try {
+          await examinationRepositoryService.uploadEvidence({
+            file: f.file,
+            academicYear,
+            moduleId,
+            recordId,
+            sectionId,
+            recordTitle,
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'unknown error';
+          errors.push(`Could not upload ${f.name}: ${msg}`);
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      toast.error(
+        `${errors.length} operation${errors.length > 1 ? 's' : ''} failed. ${errors[0]}`
+      );
+      throw new Error('Some document operations failed');
+    }
+
+    toast.success('Documents saved successfully');
+    onChanged?.();
   };
 
   return (

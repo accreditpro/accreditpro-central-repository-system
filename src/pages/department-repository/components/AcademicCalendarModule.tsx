@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,24 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useReadOnly } from '@/hooks/useReadOnly';
-import { academicRepositoryService } from '@/services/academic-repository.service';
 import {
   Calendar,
   Download,
@@ -37,7 +25,6 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  AlertTriangle,
   FileText,
   X,
   Building2,
@@ -62,7 +49,6 @@ interface CalendarEvent {
 interface AcademicCalendarModuleProps {
   department: string;
   academicYear: string;
-  departmentId?: number;
 }
 
 const YEARS_OF_STUDY = ['I Year', 'II Year', 'III Year', 'IV Year'];
@@ -112,41 +98,12 @@ function getEventStatus(startDate: string, endDate: string): 'upcoming' | 'compl
   return 'ongoing';
 }
 
-function cleanYear(y: string): string {
-  let str = (y || '').toLowerCase().trim();
-  str = str.replace(/\b1st\b|\bfirst\b|\bi\b/g, 'i');
-  str = str.replace(/\b2nd\b|\bsecond\b|\bii\b/g, 'ii');
-  str = str.replace(/\b3rd\b|\bthird\b|\biii\b/g, 'iii');
-  str = str.replace(/\b4th\b|\bfourth\b|\biv\b/g, 'iv');
-  str = str.replace(/\s+year/g, '').trim();
-  return str;
-}
-
-function cleanSem(s: string): string {
-  let str = (s || '').toLowerCase().trim();
-  str = str.replace(/\b(viii|8th|8)\b/g, '8');
-  str = str.replace(/\b(vii|7th|7)\b/g, '7');
-  str = str.replace(/\b(vi|6th|6)\b/g, '6');
-  str = str.replace(/\b(v|5th|5)\b/g, '5');
-  str = str.replace(/\b(iv|4th|4)\b/g, '4');
-  str = str.replace(/\b(iii|3rd|3)\b/g, '3');
-  str = str.replace(/\b(ii|2nd|2)\b/g, '2');
-  str = str.replace(/\b(i|1st|1)\b/g, '1');
-  str = str.replace(/^(semester|sem)\s*/i, '').trim();
-  return str;
-}
-
-export const AcademicCalendarModule = ({
-  department,
-  academicYear,
-  departmentId = 1,
-}: AcademicCalendarModuleProps) => {
+export const AcademicCalendarModule = ({ department, academicYear }: AcademicCalendarModuleProps) => {
   const isReadOnly = useReadOnly();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedYear, setSelectedYear] = useState('III Year');
   const [selectedSemester, setSelectedSemester] = useState('Semester I');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -156,46 +113,6 @@ export const AcademicCalendarModule = ({
   const [uploadPreview, setUploadPreview] = useState<CalendarEvent[]>([]);
   const [uploadStats, setUploadStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Fetch all calendar events from live API
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await academicRepositoryService.getCalendarEvents(academicYear, departmentId);
-      let items: any[] = [];
-      if (Array.isArray(res)) {
-        items = res;
-      } else if (res && Array.isArray(res.content)) {
-        items = res.content;
-      } else if (res && res.data && Array.isArray(res.data.content)) {
-        items = res.data.content;
-      } else if (res && res.data && Array.isArray(res.data)) {
-        items = res.data;
-      }
-
-      const mapped: CalendarEvent[] = items.map((item: any) => ({
-        id: String(item.id),
-        department: item.department || department,
-        year: item.yearOfStudy || item.year || 'III Year',
-        semester: item.semester || 'Semester I',
-        description: item.description || '',
-        startDate: item.startDate || '',
-        endDate: item.endDate || '',
-        duration: item.duration ?? calculateDuration(item.startDate, item.endDate),
-      }));
-
-      setEvents(mapped);
-    } catch (err) {
-      console.warn('Failed to load academic calendar events:', err);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [academicYear, departmentId, department]);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
 
   // New event form state
   const [newEvent, setNewEvent] = useState({
@@ -207,7 +124,7 @@ export const AcademicCalendarModule = ({
   // Filtered events
   const filteredEvents = useMemo(() => {
     let filtered = events.filter(
-      (e) => cleanYear(e.year) === cleanYear(selectedYear) && cleanSem(e.semester) === cleanSem(selectedSemester)
+      (e) => e.year === selectedYear && e.semester === selectedSemester
     );
 
     if (searchQuery) {
@@ -236,45 +153,33 @@ export const AcademicCalendarModule = ({
     return filtered;
   }, [events, selectedYear, selectedSemester, searchQuery, filterMonth, filterStatus]);
 
-  // Download CSV with real data from get all API
+  // Download CSV Template
   const handleDownloadTemplate = useCallback(() => {
     const header = 'Department,Year,Semester,Description,Start Date,End Date,Duration';
-    
-    // Get real events for the selected Year & Semester from API state
-    const currentEvents = events.filter(
-      (e) => cleanYear(e.year) === cleanYear(selectedYear) && cleanSem(e.semester) === cleanSem(selectedSemester)
-    );
-
-    const rows = currentEvents.length > 0
-      ? currentEvents.map((e) => {
-          const desc = e.description.includes(',') ? `"${e.description.replace(/"/g, '""')}"` : e.description;
-          const dept = (e.department && e.department.includes(',')) ? `"${e.department.replace(/"/g, '""')}"` : (e.department || department);
-          return `${dept},${e.year},${e.semester},${desc},${e.startDate},${e.endDate},${e.duration}`;
-        })
-      : [
-          `${department},${selectedYear},${selectedSemester},,${new Date().toISOString().split('T')[0]},${new Date().toISOString().split('T')[0]},1`,
-        ];
-
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const sampleRows = [
+      `${department},${selectedYear},${selectedSemester},Commencement of Class Work,2025-07-01,2025-07-01,1`,
+      `${department},${selectedYear},${selectedSemester},Orientation Program,2025-07-02,2025-07-03,2`,
+      `${department},${selectedYear},${selectedSemester},First Internal Examination,2025-09-05,2025-09-07,3`,
+      `${department},${selectedYear},${selectedSemester},Industrial Visit,2025-09-20,2025-09-20,1`,
+      `${department},${selectedYear},${selectedSemester},Second Internal Examination,2025-11-10,2025-11-12,3`,
+      `${department},${selectedYear},${selectedSemester},Practical Examinations,2025-12-05,2025-12-10,6`,
+      `${department},${selectedYear},${selectedSemester},Theory Examinations,2025-12-15,2025-12-24,10`,
+    ];
+    const csv = [header, ...sampleRows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_calendar_${academicYear}_${selectedYear.replace(/\s+/g, '_')}_${selectedSemester.replace(/\s+/g, '_')}.csv`;
+    a.download = `academic_calendar_${selectedYear.replace(' ', '_')}_${selectedSemester.replace(' ', '_')}_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [events, department, selectedYear, selectedSemester, academicYear]);
-
-  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  }, [department, selectedYear, selectedSemester]);
 
   // Upload CSV
   const handleFileUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-
-      setSelectedCsvFile(file);
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -363,94 +268,59 @@ export const AcademicCalendarModule = ({
     [department, selectedYear, selectedSemester]
   );
 
-  // Import uploaded events via live API
-  const handleImportUploaded = useCallback(async () => {
+  // Import uploaded events (only valid ones)
+  const handleImportUploaded = useCallback(() => {
     const validEvents = uploadPreview.filter((e) => e.status === 'valid');
-    if (validEvents.length === 0) return;
-
-    setUploading(true);
-    try {
-      // Format payload according to backend BulkCreateAcademicCalendarEventRequest schema
-      const targetYear = validEvents[0]?.year || selectedYear;
-      const targetSem = validEvents[0]?.semester || selectedSemester;
-
-      // Persist to backend via bulk save endpoint
-      await academicRepositoryService.bulkSaveCalendarEvents(departmentId, {
-        academicYear,
-        yearOfStudy: targetYear,
-        semester: targetSem,
-        events: validEvents.map((e) => ({
-          academicYear,
-          yearOfStudy: e.year || targetYear,
-          semester: e.semester || targetSem,
-          description: e.description,
-          startDate: e.startDate,
-          endDate: e.endDate,
-        })),
-      });
-
-      // Auto-switch to the year/semester of the imported records so user sees them immediately
-      if (targetYear && YEARS_OF_STUDY.includes(targetYear)) {
-        setSelectedYear(targetYear);
+    const newEvents = validEvents.map((e, idx) => ({
+      ...e,
+      id: `event-${Date.now()}-${idx}`,
+      status: undefined as CalendarEvent['status'],
+      errors: undefined,
+    }));
+    setEvents((prev) => [...prev, ...newEvents]);
+    // Auto-switch to the year/semester of the first imported record so user can see results
+    if (newEvents.length > 0) {
+      const firstEvent = newEvents[0];
+      if (firstEvent.year && YEARS_OF_STUDY.includes(firstEvent.year)) {
+        setSelectedYear(firstEvent.year);
       }
-      if (targetSem && SEMESTERS.includes(targetSem)) {
-        setSelectedSemester(targetSem);
+      if (firstEvent.semester && SEMESTERS.includes(firstEvent.semester)) {
+        setSelectedSemester(firstEvent.semester);
       }
-
-      await fetchEvents();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-      setShowUploadDialog(false);
-      setUploadPreview([]);
-      setUploadStats(null);
-      setSelectedCsvFile(null);
-    } catch (err: any) {
-      console.error('CSV import failed:', err);
-      alert(err?.response?.data?.message || err?.message || 'CSV import failed');
-    } finally {
-      setUploading(false);
     }
-  }, [uploadPreview, departmentId, academicYear, selectedYear, selectedSemester, fetchEvents]);
+    setShowUploadDialog(false);
+    setUploadPreview([]);
+    setUploadStats(null);
+  }, [uploadPreview]);
 
-  const [submitting, setSubmitting] = useState(false);
-  const [deleteTargetEvent, setDeleteTargetEvent] = useState<CalendarEvent | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [savingBulk, setSavingBulk] = useState(false);
-
-  // Add or Update event via live API
-  const handleAddEvent = useCallback(async () => {
+  // Add event manually
+  const handleAddEvent = useCallback(() => {
     if (!newEvent.description || !newEvent.startDate || !newEvent.endDate) return;
 
-    setSubmitting(true);
-    try {
-      const payload = {
-        academicYear,
-        yearOfStudy: selectedYear,
-        semester: selectedSemester,
-        description: newEvent.description,
-        startDate: newEvent.startDate,
-        endDate: newEvent.endDate,
-      };
+    const duration = calculateDuration(newEvent.startDate, newEvent.endDate);
+    const event: CalendarEvent = {
+      id: `event-${Date.now()}`,
+      department,
+      year: selectedYear,
+      semester: selectedSemester,
+      description: newEvent.description,
+      startDate: newEvent.startDate,
+      endDate: newEvent.endDate,
+      duration,
+    };
 
-      if (editingEvent && editingEvent.id) {
-        await academicRepositoryService.updateCalendarEvent(editingEvent.id, departmentId, payload);
-      } else {
-        await academicRepositoryService.createCalendarEvent(departmentId, payload);
-      }
-
-      await fetchEvents();
-      setNewEvent({ description: '', startDate: '', endDate: '' });
-      setShowAddDialog(false);
-      setEditingEvent(null);
-    } catch (err: any) {
-      console.error('Failed to save calendar event:', err);
-      alert(err?.response?.data?.message || err?.message || 'Failed to save calendar event');
-    } finally {
-      setSubmitting(false);
+    if (editingEvent) {
+      setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? { ...event, id: editingEvent.id } : e)));
+    } else {
+      setEvents((prev) => [...prev, event]);
     }
-  }, [newEvent, academicYear, selectedYear, selectedSemester, editingEvent, departmentId, fetchEvents]);
 
-  // Edit event trigger
+    setNewEvent({ description: '', startDate: '', endDate: '' });
+    setShowAddDialog(false);
+    setEditingEvent(null);
+  }, [newEvent, department, selectedYear, selectedSemester, editingEvent]);
+
+  // Edit event
   const handleEditEvent = useCallback((event: CalendarEvent) => {
     setEditingEvent(event);
     setNewEvent({
@@ -461,58 +331,24 @@ export const AcademicCalendarModule = ({
     setShowAddDialog(true);
   }, []);
 
-  // Confirm delete event via live API
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTargetEvent) return;
-    setIsDeleting(true);
-    try {
-      await academicRepositoryService.deleteCalendarEvent(deleteTargetEvent.id, departmentId);
-      await fetchEvents();
-      setDeleteTargetEvent(null);
-    } catch (err: any) {
-      console.error('Failed to delete calendar event:', err);
-      alert(err?.response?.data?.message || err?.message || 'Failed to delete calendar event');
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [deleteTargetEvent, departmentId, fetchEvents]);
+  // Delete event
+  const handleDeleteEvent = useCallback((id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  }, []);
 
-  // Save Calendar (Bulk save for current year & semester)
-  const handleSaveCalendar = useCallback(async () => {
+  // Save Calendar
+  const handleSaveCalendar = useCallback(() => {
     const yearSemEvents = events.filter(
-      (e) => cleanYear(e.year) === cleanYear(selectedYear) && cleanSem(e.semester) === cleanSem(selectedSemester)
+      (e) => e.year === selectedYear && e.semester === selectedSemester
     );
-    if (yearSemEvents.length === 0) return;
-
-    setSavingBulk(true);
-    try {
-      await academicRepositoryService.bulkSaveCalendarEvents(departmentId, {
-        academicYear,
-        yearOfStudy: selectedYear,
-        semester: selectedSemester,
-        events: yearSemEvents.map((e) => ({
-          academicYear,
-          yearOfStudy: e.year,
-          semester: e.semester,
-          description: e.description,
-          startDate: e.startDate,
-          endDate: e.endDate,
-        })),
-      });
-
-      await fetchEvents();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-    } catch (err: any) {
-      console.error('Failed to bulk save calendar events:', err);
-      alert(err?.response?.data?.message || err?.message || 'Failed to save calendar events');
-    } finally {
-      setSavingBulk(false);
-    }
-  }, [events, selectedYear, selectedSemester, departmentId, academicYear, fetchEvents]);
+    // Simulate save
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 4000);
+    console.log('Saving calendar events:', yearSemEvents);
+  }, [events, selectedYear, selectedSemester]);
 
   const totalEventsForYearSem = events.filter(
-    (e) => cleanYear(e.year) === cleanYear(selectedYear) && cleanSem(e.semester) === cleanSem(selectedSemester)
+    (e) => e.year === selectedYear && e.semester === selectedSemester
   ).length;
 
   return (
@@ -622,11 +458,11 @@ export const AcademicCalendarModule = ({
                 <Button
                   size="sm"
                   onClick={handleSaveCalendar}
-                  disabled={savingBulk || totalEventsForYearSem === 0}
+                  disabled={totalEventsForYearSem === 0}
                   className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  {savingBulk ? 'Saving...' : 'Save Calendar'}
+                  Save Calendar
                 </Button>
               </div>
             )}
@@ -705,36 +541,7 @@ export const AcademicCalendarModule = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loading ? (
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px] border-t border-border/40">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b border-border/60">
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="text-xs font-semibold w-10 whitespace-nowrap">#</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[220px]">Description</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap min-w-[110px]">Start Date</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap min-w-[110px]">End Date</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap min-w-[90px]">Duration</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap min-w-[90px]">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap min-w-[80px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <TableRow key={i} className="border-b border-border/40">
-                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-                      <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : filteredEvents.length === 0 ? (
+          {filteredEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Calendar className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground font-medium">No calendar events yet</p>
@@ -743,34 +550,34 @@ export const AcademicCalendarModule = ({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px] border-t border-border/40">
-              <Table className="relative">
-                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-sm border-b border-border/60">
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="text-xs font-semibold w-10 whitespace-nowrap">#</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[220px]">Description</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap min-w-[110px]">Start Date</TableHead>
-                    <TableHead className="text-xs font-semibold whitespace-nowrap min-w-[110px]">End Date</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap min-w-[90px]">Duration</TableHead>
-                    <TableHead className="text-xs font-semibold text-center whitespace-nowrap min-w-[90px]">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-right whitespace-nowrap min-w-[80px]">Actions</TableHead>
+            <ScrollArea className="max-h-[500px]">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-xs font-semibold w-8">#</TableHead>
+                    <TableHead className="text-xs font-semibold">Description</TableHead>
+                    <TableHead className="text-xs font-semibold">Start Date</TableHead>
+                    <TableHead className="text-xs font-semibold">End Date</TableHead>
+                    <TableHead className="text-xs font-semibold text-center">Duration</TableHead>
+                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
+                    <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEvents.map((event, idx) => {
                     const status = getEventStatus(event.startDate, event.endDate);
                     return (
-                      <TableRow key={event.id} className="hover:bg-muted/50 border-b border-border/40 transition-colors">
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{idx + 1}</TableCell>
+                      <TableRow key={event.id} className="hover:bg-muted/50">
+                        <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-sm font-medium">{event.description}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{formatDate(event.startDate)}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{formatDate(event.endDate)}</TableCell>
-                        <TableCell className="text-xs text-center whitespace-nowrap">
+                        <TableCell className="text-xs">{formatDate(event.startDate)}</TableCell>
+                        <TableCell className="text-xs">{formatDate(event.endDate)}</TableCell>
+                        <TableCell className="text-xs text-center">
                           <Badge variant="outline" className="text-[10px]">
                             {event.duration} {event.duration === 1 ? 'day' : 'days'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
+                        <TableCell className="text-center">
                           <Badge
                             variant="outline"
                             className={cn(
@@ -783,7 +590,7 @@ export const AcademicCalendarModule = ({
                             {status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
+                        <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             {isReadOnly ? (
                               <span className="text-[10px] text-muted-foreground italic">Read-only</span>
@@ -792,13 +599,8 @@ export const AcademicCalendarModule = ({
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEvent(event)}>
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => setDeleteTargetEvent(event)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteEvent(event.id)}>
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </>
                             )}
@@ -809,7 +611,7 @@ export const AcademicCalendarModule = ({
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
@@ -910,9 +712,9 @@ export const AcademicCalendarModule = ({
             <Button
               size="sm"
               onClick={handleAddEvent}
-              disabled={submitting || !newEvent.description || !newEvent.startDate || !newEvent.endDate}
+              disabled={!newEvent.description || !newEvent.startDate || !newEvent.endDate}
             >
-              {submitting ? 'Saving...' : editingEvent ? 'Update Event' : 'Add Event'}
+              {editingEvent ? 'Update Event' : 'Add Event'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -920,178 +722,128 @@ export const AcademicCalendarModule = ({
 
       {/* Upload Preview Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-5xl lg:max-w-6xl h-[85vh] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
-          <DialogHeader className="p-5 pb-4 border-b border-border/50 shrink-0">
+        <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+          <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
-              <Upload className="h-4 w-4 text-blue-500" />
+              <Upload className="h-4 w-4" />
               CSV Upload Preview
             </DialogTitle>
           </DialogHeader>
+          {uploadStats && (
+            <div className="space-y-4">
+              {/* Upload Stats */}
+              <div className="flex items-center gap-4">
+                <Card className="flex-1 border-border/50">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold">{uploadStats.total}</p>
+                    <p className="text-[10px] text-muted-foreground">Records Found</p>
+                  </CardContent>
+                </Card>
+                <Card className="flex-1 border-green-500/30 bg-green-500/5">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-green-600">{uploadStats.valid}</p>
+                    <p className="text-[10px] text-green-600">Valid</p>
+                  </CardContent>
+                </Card>
+                <Card className="flex-1 border-red-500/30 bg-red-500/5">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-lg font-bold text-red-600">{uploadStats.invalid}</p>
+                    <p className="text-[10px] text-red-600">Invalid</p>
+                  </CardContent>
+                </Card>
+              </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-            {uploadStats && (
-              <>
-                {/* Upload Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
-                  <Card className="border-border/50">
-                    <CardContent className="p-3 text-center">
-                      <p className="text-lg font-bold">{uploadStats.total}</p>
-                      <p className="text-[10px] text-muted-foreground">Records Found</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-green-500/30 bg-green-500/5">
-                    <CardContent className="p-3 text-center">
-                      <p className="text-lg font-bold text-green-600">{uploadStats.valid}</p>
-                      <p className="text-[10px] text-green-600">Valid</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-red-500/30 bg-red-500/5">
-                    <CardContent className="p-3 text-center">
-                      <p className="text-lg font-bold text-red-600">{uploadStats.invalid}</p>
-                      <p className="text-[10px] text-red-600">Invalid</p>
-                    </CardContent>
-                  </Card>
+              {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
                 </div>
+              )}
 
-                {uploadStats.valid > 0 && uploadStats.invalid === 0 && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20 shrink-0">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <p className="text-sm text-green-700 font-medium">CSV Uploaded Successfully — All records are valid</p>
-                  </div>
-                )}
+              {/* Preview Table */}
+              <ScrollArea className="max-h-[400px] border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="text-xs font-semibold w-8">#</TableHead>
+                      <TableHead className="text-xs font-semibold">Department</TableHead>
+                      <TableHead className="text-xs font-semibold">Year</TableHead>
+                      <TableHead className="text-xs font-semibold">Semester</TableHead>
+                      <TableHead className="text-xs font-semibold">Description</TableHead>
+                      <TableHead className="text-xs font-semibold">Start Date</TableHead>
+                      <TableHead className="text-xs font-semibold">End Date</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">Duration</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {uploadPreview.map((event, idx) => (
+                      <TableRow
+                        key={event.id}
+                        className={cn(
+                          event.status === 'invalid' && 'bg-red-500/5 border-l-2 border-l-red-500'
+                        )}
+                      >
+                        <TableCell className="text-xs">{idx + 1}</TableCell>
+                        <TableCell className="text-xs">{event.department}</TableCell>
+                        <TableCell className="text-xs">{event.year}</TableCell>
+                        <TableCell className="text-xs">{event.semester}</TableCell>
+                        <TableCell className="text-xs font-medium">{event.description}</TableCell>
+                        <TableCell className="text-xs">{event.startDate}</TableCell>
+                        <TableCell className="text-xs">{event.endDate}</TableCell>
+                        <TableCell className="text-xs text-center">{event.duration}</TableCell>
+                        <TableCell className="text-center">
+                          {event.status === 'valid' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                          ) : (
+                            <div className="flex items-center gap-1 justify-center">
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                              <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={event.errors?.join(', ')}>
+                                {event.errors?.[0]}
+                              </span>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
 
-                {/* Preview Table */}
-                <div className="border border-border/60 rounded-xl overflow-hidden bg-card/50">
-                  <div className="max-h-[360px] overflow-auto">
-                    <Table className="relative">
-                      <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 shadow-sm">
-                        <TableRow className="border-b border-border/60">
-                          <TableHead className="text-xs font-semibold w-10 whitespace-nowrap bg-muted/95">#</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[180px] whitespace-nowrap bg-muted/95">Department</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[80px] whitespace-nowrap bg-muted/95">Year</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[100px] whitespace-nowrap bg-muted/95">Semester</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[220px] whitespace-nowrap bg-muted/95">Description</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[100px] whitespace-nowrap bg-muted/95">Start Date</TableHead>
-                          <TableHead className="text-xs font-semibold min-w-[100px] whitespace-nowrap bg-muted/95">End Date</TableHead>
-                          <TableHead className="text-xs font-semibold text-center min-w-[80px] whitespace-nowrap bg-muted/95">Duration</TableHead>
-                          <TableHead className="text-xs font-semibold text-center min-w-[70px] whitespace-nowrap bg-muted/95">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {uploadPreview.map((event, idx) => (
-                          <TableRow
-                            key={event.id}
-                            className={cn(
-                              'hover:bg-muted/40 transition-colors',
-                              event.status === 'invalid' && 'bg-red-500/5 border-l-2 border-l-red-500'
-                            )}
-                          >
-                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{idx + 1}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{event.department}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap font-medium">{event.year}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{event.semester}</TableCell>
-                            <TableCell className="text-xs font-medium">{event.description}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{event.startDate}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{event.endDate}</TableCell>
-                            <TableCell className="text-xs text-center whitespace-nowrap font-semibold">{event.duration}</TableCell>
-                            <TableCell className="text-center whitespace-nowrap">
-                              {event.status === 'valid' ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
-                              ) : (
-                                <div className="flex items-center gap-1 justify-center">
-                                  <AlertCircle className="h-4 w-4 text-red-500" />
-                                  <span className="text-[9px] text-red-600 max-w-[120px] truncate" title={event.errors?.join(', ')}>
-                                    {event.errors?.[0]}
-                                  </span>
-                                </div>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+              {/* Validation Errors Summary */}
+              {uploadStats.invalid > 0 && (
+                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                  <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
+                  <div className="space-y-1">
+                    {uploadPreview
+                      .filter((e) => e.status === 'invalid')
+                      .map((e, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-red-600">
+                            Row {uploadPreview.indexOf(e) + 1}: {e.errors?.join('; ')}
+                          </p>
+                        </div>
+                      ))}
                   </div>
                 </div>
-
-                {/* Validation Errors Summary */}
-                {uploadStats.invalid > 0 && (
-                  <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 shrink-0">
-                    <p className="text-xs font-semibold text-red-700 mb-2">Validation Errors</p>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {uploadPreview
-                        .filter((e) => e.status === 'invalid')
-                        .map((e, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <X className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-red-600">
-                              Row {uploadPreview.indexOf(e) + 1}: {e.errors?.join('; ')}
-                            </p>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <DialogFooter className="p-4 px-5 border-t border-border/50 bg-muted/20 shrink-0 flex items-center justify-between sm:justify-between">
+              )}
+            </div>
+          )}
+          <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowUploadDialog(false)}>
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleImportUploaded}
-              disabled={uploading || !uploadStats || uploadStats.valid === 0}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              disabled={!uploadStats || uploadStats.valid === 0}
             >
-              {uploading ? 'Importing...' : `Import ${uploadStats?.valid || 0} Valid Records`}
+              Import {uploadStats?.valid || 0} Valid Records
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog open={!!deleteTargetEvent} onOpenChange={(open) => !open && setDeleteTargetEvent(null)}>
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 mt-0.5">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="space-y-1">
-                <AlertDialogTitle className="text-base font-semibold">
-                  Delete Calendar Event
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-xs text-muted-foreground">
-                  Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTargetEvent?.description}"</span>? This event will be permanently removed.
-                </AlertDialogDescription>
-              </div>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel disabled={isDeleting} onClick={() => setDeleteTargetEvent(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={isDeleting}
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium gap-2"
-            >
-              {isDeleting ? (
-                <>
-                  <Trash2 className="h-3.5 w-3.5 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Event'
-              )}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Paperclip, FileText, FileImage } from 'lucide-react';
 import {
@@ -5,6 +6,7 @@ import {
   EvidenceUploadResult,
 } from '@/components/shared/EvidenceUploadDialog';
 import type { UploadedFile } from '@/components/shared/EvidenceUploadDialog';
+import { tpoRepositoryService } from '@/services/tpo.service';
 
 // ============================================================
 // TYPES
@@ -66,7 +68,8 @@ export function EvidenceBadge({ evidence }: { evidence: TPOEvidence | null }) {
 // ============================================================
 
 interface TPOEvidenceDialogProps {
-  recordId: string;
+  /** Real server record id (may be the string '0'/'documents' for the documents view) */
+  recordId: string | number;
   recordName: string;
   sectionTitle: string;
   open: boolean;
@@ -74,6 +77,10 @@ interface TPOEvidenceDialogProps {
   onEvidenceChange?: (recordId: string, evidence: TPOEvidence) => void;
   initialEvidence?: TPOEvidence | null;
   sectionConfigs?: TPOEvidenceSectionConfig[];
+  departmentId: number;
+  academicYear: string;
+  /** Section slug, e.g. 'recruiters' or 'documents' */
+  sectionName: string;
 }
 
 export const DEFAULT_EVIDENCE_SECTIONS: TPOEvidenceSectionConfig[] = [
@@ -839,9 +846,110 @@ export function TPOEvidenceDialog({
   onEvidenceChange,
   initialEvidence,
   sectionConfigs = DEFAULT_EVIDENCE_SECTIONS,
+  departmentId,
+  academicYear,
+  sectionName,
 }: TPOEvidenceDialogProps) {
-  const handleSave = (result: EvidenceUploadResult) => {
-    onEvidenceChange?.(recordId, { recordId, sections: result.files });
+  // Server-side files per category (ids are server document ids). New files
+  // picked in the dialog carry a `file` object and are uploaded on save.
+  const [serverFiles, setServerFiles] = useState<Record<string, UploadedFile[]>>({});
+  const serverIdsRef = useRef<Record<string, string[]>>({});
+
+  const numericRecordId = typeof recordId === 'number' ? recordId : Number(recordId) || undefined;
+
+  const fetchEvidence = async (): Promise<Record<string, UploadedFile[]>> => {
+    const res = await tpoRepositoryService.getDocuments({
+      departmentId,
+      academicYear,
+      sectionName,
+      recordId: numericRecordId,
+      page: 0,
+      size: 500,
+    });
+    const byType: Record<string, UploadedFile[]> = {};
+    res.content.forEach((doc) => {
+      const key = doc.documentType || 'documents';
+      byType[key] = [
+        ...(byType[key] || []),
+        {
+          id: String(doc.id),
+          name: doc.documentName,
+          size: doc.size || 0,
+          type: 'application/octet-stream',
+          uploadedAt: doc.uploadedAt || '',
+        },
+      ];
+    });
+    return byType;
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetchEvidence()
+      .then((byType) => {
+        if (cancelled) return;
+        setServerFiles(byType);
+        const ids: Record<string, string[]> = {};
+        Object.entries(byType).forEach(([category, files]) => {
+          ids[category] = files.map((f) => f.id);
+        });
+        serverIdsRef.current = ids;
+      })
+      .catch(() => {
+        // leave the dialog empty on load failure; uploads still work
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, recordId, departmentId, academicYear, sectionName]);
+
+  const handleSave = async (result: EvidenceUploadResult): Promise<void> => {
+    const errors: string[] = [];
+
+    // 1. Delete documents the user removed from a category.
+    for (const [category, ids] of Object.entries(serverIdsRef.current)) {
+      const kept = new Set((result.files[category] || []).map((f) => f.id));
+      for (const serverId of ids) {
+        if (!kept.has(serverId)) {
+          try {
+            await tpoRepositoryService.deleteDocument(Number(serverId), departmentId);
+          } catch {
+            errors.push(`Could not delete ${serverId}`);
+          }
+        }
+      }
+    }
+
+    // 2. Upload newly picked files per category.
+    for (const [category, files] of Object.entries(result.files)) {
+      for (const file of files) {
+        if (file.file) {
+          try {
+            await tpoRepositoryService.uploadDocument(file.file, {
+              departmentId,
+              academicYear,
+              sectionName,
+              recordId: numericRecordId,
+              documentType: category,
+            });
+          } catch (e) {
+            errors.push(
+              `Failed to upload ${file.name}: ${e instanceof Error ? e.message : 'unknown error'}`
+            );
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('; '));
+    }
+
+    // 3. Refresh the evidence from the server and notify the parent.
+    const fresh = await fetchEvidence();
+    onEvidenceChange?.(String(recordId), { recordId: String(recordId), sections: fresh });
   };
 
   return (
@@ -851,7 +959,7 @@ export function TPOEvidenceDialog({
       title={`${sectionTitle} — ${recordName}`}
       subtitle="Upload and manage supporting documents for this record"
       categories={sectionConfigs}
-      initialFiles={initialEvidence?.sections}
+      initialFiles={serverFiles}
       onSave={handleSave}
       onCancel={() => {
         // Dismiss without persisting — changes are only committed via Save & Close

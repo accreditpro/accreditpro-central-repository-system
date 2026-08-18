@@ -1,19 +1,40 @@
 import { toast } from 'sonner';
 import type { VerificationDocument } from '../../verification-data';
 
-/** Downloads a mock evidence document as a placeholder file. */
+/**
+ * Downloads the verification document metadata as a portable text record.
+ * Verification documents are metadata-only records (the physical evidence is
+ * owned by the source repository), so a metadata export is the downloadable
+ * artifact here.
+ */
 export function downloadDocument(doc: VerificationDocument) {
-  const blob = new Blob(
-    [`AccreditPro evidence document — ${doc.name}\n\n${JSON.stringify(doc, null, 2)}`],
-    { type: 'text/plain' }
-  );
+  const header = `AccreditPro verification document — ${doc.name}`;
+  const meta = [
+    ['Department', doc.department],
+    ['Repository', doc.repository],
+    ['Folder', doc.folder],
+    ['Category', doc.category],
+    ['Academic Year', doc.academicYear],
+    ['Faculty / Student', doc.faculty ?? doc.student ?? '—'],
+    ['Version', `v${doc.version}`],
+    ['Size', doc.size],
+    ['Uploaded By', doc.uploadedBy],
+    ['Uploaded At', doc.uploadedAt],
+    ['Last Modified', doc.lastModified],
+    ['HOD Status', doc.hodStatus],
+    ['IQAC Status', doc.iqacStatus],
+    ['Frameworks', doc.frameworks.join(', ')],
+  ]
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n');
+  const blob = new Blob([`${header}\n\n${meta}\n`], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = doc.name;
+  a.download = `${doc.name.replace(/\.\w+$/, '')}-metadata.txt`;
   a.click();
   URL.revokeObjectURL(url);
-  toast.success(`Downloading ${doc.name}`);
+  toast.success(`Downloading ${doc.name} metadata`);
 }
 
 /** Maps a department name (auth / configs) to the verification module's department code. */

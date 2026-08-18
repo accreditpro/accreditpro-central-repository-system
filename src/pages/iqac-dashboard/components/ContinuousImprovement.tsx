@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,15 +33,10 @@ import {
   Clock,
   AlertTriangle,
   Eye,
+  Loader2,
 } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  addInitiative,
-  selectInitiatives,
-  updateInitiative,
-  updateInitiativeStatus,
-} from '@/store/slices/iqacSlice';
+import { iqacService } from '@/services/iqac.service';
 import { ACADEMIC_YEARS, DEPARTMENT_OPTIONS } from '../iqac-data';
 import type { ImprovementInitiative, InitiativeInput, InitiativeStatus } from '../types';
 import { FilterBar, FilterSelect, SearchInput, StatCard } from './common';
@@ -89,9 +84,9 @@ const DEFAULT_FORM: InitiativeInput = {
 };
 
 export function ContinuousImprovement() {
-  const dispatch = useAppDispatch();
   const { isImpersonating } = useAuth();
-  const initiatives = useAppSelector(selectInitiatives);
+  const [initiatives, setInitiatives] = useState<ImprovementInitiative[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -101,6 +96,18 @@ export function ContinuousImprovement() {
   const [form, setForm] = useState<InitiativeInput>(DEFAULT_FORM);
   const [editing, setEditing] = useState<ImprovementInitiative | null>(null);
   const [editOutcome, setEditOutcome] = useState('');
+
+  const reload = () => {
+    iqacService
+      .getInitiatives()
+      .then((list) => setInitiatives((list ?? []) as ImprovementInitiative[]))
+      .catch(() => setInitiatives([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
+  }, []);
 
   const stats = useMemo(
     () => ({
@@ -128,16 +135,30 @@ export function ContinuousImprovement() {
     [initiatives, search, statusFilter, categoryFilter, deptFilter]
   );
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.title.trim() || !form.owner.trim() || !form.startDate || !form.targetDate) {
       toast.error('Please fill the title, owner, start date and target date.');
       return;
     }
-    dispatch(addInitiative(form));
-    toast.success('Quality initiative added to the tracker.');
-    setCreateOpen(false);
-    setForm(DEFAULT_FORM);
+    try {
+      await iqacService.createInitiative(form as ImprovementInitiative);
+      toast.success('Quality initiative added to the tracker.');
+      setCreateOpen(false);
+      setForm(DEFAULT_FORM);
+      reload();
+    } catch {
+      toast.error('Failed to add the initiative. Please try again.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading improvement initiatives…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -216,9 +237,14 @@ export function ContinuousImprovement() {
                   ) : (
                     <Select
                       value={init.status}
-                      onValueChange={(v) => {
-                        dispatch(updateInitiativeStatus({ id: init.id, status: v as InitiativeStatus }));
-                        toast.success(`Initiative marked ${STATUS_META[v as InitiativeStatus].label}.`);
+                      onValueChange={async (v) => {
+                        try {
+                          await iqacService.updateInitiative(init.id, { status: v as InitiativeStatus });
+                          toast.success(`Initiative marked ${STATUS_META[v as InitiativeStatus].label}.`);
+                          reload();
+                        } catch {
+                          toast.error('Failed to update the initiative status.');
+                        }
                       }}
                     >
                       <SelectTrigger className="h-7 w-[120px] text-[10px]">
@@ -375,11 +401,16 @@ export function ContinuousImprovement() {
             <Button variant="outline" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
             <Button
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 if (editing) {
-                  dispatch(updateInitiative({ id: editing.id, changes: { outcome: editOutcome } }));
-                  toast.success('Outcome updated.');
-                  setEditing(null);
+                  try {
+                    await iqacService.updateInitiative(editing.id, { outcome: editOutcome });
+                    toast.success('Outcome updated.');
+                    setEditing(null);
+                    reload();
+                  } catch {
+                    toast.error('Failed to update the outcome. Please try again.');
+                  }
                 }
               }}
             >

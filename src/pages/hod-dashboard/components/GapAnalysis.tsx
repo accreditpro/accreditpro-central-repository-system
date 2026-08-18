@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,10 @@ import {
   Trophy,
   BarChart3,
   FolderOpen,
+  Loader2,
 } from 'lucide-react';
-import { getHODYearData, GapItem, GapAccreditation } from '../hod-configs';
+import { GapItem, GapAccreditation } from '../hod-configs';
+import { hodService } from '@/services/hod.service';
 import { REPO_ICONS, REPO_ACCENT } from './evidence-utils';
 import { cn } from '@/lib/utils';
 
@@ -54,11 +56,31 @@ function buildGapGroups(gaps: GapItem[]): RepoGapGroup[] {
 }
 
 export function GapAnalysis({ academicYear }: { academicYear: string }) {
-  const gapAnalysisData = getHODYearData(academicYear).gaps;
+  const [gapAnalysisData, setGapAnalysisData] = useState<GapItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [repositoryFilter, setRepositoryFilter] = useState<string>('all');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    hodService
+      .getGaps({ academicYear, page: 0, size: 200, sortBy: 'severity', sortDirection: 'DESC' })
+      .then((data) => {
+        if (!cancelled) setGapAnalysisData(data.content as GapItem[]);
+      })
+      .catch(() => {
+        if (!cancelled) setGapAnalysisData([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear]);
 
   const filteredData = useMemo(() => {
     const q = searchTerm.toLowerCase();
@@ -128,6 +150,14 @@ export function GapAnalysis({ academicYear }: { academicYear: string }) {
 
   return (
     <div className="space-y-4">
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          Loading gap analysis...
+        </div>
+      )}
+      {!loading && (
+        <>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border border-red-200 dark:border-red-900/30">
@@ -325,6 +355,8 @@ export function GapAnalysis({ academicYear }: { academicYear: string }) {
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -633,10 +633,10 @@ const ProgramsTab = () => {
       if (Array.isArray(data)) {
         const mapped: Program[] = data.map((item) => ({
           id: String(item.id),
-          programCode: item.programCode || item.code || item.program_code || '',
-          name: item.name || '',
-          level: item.level || 'UG',
-          duration: item.durationYears ?? item.duration ?? 3,
+          programCode: item.code,
+          name: item.name,
+          level: item.level,
+          duration: item.durationYears ?? 3,
           status: item.status === 'ACTIVE' ? 'active' : 'inactive',
           enabled: item.status === 'ACTIVE',
           isCustom: item.isCustom ?? false,

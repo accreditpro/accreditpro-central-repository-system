@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppDispatch } from '@/store';
 import { raiseObservation } from '@/store/slices/iqacVerificationSlice';
 import { addNotification } from '@/store/slices/uiSlice';
+import { iqacService } from '@/services/iqac.service';
 import { toast } from 'sonner';
 import { MessageSquareWarning, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ export function RaiseObservationDialog({ document, open, onOpenChange }: RaiseOb
   const [description, setDescription] = useState('');
   const [recommendedCorrection, setRecommendedCorrection] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!document) return null;
 
@@ -47,28 +49,43 @@ export function RaiseObservationDialog({ document, open, onOpenChange }: RaiseOb
     setDueDate('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !recommendedCorrection.trim() || !dueDate) {
       toast.error('Please fill in all required fields');
       return;
     }
-    dispatch(
-      raiseObservation({
-        document,
-        input: { title, priority, description, recommendedCorrection, dueDate },
-      })
-    );
-    dispatch(
-      addNotification({
-        title: 'Observation raised',
-        message: `Observation on "${document.name}" sent to ${document.department} Coordinator and HOD.`,
-        type: 'warning',
-        read: false,
-      })
-    );
-    toast.success('Observation raised — department coordinator & HOD notified');
-    reset();
-    onOpenChange(false);
+    setSubmitting(true);
+    try {
+      await iqacService.raiseVerificationObservation(document.id, {
+        title,
+        priority,
+        description,
+        recommendedCorrection,
+        dueDate,
+      });
+      // Optimistic local overlay — the views reflect the raised observation immediately.
+      dispatch(
+        raiseObservation({
+          document,
+          input: { title, priority, description, recommendedCorrection, dueDate },
+        })
+      );
+      dispatch(
+        addNotification({
+          title: 'Observation raised',
+          message: `Observation on "${document.name}" sent to ${document.department} Coordinator and HOD.`,
+          type: 'warning',
+          read: false,
+        })
+      );
+      toast.success('Observation raised — department coordinator & HOD notified');
+      reset();
+      onOpenChange(false);
+    } catch {
+      toast.error('Failed to raise the observation. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -170,9 +187,9 @@ export function RaiseObservationDialog({ document, open, onOpenChange }: RaiseOb
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} className="gap-1.5">
+          <Button onClick={handleSubmit} className="gap-1.5" disabled={submitting}>
             <MessageSquareWarning className="h-4 w-4" />
-            Submit Observation
+            {submitting ? 'Submitting…' : 'Submit Observation'}
           </Button>
         </div>
       </DialogContent>

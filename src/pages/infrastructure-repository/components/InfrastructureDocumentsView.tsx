@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,13 +20,18 @@ import {
   Search,
   Upload,
   Download,
-  Eye,
-  MoreHorizontal,
+  Trash2,
   FolderOpen,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { infrastructureDocumentCategories } from '../infrastructure-configs';
 import { EvidenceUploadDialog, EvidenceCategory } from '@/components/shared/EvidenceUploadDialog';
 import { useReadOnly } from '@/hooks/useReadOnly';
+import {
+  infrastructureRepositoryService,
+  DocumentRecord,
+} from '@/services/infrastructure-repository.service';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Map, FileCheck, Flame, BookOpen, Monitor, Leaf, Zap, Droplets, Award, ShieldCheck, FileText, Shield,
@@ -42,19 +47,6 @@ const uploadCategories: EvidenceCategory[] = infrastructureDocumentCategories.ma
   })(),
 }));
 
-const mockDocuments = [
-  { id: '1', name: 'Campus Master Plan 2024.pdf', category: 'campus-master-plan', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-10', size: '4.2 MB', status: 'verified' as const },
-  { id: '2', name: 'Building A - Occupancy Certificate.pdf', category: 'building-approval', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-09', size: '1.8 MB', status: 'verified' as const },
-  { id: '3', name: 'Fire Safety Certificate - Block A.pdf', category: 'fire-safety', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-08', size: '2.1 MB', status: 'verified' as const },
-  { id: '4', name: 'Library Annual Report 2024-25.pdf', category: 'library-reports', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-07', size: '3.5 MB', status: 'pending' as const },
-  { id: '5', name: 'Network Diagram 2025.pdf', category: 'ict-reports', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-06', size: '1.2 MB', status: 'verified' as const },
-  { id: '6', name: 'Green Audit Report 2024.pdf', category: 'green-audit', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-05', size: '5.8 MB', status: 'pending' as const },
-  { id: '7', name: 'Energy Audit Report 2024.pdf', category: 'energy-audit', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-04', size: '4.1 MB', status: 'uploaded' as const },
-  { id: '8', name: 'Calibration Certificate - Physics Lab.pdf', category: 'calibration-certificates', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-03', size: '0.8 MB', status: 'verified' as const },
-  { id: '9', name: 'Lab Safety Certificate - Chemistry.pdf', category: 'laboratory-safety', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-02', size: '1.1 MB', status: 'verified' as const },
-  { id: '10', name: 'AMC - Server Room Equipment.pdf', category: 'amc-documents', uploadedBy: 'Mr. Rajesh Kumar', uploadedDate: '2025-01-01', size: '0.9 MB', status: 'pending' as const },
-];
-
 export const InfrastructureDocumentsView = () => {
   const isReadOnly = useReadOnly();
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,11 +54,82 @@ export const InfrastructureDocumentsView = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<EvidenceCategory | null>(null);
 
-  const filteredDocuments = mockDocuments.filter((doc) => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || doc.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // ---- live (backend) state ----
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalElements, setTotalElements] = useState(0);
+  const searchTimer = useRef<number | undefined>(undefined);
+
+  const fetchDocuments = useCallback(async (search?: string, category?: string | null) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await infrastructureRepositoryService.getDocuments({
+        category: category || undefined,
+        search: search || undefined,
+        page: 0,
+        size: 100,
+      });
+      setDocuments(res.content || []);
+      setCategoryCounts(Object.fromEntries((res.categories || []).map(c => [c.id, c.count])));
+      setTotalElements(res.totalElements || 0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load documents');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDocuments('', selectedCategory);
+    return () => {
+      if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    };
+  }, [fetchDocuments, selectedCategory]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => fetchDocuments(value, selectedCategory), 400);
+  };
+
+  const handleUpload = async (files: File[], category: string, title?: string, version?: string) => {
+    setError(null);
+    try {
+      await infrastructureRepositoryService.uploadDocuments(files, category, title, version);
+      fetchDocuments(searchQuery, selectedCategory);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to upload documents');
+    }
+  };
+
+  /** Dialog saves files keyed by category id; upload each category's files with its own category param. */
+  const handleDialogSave = async (result: { files: Record<string, { file?: File }[]> }) => {
+    const entries = Object.entries(result.files || {});
+    let uploadedAny = false;
+    for (const [category, uploaded] of entries) {
+      const files = (uploaded || []).map(u => u.file).filter((f): f is File => !!f);
+      if (files.length === 0) continue;
+      await handleUpload(files, category);
+      uploadedAny = true;
+    }
+    if (uploadedAny) setUploadDialogOpen(false);
+  };
+
+  const handleDownload = (doc: DocumentRecord) => {
+    infrastructureRepositoryService.downloadDocument(doc.id, doc.name).catch(() => undefined);
+  };
+
+  const handleDelete = async (doc: DocumentRecord) => {
+    try {
+      await infrastructureRepositoryService.deleteDocument(doc.id);
+      fetchDocuments(searchQuery, selectedCategory);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete document');
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,11 +157,19 @@ export const InfrastructureDocumentsView = () => {
         )}
       </div>
 
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
+
       {/* Category Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {infrastructureDocumentCategories.map((category, index) => {
           const IconComponent = iconMap[category.icon] || FileText;
           const isSelected = selectedCategory === category.id;
+          const count = categoryCounts[category.id] ?? category.count;
           return (
             <motion.div
               key={category.id}
@@ -124,7 +195,7 @@ export const InfrastructureDocumentsView = () => {
                     </div>
                   </div>
                   <p className="text-xs font-medium leading-tight">{category.label}</p>
-                  <Badge variant="secondary" className="mt-1.5 text-[10px]">{category.count} files</Badge>
+                  <Badge variant="secondary" className="mt-1.5 text-[10px]">{count} files</Badge>
                 </CardContent>
               </Card>
             </motion.div>
@@ -138,7 +209,7 @@ export const InfrastructureDocumentsView = () => {
         <Input
           placeholder="Search documents..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9"
         />
       </div>
@@ -152,45 +223,52 @@ export const InfrastructureDocumentsView = () => {
               ? infrastructureDocumentCategories.find(c => c.id === selectedCategory)?.label
               : 'All Documents'
             }
-            <Badge variant="secondary" className="ml-2">{filteredDocuments.length}</Badge>
+            <Badge variant="secondary" className="ml-2">{loading ? '...' : documents.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {filteredDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/30">
-                  <FileText className="h-4 w-4 text-red-600" />
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Loading documents...</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/30">
+                    <FileText className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.title || doc.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(doc.uploadedBy || '—')} • {(doc.uploadedDate || '—')} • {doc.size || '—'}
+                      {doc.version ? ` • v${doc.version}` : ''}
+                    </p>
+                  </div>
+                  <Badge className={`text-[10px] ${getStatusColor(doc.status || 'uploaded')}`}>
+                    {doc.status || 'uploaded'}
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(doc)}>
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                    {!isReadOnly && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600" onClick={() => handleDelete(doc)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {doc.uploadedBy} • {doc.uploadedDate} • {doc.size}
-                  </p>
+              ))}
+              {documents.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FolderOpen className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No documents found</p>
                 </div>
-                <Badge className={`text-[10px] ${getStatusColor(doc.status)}`}>
-                  {doc.status}
-                </Badge>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Eye className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {filteredDocuments.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <FolderOpen className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No documents found</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -205,6 +283,7 @@ export const InfrastructureDocumentsView = () => {
             : 'Upload supporting documents across all infrastructure categories'
         }
         categories={uploadTarget ? [uploadTarget] : uploadCategories}
+        onSave={handleDialogSave}
       />
     </div>
   );

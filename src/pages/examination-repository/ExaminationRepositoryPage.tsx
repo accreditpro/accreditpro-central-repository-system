@@ -23,7 +23,6 @@ import { ExaminationDocumentsView } from './components/ExaminationDocumentsView'
 import {
   allModuleConfigs,
 } from './examination-configs';
-import { EvidenceProvider } from './evidence-store';
 import { cn } from '@/lib/utils';
 
 const ACADEMIC_YEARS = [
@@ -79,7 +78,6 @@ export function ExaminationRepositoryPage() {
   };
 
   return (
-    <EvidenceProvider>
     <div className="flex h-full">
       <aside
         className={cn(
@@ -171,6 +169,5 @@ export function ExaminationRepositoryPage() {
         </AnimatePresence>
       </main>
     </div>
-    </EvidenceProvider>
   );
 }

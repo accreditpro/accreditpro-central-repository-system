@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -40,8 +40,17 @@ import {
   Users,
   AlertTriangle,
   FileUp,
-  Eye,
+  Loader2,
+  Lock,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { institutionAdminService } from '@/services/institution-admin.service';
+import {
+  examinationRepositoryService,
+  BacklogRecordApi,
+  BacklogAnalyticsData,
+} from '@/services/examination-repository.service';
 
 interface BacklogRecord {
   id: string;
@@ -56,108 +65,239 @@ interface BacklogRecord {
   studentsFailed: number;
 }
 
-const sampleData: BacklogRecord[] = [
-  { id: '1', academicYear: '2023-24', semester: '4', program: 'B.Tech CSE AI R22', department: 'Computer Science', subjectCode: 'CS401', subjectName: 'Machine Learning', studentsAppeared: 28, studentsPassed: 22, studentsFailed: 6 },
-  { id: '2', academicYear: '2023-24', semester: '4', program: 'B.Tech CSE AI R22', department: 'Computer Science', subjectCode: 'CS402', subjectName: 'Database Systems', studentsAppeared: 35, studentsPassed: 28, studentsFailed: 7 },
-  { id: '3', academicYear: '2023-24', semester: '4', program: 'B.Tech CSE AI R22', department: 'Computer Science', subjectCode: 'CS403', subjectName: 'Computer Networks', studentsAppeared: 25, studentsPassed: 20, studentsFailed: 5 },
-  { id: '4', academicYear: '2023-24', semester: '3', program: 'B.Tech CSE AI R22', department: 'Computer Science', subjectCode: 'CS301', subjectName: 'Data Structures', studentsAppeared: 30, studentsPassed: 18, studentsFailed: 12 },
-  { id: '5', academicYear: '2024-25', semester: '4', program: 'B.Tech CSE AI R22', department: 'Computer Science', subjectCode: 'CS404', subjectName: 'Software Engineering', studentsAppeared: 15, studentsPassed: 12, studentsFailed: 3 },
-  { id: '6', academicYear: '2023-24', semester: '4', program: 'B.Tech ECE VLSI R22', department: 'Electronics', subjectCode: 'EC401', subjectName: 'VLSI Design', studentsAppeared: 20, studentsPassed: 16, studentsFailed: 4 },
-];
+interface TextFieldConfig {
+  key: keyof BacklogRecord;
+  label: string;
+  type: 'text' | 'select' | 'number';
+  placeholder?: string;
+  readOnly?: boolean;
+  /** Helper text shown under a read-only field. */
+  readOnlyHint?: string;
+  options?: string[];
+  /**
+   * Autofetches the option list from the institution's reference data so the
+   * user picks a real entity. Falls back to a free-text input when the list
+   * is unavailable.
+   */
+  autofetch?: 'programs' | 'departments';
+}
 
-const textFields = [
-  { key: 'academicYear', label: 'Academic Year', type: 'text', placeholder: 'e.g. 2024-25' },
+/**
+ * Update a form field and recompute any derived fields whose source values
+ * just changed (e.g. studentsFailed = studentsAppeared - studentsPassed).
+ */
+function applyFieldValue(
+  prev: BacklogRecord | null,
+  field: TextFieldConfig,
+  value: string | number
+): BacklogRecord | null {
+  if (!prev) return null;
+  const next: BacklogRecord = { ...prev, [field.key]: value };
+  // Students Failed is auto-calculated from Appeared - Passed and rendered
+  // read-only in the form (clamped at 0).
+  if (field.key === 'studentsAppeared' || field.key === 'studentsPassed') {
+    next.studentsFailed = Math.max(0, next.studentsAppeared - next.studentsPassed);
+  }
+  return next;
+}
+
+const textFields: TextFieldConfig[] = [
+  {
+    key: 'academicYear',
+    label: 'Academic Year',
+    type: 'text',
+    placeholder: 'e.g. 2024-25',
+    // Academic year is always taken from the currently selected year —
+    // it is displayed but cannot be edited (neither on create nor edit).
+    readOnly: true,
+  },
   { key: 'semester', label: 'Semester', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8'] },
-  { key: 'program', label: 'Program', type: 'text', placeholder: 'e.g. B.Tech CSE AI R22' },
-  { key: 'department', label: 'Department', type: 'text', placeholder: 'e.g. Computer Science' },
+  { key: 'program', label: 'Program', type: 'text', autofetch: 'programs', placeholder: 'Select a program' },
+  { key: 'department', label: 'Department', type: 'text', autofetch: 'departments', placeholder: 'Select a department' },
   { key: 'subjectCode', label: 'Subject Code', type: 'text', placeholder: 'e.g. CS401' },
   { key: 'subjectName', label: 'Subject Name', type: 'text', placeholder: 'e.g. Machine Learning' },
   { key: 'studentsAppeared', label: 'Students Appeared', type: 'number' },
   { key: 'studentsPassed', label: 'Students Passed', type: 'number' },
-  { key: 'studentsFailed', label: 'Students Failed', type: 'number' },
+  {
+    key: 'studentsFailed',
+    label: 'Students Failed',
+    type: 'number',
+    // Auto-calculated from Students Appeared - Students Passed and rendered
+    // read-only in the form.
+    readOnly: true,
+    readOnlyHint: 'Auto-calculated: appeared - passed',
+    placeholder: 'Auto-calculated',
+  },
 ];
+
+const PER_PAGE = 10;
+
+function toRecord(rec: BacklogRecordApi): BacklogRecord {
+  return {
+    id: String(rec.id),
+    academicYear: rec.academicYear,
+    semester: rec.semester,
+    program: rec.program,
+    department: rec.department,
+    subjectCode: rec.subjectCode,
+    subjectName: rec.subjectName,
+    studentsAppeared: rec.studentsAppeared,
+    studentsPassed: rec.studentsPassed,
+    studentsFailed: rec.studentsFailed,
+  };
+}
+
+const passRateBadge = (rate?: number) => {
+  const r = Math.round(rate ?? 0);
+  return (
+    <Badge
+      variant="secondary"
+      className={`text-[10px] ${
+        r >= 75 ? 'bg-green-100 text-green-700' : r >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+      }`}
+    >
+      {r}%
+    </Badge>
+  );
+};
 
 export function BacklogRepository({ academicYear }: { academicYear: string }) {
   const [activeTab, setActiveTab] = useState('records');
   const [searchQuery, setSearchQuery] = useState('');
-  const [records, setRecords] = useState<BacklogRecord[]>(sampleData);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [records, setRecords] = useState<BacklogRecord[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const [analytics, setAnalytics] = useState<BacklogAnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BacklogRecord | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
 
-  const filteredRecords = useMemo(() => {
-    if (!searchQuery) return records;
-    const q = searchQuery.toLowerCase();
-    return records.filter((r) =>
-      Object.values(r).some((val) => String(val).toLowerCase().includes(q))
-    );
-  }, [records, searchQuery]);
+  // ── Institution reference data (for the program / department dropdowns) ──
+  const [programOptions, setProgramOptions] = useState<string[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
 
-  // Analytics data
-  const analytics = useMemo(() => {
-    const totalAppeared = records.reduce((s, r) => s + r.studentsAppeared, 0);
-    const totalPassed = records.reduce((s, r) => s + r.studentsPassed, 0);
-    const totalFailed = records.reduce((s, r) => s + r.studentsFailed, 0);
-
-    // Subject-wise
-    const subjectWise = records.map((r) => ({
-      subject: r.subjectName,
-      code: r.subjectCode,
-      appeared: r.studentsAppeared,
-      passed: r.studentsPassed,
-      failed: r.studentsFailed,
-      passRate: r.studentsAppeared > 0 ? Math.round((r.studentsPassed / r.studentsAppeared) * 100) : 0,
-    }));
-
-    // Department-wise
-    const deptMap = new Map<string, { appeared: number; passed: number; failed: number }>();
-    records.forEach((r) => {
-      const curr = deptMap.get(r.department) || { appeared: 0, passed: 0, failed: 0 };
-      curr.appeared += r.studentsAppeared;
-      curr.passed += r.studentsPassed;
-      curr.failed += r.studentsFailed;
-      deptMap.set(r.department, curr);
-    });
-    const departmentWise = Array.from(deptMap.entries()).map(([dept, data]) => ({
-      department: dept,
-      ...data,
-      passRate: data.appeared > 0 ? Math.round((data.passed / data.appeared) * 100) : 0,
-    }));
-
-    // Semester-wise
-    const semMap = new Map<string, { appeared: number; passed: number; failed: number }>();
-    records.forEach((r) => {
-      const key = `Sem ${r.semester}`;
-      const curr = semMap.get(key) || { appeared: 0, passed: 0, failed: 0 };
-      curr.appeared += r.studentsAppeared;
-      curr.passed += r.studentsPassed;
-      curr.failed += r.studentsFailed;
-      semMap.set(key, curr);
-    });
-    const semesterWise = Array.from(semMap.entries()).map(([sem, data]) => ({
-      semester: sem,
-      ...data,
-      passRate: data.appeared > 0 ? Math.round((data.passed / data.appeared) * 100) : 0,
-    }));
-
-    return { totalAppeared, totalPassed, totalFailed, subjectWise, departmentWise, semesterWise };
-  }, [records]);
-
-  const handleExportCSV = () => {
-    const headers = 'Academic Year,Semester,Program,Department,Subject Code,Subject Name,Students Appeared,Students Passed,Students Failed';
-    const rows = records
-      .map((r) =>
-        `"${r.academicYear}","${r.semester}","${r.program}","${r.department}","${r.subjectCode}","${r.subjectName}",${r.studentsAppeared},${r.studentsPassed},${r.studentsFailed}`
+  useEffect(() => {
+    institutionAdminService
+      .getPrograms()
+      .then((list) =>
+        setProgramOptions(
+          list
+            .filter((p) => p.status === 'ACTIVE')
+            .map((p) => p.name)
+            .sort((a, b) => a.localeCompare(b))
+        )
       )
-      .join('\n');
-    const csv = `${headers}\n${rows}`;
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backlog-repository-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      .catch(() => setProgramOptions([]));
+    institutionAdminService
+      .getDepartments()
+      .then((list) =>
+        setDepartmentOptions(
+          list
+            .filter((d) => d.status === 'ACTIVE')
+            .map((d) => d.name)
+            .sort((a, b) => a.localeCompare(b))
+        )
+      )
+      .catch(() => setDepartmentOptions([]));
+  }, []);
+
+  const csvInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Debounce search ──
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, academicYear]);
+
+  // ── Fetch records ──
+  const fetchRecords = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await examinationRepositoryService.getBacklogRecords({
+        academicYear,
+        search: debouncedSearch || undefined,
+        page: currentPage - 1,
+        size: PER_PAGE,
+        sortBy: 'subjectCode',
+        sortDirection: 'ASC',
+      });
+      setRecords(data.content.map(toRecord));
+      setTotalElements(data.totalElements);
+      setTotalPages(data.totalPages);
+      if (data.totalPages > 0 && currentPage > data.totalPages) {
+        setCurrentPage(data.totalPages);
+      }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load backlog records');
+      setRecords([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [academicYear, currentPage, debouncedSearch]);
+
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  // ── Fetch analytics ──
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const data = await examinationRepositoryService.getBacklogAnalytics({ academicYear });
+      setAnalytics(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load backlog analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [academicYear]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  const handleExportCSV = async () => {
+    try {
+      await examinationRepositoryService.exportBacklogCsv({
+        academicYear,
+        search: debouncedSearch || undefined,
+      });
+      toast.success('CSV export started — check your downloads');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to export CSV');
+    }
+  };
+
+  const handleUploadCsv = async (file: File) => {
+    setUploading(true);
+    try {
+      const result = await examinationRepositoryService.uploadBacklogCsv(file, academicYear);
+      toast.success(
+        `${result.importedCount} records imported, ${result.failedCount} failed`
+      );
+      fetchRecords();
+      fetchAnalytics();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload CSV');
+    } finally {
+      setUploading(false);
+      if (csvInputRef.current) csvInputRef.current.value = '';
+    }
   };
 
   const handleAddNew = () => {
@@ -183,19 +323,51 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
     setEditDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editingRecord) return;
-    if (isNewRecord) {
-      setRecords((prev) => [...prev, { ...editingRecord, id: crypto.randomUUID() }]);
-    } else {
-      setRecords((prev) => prev.map((r) => (r.id === editingRecord.id ? editingRecord : r)));
+    const payload: Record<string, unknown> = {
+      academicYear: editingRecord.academicYear,
+      semester: editingRecord.semester,
+      program: editingRecord.program,
+      department: editingRecord.department,
+      subjectCode: editingRecord.subjectCode,
+      subjectName: editingRecord.subjectName,
+      studentsAppeared: editingRecord.studentsAppeared,
+      studentsPassed: editingRecord.studentsPassed,
+      studentsFailed: editingRecord.studentsFailed,
+    };
+    try {
+      if (isNewRecord) {
+        await examinationRepositoryService.createBacklogRecord(payload);
+        toast.success('Backlog record created successfully');
+        setCurrentPage(1);
+      } else {
+        await examinationRepositoryService.updateBacklogRecord(editingRecord.id, payload);
+        toast.success('Backlog record updated successfully');
+      }
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      fetchRecords();
+      fetchAnalytics();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save backlog record');
     }
-    setEditDialogOpen(false);
-    setEditingRecord(null);
   };
 
-  const handleDelete = (id: string) => {
-    setRecords((prev) => prev.filter((r) => r.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this backlog record? This cannot be undone.')) return;
+    try {
+      await examinationRepositoryService.deleteBacklogRecord(id);
+      toast.success('Backlog record deleted successfully');
+      if (records.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      } else {
+        fetchRecords();
+      }
+      fetchAnalytics();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete backlog record');
+    }
   };
 
   const renderRecords = () => (
@@ -208,11 +380,27 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <FileUp className="h-4 w-4" />
-            Upload CSV
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleUploadCsv(file);
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={uploading}
+            onClick={() => csvInputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            {uploading ? 'Uploading...' : 'Upload CSV'}
           </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV} disabled={loading}>
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
@@ -233,11 +421,24 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
         />
       </div>
 
+      {loadError && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+          <p className="text-xs text-destructive flex-1">{loadError}</p>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={fetchRecords}>
+            Retry
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">All Backlog Records</CardTitle>
-            <Badge variant="secondary">{filteredRecords.length} records</Badge>
+            <div className="flex items-center gap-2">
+              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              <Badge variant="secondary">{totalElements} records</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -258,14 +459,21 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecords.length === 0 ? (
+                {loading && records.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-10">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">Loading records...</p>
+                    </TableCell>
+                  </TableRow>
+                ) : records.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                      No records found
+                      {loadError ? 'Unable to load records' : 'No records found'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecords.map((record) => (
+                  records.map((record) => (
                     <TableRow key={record.id} className="hover:bg-muted/50">
                       <TableCell className="text-sm whitespace-nowrap">{record.academicYear}</TableCell>
                       <TableCell className="text-sm">{record.semester}</TableCell>
@@ -292,181 +500,227 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-muted-foreground">
+                Showing {totalElements === 0 ? 0 : (currentPage - 1) * PER_PAGE + 1} to{' '}
+                {Math.min(currentPage * PER_PAGE, totalElements)} of {totalElements} records
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-7 w-7 text-xs p-0"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold">Backlog Analytics</h3>
-        <p className="text-sm text-muted-foreground">
-          Overview of backlog data by subject, department, and semester
-        </p>
+  const renderDashboard = () => {
+    const summary = analytics?.summary;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold">Backlog Analytics</h3>
+          <p className="text-sm text-muted-foreground">
+            Overview of backlog data by subject, department, and semester
+          </p>
+        </div>
+
+        {analyticsLoading && !analytics ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : !summary ? (
+          <Card className="bg-muted/30">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No analytics available for {academicYear}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="border-l-4 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{summary.totalStudentsAppeared}</p>
+                      <p className="text-xs text-muted-foreground">Total Students Appeared</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 border-emerald-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-50">
+                      <BookOpen className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{summary.totalStudentsPassed}</p>
+                      <p className="text-xs text-muted-foreground">Total Students Passed</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 border-red-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-red-50">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{summary.totalStudentsFailed}</p>
+                      <p className="text-xs text-muted-foreground">Total Students Failed</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Subject-wise */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                    Subject-wise Backlogs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.subjectWise.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No subject data</p>
+                    )}
+                    {analytics.subjectWise.map((s) => (
+                      <div key={s.subjectCode} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{s.subjectName}</p>
+                          <p className="text-[10px] text-muted-foreground">{s.subjectCode}</p>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs shrink-0">
+                          <span className="text-muted-foreground">A: {s.studentsAppeared}</span>
+                          <span className="text-emerald-600 font-medium">P: {s.studentsPassed}</span>
+                          <span className="text-red-600 font-medium">F: {s.studentsFailed}</span>
+                          {passRateBadge(s.passPercentage)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Department-wise */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <PieChart className="h-4 w-4 text-primary" />
+                    Department-wise Backlogs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.departmentWise.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No department data</p>
+                    )}
+                    {analytics.departmentWise.map((d) => (
+                      <div key={d.department} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                        <div>
+                          <p className="text-sm font-medium">{d.department}</p>
+                          <p className="text-[10px] text-muted-foreground">{d.studentsAppeared} total students</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-emerald-600">{d.studentsPassed} passed</span>
+                          <span className="text-red-600">{d.studentsFailed} failed</span>
+                          {passRateBadge(d.passPercentage)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Semester-wise */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                    Semester-wise Backlogs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.semesterWise.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">No semester data</p>
+                    )}
+                    {analytics.semesterWise.map((s) => (
+                      <div key={s.semester} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                        <div>
+                          <p className="text-sm font-medium">Sem {s.semester}</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-muted-foreground">{s.studentsAppeared} appeared</span>
+                          <span className="text-emerald-600">{s.studentsPassed} passed</span>
+                          <span className="text-red-600">{s.studentsFailed} failed</span>
+                          {passRateBadge(s.passPercentage)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-50">
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{analytics.totalAppeared}</p>
-                <p className="text-xs text-muted-foreground">Total Students Appeared</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-emerald-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-50">
-                <BookOpen className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{analytics.totalPassed}</p>
-                <p className="text-xs text-muted-foreground">Total Students Passed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-red-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-50">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{analytics.totalFailed}</p>
-                <p className="text-xs text-muted-foreground">Total Students Failed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Subject-wise */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Subject-wise Backlogs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {analytics.subjectWise.map((s) => (
-                <div key={s.code} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{s.subject}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.code}</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs shrink-0">
-                    <span className="text-muted-foreground">A: {s.appeared}</span>
-                    <span className="text-emerald-600 font-medium">P: {s.passed}</span>
-                    <span className="text-red-600 font-medium">F: {s.failed}</span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${
-                        s.passRate >= 75
-                          ? 'bg-green-100 text-green-700'
-                          : s.passRate >= 50
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {s.passRate}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Department-wise */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <PieChart className="h-4 w-4 text-primary" />
-              Department-wise Backlogs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {analytics.departmentWise.map((d) => (
-                <div key={d.department} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">{d.department}</p>
-                    <p className="text-[10px] text-muted-foreground">{d.appeared} total students</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-emerald-600">{d.passed} passed</span>
-                    <span className="text-red-600">{d.failed} failed</span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${
-                        d.passRate >= 75
-                          ? 'bg-green-100 text-green-700'
-                          : d.passRate >= 50
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {d.passRate}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Semester-wise */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Semester-wise Backlogs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {analytics.semesterWise.map((s) => (
-                <div key={s.semester} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">{s.semester}</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-muted-foreground">{s.appeared} appeared</span>
-                    <span className="text-emerald-600">{s.passed} passed</span>
-                    <span className="text-red-600">{s.failed} failed</span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${
-                        s.passRate >= 75
-                          ? 'bg-green-100 text-green-700'
-                          : s.passRate >= 50
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {s.passRate}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -496,52 +750,85 @@ export function BacklogRepository({ academicYear }: { academicYear: string }) {
             <DialogTitle>{isNewRecord ? 'Add Backlog Record' : 'Edit Backlog Record'}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
-            {textFields.map((field) => (
+            {textFields.map((field) => {
+              const fieldOptions =
+                field.autofetch === 'programs'
+                  ? programOptions
+                  : field.autofetch === 'departments'
+                  ? departmentOptions
+                  : field.options ?? [];
+              const useSelect =
+                field.type === 'select' ||
+                (field.autofetch && fieldOptions.length > 0);
+              return (
               <div key={field.key} className="space-y-1.5">
                 <Label className="text-xs font-medium">{field.label}</Label>
-                {field.type === 'select' ? (
+                {useSelect ? (
                   <Select
                     value={String(editingRecord?.[field.key as keyof BacklogRecord] || '')}
                     onValueChange={(val) =>
-                      setEditingRecord((prev) =>
-                        prev ? { ...prev, [field.key]: val } : null
-                      )
+                      setEditingRecord((prev) => applyFieldValue(prev, field, val))
                     }
                   >
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder={`Select ${field.label}`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {field.options?.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
-                        </SelectItem>
-                      ))}
+                      {(() => {
+                        const currentValue = String(
+                          editingRecord?.[field.key as keyof BacklogRecord] || ''
+                        );
+                        const items = [...fieldOptions];
+                        // Keep the current value visible/selectable even if it is
+                        // not in the fetched options (e.g. legacy free-text values).
+                        if (currentValue && !items.includes(currentValue)) {
+                          items.unshift(currentValue);
+                        }
+                        return items.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ));
+                      })()}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input
-                    type={field.type === 'number' ? 'number' : 'text'}
-                    value={String(editingRecord?.[field.key as keyof BacklogRecord] || '')}
-                    onChange={(e) =>
-                      setEditingRecord((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              [field.key]:
-                                field.type === 'number'
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                            }
-                          : null
-                      )
-                    }
-                    placeholder={field.placeholder}
-                    className="h-9"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={field.type === 'number' ? 'number' : 'text'}
+                      value={String(editingRecord?.[field.key] || '')}
+                      disabled={field.readOnly}
+                      onChange={(e) =>
+                        setEditingRecord((prev) =>
+                          applyFieldValue(
+                            prev,
+                            field,
+                            field.type === 'number'
+                              ? Number(e.target.value)
+                              : e.target.value
+                          )
+                        )
+                      }
+                      placeholder={field.placeholder}
+                      className={cn(
+                        'h-9',
+                        field.readOnly && 'bg-muted/50 cursor-not-allowed opacity-100 pr-8'
+                      )}
+                    />
+                    {field.readOnly && (
+                      <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    )}
+                  </div>
+                )}
+                {field.readOnly && (
+                  <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Lock className="h-2.5 w-2.5" />
+                    {field.readOnlyHint ?? 'Fixed to the selected academic year'}
+                  </p>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>

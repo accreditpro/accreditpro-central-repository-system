@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,19 +16,15 @@ import {
   Gauge,
   ChevronRight,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import { useAppSelector } from '@/store';
-import { selectObservations } from '@/store/slices/iqacSlice';
-import {
-  iqacKpis,
-  departmentReadinessRows,
-  departmentRepositories,
-  institutionOverall,
-  gapStats,
-} from '../iqac-data';
+import { iqacService, DashboardDto, QualityObservationDto } from '@/services/iqac.service';
+import { departmentRepositories } from '../iqac-data';
 import { StatCard, statusOf, StatusBadge, ReadinessBar, scoreTone, PRIORITY_META } from './common';
 import { InstitutionalCharts } from './InstitutionalCharts';
 import { VerificationOverview } from './VerificationOverview';
+import { cn } from '@/lib/utils';
 
 function ReadinessGauge({ value, label }: { value: number; label: string }) {
   return (
@@ -56,22 +53,71 @@ function ReadinessGauge({ value, label }: { value: number; label: string }) {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const observations = useAppSelector(selectObservations);
+  const selectedAcademicYear = useAppSelector((state) => state.ui.selectedAcademicYear);
+  const [dashboard, setDashboard] = useState<DashboardDto | null>(null);
+  const [observations, setObservations] = useState<QualityObservationDto[]>([]);
+  const [repoMatrix, setRepoMatrix] = useState<{ code: string; repositories: { repo: string; completion: number }[] }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      iqacService.getDashboard(selectedAcademicYear),
+      iqacService.getObservations(),
+      iqacService.getDepartments({ academicYear: selectedAcademicYear }),
+    ])
+      .then(([dash, obs, depts]) => {
+        if (cancelled) return;
+        setDashboard(dash);
+        setObservations(obs);
+        setRepoMatrix(depts.matrix.map((m) => ({ code: m.code, repositories: m.repositories })));
+      })
+      .catch(() => {
+        if (!cancelled) setDashboard(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAcademicYear]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading IQAC dashboard…
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="rounded-xl border border-dashed p-12 text-center text-sm text-muted-foreground">
+        Unable to load the IQAC dashboard. Please try again.
+      </div>
+    );
+  }
+
+  const { kpis, institutionOverall } = dashboard;
+  const departmentReadinessRows = dashboard.departmentReadiness;
   const activeObservations = observations.filter((o) => o.status !== 'closed');
   const openObservations = observations.filter((o) => o.status === 'open');
   const criticalObs = observations.filter((o) => o.priority === 'critical' && o.status !== 'closed');
 
   const kpiCards = [
-    { label: 'Overall Repository Readiness', value: `${iqacKpis.repositoryReadiness}%`, icon: Database, tone: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/40' },
-    { label: 'NBA Readiness', value: `${iqacKpis.nbaReadiness}%`, icon: Trophy, tone: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40' },
-    { label: 'NAAC Readiness', value: `${iqacKpis.naacReadiness}%`, icon: Award, tone: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/40' },
-    { label: 'NIRF Readiness', value: `${iqacKpis.nirfReadiness}%`, icon: TrendingUp, tone: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
-    { label: 'Evidence Completion', value: `${iqacKpis.evidenceCompletion}%`, icon: FileCheck, tone: 'text-fuchsia-600', bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40' },
-    { label: 'Departments Ready', value: `${iqacKpis.departmentsReady}`, icon: Building, tone: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
-    { label: 'Needing Attention', value: `${iqacKpis.departmentsNeedingAttention}`, icon: Building, tone: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40' },
-    { label: 'Critical Gaps', value: `${gapStats.critical}`, icon: AlertTriangle, tone: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950/40' },
-    { label: 'Pending HOD Approvals', value: `${iqacKpis.pendingHodApprovals}`, icon: CheckSquare, tone: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/40' },
-    { label: 'Active Observations', value: `${activeObservations.length}`, icon: MessageSquareWarning, tone: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/40' },
+    { label: 'Overall Repository Readiness', value: `${kpis.repositoryReadiness}%`, icon: Database, tone: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/40' },
+    { label: 'NBA Readiness', value: `${kpis.nbaReadiness}%`, icon: Trophy, tone: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40' },
+    { label: 'NAAC Readiness', value: `${kpis.naacReadiness}%`, icon: Award, tone: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/40' },
+    { label: 'NIRF Readiness', value: `${kpis.nirfReadiness}%`, icon: TrendingUp, tone: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
+    { label: 'Evidence Completion', value: `${kpis.evidenceCompletion}%`, icon: FileCheck, tone: 'text-fuchsia-600', bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40' },
+    { label: 'Departments Ready', value: `${kpis.departmentsReady}`, icon: Building, tone: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
+    { label: 'Needing Attention', value: `${kpis.departmentsNeedingAttention}`, icon: Building, tone: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40' },
+    { label: 'Critical Gaps', value: `${kpis.criticalGaps}`, icon: AlertTriangle, tone: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950/40' },
+    { label: 'Pending HOD Approvals', value: `${kpis.pendingHodApprovals}`, icon: CheckSquare, tone: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/40' },
+    { label: 'Active Observations', value: `${kpis.activeObservations}`, icon: MessageSquareWarning, tone: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/40' },
   ];
 
   return (
@@ -186,7 +232,11 @@ export function Dashboard() {
       </div>
 
       {/* Charts — repository trends, observation status, department comparisons */}
-      <InstitutionalCharts />
+      <InstitutionalCharts
+        trends={dashboard.trends}
+        departmentReadiness={dashboard.departmentReadiness}
+        observations={observations}
+      />
 
       {/* Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

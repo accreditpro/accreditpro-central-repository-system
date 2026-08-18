@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,12 @@ import {
   Trophy,
   Award,
   Gauge,
+  Loader2,
 } from 'lucide-react';
-import { useAppSelector } from '@/store';
-import { selectInitiatives, selectObservations } from '@/store/slices/iqacSlice';
+import { iqacService } from '@/services/iqac.service';
+import type { ReportContext } from './report-export';
 import { IQAC_REPORT_TYPES, exportIQACReportToPDF, exportIQACReportToExcel } from './report-export';
+import type { ImprovementInitiative, QualityObservation } from '../types';
 import { SearchInput } from './common';
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -35,20 +37,70 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 };
 
 export function InstitutionalReports() {
-  const observations = useAppSelector(selectObservations);
-  const initiatives = useAppSelector(selectInitiatives);
+  const [observations, setObservations] = useState<QualityObservation[]>([]);
+  const [initiatives, setInitiatives] = useState<ImprovementInitiative[]>([]);
+  const [ctx, setCtx] = useState<ReportContext | null>(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      iqacService.getDashboard(),
+      iqacService.getInstitutionReadiness(),
+      iqacService.getRepositoryMonitoring(),
+      iqacService.getGaps(),
+      iqacService.getAccreditation(),
+      iqacService.getObservations(),
+      iqacService.getInitiatives(),
+    ])
+      .then(([dashboard, readiness, monitoring, gaps, accreditation, obs, inits]) => {
+        if (cancelled) return;
+        setObservations((obs ?? []) as QualityObservation[]);
+        setInitiatives((inits ?? []) as ImprovementInitiative[]);
+        setCtx({
+          kpis: dashboard.kpis,
+          departmentReadiness: dashboard.departmentReadiness,
+          institutionRepositories: readiness.repositories ?? [],
+          repositoryMonitoring: monitoring ?? [],
+          gaps,
+          accreditation,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setCtx(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = IQAC_REPORT_TYPES.filter(
     (r) => !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (loading || !ctx) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading reports…
+      </div>
+    );
+  }
+
   const handleExport = (id: string, format: 'pdf' | 'excel') => {
+    if (!ctx) {
+      toast.error('Report data is still loading. Please try again.');
+      return;
+    }
     try {
       if (format === 'pdf') {
-        exportIQACReportToPDF(id, observations, initiatives);
+        exportIQACReportToPDF(id, observations, initiatives, ctx);
       } else {
-        exportIQACReportToExcel(id, observations, initiatives);
+        exportIQACReportToExcel(id, observations, initiatives, ctx);
       }
       toast.success(`Report exported as ${format.toUpperCase()}.`);
     } catch {

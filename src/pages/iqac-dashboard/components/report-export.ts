@@ -2,31 +2,29 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import {
-  departmentReadinessRows,
-  institutionRepositories,
-  institutionOverall,
-  repositoryGaps,
-  evidenceGaps,
-  criterionGaps,
-  departmentGaps,
-  yearGaps,
-  iqacKpis,
-  NBA_CRITERIA,
-  NAAC_CRITERIA,
-  NIRF_PARAMETERS,
-  NIRF_SHORT,
-  nbaDeptScores,
-  naacDeptScores,
-  nirfDeptScores,
-  repositoryMonitoringRows,
-} from '../iqac-data';
 import type { ImprovementInitiative, QualityObservation } from '../types';
+import type {
+  AccreditationDto,
+  DashboardKpisDto,
+  DepartmentReadinessRowDto,
+  GapAnalysisDto,
+  InstitutionReadinessDto,
+  RepositoryMonitoringDto,
+} from '@/services/iqac.service';
 
 export interface ReportData {
   title: string;
   columns: string[];
   rows: (string | number)[][];
+}
+
+export interface ReportContext {
+  kpis: DashboardKpisDto;
+  departmentReadiness: DepartmentReadinessRowDto[];
+  institutionRepositories: InstitutionReadinessDto['repositories'];
+  repositoryMonitoring: RepositoryMonitoringDto[];
+  gaps: GapAnalysisDto;
+  accreditation: AccreditationDto;
 }
 
 export const IQAC_REPORT_TYPES = [
@@ -41,35 +39,50 @@ export const IQAC_REPORT_TYPES = [
   { id: 'nirf', name: 'NIRF Readiness Report', description: 'NIRF category-wise readiness scores' },
 ];
 
+function gapRows(gaps: GapAnalysisDto, scope: 'repository' | 'evidence' | 'criterion' | 'department' | 'year') {
+  return (gaps[scope] ?? []).map((g) => [
+    g.scope,
+    g.department ?? '-',
+    g.repository ?? (g.framework ? `${g.framework} ${g.criterion ?? ''}` : g.criterion ?? '-'),
+    `${g.current}%`,
+    `${g.target}%`,
+    g.target - g.current,
+    g.priority,
+    g.suggestedAction,
+  ]);
+}
+
 export function buildReportData(
   id: string,
   observations: QualityObservation[],
-  initiatives: ImprovementInitiative[]
+  initiatives: ImprovementInitiative[],
+  ctx: ReportContext
 ): ReportData {
+  const { kpis, departmentReadiness, institutionRepositories, repositoryMonitoring, gaps, accreditation } = ctx;
   switch (id) {
     case 'institution':
       return {
         title: 'Institution Readiness Report',
         columns: ['Metric', 'Value'],
         rows: [
-          ['Overall Repository Readiness', `${iqacKpis.repositoryReadiness}%`],
-          ['Evidence Completion', `${iqacKpis.evidenceCompletion}%`],
-          ['NBA Readiness', `${iqacKpis.nbaReadiness}%`],
-          ['NAAC Readiness', `${iqacKpis.naacReadiness}%`],
-          ['NIRF Readiness', `${iqacKpis.nirfReadiness}%`],
-          ['Departments Ready', iqacKpis.departmentsReady],
-          ['Departments Needing Attention', iqacKpis.departmentsNeedingAttention],
-          ['Critical Departments', iqacKpis.criticalDepartments],
-          ['Critical Gaps', iqacKpis.criticalGaps],
-          ['Pending HOD Approvals', iqacKpis.pendingHodApprovals],
-          ['Active Quality Observations', iqacKpis.activeObservations],
+          ['Overall Repository Readiness', `${kpis.repositoryReadiness}%`],
+          ['Evidence Completion', `${kpis.evidenceCompletion}%`],
+          ['NBA Readiness', `${kpis.nbaReadiness}%`],
+          ['NAAC Readiness', `${kpis.naacReadiness}%`],
+          ['NIRF Readiness', `${kpis.nirfReadiness}%`],
+          ['Departments Ready', kpis.departmentsReady],
+          ['Departments Needing Attention', kpis.departmentsNeedingAttention],
+          ['Critical Departments', kpis.criticalDepartments],
+          ['Critical Gaps', kpis.criticalGaps],
+          ['Pending HOD Approvals', kpis.pendingHodApprovals],
+          ['Active Quality Observations', kpis.activeObservations],
         ],
       };
     case 'department':
       return {
         title: 'Department Readiness Report',
         columns: ['Department', 'Repository Completion', 'NBA', 'NAAC', 'NIRF', 'Overall Status'],
-        rows: departmentReadinessRows.map((d) => [
+        rows: departmentReadiness.map((d) => [
           d.code,
           `${d.repositoryCompletion}%`,
           `${d.nba}%`,
@@ -82,26 +95,29 @@ export function buildReportData(
       return {
         title: 'Repository Completion Report',
         columns: ['Repository', 'Total Records', 'Approved', 'Pending Uploads', 'Pending HOD Approval', 'Missing Evidence', 'Completion'],
-        rows: institutionRepositories.map((r, i) => [
-          r.repository,
-          r.totalRecords,
-          r.approvedRecords,
-          repositoryComputed[i].pendingUploads,
-          repositoryComputed[i].pendingHodApproval,
-          r.missingRecords,
-          `${r.readiness}%`,
-        ]),
+        rows: institutionRepositories.map((r) => {
+          const m = repositoryMonitoring.find((x) => x.repository === r.repository);
+          return [
+            r.repository,
+            r.totalRecords,
+            r.approvedRecords,
+            m?.pendingUploads ?? 0,
+            m?.pendingHodApproval ?? 0,
+            r.missingRecords,
+            `${r.readiness}%`,
+          ];
+        }),
       };
     case 'gaps':
       return {
         title: 'Gap Analysis Report',
         columns: ['Scope', 'Department', 'Repository / Criterion', 'Current', 'Target', 'Gap', 'Priority', 'Suggested Action'],
         rows: [
-          ...repositoryGaps.map((g) => [g.scope, g.department ?? '-', g.repository ?? '-', `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority, g.suggestedAction]),
-          ...evidenceGaps.map((g) => [g.scope, g.department ?? '-', g.repository ?? '-', `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority, g.suggestedAction]),
-          ...criterionGaps.map((g) => [g.scope, '-', `${g.framework} ${g.criterion ?? ''}`, `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority, g.suggestedAction]),
-          ...departmentGaps.map((g) => [g.scope, g.department ?? '-', 'Overall', `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority, g.suggestedAction]),
-          ...yearGaps.map((g) => [g.scope, '-', g.criterion ?? '-', `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority, g.suggestedAction]),
+          ...gapRows(gaps, 'repository'),
+          ...gapRows(gaps, 'evidence'),
+          ...gapRows(gaps, 'criterion'),
+          ...gapRows(gaps, 'department'),
+          ...gapRows(gaps, 'year'),
         ],
       };
     case 'observations':
@@ -135,35 +151,45 @@ export function buildReportData(
           i.outcome ?? '-',
         ]),
       };
-    case 'nba':
+    case 'nba': {
+      const criteria = accreditation.nba.criteria ?? [];
+      const deptRows = accreditation.nba.departments ?? [];
       return {
         title: 'NBA Readiness Report',
-        columns: ['Department', ...NBA_CRITERIA.map((_, ci) => `C${ci + 1}`), 'Overall'],
-        rows: nbaDeptScores.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
+        columns: ['Department', ...criteria.map((_, ci) => `C${ci + 1}`), 'Overall'],
+        rows: deptRows.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
       };
-    case 'naac':
+    }
+    case 'naac': {
+      const criteria = accreditation.naac.criteria ?? [];
+      const deptRows = accreditation.naac.departments ?? [];
       return {
         title: 'NAAC Readiness Report',
-        columns: ['Department', ...NAAC_CRITERIA.map((_, ci) => `C${ci + 1}`), 'Overall'],
-        rows: naacDeptScores.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
+        columns: ['Department', ...criteria.map((_, ci) => `C${ci + 1}`), 'Overall'],
+        rows: deptRows.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
       };
-    case 'nirf':
+    }
+    case 'nirf': {
+      const params = accreditation.nirf.parameters ?? [];
+      const deptRows = accreditation.nirf.departments ?? [];
       return {
         title: 'NIRF Readiness Report',
-        columns: ['Department', ...NIRF_SHORT, 'Overall'],
-        rows: nirfDeptScores.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
+        columns: ['Department', ...params.map((p) => p.id.toUpperCase()), 'Overall'],
+        rows: deptRows.map((d) => [d.dept, ...d.scores.map((s) => `${s}%`), `${d.overall}%`]),
       };
+    }
     default:
       return { title: 'Report', columns: ['Item'], rows: [['—']] };
   }
 }
 
-// Pending/approval splits for the repository report stay in sync with
-// repositoryMonitoringRows on the monitoring page.
-const repositoryComputed = repositoryMonitoringRows;
-
-export function exportIQACReportToExcel(id: string, observations: QualityObservation[], initiatives: ImprovementInitiative[]) {
-  const data = buildReportData(id, observations, initiatives);
+export function exportIQACReportToExcel(
+  id: string,
+  observations: QualityObservation[],
+  initiatives: ImprovementInitiative[],
+  ctx: ReportContext
+) {
+  const data = buildReportData(id, observations, initiatives, ctx);
   const sheet = XLSX.utils.json_to_sheet(
     data.rows.map((row) => Object.fromEntries(data.columns.map((c, i) => [c, row[i]])))
   );
@@ -176,8 +202,13 @@ export function exportIQACReportToExcel(id: string, observations: QualityObserva
   );
 }
 
-export function exportIQACReportToPDF(id: string, observations: QualityObservation[], initiatives: ImprovementInitiative[]) {
-  const data = buildReportData(id, observations, initiatives);
+export function exportIQACReportToPDF(
+  id: string,
+  observations: QualityObservation[],
+  initiatives: ImprovementInitiative[],
+  ctx: ReportContext
+) {
+  const data = buildReportData(id, observations, initiatives, ctx);
   const doc = new jsPDF();
   doc.setFontSize(18);
   doc.setTextColor(79, 70, 229);

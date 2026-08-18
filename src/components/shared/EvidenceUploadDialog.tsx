@@ -37,6 +37,8 @@ export interface UploadedFile {
   type: string;
   uploadedAt: string;
   dataUrl?: string;
+  /** Original File object for session-uploaded files (used by API-backed callers) */
+  file?: File;
 }
 
 export interface EvidenceCategory {
@@ -337,6 +339,7 @@ export function EvidenceUploadDialog({
         type: f.type,
         uploadedAt: new Date().toISOString(),
         dataUrl: URL.createObjectURL(f),
+        file: f,
       }));
 
       setUploadedFiles((prev) => ({
@@ -393,12 +396,27 @@ export function EvidenceUploadDialog({
       });
   }, [uploadedFiles, initialFiles]);
 
+  const [saving, setSaving] = useState(false);
+
   const handleSaveClose = () => {
-    onSave?.({ files: uploadedFiles });
-    onClose();
+    if (saving) return;
+    setSaving(true);
+    // onSave may return a Promise (API-backed callers perform real uploads);
+    // only close once the work is complete so the dialog can surface errors.
+    const result = onSave?.({ files: uploadedFiles });
+    Promise.resolve(result)
+      .then(() => {
+        setSaving(false);
+        onClose();
+      })
+      .catch(() => {
+        setSaving(false);
+        // Keep the dialog open so the caller's error handling can be retried
+      });
   };
 
   const handleDismiss = () => {
+    if (saving) return;
     if (onCancel || !onSave) {
       // Discard — release this session's object URLs since nothing is persisted
       // (covers explicit cancel AND the plain documents views that only discard)
@@ -558,11 +576,11 @@ export function EvidenceUploadDialog({
             Accepted formats: PDF, DOCX, ZIP, PNG, JPG, XLSX, CSV (max 10MB each)
           </p>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleDismiss}>
+            <Button variant="outline" size="sm" onClick={handleDismiss} disabled={saving}>
               Close
             </Button>
-            <Button size="sm" onClick={handleSaveClose}>
-              Save & Close
+            <Button size="sm" onClick={handleSaveClose} disabled={saving}>
+              {saving ? 'Saving...' : 'Save & Close'}
             </Button>
           </div>
         </div>

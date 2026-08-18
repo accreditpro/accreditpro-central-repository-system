@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 import {
   FileText,
   FileCheck,
@@ -14,13 +15,40 @@ import {
   Printer,
   Mail,
   Calendar,
+  Loader2,
 } from 'lucide-react';
-import { reportTypes, ACADEMIC_YEARS } from '../hod-configs';
+import { hodService, ReportTypeDto, RecentReportDto } from '@/services/hod.service';
+import { ACADEMIC_YEARS } from '../hod-configs';
 
 export function ReportsModule({ academicYear }: { academicYear: string }) {
+  const [reportTypes, setReportTypes] = useState<ReportTypeDto[]>([]);
+  const [recentReports, setRecentReports] = useState<RecentReportDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [selectedReport, setSelectedReport] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>(academicYear);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    hodService
+      .getReports()
+      .then((data) => {
+        if (cancelled) return;
+        setReportTypes(data.reportTypes);
+        setRecentReports(data.recentReports);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Failed to load reports. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const getReportIcon = (iconName: string) => {
     switch (iconName) {
@@ -34,13 +62,54 @@ export function ReportsModule({ academicYear }: { academicYear: string }) {
     }
   };
 
-  const recentReports = [
-    { name: 'Department Repository Report', generatedOn: '2024-12-14', format: 'PDF', size: '2.4 MB' },
-    { name: 'Evidence Report', generatedOn: '2024-12-12', format: 'Excel', size: '1.8 MB' },
-    { name: 'Gap Analysis Report', generatedOn: '2024-12-10', format: 'PDF', size: '1.2 MB' },
-    { name: 'Five Year Summary', generatedOn: '2024-12-08', format: 'PDF', size: '3.6 MB' },
-    { name: 'Pending Tasks Report', generatedOn: '2024-12-05', format: 'PDF', size: '0.8 MB' },
-  ];
+  const generateAndDownload = async () => {
+    if (!selectedReport) {
+      toast.error('Please select a report type');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const report = await hodService.generateReport({
+        reportType: selectedReport,
+        format: selectedFormat,
+        academicYear: selectedYear,
+      });
+      setRecentReports((prev) => [report, ...prev]);
+      await hodService.downloadReport(report.id, report.name);
+      toast.success('Report generated and downloaded');
+    } catch {
+      toast.error('Failed to generate the report. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const emailReport = async (report: RecentReportDto) => {
+    try {
+      await hodService.emailReport(report.id);
+      toast.success(`Report emailed successfully`);
+    } catch {
+      toast.error('Failed to email the report. Please try again.');
+    }
+  };
+
+  const downloadReport = async (report: RecentReportDto) => {
+    try {
+      await hodService.downloadReport(report.id, report.name);
+      toast.success(`Downloading ${report.name}`);
+    } catch {
+      toast.error('Failed to download the report. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading reports...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,15 +153,20 @@ export function ReportsModule({ academicYear }: { academicYear: string }) {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={generateAndDownload} disabled={generating}>
               <Download className="h-4 w-4" />
-              Generate & Download
+              {generating ? 'Generating...' : 'Generate & Download'}
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
               Print
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={recentReports.length === 0}
+              onClick={() => recentReports[0] && emailReport(recentReports[0])}
+            >
               <Mail className="h-4 w-4" />
               Email Report
             </Button>
@@ -137,21 +211,21 @@ export function ReportsModule({ academicYear }: { academicYear: string }) {
                 </tr>
               </thead>
               <tbody>
-                {recentReports.map((report, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
+                {recentReports.map((report) => (
+                  <tr key={report.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-3 font-medium">{report.name}</td>
                     <td className="p-3 text-muted-foreground">{new Date(report.generatedOn).toLocaleDateString()}</td>
                     <td className="p-3">
                       <Badge variant="outline">{report.format}</Badge>
                     </td>
-                    <td className="p-3 text-muted-foreground">{report.size}</td>
+                    <td className="p-3 text-muted-foreground">{report.size ?? '—'}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" className="h-7 gap-1">
+                        <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => downloadReport(report)}>
                           <Download className="h-3.5 w-3.5" />
                           Download
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-7 gap-1">
+                        <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => emailReport(report)}>
                           <Mail className="h-3.5 w-3.5" />
                           Email
                         </Button>
@@ -159,6 +233,13 @@ export function ReportsModule({ academicYear }: { academicYear: string }) {
                     </td>
                   </tr>
                 ))}
+                {recentReports.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-sm text-muted-foreground">
+                      No reports generated yet. Use the form above to create one.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

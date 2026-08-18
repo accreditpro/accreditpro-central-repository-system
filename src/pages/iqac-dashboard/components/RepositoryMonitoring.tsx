@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Database,
@@ -9,8 +9,11 @@ import {
   AlertTriangle,
   AlertOctagon,
   Info,
+  Loader2,
 } from 'lucide-react';
-import { repositoryMonitoringRows, statusOf } from '../iqac-data';
+import { iqacService } from '@/services/iqac.service';
+import type { RepositoryMonitoringDto } from '@/services/iqac.service';
+import { statusOf } from '../iqac-data';
 import { FilterBar, FilterSelect, ReadinessBar, StatusBadge, scoreTone } from './common';
 import { cn } from '@/lib/utils';
 
@@ -23,16 +26,45 @@ const REPO_STATUS_OPTIONS = [
 
 export function RepositoryMonitoring() {
   const [filter, setFilter] = useState('all');
+  const [repositoryMonitoringRows, setRepositoryMonitoringRows] = useState<RepositoryMonitoringDto[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rows = useMemo(
-    () => (filter === 'all' ? repositoryMonitoringRows : repositoryMonitoringRows.filter((r) => statusOf(r.completion) === filter)),
-    [filter]
-  );
+  useEffect(() => {
+    let cancelled = false;
+    iqacService
+      .getRepositoryMonitoring()
+      .then((rows) => {
+        if (!cancelled) setRepositoryMonitoringRows(rows ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setRepositoryMonitoringRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows =
+    filter === 'all'
+      ? repositoryMonitoringRows
+      : repositoryMonitoringRows.filter((r) => statusOf(r.completion) === filter);
 
   const highlighted = repositoryMonitoringRows.filter((r) => {
     const st = statusOf(r.completion);
     return st === 'critical' || r.missingEvidence > 60 || r.pendingHodApproval > 25;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading repository monitoring…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

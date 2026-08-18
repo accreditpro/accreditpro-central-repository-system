@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,9 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { useAppSelector } from '@/store';
-import { selectReviews } from '@/store/slices/evidenceReviewSlice';
-import { getHODYearData } from '@/pages/hod-dashboard/hod-configs';
-import { applyReviewOverrides } from '@/pages/hod-dashboard/components/evidence-utils';
+import { hodService } from '@/services/hod.service';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -56,15 +54,29 @@ export default function HODLayout() {
 
   const activeView = searchParams.get('view') || 'dashboard';
 
-  const reviews = useAppSelector(selectReviews);
-  const yearData = getHODYearData(selectedAcademicYear);
-  const pendingEvidence = applyReviewOverrides(yearData.evidence, selectedAcademicYear, reviews).filter(
-    (e) => e.status === 'pending'
-  ).length;
+  // Badge counts come from the live dashboard aggregate (pending evidence + gaps).
+  const [badges, setBadges] = useState<{ pending: number; gaps: number }>({ pending: 0, gaps: 0 });
+  useEffect(() => {
+    let cancelled = false;
+    hodService
+      .getDashboard(selectedAcademicYear)
+      .then((data) => {
+        if (cancelled) return;
+        const pending = data.evidenceSummary?.pending ?? data.evidence.filter((e) => e.status === 'pending').length;
+        setBadges({ pending, gaps: data.gaps.length });
+      })
+      .catch(() => {
+        if (!cancelled) setBadges({ pending: 0, gaps: 0 });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAcademicYear]);
+
   const badgeFor: Record<string, string | undefined> = {
-    evidence: String(pendingEvidence),
-    approvals: String(pendingEvidence),
-    gaps: String(yearData.gaps.length),
+    evidence: String(badges.pending),
+    approvals: String(badges.pending),
+    gaps: String(badges.gaps),
   };
 
   const handleNavClick = (id: string) => {

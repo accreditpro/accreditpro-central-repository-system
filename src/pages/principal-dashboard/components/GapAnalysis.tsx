@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,10 @@ import {
   Lightbulb,
   ChevronRight,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
-import {
-  principalGaps,
-  departmentOptions,
-  academicYearOptions,
-  type PrincipalGap,
-} from '../principal-data';
+import { departmentOptions, academicYearOptions } from '../principal-data';
+import { principalService, PrincipalGapDto } from '@/services/principal.service';
 import { StatCard, FilterBar, FilterSelect, ReadinessBar } from './common';
 
 const frameworkOptions = [
@@ -28,7 +25,9 @@ const frameworkOptions = [
   { value: 'NIRF', label: 'NIRF' },
 ];
 
-const priorityMeta: Record<PrincipalGap['priority'], { label: string; badge: string }> = {
+type GapPriority = 'critical' | 'high' | 'medium' | 'low';
+
+const priorityMeta: Record<GapPriority, { label: string; badge: string }> = {
   critical: { label: 'Critical', badge: 'bg-red-500/10 text-red-600 border-red-500/30' },
   high: { label: 'High', badge: 'bg-orange-500/10 text-orange-600 border-orange-500/30' },
   medium: { label: 'Medium', badge: 'bg-amber-500/10 text-amber-600 border-amber-500/30' },
@@ -39,24 +38,53 @@ export function GapAnalysis() {
   const [year, setYear] = useState('2025-26');
   const [dept, setDept] = useState('all');
   const [framework, setFramework] = useState('all');
-  const [selected, setSelected] = useState<PrincipalGap | null>(null);
+  const [selected, setSelected] = useState<PrincipalGapDto | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      principalGaps.filter(
-        (g) =>
-          (dept === 'all' || g.department === dept) &&
-          (framework === 'all' || g.framework === framework)
-      ),
-    [dept, framework]
-  );
+  const [gaps, setGaps] = useState<PrincipalGapDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    principalService
+      .getGaps({
+        academicYear: year,
+        department: dept === 'all' ? undefined : dept,
+        framework: framework === 'all' ? undefined : framework,
+        page: 0,
+        size: 100,
+      })
+      .then(response => {
+        if (!cancelled) setGaps(response.content ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setGaps([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [year, dept, framework]);
+
+  const filtered = useMemo(() => gaps, [gaps]);
 
   const counts = {
-    critical: filtered.filter((g) => g.priority === 'critical').length,
-    high: filtered.filter((g) => g.priority === 'high').length,
-    medium: filtered.filter((g) => g.priority === 'medium').length,
+    critical: filtered.filter(g => g.priority === 'critical').length,
+    high: filtered.filter(g => g.priority === 'high').length,
+    medium: filtered.filter(g => g.priority === 'medium').length,
     total: filtered.length,
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading gap analysis...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,20 +92,65 @@ export function GapAnalysis() {
       <Card>
         <CardContent className="p-3">
           <FilterBar>
-            <FilterSelect value={year} onValueChange={setYear} options={academicYearOptions} placeholder="Academic Year" />
-            <FilterSelect value={dept} onValueChange={setDept} options={departmentOptions} placeholder="Department" />
-            <FilterSelect value={framework} onValueChange={setFramework} options={frameworkOptions} placeholder="Framework" />
-            <span className="ml-auto text-[11px] text-muted-foreground">Click any gap for remediation detail</span>
+            <FilterSelect
+              value={year}
+              onValueChange={setYear}
+              options={academicYearOptions}
+              placeholder="Academic Year"
+            />
+            <FilterSelect
+              value={dept}
+              onValueChange={setDept}
+              options={departmentOptions}
+              placeholder="Department"
+            />
+            <FilterSelect
+              value={framework}
+              onValueChange={setFramework}
+              options={frameworkOptions}
+              placeholder="Framework"
+            />
+            <span className="ml-auto text-[11px] text-muted-foreground">
+              Click any gap for remediation detail
+            </span>
           </FilterBar>
         </CardContent>
       </Card>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={AlertTriangle} label="Critical Gaps" value={`${counts.critical}`} sub="Immediate action" tone="text-red-600" iconBg="bg-red-50 dark:bg-red-950/40" />
-        <StatCard icon={AlertTriangle} label="High Priority" value={`${counts.high}`} sub="This quarter" tone="text-orange-600" iconBg="bg-orange-50 dark:bg-orange-950/40" />
-        <StatCard icon={AlertTriangle} label="Medium" value={`${counts.medium}`} sub="Tracked" tone="text-amber-600" iconBg="bg-amber-50 dark:bg-amber-950/40" />
-        <StatCard icon={AlertTriangle} label="Total Gaps" value={`${counts.total}`} sub={`AY ${year}`} tone="text-indigo-600" iconBg="bg-indigo-50 dark:bg-indigo-950/40" />
+        <StatCard
+          icon={AlertTriangle}
+          label="Critical Gaps"
+          value={`${counts.critical}`}
+          sub="Immediate action"
+          tone="text-red-600"
+          iconBg="bg-red-50 dark:bg-red-950/40"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="High Priority"
+          value={`${counts.high}`}
+          sub="This quarter"
+          tone="text-orange-600"
+          iconBg="bg-orange-50 dark:bg-orange-950/40"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Medium"
+          value={`${counts.medium}`}
+          sub="Tracked"
+          tone="text-amber-600"
+          iconBg="bg-amber-50 dark:bg-amber-950/40"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Total Gaps"
+          value={`${counts.total}`}
+          sub={`AY ${year}`}
+          tone="text-indigo-600"
+          iconBg="bg-indigo-50 dark:bg-indigo-950/40"
+        />
       </div>
 
       {/* Gap table */}
@@ -92,7 +165,9 @@ export function GapAnalysis() {
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-2.5 font-medium text-muted-foreground">Department</th>
                   <th className="text-left p-2.5 font-medium text-muted-foreground">Repository</th>
-                  <th className="text-left p-2.5 font-medium text-muted-foreground hidden lg:table-cell">Description</th>
+                  <th className="text-left p-2.5 font-medium text-muted-foreground hidden lg:table-cell">
+                    Description
+                  </th>
                   <th className="text-center p-2.5 font-medium text-muted-foreground">Current</th>
                   <th className="text-center p-2.5 font-medium text-muted-foreground">Target</th>
                   <th className="text-center p-2.5 font-medium text-muted-foreground">Gap</th>
@@ -101,8 +176,12 @@ export function GapAnalysis() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((g) => {
+                {filtered.map(g => {
                   const gap = g.target - g.current;
+                  const prio =
+                    (g.priority as GapPriority) in priorityMeta
+                      ? (g.priority as GapPriority)
+                      : 'low';
                   return (
                     <tr
                       key={g.id}
@@ -111,19 +190,33 @@ export function GapAnalysis() {
                     >
                       <td className="p-2.5 font-medium">{g.department}</td>
                       <td className="p-2.5">{g.repository}</td>
-                      <td className="p-2.5 text-muted-foreground truncate max-w-[260px] hidden lg:table-cell">{g.description}</td>
+                      <td className="p-2.5 text-muted-foreground truncate max-w-[260px] hidden lg:table-cell">
+                        {g.description}
+                      </td>
                       <td className="p-2.5 text-center">
                         <span className="font-semibold">{g.current}%</span>
                       </td>
                       <td className="p-2.5 text-center text-muted-foreground">{g.target}%</td>
                       <td className="p-2.5 text-center">
-                        <Badge variant="outline" className={gap >= 25 ? 'text-red-600 border-red-500/30' : gap >= 15 ? 'text-amber-600 border-amber-500/30' : 'text-emerald-600 border-emerald-500/30'}>
+                        <Badge
+                          variant="outline"
+                          className={
+                            gap >= 25
+                              ? 'text-red-600 border-red-500/30'
+                              : gap >= 15
+                                ? 'text-amber-600 border-amber-500/30'
+                                : 'text-emerald-600 border-emerald-500/30'
+                          }
+                        >
                           -{gap} pts
                         </Badge>
                       </td>
                       <td className="p-2.5 text-center">
-                        <Badge variant="outline" className={`text-[9px] ${priorityMeta[g.priority].badge}`}>
-                          {priorityMeta[g.priority].label}
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] ${priorityMeta[prio].badge}`}
+                        >
+                          {priorityMeta[prio].label}
                         </Badge>
                       </td>
                       <td className="p-2.5 text-right">
@@ -139,7 +232,7 @@ export function GapAnalysis() {
       </Card>
 
       {/* Gap detail dialog */}
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={open => !open && setSelected(null)}>
         <DialogContent className="max-w-2xl">
           {selected && (
             <>
@@ -148,8 +241,17 @@ export function GapAnalysis() {
                   <DialogTitle className="text-base">
                     {selected.department} — {selected.repository} ({selected.framework})
                   </DialogTitle>
-                  <Badge variant="outline" className={`text-[9px] ${priorityMeta[selected.priority].badge}`}>
-                    {priorityMeta[selected.priority].label}
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] ${priorityMeta[(selected.priority as GapPriority) in priorityMeta ? (selected.priority as GapPriority) : 'low'].badge}`}
+                  >
+                    {
+                      priorityMeta[
+                        (selected.priority as GapPriority) in priorityMeta
+                          ? (selected.priority as GapPriority)
+                          : 'low'
+                      ].label
+                    }
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">{selected.description}</p>
@@ -174,17 +276,39 @@ export function GapAnalysis() {
                 <Card>
                   <CardContent className="p-3 text-center">
                     <p className="text-[10px] text-muted-foreground">Gap</p>
-                    <p className="text-xl font-bold text-amber-600">{selected.target - selected.current} pts</p>
+                    <p className="text-xl font-bold text-amber-600">
+                      {selected.target - selected.current} pts
+                    </p>
                     <TrendingUp className="h-4 w-4 mx-auto mt-1.5 text-amber-500" />
                   </CardContent>
                 </Card>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <DetailBlock icon={Database} title="Missing Data" items={selected.missingData} tone="text-blue-600" />
-                <DetailBlock icon={FileQuestion} title="Missing Evidence" items={selected.missingEvidence} tone="text-orange-600" />
-                <DetailBlock icon={Clock} title="Pending Approval" items={[selected.pendingApproval]} tone="text-amber-600" />
-                <DetailBlock icon={ClipboardList} title="IQAC Observation" items={[selected.iqacObservation]} tone="text-purple-600" />
+                <DetailBlock
+                  icon={Database}
+                  title="Missing Data"
+                  items={selected.missingData ?? []}
+                  tone="text-blue-600"
+                />
+                <DetailBlock
+                  icon={FileQuestion}
+                  title="Missing Evidence"
+                  items={selected.missingEvidence ?? []}
+                  tone="text-orange-600"
+                />
+                <DetailBlock
+                  icon={Clock}
+                  title="Pending Approval"
+                  items={selected.pendingApproval ? [selected.pendingApproval] : []}
+                  tone="text-amber-600"
+                />
+                <DetailBlock
+                  icon={ClipboardList}
+                  title="IQAC Observation"
+                  items={selected.iqacObservation ? [selected.iqacObservation] : []}
+                  tone="text-purple-600"
+                />
               </div>
 
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
@@ -193,7 +317,7 @@ export function GapAnalysis() {
                   <p className="text-xs font-semibold">Recommended Actions</p>
                 </div>
                 <ol className="space-y-1.5">
-                  {selected.recommendedActions.map((action, i) => (
+                  {(selected.recommendedActions ?? []).map((action, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs">
                       <span className="h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-px">
                         {i + 1}
@@ -205,7 +329,9 @@ export function GapAnalysis() {
               </div>
 
               <div className="flex justify-end">
-                <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
+                <Button size="sm" variant="outline" onClick={() => setSelected(null)}>
+                  Close
+                </Button>
               </div>
             </>
           )}

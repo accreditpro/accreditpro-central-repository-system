@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,16 +13,11 @@ import {
   Sparkles,
   AlertTriangle,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppSelector } from '@/store';
-import { selectObservations } from '@/store/slices/iqacSlice';
-import {
-  departmentReadinessRows,
-  institutionRepositories,
-  repositoryGaps,
-  departmentGaps,
-} from '../iqac-data';
+import { iqacService } from '@/services/iqac.service';
+import type { IqaGap } from '../iqac-data';
 import type { QualityObservation } from '../types';
 import { FilterBar, FilterSelect, SearchInput, StatCard } from './common';
 import { cn } from '@/lib/utils';
@@ -60,15 +55,20 @@ const SEVERITY_META: Record<AiInsight['severity'], { label: string; badge: strin
   low: { label: 'Low', badge: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
 };
 
-function buildInsights(observations: QualityObservation[]): AiInsight[] {
+function buildInsights(
+  observations: QualityObservation[],
+  institutionRepositories: { repository: string; readiness: number }[],
+  departmentReadinessRows: { code: string; repositoryCompletion: number }[],
+  repositoryGaps: IqaGap[],
+  departmentGaps: IqaGap[]
+): AiInsight[] {
   const insights: AiInsight[] = [];
 
   // --- Repository domain (computed from readiness data) ---
   for (const repo of institutionRepositories) {
     if (repo.readiness < 70) {
-      const dept = departmentReadinessRows.reduce((a, b) =>
-        (a.repositoryCompletion < b.repositoryCompletion ? a : b)
-      );
+      const weakest = [...departmentReadinessRows].sort((a, b) => a.repositoryCompletion - b.repositoryCompletion)[0];
+      const dept = weakest ?? { code: '—', repositoryCompletion: 0 };
       insights.push({
         id: `ai-repo-${repo.repository}`,
         domain: 'Repository',
@@ -190,12 +190,39 @@ function buildInsights(observations: QualityObservation[]): AiInsight[] {
 }
 
 export function AIInsights() {
-  const observations = useAppSelector(selectObservations);
+  const [insights, setInsights] = useState<AiInsight[]>([]);
+  const [loading, setLoading] = useState(true);
   const [domain, setDomain] = useState('all');
   const [search, setSearch] = useState('');
   const [generatedAt, setGeneratedAt] = useState(() => new Date());
 
-  const insights = useMemo(() => buildInsights(observations), [observations]);
+  const loadInsights = useCallback(() => {
+    Promise.all([
+      iqacService.getInstitutionReadiness(),
+      iqacService.getGaps(),
+      iqacService.getObservations(),
+    ])
+      .then(([readiness, gaps, observations]) => {
+        setInsights(
+          buildInsights(
+            (observations ?? []) as QualityObservation[],
+            readiness.repositories ?? [],
+            (readiness.departments ?? []).map((d) => ({
+              code: d.code,
+              repositoryCompletion: d.repositoryCompletion,
+            })),
+            (gaps.repository ?? []) as IqaGap[],
+            (gaps.department ?? []) as IqaGap[]
+          )
+        );
+      })
+      .catch(() => setInsights([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadInsights();
+  }, [loadInsights]);
 
   const filtered = insights.filter((i) => {
     const matchesDomain = domain === 'all' || i.domain === domain;
@@ -205,6 +232,15 @@ export function AIInsights() {
       i.description.toLowerCase().includes(search.toLowerCase());
     return matchesDomain && matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Generating AI insights from live data…
+      </div>
+    );
+  }
 
   const domainOptions = [
     { value: 'all', label: 'All Domains' },
@@ -231,6 +267,7 @@ export function AIInsights() {
               className="h-8 text-[11px] gap-1.5"
               onClick={() => {
                 setGeneratedAt(new Date());
+                loadInsights();
                 toast('Insights regenerated from the latest data.');
               }}
             >

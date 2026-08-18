@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,9 +13,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
+import {
+  financeRepositoryService,
+  FinanceDashboardData,
+} from '@/services/finance-repository.service';
 
-interface KPICard {
+interface KpiCard {
   title: string;
   value: string;
   change: string;
@@ -23,90 +30,25 @@ interface KPICard {
   color: string;
 }
 
-const kpiCards: KPICard[] = [
-  {
-    title: 'Total Budget',
-    value: '₹18.5 Cr',
-    change: '+8.2% from last year',
-    changeType: 'positive',
-    icon: <PieChart className="h-5 w-5" />,
-    color: 'bg-blue-500/10 text-blue-600',
-  },
-  {
-    title: 'Total Revenue',
-    value: '₹63.3 Cr',
-    change: '+12.5% YoY',
-    changeType: 'positive',
-    icon: <TrendingUp className="h-5 w-5" />,
-    color: 'bg-emerald-500/10 text-emerald-600',
-  },
-  {
-    title: 'Total Expenditure',
-    value: '₹10.5 Cr',
-    change: '56.8% utilized',
-    changeType: 'neutral',
-    icon: <TrendingDown className="h-5 w-5" />,
-    color: 'bg-orange-500/10 text-orange-600',
-  },
-  {
-    title: 'Research Funding',
-    value: '₹9.0 Cr',
-    change: '4 active projects',
-    changeType: 'positive',
-    icon: <IndianRupee className="h-5 w-5" />,
-    color: 'bg-purple-500/10 text-purple-600',
-  },
-  {
-    title: 'Scholarships Disbursed',
-    value: '₹82.5 L',
-    change: '205 beneficiaries',
-    changeType: 'positive',
-    icon: <GraduationCap className="h-5 w-5" />,
-    color: 'bg-cyan-500/10 text-cyan-600',
-  },
-  {
-    title: 'Endowments Value',
-    value: '₹19.9 Cr',
-    change: '4 active endowments',
-    changeType: 'positive',
-    icon: <Heart className="h-5 w-5" />,
-    color: 'bg-pink-500/10 text-pink-600',
-  },
-  {
-    title: 'Audit Compliance',
-    value: '92%',
-    change: 'Last audit: Clean',
-    changeType: 'positive',
-    icon: <FileCheck className="h-5 w-5" />,
-    color: 'bg-green-500/10 text-green-600',
-  },
-  {
-    title: 'Financial Assets',
-    value: '₹55.0 Cr',
-    change: '₹4.08 Cr annual income',
-    changeType: 'positive',
-    icon: <Landmark className="h-5 w-5" />,
-    color: 'bg-amber-500/10 text-amber-600',
-  },
+// Icon/color palette for the 8 KPI slots (positional — matches the backend KPI order).
+const kpiPalette: { icon: React.ReactNode; color: string }[] = [
+  { icon: <PieChart className="h-5 w-5" />, color: 'bg-blue-500/10 text-blue-600' },
+  { icon: <TrendingUp className="h-5 w-5" />, color: 'bg-emerald-500/10 text-emerald-600' },
+  { icon: <TrendingDown className="h-5 w-5" />, color: 'bg-orange-500/10 text-orange-600' },
+  { icon: <IndianRupee className="h-5 w-5" />, color: 'bg-purple-500/10 text-purple-600' },
+  { icon: <GraduationCap className="h-5 w-5" />, color: 'bg-cyan-500/10 text-cyan-600' },
+  { icon: <Heart className="h-5 w-5" />, color: 'bg-pink-500/10 text-pink-600' },
+  { icon: <FileCheck className="h-5 w-5" />, color: 'bg-green-500/10 text-green-600' },
+  { icon: <Landmark className="h-5 w-5" />, color: 'bg-amber-500/10 text-amber-600' },
 ];
 
-interface RecentActivity {
-  id: string;
-  action: string;
-  details: string;
-  timestamp: string;
-  type: 'income' | 'expense' | 'audit' | 'scholarship' | 'investment';
-}
-
-const recentActivities: RecentActivity[] = [
-  { id: '1', action: 'Budget Revised', details: 'Library budget increased by ₹1L for e-journal subscriptions', timestamp: '2 hours ago', type: 'expense' },
-  { id: '2', action: 'Scholarship Disbursed', details: 'Merit Excellence Award disbursed to 50 students - ₹12.5L', timestamp: '5 hours ago', type: 'scholarship' },
-  { id: '3', action: 'Audit Completed', details: 'Internal audit Q2 completed with 88% compliance score', timestamp: '1 day ago', type: 'audit' },
-  { id: '4', action: 'Grant Received', details: 'DST grant installment received - ₹8L for AI research project', timestamp: '2 days ago', type: 'income' },
-  { id: '5', action: 'FD Renewed', details: 'Corpus Fund FD renewed at 7.5% for 3 years', timestamp: '3 days ago', type: 'investment' },
-  { id: '6', action: 'Donation Received', details: 'Alumni batch 1995 donated ₹5L for sports infrastructure', timestamp: '4 days ago', type: 'income' },
-  { id: '7', action: 'Expenditure Approved', details: 'Server equipment purchase approved - ₹4.5L', timestamp: '5 days ago', type: 'expense' },
-  { id: '8', action: 'UC Submitted', details: 'Utilization certificate submitted for CSIR project', timestamp: '1 week ago', type: 'audit' },
+const healthColors = [
+  'bg-blue-500',
+  'bg-emerald-500',
+  'bg-orange-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-cyan-500',
 ];
 
 const getActivityColor = (type: string) => {
@@ -121,6 +63,55 @@ const getActivityColor = (type: string) => {
 };
 
 export function FinanceDashboard() {
+  const [dashboard, setDashboard] = useState<FinanceDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    financeRepositoryService
+      .getDashboard()
+      .then((data) => {
+        if (!cancelled) setDashboard(data);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load dashboard');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-20 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  if (error || !dashboard) {
+    return (
+      <div className="flex items-center gap-2 p-4 rounded-lg border border-red-500/20 bg-red-500/5">
+        <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+        <p className="text-xs text-red-600">{error || 'Failed to load dashboard'}</p>
+      </div>
+    );
+  }
+
+  const kpiCards: KpiCard[] = (dashboard.kpis || []).map((kpi, index) => ({
+    title: kpi.title,
+    value: kpi.value,
+    change: kpi.change,
+    changeType: kpi.changeType || 'neutral',
+    icon: kpiPalette[index % kpiPalette.length]?.icon,
+    color: kpiPalette[index % kpiPalette.length]?.color || 'bg-muted',
+  }));
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -160,14 +151,7 @@ export function FinanceDashboard() {
             <CardTitle className="text-lg">Financial Health Indicators</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { label: 'Budget Utilization', value: 70, color: 'bg-blue-500' },
-              { label: 'Revenue Collection', value: 85, color: 'bg-emerald-500' },
-              { label: 'Expenditure Control', value: 78, color: 'bg-orange-500' },
-              { label: 'Audit Compliance', value: 92, color: 'bg-green-500' },
-              { label: 'Asset Growth', value: 88, color: 'bg-purple-500' },
-              { label: 'Scholarship Coverage', value: 65, color: 'bg-cyan-500' },
-            ].map((item) => (
+            {(dashboard.financialHealth || []).map((item, index) => (
               <div key={item.label} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{item.label}</span>
@@ -175,12 +159,15 @@ export function FinanceDashboard() {
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${item.color} transition-all duration-500`}
-                    style={{ width: `${item.value}%` }}
+                    className={`h-full rounded-full ${healthColors[index % healthColors.length]} transition-all duration-500`}
+                    style={{ width: `${Math.min(100, Math.max(0, item.value))}%` }}
                   />
                 </div>
               </div>
             ))}
+            {(dashboard.financialHealth || []).length === 0 && (
+              <p className="text-center py-8 text-sm text-muted-foreground">No health indicators available</p>
+            )}
           </CardContent>
         </Card>
 
@@ -191,7 +178,7 @@ export function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {recentActivities.map((activity) => (
+              {(dashboard.recentActivities || []).map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                   <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 shrink-0 ${getActivityColor(activity.type)}`}>
                     {activity.type}
@@ -206,6 +193,9 @@ export function FinanceDashboard() {
                   </div>
                 </div>
               ))}
+              {(dashboard.recentActivities || []).length === 0 && (
+                <p className="text-center py-8 text-sm text-muted-foreground">No recent activities</p>
+              )}
             </div>
           </CardContent>
         </Card>

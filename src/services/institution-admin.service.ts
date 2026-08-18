@@ -1102,31 +1102,10 @@ class InstitutionAdminService {
   // ──────────────────────────────────────────────
 
   /**
-   * Fetch activity logs for the institution.
-   * GET /api/v1/app/activity-logs
-   */
-  async getAppActivityLogs(params?: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    module?: string;
-    sortBy?: string;
-    sortDirection?: string;
-  }): Promise<any> {
-    const query = new URLSearchParams();
-    if (params?.page) query.set('page', String(params.page));
-    if (params?.pageSize) query.set('pageSize', String(params.pageSize));
-    if (params?.search) query.set('search', params.search);
-    if (params?.module && params.module !== 'all') query.set('module', params.module);
-    if (params?.sortBy) query.set('sortBy', params.sortBy);
-    if (params?.sortDirection) query.set('sortDirection', params.sortDirection);
-    const qStr = query.toString();
-    return apiService.get<any>(`/v1/app/activity-logs${qStr ? `?${qStr}` : ''}`);
-  }
-
-  /**
-   * Fetch paginated activity logs for the institution (Legacy).
+   * Fetch paginated activity logs for the institution.
    * GET /api/institution/activity-logs?institutionId=&page=&pageSize=
+   *
+   * Note: This endpoint uses /api/institution/ prefix (not /api/v1/app/).
    */
   async getActivityLogs(
     params: ActivityLogQueryParams

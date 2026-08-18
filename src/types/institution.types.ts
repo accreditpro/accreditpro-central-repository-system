@@ -5,8 +5,6 @@ export interface InstitutionAdmin {
   name: string;
   email: string;
   mobile: string;
-  temporaryPassword?: string;
-  password?: string;
 }
 
 export interface Institution {
@@ -70,91 +68,4 @@ export interface InstitutionQueryParams {
   repositoryCompletion?: string;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-}
-
-export interface BasicInfoPayload {
-  name: string;
-  code: string;
-  category: string;
-  email: string;
-  phone: string;
-  website?: string;
-  logo?: string;
-}
-
-export interface AddressPayload {
-  addressLine1: string;
-  addressLine2?: string;
-  state: string;
-  district: string;
-  pincode: string;
-}
-
-export interface AdminUserPayload {
-  name: string;
-  email: string;
-  mobile: string;
-  autoGeneratePassword?: boolean;
-}
-
-export interface CreateInstitutionRequest {
-  basicInfo: BasicInfoPayload;
-  address: AddressPayload;
-  admin: AdminUserPayload;
-}
-
-export interface InstitutionAdminDto {
-  name: string;
-  email: string;
-  mobile: string;
-  temporaryPassword?: string;
-}
-
-export interface CreateInstitutionResponse {
-  id: string | number;
-  basicInfo?: BasicInfoPayload;
-  address?: AddressPayload;
-  admin?: InstitutionAdminDto;
-  status?: string;
-  createdAt?: string;
-  name?: string;
-  code?: string;
-  category?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  logo?: string;
-  logoUrl?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  state?: string;
-  city?: string;
-  district?: string;
-  pincode?: string;
-  usersCount?: number;
-  repositoryCompletion?: number;
-  documentsUploaded?: number;
-  institution?: any;
-  adminUser?: any;
-  academicEntities?: any;
-  iqacUser?: any;
-  principalUser?: any;
-}
-
-export interface InstitutionSummary {
-  id: number | string;
-  name: string;
-  code: string;
-  status: string;
-  category: string;
-  usersCount?: number;
-  repositoryCompletion?: number;
-}
-
-export interface InstitutionListApiResponse {
-  content: any[];
-  page: number;
-  pageSize: number;
-  totalElements: number;
-  totalPages: number;
 }

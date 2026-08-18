@@ -15,9 +15,11 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart as LineChartIcon, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
-import { useAppSelector } from '@/store';
-import { selectObservations } from '@/store/slices/iqacSlice';
-import { analyticsTrends, departmentReadinessRows } from '../iqac-data';
+import type {
+  DashboardTrendsDto,
+  DepartmentReadinessRowDto,
+  QualityObservationDto,
+} from '@/services/iqac.service';
 
 const TREND_COLORS = {
   repositoryCompletion: '#3b82f6',
@@ -34,14 +36,20 @@ const OBS_COLORS: Record<string, string> = {
 
 const DEPT_BAR_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
-export function InstitutionalCharts() {
-  const observations = useAppSelector(selectObservations);
-
-  const trendData = analyticsTrends.years.map((year, i) => ({
+export function InstitutionalCharts({
+  trends,
+  departmentReadiness,
+  observations,
+}: {
+  trends: DashboardTrendsDto;
+  departmentReadiness: DepartmentReadinessRowDto[];
+  observations: QualityObservationDto[];
+}) {
+  const trendData = (trends.years ?? []).map((year, i) => ({
     year,
-    'Repository Completion': analyticsTrends.repositoryCompletion[i],
-    'Accreditation Readiness': analyticsTrends.accreditationReadiness[i],
-    'Evidence Completion': analyticsTrends.evidenceCompletion[i],
+    'Repository Completion': trends.repositoryCompletion?.[i] ?? 0,
+    'Accreditation Readiness': trends.accreditationReadiness?.[i] ?? 0,
+    'Evidence Completion': trends.evidenceCompletion?.[i] ?? 0,
   }));
 
   const statusData = (['open', 'in-progress', 'resolved', 'closed'] as const).map((s) => ({
@@ -49,7 +57,7 @@ export function InstitutionalCharts() {
     value: observations.filter((o) => o.status === s).length,
   }));
 
-  const deptData = departmentReadinessRows.map((d) => ({
+  const deptData = departmentReadiness.map((d) => ({
     dept: d.code,
     readiness: d.repositoryCompletion,
     nba: d.nba,

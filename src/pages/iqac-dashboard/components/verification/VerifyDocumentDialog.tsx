@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store';
 import { verifyDocument } from '@/store/slices/iqacVerificationSlice';
 import { addNotification } from '@/store/slices/uiSlice';
+import { iqacService } from '@/services/iqac.service';
 import { toast } from 'sonner';
 import { ShieldCheck, FileText, CheckCircle2, Calendar, User } from 'lucide-react';
 import { VerificationDocument } from '../../verification-data';
@@ -27,22 +28,32 @@ interface VerifyDocumentDialogProps {
 export function VerifyDocumentDialog({ document, open, onOpenChange }: VerifyDocumentDialogProps) {
   const dispatch = useAppDispatch();
   const [comments, setComments] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!document) return null;
 
-  const handleVerify = () => {
-    dispatch(verifyDocument({ id: document.id, comments, hodApproved: document.hodStatus === 'approved' }));
-    dispatch(
-      addNotification({
-        title: 'Document verified',
-        message: `"${document.name}" verified for ${document.department} · ${document.repository}.`,
-        type: 'success',
-        read: false,
-      })
-    );
-    toast.success(`"${document.name}" verified`);
-    setComments('');
-    onOpenChange(false);
+  const handleVerify = async () => {
+    setSubmitting(true);
+    try {
+      await iqacService.verifyDocument(document.id, { comments: comments.trim() || undefined });
+      // Optimistic local overlay — the view refreshes its list immediately.
+      dispatch(verifyDocument({ id: document.id, comments, hodApproved: document.hodStatus === 'approved' }));
+      dispatch(
+        addNotification({
+          title: 'Document verified',
+          message: `"${document.name}" verified for ${document.department} · ${document.repository}.`,
+          type: 'success',
+          read: false,
+        })
+      );
+      toast.success(`"${document.name}" verified`);
+      setComments('');
+      onOpenChange(false);
+    } catch {
+      toast.error('Failed to verify the document. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -119,9 +130,9 @@ export function VerifyDocumentDialog({ document, open, onOpenChange }: VerifyDoc
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleVerify} className="gap-1.5">
+          <Button onClick={handleVerify} className="gap-1.5" disabled={submitting}>
             <CheckCircle2 className="h-4 w-4" />
-            Verify
+            {submitting ? 'Verifying…' : 'Verify'}
           </Button>
         </div>
       </DialogContent>

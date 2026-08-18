@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_META } from '@/pages/iqac-dashboard/components/common';
 import { resolveDepartmentCode } from '@/pages/iqac-dashboard/components/verification/verification-utils';
 import type { EvidenceObservation } from '@/pages/iqac-dashboard/verification-data';
+import type { EvidenceObservationDto } from '@/services/hod.service';
 
 const STATUS_META: Record<EvidenceObservation['status'], { label: string; badge: string }> = {
   open: { label: 'Open', badge: 'bg-red-500/10 text-red-600 border-red-500/25' },
@@ -17,9 +18,39 @@ const STATUS_META: Record<EvidenceObservation['status'], { label: string; badge:
   verified: { label: 'Verified', badge: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25' },
 };
 
-export function IQACObservationsWidget() {
+interface IQACObservationsWidgetProps {
+  /** Real observations from the dashboard API (optional — falls back to the IQAC store). */
+  observations?: EvidenceObservationDto[];
+}
+
+export function IQACObservationsWidget({ observations: apiObservations }: IQACObservationsWidgetProps) {
   const { user } = useAuth();
-  const observations = useAppSelector(selectVerificationObservations);
+  const storeObservations = useAppSelector(selectVerificationObservations);
+
+  // API-backed observations win; the local IQAC store is the fallback when the
+  // backend returns none (e.g. no observations raised yet).
+  const observations = useMemo((): EvidenceObservation[] => {
+    if (apiObservations && apiObservations.length > 0) {
+      return apiObservations.map((o) => ({
+        id: o.id,
+        documentId: o.documentId ?? '',
+        documentName: o.documentName ?? o.title,
+        title: o.title,
+        description: o.description ?? '',
+        repository: o.repository ?? '',
+        folder: o.folder ?? '',
+        category: o.category ?? '',
+        department: o.department ?? '',
+        priority: o.priority as EvidenceObservation['priority'],
+        status: o.status as EvidenceObservation['status'],
+        dueDate: o.dueDate,
+        recommendedCorrection: o.recommendedCorrection ?? '',
+        raisedBy: o.raisedBy ?? 'IQAC',
+        raisedAt: o.raisedAt ?? new Date().toISOString(),
+      }));
+    }
+    return storeObservations;
+  }, [apiObservations, storeObservations]);
 
   const dept = useMemo(
     () => resolveDepartmentCode(user?.department ?? '', observations[0]?.department ?? 'CSE'),
@@ -58,8 +89,8 @@ export function IQACObservationsWidget() {
           </p>
         )}
         {deptObservations.slice(0, 5).map((obs) => {
-          const priority = PRIORITY_META[obs.priority];
-          const status = STATUS_META[obs.status];
+          const priority = PRIORITY_META[obs.priority] ?? { label: obs.priority, badge: 'bg-muted text-muted-foreground' };
+          const status = STATUS_META[obs.status] ?? { label: obs.status, badge: 'bg-muted text-muted-foreground' };
           const isOverdue = obs.status !== 'verified' && obs.dueDate < new Date().toISOString().slice(0, 10);
           return (
             <div key={obs.id} className="rounded-lg border p-3 hover:border-orange-500/30 hover:shadow-sm transition-all">

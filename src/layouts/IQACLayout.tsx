@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,10 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { useAppSelector } from '@/store';
-import { selectObservations } from '@/store/slices/iqacSlice';
-import { selectVerificationObservations } from '@/store/slices/iqacVerificationSlice';
-import { gapStats } from '@/pages/iqac-dashboard/iqac-data';
+import { iqacService } from '@/services/iqac.service';
 import { useVerificationDocuments } from '@/pages/iqac-dashboard/components/verification/useVerificationDocuments';
 import { ImpersonationBanner } from '@/components/shared/ImpersonationBanner';
 import { cn } from '@/lib/utils';
@@ -80,10 +77,29 @@ export default function IQACLayout() {
   const { user, logout, isImpersonating } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const observations = useAppSelector(selectObservations);
-  const verificationObservations = useAppSelector(selectVerificationObservations);
-  const { documents: verificationDocuments } = useVerificationDocuments();
+  const [observations, setObservations] = useState<{ status: string }[]>([]);
+  const [criticalGaps, setCriticalGaps] = useState(0);
+  const { documents: verificationDocuments, observations: verificationObservations } = useVerificationDocuments();
   const activeView = searchParams.get('view') || 'dashboard';
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([iqacService.getObservations(), iqacService.getGaps()])
+      .then(([obs, gaps]) => {
+        if (cancelled) return;
+        setObservations(obs ?? []);
+        setCriticalGaps(gaps?.stats?.critical ?? 0);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setObservations([]);
+          setCriticalGaps(0);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activeObservations = observations.filter((o) => o.status !== 'closed').length;
   const pendingVerification = verificationDocuments.filter(
@@ -94,7 +110,7 @@ export default function IQACLayout() {
   ).length;
   const badgeFor: Record<string, string | undefined> = {
     observations: activeObservations > 0 ? String(activeObservations) : undefined,
-    gaps: gapStats.critical > 0 ? String(gapStats.critical) : undefined,
+    gaps: criticalGaps > 0 ? String(criticalGaps) : undefined,
     'pending-verification': pendingVerification > 0 ? String(pendingVerification) : undefined,
     'verification-observations': openVerificationObservations > 0 ? String(openVerificationObservations) : undefined,
   };

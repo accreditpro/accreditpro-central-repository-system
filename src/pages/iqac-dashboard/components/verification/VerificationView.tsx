@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useReadOnly } from '@/hooks/useReadOnly';
 import {
-  verificationDocuments,
   summarizeVerification,
   type VerificationDocument,
 } from '../../verification-data';
@@ -40,9 +39,9 @@ interface HierarchyNode {
   repositories: { repository: string; folders: string[] }[];
 }
 
-function buildHierarchy(): HierarchyNode[] {
+function buildHierarchy(documents: VerificationDocument[]): HierarchyNode[] {
   const map = new Map<string, HierarchyNode>();
-  for (const doc of verificationDocuments) {
+  for (const doc of documents) {
     let node = map.get(doc.department);
     if (!node) {
       node = { code: doc.department, name: doc.departmentName, repositories: [] };
@@ -61,11 +60,13 @@ function buildHierarchy(): HierarchyNode[] {
 function HierarchyPanel({
   selected,
   onSelect,
+  documents,
 }: {
   selected: { department?: string; repository?: string; folder?: string };
   onSelect: (sel: { department?: string; repository?: string; folder?: string }) => void;
+  documents: VerificationDocument[];
 }) {
-  const hierarchy = useMemo(buildHierarchy, []);
+  const hierarchy = useMemo(() => buildHierarchy(documents), [documents]);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
   const [expandedRepo, setExpandedRepo] = useState<string | null>(null);
 
@@ -338,7 +339,7 @@ export function VerificationView() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-4 items-start">
         {/* Left — hierarchy */}
-        <HierarchyPanel selected={selection} onSelect={setSelection} />
+        <HierarchyPanel selected={selection} onSelect={setSelection} documents={documents} />
 
         {/* Right — document grid + inline preview */}
         <div className="space-y-3">

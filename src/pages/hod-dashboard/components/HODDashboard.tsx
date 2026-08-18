@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -13,37 +14,74 @@ import {
   Info,
   CheckCircle2,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
-import { useAppSelector } from '@/store';
-import { selectReviews } from '@/store/slices/evidenceReviewSlice';
-import { getHODYearData } from '../hod-configs';
-import { applyReviewOverrides } from './evidence-utils';
+import { hodService, HodDashboardDto } from '@/services/hod.service';
 import { AccreditationReadiness } from './AccreditationReadiness';
 import { IQACObservationsWidget } from './IQACObservationsWidget';
 
 export function HODDashboard({ academicYear }: { academicYear: string }) {
-  const reviews = useAppSelector(selectReviews);
-  const yearData = getHODYearData(academicYear);
-  const { repositoryOverview, readiness, insights, activities, health } = yearData;
-  // Live counts reflect decisions made in Evidence Review / Approval Queue.
-  const evidence = applyReviewOverrides(yearData.evidence, academicYear, reviews);
+  const [dashboard, setDashboard] = useState<HodDashboardDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    hodService
+      .getDashboard(academicYear)
+      .then((data) => {
+        if (!cancelled) setDashboard(data);
+      })
+      .catch(() => {
+        if (!cancelled) setError('Failed to load the department dashboard. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading department dashboard...
+      </div>
+    );
+  }
+
+  if (error || !dashboard) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
+        {error || 'Dashboard unavailable'}
+      </div>
+    );
+  }
+
+  const { repositoryOverview, readiness, insights, activities, health, evidence, accreditation, observations, evidenceSummary } = dashboard;
 
   const weightedScore = readiness.reduce((acc, item) => {
     const avgScore = (item.dataCompletion + item.evidenceCompletion + item.verification + item.approval) / 4;
-    return acc + (avgScore * item.weight / 100);
+    return acc + (avgScore * item.weight) / 100;
   }, 0);
 
   const avgOf = (fn: (item: (typeof readiness)[number]) => number) =>
     Math.round(readiness.reduce((acc, item) => acc + fn(item), 0) / Math.max(readiness.length, 1));
 
   const pendingReviews = evidence.filter((item) => item.status === 'pending').length;
+  const approvedCount = evidenceSummary?.approved ?? evidence.filter((e) => e.status === 'approved').length;
 
   const kpiCards = [
     { label: 'Department Readiness', value: `${Math.round(weightedScore)}%`, icon: Target, color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-950/30' },
     { label: 'Evidence Completion', value: `${avgOf((item) => item.evidenceCompletion)}%`, icon: FileCheck, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-950/30' },
     { label: 'Verification', value: `${avgOf((item) => item.verification)}%`, icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
     { label: 'Pending Review', value: `${pendingReviews}`, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30' },
-    { label: 'Approved Documents', value: `${evidence.filter((e) => e.status === 'approved').length}`, icon: CheckSquare, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30' },
+    { label: 'Approved Documents', value: `${approvedCount}`, icon: CheckSquare, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30' },
     { label: 'Department Health', value: `${health}%`, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
   ];
 
@@ -123,10 +161,10 @@ export function HODDashboard({ academicYear }: { academicYear: string }) {
       </Card>
 
       {/* Accreditation Readiness */}
-      <AccreditationReadiness academicYear={academicYear} />
+      <AccreditationReadiness academicYear={academicYear} frameworks={accreditation} />
 
       {/* IQAC Department Quality Observations */}
-      <IQACObservationsWidget />
+      <IQACObservationsWidget observations={observations ?? []} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AI Insights Panel */}

@@ -2,20 +2,17 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import {
-  kpiData,
-  institutionStats,
-  departmentRepositories,
-  deptAcademic,
-  deptFaculty,
-  deptStudent,
-  deptResearch,
-  deptInfra,
-  principalGaps,
-  nbaDeptScores,
-  naacDeptScores,
-  nirfDeptScores,
-} from '../principal-data';
+import type {
+  PrincipalDashboardDto,
+  DepartmentRepositoryDto,
+  PrincipalAccreditationDto,
+  PrincipalGapDto,
+  DeptFacultyDto,
+  DeptStudentDto,
+  DeptResearchDto,
+  DeptInfraDto,
+  AnalyticsSeriesDto,
+} from '@/services/principal.service';
 
 export interface ReportData {
   title: string;
@@ -23,120 +20,225 @@ export interface ReportData {
   rows: (string | number)[][];
 }
 
-export const REPORT_TYPES = [
-  { id: 'institution', name: 'Institution Summary', description: 'Institution-level KPIs and readiness overview' },
-  { id: 'department', name: 'Department Summary', description: 'Department-wise readiness and accreditation scores' },
-  { id: 'academic-year', name: 'Academic Year Summary', description: 'Year-wise repository and accreditation trends' },
-  { id: 'repository', name: 'Repository Summary', description: 'Repository completion matrix across departments' },
-  { id: 'accreditation', name: 'Accreditation Readiness Report', description: 'NBA / NAAC / NIRF criterion readiness' },
-  { id: 'gaps', name: 'Gap Analysis Report', description: 'Current vs target readiness gaps with owners' },
-  { id: 'faculty', name: 'Faculty Summary', description: 'Faculty strength, qualifications and research' },
-  { id: 'student', name: 'Student Summary', description: 'Student performance and progression metrics' },
-  { id: 'research', name: 'Research Summary', description: 'Publications, patents, projects and funding' },
-  { id: 'infrastructure', name: 'Infrastructure Summary', description: 'Facilities readiness and compliance alerts' },
-];
+/**
+ * Real-data context for report generation. Every exporter reads from these
+ * backend-provided aggregates (fetched by ExecutiveReports) instead of
+ * hardcoded mock arrays.
+ */
+export interface ReportContext {
+  dashboard?: PrincipalDashboardDto;
+  departments?: DepartmentRepositoryDto[];
+  accreditation?: PrincipalAccreditationDto;
+  gaps?: PrincipalGapDto[];
+  faculty?: DeptFacultyDto[];
+  students?: DeptStudentDto[];
+  research?: DeptResearchDto[];
+  infrastructure?: DeptInfraDto[];
+  analytics?: AnalyticsSeriesDto[];
+}
 
-export function buildReportData(id: string): ReportData {
+const deptOverall = (
+  ctx: ReportContext,
+  code: string,
+  framework: 'nba' | 'naac' | 'nirf'
+): number => {
+  const rows = ctx.accreditation?.[framework]?.departments ?? [];
+  return rows.find(x => x.dept === code)?.overall ?? 0;
+};
+
+export function buildReportData(id: string, ctx: ReportContext = {}): ReportData {
   switch (id) {
-    case 'institution':
+    case 'institution': {
+      const kpi = ctx.dashboard?.kpi;
+      const stats = ctx.dashboard?.institutionStats;
       return {
         title: 'Institution Summary',
         columns: ['Metric', 'Value'],
         rows: [
-          ['Repository Readiness', `${kpiData.repositoryCompletion}%`],
-          ['NAAC Readiness', `${kpiData.naacReadiness}%`],
-          ['NBA Readiness', `${kpiData.nbaReadiness}%`],
-          ['NIRF Readiness', `${kpiData.nirfReadiness}%`],
-          ['Evidence Completion', `${kpiData.evidenceCompletion}%`],
-          ['Departments', institutionStats.departments],
-          ['Programs', institutionStats.programs],
-          ['Faculty', institutionStats.faculty],
-          ['Students', institutionStats.students],
-          ['Pending Approvals', kpiData.pendingApprovals],
+          ['Repository Readiness', kpi ? `${kpi.repositoryCompletion}%` : '—'],
+          ['NAAC Readiness', kpi ? `${kpi.naacReadiness}%` : '—'],
+          ['NBA Readiness', kpi ? `${kpi.nbaReadiness}%` : '—'],
+          ['NIRF Readiness', kpi ? `${kpi.nirfReadiness}%` : '—'],
+          ['Evidence Completion', kpi ? `${kpi.evidenceCompletion}%` : '—'],
+          ['Departments', stats?.departments ?? '—'],
+          ['Programs', stats?.programs ?? '—'],
+          ['Faculty', stats?.faculty ?? '—'],
+          ['Students', stats?.students ?? '—'],
+          ['Pending Approvals', kpi?.pendingApprovals ?? '—'],
         ],
       };
+    }
     case 'department':
       return {
         title: 'Department Summary',
         columns: ['Department', 'Repository Readiness', 'NBA', 'NAAC', 'NIRF'],
-        rows: departmentRepositories.map((d) => [
+        rows: (ctx.departments ?? []).map(d => [
           d.code,
           `${d.readiness}%`,
-          `${nbaDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
-          `${naacDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
-          `${nirfDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
+          `${deptOverall(ctx, d.code, 'nba')}%`,
+          `${deptOverall(ctx, d.code, 'naac')}%`,
+          `${deptOverall(ctx, d.code, 'nirf')}%`,
         ]),
       };
     case 'academic-year':
       return {
         title: 'Academic Year Summary',
-        columns: ['Year', 'Repository Completion', 'Accreditation Readiness', 'Evidence', 'Placements'],
-        rows: [2021, 2022, 2023, 2024, 2025].map((y, i) => [
-          `${y - 1}-${String(y).slice(2)}`,
-          `${72 + i * 3}%`,
-          `${68 + i * 3}%`,
-          `${65 + i * 2}%`,
-          `${72 + i * 2}%`,
+        columns: [
+          'Year',
+          'Repository Completion',
+          'Accreditation Readiness',
+          'Evidence',
+          'Placements',
+        ],
+        rows: (ctx.analytics ?? []).map(s => [
+          s.year,
+          `${s.repositoryCompletion}%`,
+          `${s.accreditationReadiness}%`,
+          `${s.evidenceCompletion}%`,
+          `${s.placements}%`,
         ]),
       };
     case 'repository':
       return {
         title: 'Repository Summary',
         columns: ['Department', 'Repository', 'Completion', 'Approved', 'Pending', 'Missing'],
-        rows: departmentRepositories.flatMap((d) =>
-          d.repositories.map((r) => [d.code, r.repo, `${r.completion}%`, `${r.approved}%`, `${r.pending}%`, `${r.missing}%`])
+        rows: (ctx.departments ?? []).flatMap(d =>
+          d.repositories.map(r => [
+            d.code,
+            r.repo,
+            `${r.completion}%`,
+            `${r.approved}%`,
+            `${r.pending}%`,
+            `${r.missing}%`,
+          ])
         ),
       };
     case 'accreditation':
       return {
         title: 'Accreditation Readiness Report',
         columns: ['Department', 'NBA', 'NAAC', 'NIRF'],
-        rows: departmentRepositories.map((d) => [
+        rows: (ctx.departments ?? []).map(d => [
           d.code,
-          `${nbaDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
-          `${naacDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
-          `${nirfDeptScores.find((x) => x.dept === d.code)?.overall ?? 0}%`,
+          `${deptOverall(ctx, d.code, 'nba')}%`,
+          `${deptOverall(ctx, d.code, 'naac')}%`,
+          `${deptOverall(ctx, d.code, 'nirf')}%`,
         ]),
       };
     case 'gaps':
       return {
         title: 'Gap Analysis Report',
         columns: ['Department', 'Repository', 'Framework', 'Current', 'Target', 'Gap', 'Priority'],
-        rows: principalGaps.map((g) => [g.department, g.repository, g.framework, `${g.current}%`, `${g.target}%`, g.target - g.current, g.priority]),
+        rows: (ctx.gaps ?? []).map(g => [
+          g.department,
+          g.repository,
+          g.framework,
+          `${g.current}%`,
+          `${g.target}%`,
+          g.target - g.current,
+          g.priority,
+        ]),
       };
     case 'faculty':
       return {
         title: 'Faculty Summary',
-        columns: ['Department', 'Strength', 'PhD %', 'FDP %', 'Publications', 'Patents', 'Funding (₹L)'],
-        rows: deptFaculty.map((d) => [d.dept, d.strength, `${d.phdPercentage}%`, `${d.fdpParticipation}%`, d.publications, d.patents, d.researchFunding]),
+        columns: [
+          'Department',
+          'Strength',
+          'PhD %',
+          'FDP %',
+          'Publications',
+          'Patents',
+          'Funding (₹L)',
+        ],
+        rows: (ctx.faculty ?? []).map(d => [
+          d.dept,
+          d.strength,
+          `${d.phdPercentage}%`,
+          `${d.fdpParticipation}%`,
+          d.publications,
+          d.patents,
+          d.researchFunding,
+        ]),
       };
     case 'student':
       return {
         title: 'Student Summary',
-        columns: ['Department', 'Strength', 'Pass %', 'Placements %', 'Higher Studies %', 'Internships', 'Awards', 'Certifications'],
-        rows: deptStudent.map((d) => [d.dept, d.strength, `${d.passPercentage}%`, `${d.placements}%`, `${d.higherStudies}%`, d.internships, d.awards, d.certifications]),
+        columns: [
+          'Department',
+          'Strength',
+          'Pass %',
+          'Placements %',
+          'Higher Studies %',
+          'Internships',
+          'Awards',
+          'Certifications',
+        ],
+        rows: (ctx.students ?? []).map(d => [
+          d.dept,
+          d.strength,
+          `${d.passPercentage}%`,
+          `${d.placements}%`,
+          `${d.higherStudies}%`,
+          d.internships,
+          d.awards,
+          d.certifications,
+        ]),
       };
     case 'research':
       return {
         title: 'Research Summary',
-        columns: ['Department', 'Publications', 'Patents', 'Books', 'Sponsored', 'Consultancy (₹L)', 'Funding (₹L)'],
-        rows: deptResearch.map((d) => [d.dept, d.publications, d.patents, d.books, d.sponsoredProjects, d.consultancy, d.researchFunding]),
+        columns: [
+          'Department',
+          'Publications',
+          'Patents',
+          'Books',
+          'Sponsored',
+          'Consultancy (₹L)',
+          'Funding (₹L)',
+        ],
+        rows: (ctx.research ?? []).map(d => [
+          d.dept,
+          d.publications,
+          d.patents,
+          d.books,
+          d.sponsoredProjects,
+          d.consultancy,
+          d.researchFunding,
+        ]),
       };
     case 'infrastructure':
       return {
         title: 'Infrastructure Summary',
-        columns: ['Department', 'Labs %', 'Equipment %', 'Licenses %', 'ICT %', 'Smart Classrooms %', 'Evidence %', 'Alerts'],
-        rows: deptInfra.map((d) => [d.dept, d.laboratories, d.equipment, d.softwareLicenses, d.ictFacilities, d.smartClassrooms, d.evidenceCompletion, d.alerts.length]),
+        columns: [
+          'Department',
+          'Labs %',
+          'Equipment %',
+          'Licenses %',
+          'ICT %',
+          'Smart Classrooms %',
+          'Evidence %',
+          'Alerts',
+        ],
+        rows: (ctx.infrastructure ?? []).map(d => [
+          d.dept,
+          d.laboratories,
+          d.equipment,
+          d.softwareLicenses,
+          d.ictFacilities,
+          d.smartClassrooms,
+          d.evidenceCompletion,
+          d.alerts.length,
+        ]),
       };
     default:
       return { title: 'Report', columns: ['Item'], rows: [['—']] };
   }
 }
 
-export function exportReportToExcel(id: string) {
-  const data = buildReportData(id);
+export function exportReportToExcel(id: string, ctx: ReportContext = {}) {
+  const data = buildReportData(id, ctx);
   const sheet = XLSX.utils.json_to_sheet(
-    data.rows.map((row) => Object.fromEntries(data.columns.map((c, i) => [c, row[i]])))
+    data.rows.map(row => Object.fromEntries(data.columns.map((c, i) => [c, row[i]])))
   );
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, data.title.slice(0, 31));
@@ -147,8 +249,8 @@ export function exportReportToExcel(id: string) {
   );
 }
 
-export function exportReportToPDF(id: string) {
-  const data = buildReportData(id);
+export function exportReportToPDF(id: string, ctx: ReportContext = {}) {
+  const data = buildReportData(id, ctx);
   const doc = new jsPDF();
   doc.setFontSize(18);
   doc.setTextColor(99, 102, 241);
@@ -159,7 +261,7 @@ export function exportReportToPDF(id: string) {
   autoTable(doc, {
     startY: 34,
     head: [data.columns],
-    body: data.rows.map((row) => row.map(String)),
+    body: data.rows.map(row => row.map(String)),
     theme: 'striped',
     headStyles: { fillColor: [99, 102, 241] },
     styles: { fontSize: 9 },
