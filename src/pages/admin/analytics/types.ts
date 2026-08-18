@@ -50,4 +50,14 @@ export interface RecentActivityItem {
   type: 'upload' | 'create' | 'update' | 'delete' | 'login';
 }
 
+export interface AnalyticsOverviewData {
+  cards: AnalyticsCard[];
+  institutionGrowth: InstitutionGrowthData[];
+  categoryDistribution: InstitutionDistributionData[];
+  topInstitutions: TopInstitutionData[];
+  repositoryCompletion: RepositoryCompletionData[];
+  activityHeatmap: ActivityHeatmapData[];
+  recentActivities: RecentActivityItem[];
+}
+
 export type ExportFormat = 'csv' | 'excel' | 'pdf';

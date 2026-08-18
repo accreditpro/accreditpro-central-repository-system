@@ -259,7 +259,7 @@ class AdminService {
 
   /**
    * Fetch paginated list of institutions.
-   * GET /api/admin/institutions
+   * GET /api/v1/super-admin/institutions
    */
   async getInstitutions(params: InstitutionQueryParams): Promise<InstitutionListApiResponse> {
     const queryParams: Record<string, string | number> = {
@@ -275,7 +275,7 @@ class AdminService {
     if (params.sortBy) queryParams.sortBy = params.sortBy;
     if (params.sortDirection) queryParams.sortDirection = params.sortDirection;
 
-    return apiService.get<InstitutionListApiResponse>('/admin/institutions', {
+    return apiService.get<InstitutionListApiResponse>('/v1/super-admin/institutions', {
       params: queryParams,
     });
   }
@@ -301,92 +301,145 @@ class AdminService {
   }
 
   /**
-   * Build FormData from a CreateInstitutionRequest when the logo is a file upload.
-   * - If logo is a base64 data URL → convert to File blob, send as multipart
-   * - If logo is a URL or empty → send as regular JSON
+   * Build FormData from a CreateInstitutionRequest.
+   * Supports Spring Boot @RequestPart("request") with application/json Blob,
+   * and @RequestPart(value = "logo", required = false) MultipartFile.
    */
   private buildCreatePayload(
     request: CreateInstitutionRequest
-  ): FormData | CreateInstitutionRequest {
+  ): FormData {
+    const formData = new FormData();
     const logo = request.basicInfo.logo;
 
     if (logo && logo.startsWith('data:')) {
-      // Logo is a new file upload — use FormData
-      const formData = new FormData();
       const blob = this.dataURLToBlob(logo);
       const extension = blob.type.split('/')[1] || 'png';
       formData.append('logo', blob, `logo.${extension}`);
-
-      // Send the rest of the request as a JSON string under 'request' field
-      const dataWithoutLogo: CreateInstitutionRequest = {
-        ...request,
-        basicInfo: { ...request.basicInfo, logo: '' },
-      };
-      formData.append('request', JSON.stringify(dataWithoutLogo));
-
-      return formData;
     }
 
-    // No file upload — send as regular JSON
-    return request;
+    const dataWithoutBase64Logo: CreateInstitutionRequest = {
+      ...request,
+      basicInfo: {
+        ...request.basicInfo,
+        logo: logo && !logo.startsWith('data:') ? logo : '',
+      },
+    };
+
+    const requestBlob = new Blob([JSON.stringify(dataWithoutBase64Logo)], {
+      type: 'application/json',
+    });
+    formData.append('request', requestBlob);
+
+    return formData;
   }
 
   /**
    * Create a new institution.
-   * POST /api/admin/institutions
+   * POST /api/v1/super-admin/institutions
    *
-   * Supports logo file upload via multipart/form-data when logo is a base64 data URL.
+   * Sends multipart/form-data with 'request' JSON Blob + optional 'logo' File.
    */
   async createInstitution(data: CreateInstitutionRequest): Promise<CreateInstitutionResponse> {
     const payload = this.buildCreatePayload(data);
-    return apiService.post<CreateInstitutionResponse>('/admin/institutions', payload);
+    return apiService.post<CreateInstitutionResponse>('/v1/super-admin/institutions', payload);
   }
 
   /**
    * Update an existing institution.
-   * PUT /api/admin/institutions/{id}
-   *
-   * Accepts the same JSON shape as create. Supports logo file upload
-   * via multipart/form-data when logo is a base64 data URL.
+   * PUT /api/v1/super-admin/institutions/{id}
    */
   async updateInstitution(
-    id: number,
+    id: number | string,
     data: CreateInstitutionRequest
   ): Promise<CreateInstitutionResponse> {
     const payload = this.buildCreatePayload(data);
-    return apiService.put<CreateInstitutionResponse>(`/admin/institutions/${id}`, payload);
+    return apiService.put<CreateInstitutionResponse>(`/v1/super-admin/institutions/${id}`, payload);
   }
 
   /**
    * Fetch a single institution by ID.
-   * GET /api/admin/institutions/{id}
+   * GET /api/v1/super-admin/institutions/{id}
    */
-  async getInstitutionById(id: number): Promise<CreateInstitutionResponse> {
-    return apiService.get<CreateInstitutionResponse>(`/admin/institutions/${id}`);
+  async getInstitutionById(id: number | string): Promise<CreateInstitutionResponse> {
+    return apiService.get<CreateInstitutionResponse>(`/v1/super-admin/institutions/${id}`);
   }
 
   /**
    * Update institution status (activate/deactivate).
-   * PATCH /api/admin/institutions/{id}/status
-   *
-   * Request body: { status: 'ACTIVE' | 'INACTIVE' }
-   * Response: Updated institution object
+   * PATCH /api/v1/super-admin/institutions/{id}/status
    */
   async updateInstitutionStatus(
-    id: number,
-    status: 'ACTIVE' | 'INACTIVE'
+    id: number | string,
+    status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED' | string
   ): Promise<InstitutionSummary> {
-    return apiService.patch<InstitutionSummary>(`/admin/institutions/${id}/status`, { status });
+    const apiStatus = status.toUpperCase();
+    return apiService.patch<InstitutionSummary>(`/v1/super-admin/institutions/${id}/status`, {
+      status: apiStatus,
+    });
   }
 
   /**
    * Delete an institution.
-   * DELETE /api/admin/institutions/{id}
-   *
-   * Response: { success: true, message: '...' }
+   * DELETE /api/v1/super-admin/institutions/{id}
    */
-  async deleteInstitution(id: number): Promise<void> {
-    await apiService.delete<void>(`/admin/institutions/${id}`);
+  async deleteInstitution(id: number | string): Promise<void> {
+    await apiService.delete<void>(`/v1/super-admin/institutions/${id}`);
+  }
+
+  /**
+   * Fetch list of distinct Indian states for filtering.
+   * GET /api/v1/super-admin/institutions/states
+   */
+  async getStates(): Promise<string[]> {
+    return apiService.get<string[]>('/v1/super-admin/institutions/states');
+  }
+
+  /**
+   * Fetch list of distinct categories for filtering.
+   * GET /api/v1/super-admin/institutions/categories
+   */
+  async getCategories(): Promise<string[]> {
+    return apiService.get<string[]>('/v1/super-admin/institutions/categories');
+  }
+
+  /**
+   * Impersonate institution administrator.
+   * POST /api/v1/super-admin/institutions/{id}/impersonate
+   */
+  async impersonateInstitution(id: number | string): Promise<any> {
+    return apiService.post<any>(`/v1/super-admin/institutions/${id}/impersonate`);
+  }
+
+  /**
+   * Export institutions report in bulk CSV format.
+   * GET /api/v1/super-admin/institutions/export
+   */
+  async exportInstitutions(params?: InstitutionQueryParams): Promise<void> {
+    const queryParams: Record<string, string | number> = {};
+    if (params) {
+      if (params.page) queryParams.page = params.page;
+      if (params.pageSize) queryParams.pageSize = params.pageSize;
+      if (params.search) queryParams.search = params.search;
+      if (params.status && params.status !== 'all') queryParams.status = params.status;
+      if (params.category && params.category !== 'all') queryParams.category = params.category;
+      if (params.state && params.state !== 'all') queryParams.state = params.state;
+      if (params.repositoryCompletion && params.repositoryCompletion !== 'all')
+        queryParams.repositoryCompletion = params.repositoryCompletion;
+      if (params.sortBy) queryParams.sortBy = params.sortBy;
+      if (params.sortDirection) queryParams.sortDirection = params.sortDirection;
+    }
+    const filename = `institutions_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    return apiService.download('/v1/super-admin/institutions/export', filename, queryParams);
+  }
+
+  /**
+   * Bulk upload institutions via CSV.
+   * POST /api/v1/super-admin/institutions/upload-csv
+   */
+  async uploadInstitutionCSV(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiService.post<any>('/v1/super-admin/institutions/upload-csv', formData);
   }
 }
 
